@@ -1,0 +1,102 @@
+# Canonical, human-owned project configuration. No credentials belong here.
+schema_version = 1
+
+[project]
+name = "Mei"
+branch = "main"
+codeowners = ["@yuma-mizuno"]
+
+[repositories]
+content = "yuma-mizuno-lean/Mei"
+roadmap = "yuma-mizuno/TauCetiRoadmap"
+# Workers only read the roadmap. Its default branch carries the areas proposed to
+# TauCetiProject/TauCetiRoadmap that Mei drafts (now scattering-rev, PR 1134).
+review = "TauCetiProject/TauCetiReview"
+# Enable and create these repositories when choosing the corresponding extras.
+# data = "yuma-mizuno-lean/MeiData"
+# ci = "yuma-mizuno-lean/MeiCI"
+# claims = "yuma-mizuno-lean/Mei-claims"
+
+[lean]
+roots = ["Mei"]
+root_module = "empty"
+
+[roadmap]
+active_dir = "TauCetiRoadmap"
+completed_dir = "Completed"
+# Optional WIP roadmap authoring uses its own configuration, not this tauceti.toml.
+# authoring_conf_url = "https://raw.githubusercontent.com/yuma-mizuno-lean/MeiRoadmapJobs/main/tauceti-roadmap.toml"
+
+# Select full commit SHAs before installing the core workflows.
+# Discover a version with: gh api repos/TauCetiProject/TauCetiTools/commits/main --jq .sha
+[tools.tools]
+repo = "TauCetiProject/TauCetiTools"
+ref = "166866fd25cdcd433e7fad8bfb70aa770de54554"
+[tools.review]
+repo = "TauCetiProject/TauCetiReview"
+ref = "3999677031829254b4cbb27e9156c33672c61d0d"
+[tools.progress]
+repo = "TauCetiProject/TauCetiProgress"
+ref = "5b0fb84dbeb36e9575b2205f9d2a5177671d3f33"
+# [tools.docgen]
+# repo = "leanprover/doc-gen4"
+# ref = "FULL_COMMIT_SHA_COMPATIBLE_WITH_YOUR_LEAN_TOOLCHAIN"
+
+[merge]
+backend = "github-queue"
+checks = ["build", "bump-guard", "scope"]
+
+[[upstreams]]
+repo = "leanprover-community/mathlib4"
+package = "mathlib"
+branch = "master"
+# Mathlib is inherited through TauCeti; do not update it independently.
+update = false
+overlap = false
+upstream_destination = false
+
+# Nothing is sent upstream: TauCeti is only a dependency here.
+[[upstreams]]
+repo = "TauCetiProject/TauCeti"
+package = "TauCeti"
+branch = "main"
+update = true
+overlap = false
+upstream_destination = false
+
+# Everything below is optional. Use doctor --no-extras to report only core setup.
+[features]
+archives = false
+ci_archive = false
+claims = false
+docs = false
+progress = false
+zulip = false
+fleet = false
+security_audit = false
+roadmap_authoring = false # WIP: TauCetiRoadmapWorker and a downstream-owned job board
+
+[services.github_state]
+mode = "off" # off | hosted | custom
+# url = "https://github-state.example.org"
+
+[services.bors]
+mode = "off" # hosted supplies Neon only; YOU operate the runtime
+deployment = "docker" # docker | cloudflare
+# url = "https://bors.example.org"
+# repository_id = 123 # Replace with the number in the Bors /repositories/NUMBER URL.
+# image = "ghcr.io/taucetiproject/bors-ng@sha256:SELECT_RELEASE_DIGEST"
+
+[services.cache]
+mode = "off"
+# name = "mei-public"
+# artifact_url = "https://cache.example.org/artifacts"
+# revision_url = "https://cache.example.org/revisions"
+# artifact_write_url = "https://ACCOUNT_ID.r2.cloudflarestorage.com/PROJECT-cache/artifacts"
+# revision_write_url = "https://ACCOUNT_ID.r2.cloudflarestorage.com/PROJECT-cache/revisions"
+
+[publication]
+# docs_url = "https://yuma-mizuno-lean.github.io/Mei/docs"
+# zulip_site = "https://leanprover.zulipchat.com"
+# zulip_channel = "Project channel"
+# zulip_topic = "Progress logs"

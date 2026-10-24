@@ -1,0 +1,23 @@
+name = "Mei"
+defaultTargets = ["Mei"]
+platformIndependent = true
+
+# TauCeti brings Mathlib transitively; lake-manifest.json carries the exact pins.
+[[require]]
+name = "TauCeti"
+git = "https://github.com/TauCetiProject/TauCeti"
+rev = "main"
+
+# Same linter set and limits as TauCeti, so code here can later move there unchanged.
+[[lean_lib]]
+name = "Mei"
+globs = ["Mei.*"]
+leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.style.longFile = 1500, weak.linter.style.longFileDefValue = 1500, weak.linter.style.header = true, warningAsError = true }
+
+[[lean_exe]]
+name = "axioms"
+root = "scripts.Axioms"
+
+[[lean_exe]]
+name = "module-system"
+root = "scripts.ModuleSystem"

@@ -1,0 +1,6 @@
+/tauceti.toml @yuma-mizuno
+/.github/ @yuma-mizuno
+/scripts/ @yuma-mizuno
+/lakefile.* @yuma-mizuno
+/lean-toolchain @yuma-mizuno
+/lake-manifest.json @yuma-mizuno
