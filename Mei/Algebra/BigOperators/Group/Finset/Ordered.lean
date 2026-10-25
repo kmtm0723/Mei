@@ -49,6 +49,23 @@ theorem prod_map_sort_subset {s t : Finset ι} (hst : s ⊆ t) (f : ι → M)
       simpa only [List.filter_map, Function.comp_def, bne_iff_ne] using
         List.prod_filter_bne_one (t.sort.map f)
 
+/-- Sorted products agree when their index sets agree wherever the factor is not one. -/
+theorem prod_map_sort_eq_of_ne_one (s t : Finset ι) (f : ι → M)
+    (h : ∀ i, f i ≠ 1 → (i ∈ s ↔ i ∈ t)) :
+    (s.sort.map f).prod = (t.sort.map f).prod := by
+  classical
+  have hs : (s.sort.map f).prod = ((s ∪ t).sort.map f).prod := by
+    apply prod_map_sort_subset Finset.subset_union_left
+    intro i hi his
+    by_contra hfi
+    exact his ((h i hfi).mpr ((Finset.mem_union.mp hi).resolve_left his))
+  have ht : (t.sort.map f).prod = ((s ∪ t).sort.map f).prod := by
+    apply prod_map_sort_subset Finset.subset_union_right
+    intro i hi hit
+    by_contra hfi
+    exact hit ((h i hfi).mp ((Finset.mem_union.mp hi).resolve_right hit))
+  exact hs.trans ht.symm
+
 /-- Swapping two consecutive indices in a finite increasing product preserves it
 when their factors commute. -/
 theorem prod_map_sort_swap (s : Finset ι) (f : ι → M) {a b : ι}

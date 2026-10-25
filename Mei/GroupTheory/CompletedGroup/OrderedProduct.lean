@@ -23,7 +23,9 @@ The construction uses Mathlib's `Function.mulSupport`, `Finset.sort` and
 computed using any finite set containing the support at the chosen order. This
 also proves uniqueness, deletion of identity factors, order-preserving reindexing,
 swapping adjacent commuting factors, and preservation by maps of reindexed towers.
-The reindexing proof uses Mathlib's `Finset.map_sort`.
+The reindexing proof uses Mathlib's `Finset.map_sort`. The predicate
+`HasFiniteSupport` records the support condition and is preserved by injective
+reindexing and maps of reindexed towers.
 -/
 
 public section
@@ -34,12 +36,39 @@ universe u
 
 namespace Mei.CompletedGroup
 
-variable {F G : ℕᵒᵖ ⥤ GrpCat.{u}} {ι κ : Type*} [LinearOrder ι] [LinearOrder κ]
+variable {F G : ℕᵒᵖ ⥤ GrpCat.{u}} {ι κ : Type*}
+
+/-- A family has finite support at each order if only finitely many factors have
+nonidentity projection to any fixed tower group. -/
+abbrev HasFiniteSupport (x : ι → completedGroup F) : Prop :=
+  ∀ k, (Function.mulSupport fun i => projection k (x i)).Finite
+
+namespace HasFiniteSupport
+
+/-- A subfamily indexed by an injection still has finite support at each order. -/
+theorem comp {x : ι → completedGroup F} (hx : HasFiniteSupport x)
+    {e : κ → ι} (he : Function.Injective e) : HasFiniteSupport (x ∘ e) :=
+  fun k => (hx k).preimage he.injOn
+
+/-- A map of reindexed towers preserves finite support at each order. -/
+theorem map {x : ι → completedGroup F} (hx : HasFiniteSupport x)
+    (ρ : ℕ →o ℕ) (f : ρ.toFunctor.op ⋙ F ⟶ G) :
+    HasFiniteSupport (fun i => CompletedGroup.map ρ f (x i)) := by
+  intro k
+  apply (hx (ρ k)).subset
+  intro i hi
+  simp only [Function.mem_mulSupport, projection_map] at hi ⊢
+  intro h
+  exact hi (by simp [h])
+
+end HasFiniteSupport
+
+variable [LinearOrder ι] [LinearOrder κ]
 
 /-- The ordered product of a family with finite support in every quotient.
 The smallest index is the leftmost factor. -/
 noncomputable def orderedProd (f : ι → completedGroup F)
-    (hf : ∀ k, (Function.mulSupport fun i => projection k (f i)).Finite) :
+    (hf : HasFiniteSupport f) :
     completedGroup F := by
   classical
   refine ⟨fun k => (((hf k).toFinset).sort.map fun i => projection k (f i)).prod,
@@ -59,7 +88,7 @@ noncomputable def orderedProd (f : ι → completedGroup F)
 nonidentity factors at that order. -/
 @[simp]
 theorem projection_orderedProd (f : ι → completedGroup F)
-    (hf : ∀ k, (Function.mulSupport fun i => projection k (f i)).Finite) (k : ℕ) :
+    (hf : HasFiniteSupport f) (k : ℕ) :
     projection k (orderedProd f hf) =
       (((hf k).toFinset).sort.map fun i => projection k (f i)).prod := by
   rw [projection_apply]
@@ -67,7 +96,7 @@ theorem projection_orderedProd (f : ι → completedGroup F)
 
 /-- Any finite set containing the nonidentity factors computes the same projection. -/
 theorem projection_orderedProd_of_support (f : ι → completedGroup F)
-    (hf : ∀ k, (Function.mulSupport fun i => projection k (f i)).Finite)
+    (hf : HasFiniteSupport f)
     (k : ℕ) (s : Finset ι)
     (hs : ∀ i, projection k (f i) ≠ 1 → i ∈ s) :
     projection k (orderedProd f hf) = (s.sort.map fun i => projection k (f i)).prod := by
@@ -82,7 +111,7 @@ theorem projection_orderedProd_of_support (f : ι → completedGroup F)
 /-- An element is the ordered product exactly when it has the prescribed finite products
 as its projections. -/
 theorem eq_orderedProd_iff (f : ι → completedGroup F)
-    (hf : ∀ k, (Function.mulSupport fun i => projection k (f i)).Finite)
+    (hf : HasFiniteSupport f)
     (x : completedGroup F) :
     x = orderedProd f hf ↔ ∀ k, projection k x =
       (((hf k).toFinset).sort.map fun i => projection k (f i)).prod := by
@@ -94,7 +123,7 @@ theorem eq_orderedProd_iff (f : ι → completedGroup F)
 
 /-- A globally finite family has its usual finite increasing product. -/
 theorem orderedProd_eq_list_prod (f : ι → completedGroup F)
-    (hf : ∀ k, (Function.mulSupport fun i => projection k (f i)).Finite)
+    (hf : HasFiniteSupport f)
     (s : Finset ι) (hs : ∀ i, f i ≠ 1 → i ∈ s) :
     orderedProd f hf = (s.sort.map f).prod := by
   apply ext
@@ -107,7 +136,7 @@ theorem orderedProd_eq_list_prod (f : ι → completedGroup F)
 /-- A family consisting entirely of identities has ordered product one. -/
 @[simp]
 theorem orderedProd_one
-    (hf : ∀ k, (Function.mulSupport fun _ : ι => projection (F := F) k 1).Finite) :
+    (hf : HasFiniteSupport (fun _ : ι => (1 : completedGroup F))) :
     orderedProd (fun _ : ι => (1 : completedGroup F)) hf = 1 := by
   apply ext
   intro k
@@ -116,23 +145,20 @@ theorem orderedProd_one
 /-- The product of an empty indexed family is the identity. -/
 @[simp]
 theorem orderedProd_of_isEmpty [IsEmpty ι] (f : ι → completedGroup F)
-    (hf : ∀ k, (Function.mulSupport fun i => projection k (f i)).Finite) :
+    (hf : HasFiniteSupport f) :
     orderedProd f hf = 1 := by
   simpa using orderedProd_eq_list_prod f hf ∅ (fun i => isEmptyElim i)
 
 /-- Order-preserving reindexing does not change the product if all omitted factors are one. -/
 theorem orderedProd_comp (f : κ → completedGroup F)
-    (hf : ∀ k, (Function.mulSupport fun i => projection k (f i)).Finite)
+    (hf : HasFiniteSupport f)
     (e : ι ↪o κ) (he : ∀ j, f j ≠ 1 → j ∈ Set.range e) :
-    orderedProd (fun i => f (e i)) (fun k => by
-      simpa only [Function.mulSupport, Set.preimage_ofPred_eq] using
-        (hf k).preimage e.injective.injOn) = orderedProd f hf := by
+    orderedProd (fun i => f (e i)) (hf.comp e.injective) = orderedProd f hf := by
   classical
   apply ext
   intro k
-  have hfe : (Function.mulSupport fun i => projection k (f (e i))).Finite := by
-    simpa only [Function.mulSupport, Set.preimage_ofPred_eq] using
-      (hf k).preimage e.injective.injOn
+  have hfe : (Function.mulSupport fun i => projection k (f (e i))).Finite :=
+    hf.comp e.injective k
   let s := hfe.toFinset
   rw [projection_orderedProd_of_support f hf k (s.map e.toEmbedding)]
   · rw [projection_orderedProd, ← Finset.map_sort e.toEmbedding s (· ≤ ·) (· ≤ ·)
@@ -145,24 +171,20 @@ theorem orderedProd_comp (f : κ → completedGroup F)
 
 /-- Deleting any set of identity factors preserves the ordered product. -/
 theorem orderedProd_subtype (f : ι → completedGroup F)
-    (hf : ∀ k, (Function.mulSupport fun i => projection k (f i)).Finite)
+    (hf : HasFiniteSupport f)
     (s : Set ι) (hs : ∀ i, f i ≠ 1 → i ∈ s) :
-    orderedProd (fun i : s => f i)
-      (fun k => by
-        simpa only [Function.mulSupport, Set.preimage_ofPred_eq] using
-          (hf k).preimage Subtype.val_injective.injOn) = orderedProd f hf :=
+    orderedProd (fun i : s => f i) (hf.comp Subtype.val_injective) = orderedProd f hf :=
   orderedProd_comp f hf (OrderEmbedding.subtype (fun i => i ∈ s))
     (fun i hi => ⟨⟨i, hs i hi⟩, rfl⟩)
 
 /-- Two factors adjacent among the nonidentity factors may be swapped when their
 projections commute at every order. Identity factors between the two indices are allowed. -/
 theorem orderedProd_swap (f : ι → completedGroup F)
-    (hf : ∀ k, (Function.mulSupport fun i => projection k (f i)).Finite)
+    (hf : HasFiniteSupport f)
     {a b : ι} (hab : a < b) (hgap : ∀ i, a < i → i < b → f i = 1)
     (hcomm : ∀ k, Commute (projection k (f a)) (projection k (f b))) :
-    orderedProd (fun i => f (Equiv.swap a b i)) (fun k => by
-      simpa only [Function.mulSupport, Set.preimage_ofPred_eq] using
-        (hf k).preimage (Equiv.swap a b).injective.injOn) = orderedProd f hf := by
+    orderedProd (fun i => f (Equiv.swap a b i))
+      (hf.comp (Equiv.swap a b).injective) = orderedProd f hf := by
   classical
   apply ext
   intro k
@@ -193,13 +215,9 @@ theorem orderedProd_swap (f : ι → completedGroup F)
 @[simp]
 theorem map_orderedProd (ρ : ℕ →o ℕ) (g : ρ.toFunctor.op ⋙ F ⟶ G)
     (f : ι → completedGroup F)
-    (hf : ∀ k, (Function.mulSupport fun i => projection k (f i)).Finite) :
+    (hf : HasFiniteSupport f) :
     map ρ g (orderedProd f hf) =
-      orderedProd (fun i => map ρ g (f i)) (by
-        intro k
-        apply (hf (ρ k)).subset
-        intro i hi he
-        exact hi (by simp [he])) := by
+      orderedProd (fun i => map ρ g (f i)) (hf.map ρ g) := by
   apply ext
   intro k
   rw [projection_map, projection_orderedProd,
