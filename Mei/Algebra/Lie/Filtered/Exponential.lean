@@ -40,16 +40,6 @@ section Decomposition
 
 variable [DirectSum.Decomposition ℒ]
 
-/-- The induced finite-order representation satisfies the associative Leibniz rule. -/
-theorem quotientLieAction_mul (k : ℕ) (x : L)
-    (a b : A ⧸ F.ideal (k + 1)) :
-    F.quotientLieAction d ℒ k x (a * b) =
-      a * F.quotientLieAction d ℒ k x b + F.quotientLieAction d ℒ k x a * b := by
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
-  obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective b
-  rw [← map_mul, quotientLieAction_mk, IsDerivationAction.lie_mul]
-  simp
-
 variable [Algebra ℚ A]
 
 /-- The exponential of the order-`k` coefficient representation, as an algebra automorphism. -/
