@@ -49,28 +49,43 @@ theorem degreeIdeal_restrictScalars (k : ℕ) :
   apply LieSubmodule.toSubmodule_injective
   simp
 
-/-- Finite Lie truncation commutes with restriction of scalars. -/
+/-- Restricting scalars commutes with finite Lie truncation. -/
 def truncatedRestrictScalarsEquiv (k : ℕ) :
-    d.truncatedLie (fun n => (ℒ n).restrictScalars R) k ≃ₗ⁅R⁆ d.truncatedLie ℒ k := by
-  let e := Submodule.quotEquivOfEq _ _
-    (congrArg LieSubmodule.toSubmodule (d.degreeIdeal_restrictScalars (R := R) ℒ k))
-  let eLie : d.truncatedLie (fun n => (ℒ n).restrictScalars R) k ≃ₗ⁅R⁆
+    d.truncatedLie (fun n => (ℒ n).restrictScalars R) k ≃ₗ⁅R⁆
+      d.truncatedLie ℒ k := by
+  let e : d.truncatedLie (fun n => (ℒ n).restrictScalars R) k ≃ₗ[R]
+      L ⧸ (d.degreeIdeal ℒ k).restrictScalars R :=
+    Submodule.quotEquivOfEq (R := R)
+      (d.degreeIdeal (fun n => (ℒ n).restrictScalars R) k).toSubmodule
+      ((d.degreeIdeal ℒ k).restrictScalars R).toSubmodule (by simp)
+  have he (x : L) : e (Submodule.Quotient.mk x) = Submodule.Quotient.mk x :=
+    Submodule.quotEquivOfEq_mk _ _ _ x
+  let e' : d.truncatedLie (fun n => (ℒ n).restrictScalars R) k ≃ₗ⁅R⁆
       L ⧸ (d.degreeIdeal ℒ k).restrictScalars R :=
     { e with
       map_lie' {x y} := by
-        induction x using Submodule.Quotient.induction_on
-        induction y using Submodule.Quotient.induction_on
-        rfl }
-  exact eLie.trans ((d.degreeIdeal ℒ k).quotientRestrictScalarsEquiv R)
+        induction x using Submodule.Quotient.induction_on with | _ x
+        induction y using Submodule.Quotient.induction_on with | _ y
+        -- Expose the linear equivalence behind the Lie-equivalence structure fields.
+        change e (Submodule.Quotient.mk ⁅x, y⁆) =
+          ⁅e (Submodule.Quotient.mk x), e (Submodule.Quotient.mk y)⁆
+        rw [he, he, he]
+        exact LieSubmodule.Quotient.mk_bracket _ _ _ }
+  exact e'.trans ((d.degreeIdeal ℒ k).quotientRestrictScalarsEquiv R)
 
-/-- The comparison preserves quotient representatives. -/
+/-- The truncation comparison preserves representatives. -/
 @[simp]
 theorem truncatedRestrictScalarsEquiv_mk (k : ℕ) (x : L) :
     d.truncatedRestrictScalarsEquiv (R := R) ℒ k (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk x := by
-  unfold truncatedRestrictScalarsEquiv
-  rw [LieEquiv.trans_apply]
-  exact (d.degreeIdeal ℒ k).quotientRestrictScalarsEquiv_mk (R := R) x
+  simp only [truncatedRestrictScalarsEquiv, LieEquiv.trans_apply]
+  -- The first Lie equivalence wraps a linear equivalence; expose it to use its API.
+  change (d.degreeIdeal ℒ k).quotientRestrictScalarsEquiv R
+      (Submodule.quotEquivOfEq (R := R)
+        (d.degreeIdeal (fun n => (ℒ n).restrictScalars R) k).toSubmodule
+        ((d.degreeIdeal ℒ k).restrictScalars R).toSubmodule (by simp)
+        (Submodule.Quotient.mk x)) = Submodule.Quotient.mk x
+  rw [Submodule.quotEquivOfEq_mk, LieIdeal.quotientRestrictScalarsEquiv_mk]
 
 /-- The inverse comparison preserves quotient representatives. -/
 @[simp]
@@ -101,6 +116,23 @@ theorem map_truncatedGrading_restrictScalars (k : ℕ) (n : ι) :
   simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply]
   rw [Submodule.mkQ_apply, Submodule.mkQ_apply]
   exact d.truncatedRestrictScalarsEquiv_mk (R := R) ℒ k x
+
+/-- The comparison identifies the homogeneous pieces in the two truncations. -/
+theorem truncatedRestrictScalarsEquiv_mem_iff (k : ℕ) (n : ι)
+    (x : d.truncatedLie (fun n => (ℒ n).restrictScalars R) k) :
+    d.truncatedRestrictScalarsEquiv (R := R) ℒ k x ∈ d.truncatedGrading ℒ k n ↔
+      x ∈ d.truncatedGrading (fun n => (ℒ n).restrictScalars R) k n := by
+  rw [← Submodule.restrictScalars_mem R, ← d.map_truncatedGrading_restrictScalars ℒ k n]
+  have he : (d.truncatedRestrictScalarsEquiv (R := R) ℒ k).toLinearEquiv.toLinearMap =
+      (d.truncatedRestrictScalarsEquiv (R := R) ℒ k).toLinearMap := by
+    ext y
+    simp
+  have h := Submodule.mem_map_equiv
+      (d.truncatedGrading (fun n => (ℒ n).restrictScalars R) k n)
+      (e := (d.truncatedRestrictScalarsEquiv (R := R) ℒ k).toLinearEquiv)
+      (x := (d.truncatedRestrictScalarsEquiv (R := R) ℒ k).toLinearEquiv x)
+  simp only [LinearEquiv.symm_apply_apply] at h
+  simpa only [he, LieEquiv.coe_toLinearEquiv] using h
 
 /-- Homogeneous projection commutes with the scalar-restriction comparison. -/
 @[simp]
