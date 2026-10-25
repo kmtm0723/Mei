@@ -6,8 +6,6 @@ Authors: Codex
 module
 
 public import Mei.Algebra.Lie.Graded.Truncation
-public import Mei.Algebra.PositiveDegrees.Map
-public import Mei.Algebra.Lie.Quotient.Map
 
 /-!
 # Graded Lie homomorphisms and their truncations
@@ -16,13 +14,17 @@ A `Mei.GradedLieHom` carries homogeneous pieces along a specified positive degre
 map. Its cutoff modulus controls the degree ideals, so the homomorphism descends
 from the source truncation at the prescribed order to each target truncation.
 These induced maps respect homogeneous pieces, identities, and composition.
+They commute with the surjective truncation transitions and remain compatible
+when the source cutoff is increased, providing finite-order maps for
+inverse-limit constructions.
 
 The cutoff estimate needs only positivity of the source pieces; it does not need
 an internal decomposition or injectivity of the degree map. In particular,
 distinct source degrees may merge in the target.
 
 The induced maps specialize `LieIdeal.mapQ`, which uses `LieIdeal.liftQ` from
-Tau Ceti, the universal property of the Lie quotient.
+Tau Ceti, the universal property of the Lie quotient. The tower compatibility
+laws use `LieIdeal.factor` and its quotient laws.
 -/
 
 public section
@@ -105,13 +107,8 @@ No decomposition or positivity hypothesis on the target pieces is needed. -/
 theorem map_degreeSubmodule_le (f : GradedLieHom T ℒ ℳ) (k : ℕ) :
     (d.degreeSubmodule ℒ (T.modulus k)).map f.toLieHom.toLinearMap ≤
       e.degreeSubmodule ℳ k := by
-  rw [d.degreeSubmodule_def, Submodule.map_iSup]
-  refine iSup_le fun n => Submodule.map_le_iff_le_comap.mpr fun x hx => ?_
-  by_cases hn : n.val ∈ d.monoid
-  · exact e.le_degreeSubmodule ℳ (T.degree_gt k hn n.property) (f.map_mem hx)
-  · have hx0 : x = 0 := by
-      simpa [IsPositiveGrading.eq_bot (d := d) (ℒ := ℒ) n.val (Or.inl hn)] using hx
-    simp [hx0]
+  exact d.map_degreeSubmodule_le ℒ T ℳ f.toLieHom.toLinearMap
+    (fun _ _ hx => f.map_mem hx) k
 
 variable [DecidableEq N] [DecidableEq M] [DecidableEq P]
   [GradedLieAlgebra ℒ] [GradedLieAlgebra ℳ] [GradedLieAlgebra ℋ]
@@ -133,6 +130,13 @@ def truncatedMap (f : GradedLieHom T ℒ ℳ) {a : ℕ} (k : ℕ) (h : T.modulus
     d.truncatedLie ℒ a →ₗ⁅R⁆ e.truncatedLie ℳ k :=
   (d.degreeIdeal ℒ a).mapQ (e.degreeIdeal ℳ k) f.toLieHom
     (fun _ hx => f.map_mem_degreeIdeal k (d.degreeIdeal_antitone ℒ h hx))
+
+/-- The induced truncation map is the quotient map of the underlying Lie homomorphism. -/
+theorem truncatedMap_def (f : GradedLieHom T ℒ ℳ) {a : ℕ} (k : ℕ)
+    (h : T.modulus k ≤ a) :
+    f.truncatedMap k h =
+      (d.degreeIdeal ℒ a).mapQ (e.degreeIdeal ℳ k) f.toLieHom
+        (fun _ hx => f.map_mem_degreeIdeal k (d.degreeIdeal_antitone ℒ h hx)) := (rfl)
 
 /-- The induced map sends the class of an element to the class of its image. -/
 @[simp]
@@ -179,6 +183,29 @@ theorem truncatedMap_naturality (f : GradedLieHom T ℒ ℳ) {a b k l : ℕ}
   apply (d.degreeIdeal ℒ b).lieHom_qext
   intro x
   simp [LieIdeal.mkQ_apply]
+
+/-- Increasing the source cutoff changes the induced map only by precomposition
+with the source truncation transition. -/
+@[simp]
+theorem truncatedMap_comp_truncationMap (f : GradedLieHom T ℒ ℳ)
+    {k l m : ℕ} (hl : T.modulus k ≤ l) (h : l ≤ m) :
+    (f.truncatedMap k hl).comp (d.truncationMap ℒ h) =
+      f.truncatedMap k (hl.trans h) := by
+  simp only [truncatedMap_def, PositiveDegrees.truncationMap_def]
+  simpa only [LieIdeal.factor_refl, LieHom.id_comp] using
+    (LieIdeal.factor_comp_mapQ (d.degreeIdeal ℒ m) (e.degreeIdeal ℳ k)
+      (d.degreeIdeal ℒ l) (e.degreeIdeal ℳ k)
+      (d.degreeIdeal_antitone ℒ h) le_rfl f.toLieHom
+      (fun _ hx => f.map_mem_degreeIdeal k (d.degreeIdeal_antitone ℒ (hl.trans h) hx))
+      (fun _ hx => f.map_mem_degreeIdeal k (d.degreeIdeal_antitone ℒ hl hx))).symm
+
+/-- The maps of degree truncations commute with the transitions in both towers. -/
+theorem truncationMap_comp_truncatedMap (f : GradedLieHom T ℒ ℳ)
+    {k l : ℕ} (h : k ≤ l) :
+    (e.truncationMap ℳ h).comp (f.truncatedMap l le_rfl) =
+      (f.truncatedMap k le_rfl).comp (d.truncationMap ℒ (T.monotone_modulus h)) := by
+  simp only [truncatedMap_def, PositiveDegrees.truncationMap_def]
+  exact LieIdeal.factor_comp_mapQ _ _ _ _ _ _ _ _ _
 
 end GradedLieHom
 end Mei
