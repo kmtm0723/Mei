@@ -18,8 +18,10 @@ are the quotient coproducts. The counit factors through every finite quotient an
 thus extends to the completion as an algebra homomorphism to the scalar ring.
 
 Completed primitive elements form a Lie subalgebra, and the canonical Lie map
-lands in it. These constructions require only a nonnegative integral degree on
-the Lie grading, over any commutative ring, without a basis or finiteness assumption.
+lands in it. Completed group-like elements, whose counit is one and whose coproduct
+is their completed tensor square, form a submonoid. These constructions require
+only a nonnegative integral degree on the Lie grading, over any commutative ring,
+without a basis or finiteness assumption.
 The tensor target is completed by total degree; no coalgebra structure on the
 ordinary degree quotients is used.
 
@@ -74,9 +76,12 @@ theorem completedCoproduct_toCompletion (a : U) :
 
 /-- The completed coproduct preserves the induced degree filtrations. -/
 theorem completedCoproduct_mem_completionIdeal (k : ℕ) {x : (F).completion}
-    (hx : x ∈ (F).completionIdeal (k + 1)) :
-    completedCoproduct ℒ d hneg x ∈ (T).completionIdeal (k + 1) := by
-  exact (F).mapCompletionₐ_mem_completionIdeal _ _ id monotone_id _ k hx
+    (hx : x ∈ (F).completionIdeal k) :
+    completedCoproduct ℒ d hneg x ∈ (T).completionIdeal k := by
+  cases k with
+  | zero => simp
+  | succ k =>
+    exact (F).mapCompletionₐ_mem_completionIdeal _ _ id monotone_id _ k hx
 
 /-- The scalar-valued counit induced on an order-`k` quotient. -/
 noncomputable def quotientCounit (k : ℕ) : U ⧸ (F).ideal (k + 1) →ₐ[R] R :=
@@ -198,5 +203,41 @@ noncomputable def toCompletedPrimitives : L →ₗ⁅R⁆ completedPrimitives �
 theorem coe_toCompletedPrimitives (x : L) :
     (toCompletedPrimitives ℒ d hneg x : (F).completion) = (F).toCompletion (ι R x) := by
   exact (F).toCompletionₐ_apply (ι R x)
+
+/-- A group-like element has counit one and tensor-square coproduct in the completion. -/
+def IsCompletedGroupLike (x : (F).completion) : Prop :=
+  completedCounit ℒ d hneg x = 1 ∧
+    completedCoproduct ℒ d hneg x = (F).completedTensor (R := R) (F) x x
+
+/-- The two equations characterizing a completed group-like element. -/
+theorem isCompletedGroupLike_iff (x : (F).completion) :
+    IsCompletedGroupLike ℒ d hneg x ↔
+      completedCounit ℒ d hneg x = 1 ∧
+        completedCoproduct ℒ d hneg x = (F).completedTensor (R := R) (F) x x := Iff.rfl
+
+/-- The unit of the completed enveloping algebra is group-like. -/
+@[simp]
+theorem isCompletedGroupLike_one : IsCompletedGroupLike ℒ d hneg 1 := by
+  simp [isCompletedGroupLike_iff]
+
+/-- Products of completed group-like elements are group-like. -/
+theorem IsCompletedGroupLike.mul {x y : (F).completion}
+    (hx : IsCompletedGroupLike ℒ d hneg x) (hy : IsCompletedGroupLike ℒ d hneg y) :
+    IsCompletedGroupLike ℒ d hneg (x * y) := by
+  obtain ⟨hxc, hxd⟩ := hx
+  obtain ⟨hyc, hyd⟩ := hy
+  exact ⟨by rw [map_mul, hxc, hyc, one_mul], by
+    rw [map_mul, hxd, hyd, Mei.AlgFiltration.completedTensor_mul]⟩
+
+/-- The submonoid of group-like elements of the degree-completed enveloping algebra. -/
+noncomputable def completedGroupLikeSubmonoid : Submonoid (F).completion where
+  carrier := {x | IsCompletedGroupLike ℒ d hneg x}
+  one_mem' := isCompletedGroupLike_one ℒ d hneg
+  mul_mem' := fun hx hy => hx.mul ℒ d hneg hy
+
+/-- Membership in the group-like submonoid is the pair of completed group-like equations. -/
+@[simp]
+theorem mem_completedGroupLikeSubmonoid (x : (F).completion) :
+    x ∈ completedGroupLikeSubmonoid ℒ d hneg ↔ IsCompletedGroupLike ℒ d hneg x := Iff.rfl
 
 end Mei.UniversalEnvelopingAlgebra
