@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mei.Algebra.Group.Hom.Int
 public import Mei.Geometry.ScatteringDiagram.WallSpace.Group
 public import Mei.Geometry.Convex.Polyhedron.Rational.Map
 public import Mei.Geometry.Convex.Recession
@@ -26,6 +27,23 @@ degree on its supported ray. A wall of zero geometric direction is incoming.
 
 Translation uses Mathlib's `AffineEquiv.constVAdd` and `AffineSubspace.map_span`,
 and the existing integral-affine transport of rational-normal polyhedra.
+
+Wall labels commute whenever their affine supporting directions agree, even for
+different primitive degrees. The proof restricts the real normal kernels to the lattice
+and uses the proportional-normal commutation theorem for completed wall groups.
+
+The wall data and direction convention follow Travis Mandel,
+*Scattering diagrams, theta functions, and refined tropical curve counts*,
+[arXiv:1503.06183v5](https://arxiv.org/abs/1503.06183v5), Definition 2.2 and Remark 2.3.
+Label commutation corresponds to the observation immediately preceding equation (8).
+Here we allow general rational-normal polyhedral supports with arbitrary real offsets,
+and express incomingness by membership of the positive projected degree in the support's
+recession cone. This affine adaptation preserves incomingness under translation and
+includes zero projected degrees.
+
+The constructions use `Mei.DirectedWallSpaces.wallGroup`,
+`TauCeti.Toric.IsIntegralLattice.realCharacter`, Mathlib's `AffineEquiv.constVAdd`
+and `Module.Dual.finrank_ker_add_one_of_ne_zero`.
 -/
 
 public section
@@ -202,6 +220,40 @@ theorem translate_translate (v w : V) : (W.translate v).translate w = W.translat
   congr 1
   funext x
   exact (add_assoc w v x).symm
+
+/-- The real normal takes a constant value along the support. -/
+theorem normal_apply_eq (D : DirectedWall (d := d) h H) {x y : V}
+    (hx : x ∈ D.support) (hy : y ∈ D.support) :
+    h.realCharacter D.normal x = h.realCharacter D.normal y := by
+  have hm : x - y ∈ LinearMap.ker (h.realCharacter D.normal) := by
+    rw [← D.direction_support]
+    exact AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ _ hx) (subset_affineSpan ℝ _ hy)
+  simpa only [LinearMap.mem_ker, map_sub, sub_eq_zero] using hm
+
+/-- The spatial velocity is tangent to the supporting hyperplane, also when it is zero. -/
+theorem direction_mem : W.direction ∈ (affineSpan ℝ W.support).direction := by
+  rw [W.direction_def]
+  exact (affineSpan ℝ W.support).direction.neg_mem W.geometricDirection_mem_direction_support
+
+/-- An outgoing wall has a point which leaves its support under a positive-degree translation. -/
+theorem outgoing_exists_iff (D : DirectedWall (d := d) h H) : D.Outgoing ↔
+    ∃ x ∈ D.support, ∃ t : ℝ, 0 ≤ t ∧ x + t • i (ρ D.ray.generator) ∉ D.support := by
+  simp only [Outgoing, incoming_iff, not_forall, exists_prop]
+
+/-- Labels commute whenever the affine tangent hyperplanes have the same direction.
+The wall supports need not meet and the supported primitive degrees may differ. -/
+theorem commute_label_of_direction_eq (D E : DirectedWall (d := d) h H)
+    (he : (affineSpan ℝ D.support).direction = (affineSpan ℝ E.support).direction) :
+    Commute D.label E.label := by
+  have hk : D.normal.ker = E.normal.ker := by
+    ext n
+    have hn := SetLike.ext_iff.mp
+      (D.direction_support.symm.trans (he.trans E.direction_support)) (i n)
+    simpa only [LinearMap.mem_ker, h.realCharacter_apply, Int.cast_eq_zero,
+      AddMonoidHom.mem_ker] using hn
+  obtain ⟨c, e, hc, he, hn⟩ :=
+    D.normal.exists_ne_zero_zsmul_eq_of_ker_eq E.normal D.normal_ne_zero hk
+  exact H.commute_of_mem_wallGroup D.label_mem E.label_mem hc he hn
 
 end DirectedWall
 end Mei
