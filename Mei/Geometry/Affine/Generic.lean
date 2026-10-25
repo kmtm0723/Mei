@@ -21,6 +21,10 @@ For affine obstacles of codimension at least two, a freely chosen intermediate
 vertex can avoid all the affine spans with either endpoint. This constructs two
 segments avoiding every obstacle while fixing both endpoints. Finite exceptional
 arrangements support union and transport by affine equivalences.
+
+For a set covered by such obstacles, the endpoints need only avoid the set
+itself, and the vertex may simultaneously avoid additional proper affine
+subspaces.
 -/
 
 public section
@@ -123,14 +127,13 @@ theorem affineSpan_insert_ne_top_of_finrank (S : AffineSubspace k P)
   rw [← direction_affineSpan, htop, direction_top, finrank_top] at hle
   exact (not_le_of_gt hS) hle
 
-/-- A vertex outside the affine span of an obstacle and an allowed endpoint
-determines a full line avoiding the obstacle. -/
-theorem lineMap_not_mem_of_not_mem_affineSpan_insert (S : AffineSubspace k P)
-    {x z : P} (hx : x ∉ S) (hz : z ∉ affineSpan k (insert x (S : Set P)))
-    (t : k) : AffineMap.lineMap x z t ∉ S := by
+/-- Outside the span of an affine obstacle and an endpoint, every nonzero
+parameter on the line from that endpoint avoids the obstacle. The endpoint
+itself need not avoid the obstacle. -/
+theorem lineMap_not_mem_of_not_mem_affineSpan_insert_of_ne_zero (S : AffineSubspace k P)
+    {x z : P} (hz : z ∉ affineSpan k (insert x (S : Set P)))
+    {t : k} (ht : t ≠ 0) : AffineMap.lineMap x z t ∉ S := by
   intro htS
-  by_cases ht : t = 0
-  · exact hx (by simpa [ht] using htS)
   apply hz
   have hxspan : x ∈ affineSpan k (insert x (S : Set P)) :=
     subset_affineSpan k _ (mem_insert x _)
@@ -138,6 +141,15 @@ theorem lineMap_not_mem_of_not_mem_affineSpan_insert (S : AffineSubspace k P)
     subset_affineSpan k _ (mem_insert_of_mem x htS)
   simpa only [AffineMap.lineMap_lineMap_right, inv_mul_cancel₀ ht,
     AffineMap.lineMap_apply_one] using AffineMap.lineMap_mem t⁻¹ hxspan htspan
+
+/-- A vertex outside the affine span of an obstacle and an allowed endpoint
+determines a full line avoiding the obstacle. -/
+theorem lineMap_not_mem_of_not_mem_affineSpan_insert (S : AffineSubspace k P)
+    {x z : P} (hx : x ∉ S) (hz : z ∉ affineSpan k (insert x (S : Set P)))
+    (t : k) : AffineMap.lineMap x z t ∉ S := by
+  by_cases ht : t = 0
+  · simpa [ht] using hx
+  · exact S.lineMap_not_mem_of_not_mem_affineSpan_insert_of_ne_zero hz ht
 
 end Algebra
 
@@ -169,6 +181,45 @@ theorem exists_mem_open_two_lineMaps_avoid {ι : Type*} [Countable ι]
   exact ⟨z, hzU, fun i t =>
     ⟨(S i).lineMap_not_mem_of_not_mem_affineSpan_insert (hx i) (hz (.inl i)) t,
       (S i).lineMap_not_mem_of_not_mem_affineSpan_insert (hy i) (hz (.inr i)) t⟩⟩
+
+/-- A set covered by countably many affine subspaces of codimension at least
+two can be avoided by both full lines from two fixed allowed endpoints to a
+vertex in any nonempty open set. The vertex may simultaneously avoid any
+additional countable family of proper affine subspaces.
+
+The endpoints are required to avoid the actual set only; they may lie in its
+affine cover. The prescribed open set constrains the vertex, not the lines. -/
+theorem exists_mem_open_two_lineMaps_avoid_set {ι κ : Type*} [Countable ι] [Countable κ]
+    (S : κ → AffineSubspace ℝ V)
+    (hS : ∀ k, Module.finrank ℝ (S k).direction + 1 < Module.finrank ℝ V)
+    (A : ι → AffineSubspace ℝ V) (hA : ∀ i, A i ≠ ⊤)
+    {E : Set V} (hE : E ⊆ ⋃ k, (S k : Set V))
+    {x y : V} (hx : x ∉ E) (hy : y ∉ E)
+    {U : Set V} (hU : IsOpen U) (hne : U.Nonempty) :
+    ∃ z ∈ U, (∀ i, z ∉ A i) ∧ ∀ t : ℝ,
+      AffineMap.lineMap x z t ∉ E ∧ AffineMap.lineMap y z t ∉ E := by
+  let B : (κ ⊕ κ) ⊕ ι → AffineSubspace ℝ V := Sum.elim
+    (Sum.elim (fun k => affineSpan ℝ (insert x (S k : Set V)))
+      (fun k => affineSpan ℝ (insert y (S k : Set V)))) A
+  have hB : ∀ i, B i ≠ ⊤ := by
+    intro i
+    rcases i with k | i
+    · rcases k with k | k
+      · exact (S k).affineSpan_insert_ne_top_of_finrank (hS k) x
+      · exact (S k).affineSpan_insert_ne_top_of_finrank (hS k) y
+    · exact hA i
+  obtain ⟨z, hzU, hz⟩ := exists_mem_open_genericLocus B hB hU hne
+  have havoid (p : V) (hp : p ∉ E)
+      (hzp : ∀ k, z ∉ affineSpan ℝ (insert p (S k : Set V))) (t : ℝ) :
+      AffineMap.lineMap p z t ∉ E := by
+    by_cases ht : t = 0
+    · simpa [ht] using hp
+    · intro htE
+      obtain ⟨k, htk⟩ := Set.mem_iUnion.mp (hE htE)
+      exact (S k).lineMap_not_mem_of_not_mem_affineSpan_insert_of_ne_zero (hzp k) ht htk
+  exact ⟨z, hzU, fun i => hz (.inr i), fun t =>
+    ⟨havoid x hx (fun k => hz (.inl (.inl k))) t,
+      havoid y hy (fun k => hz (.inl (.inr k))) t⟩⟩
 
 end Topology
 
