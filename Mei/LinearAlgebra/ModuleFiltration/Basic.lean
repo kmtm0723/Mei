@@ -75,6 +75,14 @@ lemma restrictScalars_self : F.restrictScalars S = F := by
   ext k
   simp
 
+/-- Successive scalar restrictions agree with direct restriction. -/
+@[simp]
+lemma restrictScalars_restrictScalars (T : Type*) [Semiring T] [SMul T R]
+    [SMul T S] [Module T M] [IsScalarTower T R M] [IsScalarTower T S M] :
+    (F.restrictScalars R).restrictScalars T = F.restrictScalars T := by
+  ext k
+  simp
+
 end Semiring
 
 end ModuleFiltration
