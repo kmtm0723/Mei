@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude Code
+Authors: Claude Code, Codex
 -/
 module
 
 public import Mathlib.LinearAlgebra.Orientation
+public import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
 # Conormal alternating forms
@@ -16,7 +17,9 @@ the form degree equals its dimension, a ray of such forms orients the quotient f
 conormal side, without passing to the quotient module. Conormality of a ray does not depend on
 the representing form, and reversing a ray preserves it.
 
-These rays orient the normal quotients of polyhedra in polyhedral cochains.
+Pullback from the quotient identifies alternating forms on `M ⧸ W` with conormal
+forms on `M` via `Submodule.conormalFormsEquiv`. These rays orient the normal
+quotients of polyhedra in polyhedral cochains.
 -/
 
 public section
@@ -47,6 +50,74 @@ theorem conormalForms_bot : (⊥ : Submodule R M).conormalForms ι = ⊤ := by
   ext α
   simp only [mem_conormalForms, mem_bot, Submodule.mem_top, iff_true]
   exact fun v j hv => α.map_coord_zero j hv
+
+/-- A conormal form depends only on the classes of its arguments modulo the submodule. -/
+theorem conormalForms_apply_eq_of_sub_mem [Finite ι] {W : Submodule R M}
+    {α : M [⋀^ι]→ₗ[R] R} (hα : α ∈ W.conormalForms ι) {x y : ι → M}
+    (hxy : ∀ j, x j - y j ∈ W) : α x = α y := by
+  classical
+  let := Fintype.ofFinite ι
+  have he : x = (x - y) + y := (sub_add_cancel x y).symm
+  rw [he, ← α.coe_multilinearMap, MultilinearMap.map_add_univ]
+  rw [Finset.sum_eq_single ∅ ?_ (by simp)]
+  · simp
+  · intro s _ hs
+    obtain ⟨j, hj⟩ := Finset.nonempty_iff_ne_empty.mpr hs
+    exact hα _ j (by simpa [Finset.piecewise, hj] using hxy j)
+
+variable [Finite ι]
+
+/-- Pullback from the quotient identifies alternating forms with conormal forms.
+This is the linear version of orienting a normal quotient by conormal forms. -/
+noncomputable def conormalFormsEquiv (W : Submodule R M) :
+    ((M ⧸ W) [⋀^ι]→ₗ[R] R) ≃ₗ[R] W.conormalForms ι := by
+  classical
+  exact LinearEquiv.ofBijective
+    ({ toFun α := ⟨α.compLinearMap W.mkQ, by
+        intro v j hv
+        apply α.map_coord_zero j
+        exact (Submodule.Quotient.mk_eq_zero W).mpr hv⟩
+       map_add' := fun _ _ => Subtype.ext (AlternatingMap.add_compLinearMap _ _ _)
+       map_smul' := fun _ _ => Subtype.ext (by ext v; rfl) } :
+      ((M ⧸ W) [⋀^ι]→ₗ[R] R) →ₗ[R] W.conormalForms ι)
+    ⟨fun α β he => AlternatingMap.compLinearMap_injective W.mkQ W.mkQ_surjective
+      (congrArg Subtype.val he), by
+      intro α
+      let f : (ι → M ⧸ W) → R := fun v => α.val (fun j => (v j).out)
+      have hf (v : ι → M) : f (W.mkQ ∘ v) = α.val v := by
+        apply conormalForms_apply_eq_of_sub_mem α.property
+        intro j
+        exact (Submodule.Quotient.eq W).mp (Submodule.Quotient.mk_out _)
+      have hsurj : Function.Surjective (fun v : ι → M => W.mkQ ∘ v) := by
+        intro v
+        exact ⟨fun j => (v j).out, funext fun j => Submodule.Quotient.mk_out (v j)⟩
+      let β : (M ⧸ W) [⋀^ι]→ₗ[R] R :=
+        { toFun := f
+          map_update_add' := by
+            intro _ v j x y
+            obtain ⟨v, rfl⟩ := hsurj v
+            obtain ⟨x, rfl⟩ := W.mkQ_surjective x
+            obtain ⟨y, rfl⟩ := W.mkQ_surjective y
+            simp only [← map_add, ← Function.comp_update, hf, α.val.map_update_add]
+          map_update_smul' := by
+            intro _ v j c x
+            obtain ⟨v, rfl⟩ := hsurj v
+            obtain ⟨x, rfl⟩ := W.mkQ_surjective x
+            simp only [← map_smul, ← Function.comp_update, hf, α.val.map_update_smul]
+          map_eq_zero_of_eq' := fun v j l hjl hne =>
+            α.val.map_eq_zero_of_eq _ (congrArg Quotient.out hjl) hne }
+      exact ⟨β, Subtype.ext (AlternatingMap.ext hf)⟩⟩
+
+@[simp]
+theorem conormalFormsEquiv_apply (W : Submodule R M) (α : (M ⧸ W) [⋀^ι]→ₗ[R] R) :
+    (W.conormalFormsEquiv α).val = α.compLinearMap W.mkQ := (rfl)
+
+/-- Descent of a conormal form evaluates on quotient classes by the original form. -/
+@[simp]
+theorem conormalFormsEquiv_symm_apply_mk (W : Submodule R M)
+    (α : W.conormalForms ι) (v : ι → M) :
+    W.conormalFormsEquiv.symm α (fun j => Submodule.Quotient.mk (v j)) = α.val v :=
+  AlternatingMap.congr_fun (congrArg Subtype.val (W.conormalFormsEquiv.apply_symm_apply α)) v
 
 end CommRing
 
