@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Algebra.PositiveDegrees.Basic
+public import Mei.Analysis.Convex.Sign
 public import Mei.Geometry.Toric.Algebraic.DualLattice
 
 /-!
@@ -137,6 +138,18 @@ theorem evaluation_degreePoint (d : PositiveDegrees N) (n : N) :
     s.evaluation (s.degreePoint d) n = (d.degree n : ℝ) := by
   simp [degreePoint]
 
+/-- The degree point is positive on every nonzero allowed degree. -/
+theorem evaluation_degreePoint_pos (d : PositiveDegrees N) {n : N}
+    (hn : n ∈ d.monoid) (hn0 : n ≠ 0) : 0 < s.evaluation (s.degreePoint d) n := by
+  rw [evaluation_degreePoint]
+  exact Int.cast_pos.mpr (d.degree_pos hn hn0)
+
+/-- The negated degree point is negative on every nonzero allowed degree. -/
+theorem evaluation_neg_degreePoint_neg (d : PositiveDegrees N) {n : N}
+    (hn : n ∈ d.monoid) (hn0 : n ≠ 0) : s.evaluation (-s.degreePoint d) n < 0 := by
+  rw [map_neg, AddMonoidHom.neg_apply]
+  exact neg_neg_of_pos (s.evaluation_degreePoint_pos d hn hn0)
+
 /-- Every nonzero allowed degree has a nonzero normal, without a saturation assumption. -/
 theorem normal_ne_zero (d : PositiveDegrees N) {n : N}
     (hn : n ∈ d.monoid) (hn0 : n ≠ 0) : s.normal n ≠ 0 := by
@@ -145,6 +158,37 @@ theorem normal_ne_zero (d : PositiveDegrees N) {n : N}
   have hp : (0 : ℝ) < d.degree n := Int.cast_pos.mpr (d.degree_pos hn hn0)
   rw [normal_apply, evaluation_degreePoint, LinearMap.zero_apply] at hz
   exact hp.ne' hz
+
+section SignRegions
+
+variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  {i : (N →+ ℤ) →+ V} {h : TauCeti.Toric.IsIntegralLattice i} (s : KSSpace h)
+
+/-- The points where every degree of `S` evaluates with sign `σ` form a convex set. -/
+theorem convex_setOf_forall_sign_evaluation_eq (S : Set N) (σ : SignType) :
+    Convex ℝ {θ : V | ∀ n ∈ S, SignType.sign (s.evaluation θ n) = σ} := by
+  have he : {θ : V | ∀ n ∈ S, SignType.sign (s.evaluation θ n) = σ} =
+      ⋂ n ∈ S, s.normal n ⁻¹' {a : ℝ | SignType.sign a = σ} := by
+    ext θ
+    simp [normal_apply]
+  rw [he]
+  exact convex_iInter₂ fun n _ => (convex_setOf_sign_eq σ).linear_preimage (s.normal n)
+
+/-- The points where every degree of a finite set `S` evaluates with the nonzero sign `σ`
+form an open set. -/
+theorem isOpen_setOf_forall_sign_evaluation_eq {S : Set N} (hS : S.Finite)
+    {σ : SignType} (hσ : σ ≠ 0) :
+    IsOpen {θ : V | ∀ n ∈ S, SignType.sign (s.evaluation θ n) = σ} := by
+  let := h.finiteDimensional
+  have he : {θ : V | ∀ n ∈ S, SignType.sign (s.evaluation θ n) = σ} =
+      ⋂ n ∈ S, s.normal n ⁻¹' {a : ℝ | SignType.sign a = σ} := by
+    ext θ
+    simp [normal_apply]
+  rw [he]
+  exact hS.isOpen_biInter fun n _ =>
+    (isOpen_setOf_sign_eq hσ).preimage (s.normal n).continuous_of_finiteDimensional
+
+end SignRegions
 
 end KSSpace
 end Mei
