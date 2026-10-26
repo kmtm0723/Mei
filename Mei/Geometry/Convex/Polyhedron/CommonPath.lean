@@ -15,7 +15,8 @@ An edge is a segment admissible for each family separately. Thus a quiver path
 records one vertex list, with an admissible realization in every family. No
 transversality to intersections between different families is imposed.
 
-Projection to a family preserves vertices, concatenation and reversal. For
+Projection to a family preserves vertices, concatenation and reversal. Reindexing
+selects any subfamily of admissibility conditions and commutes with projection. For
 countably many finite codimension-one polyhedral families, any two common
 allowed points are joined by such a path with two edges. This applies
 `dense_setOf_forall_admissiblePairs`, based on Mathlib's Baire theorem, to the
@@ -119,6 +120,10 @@ theorem vertices_projection (j : J) (p : Quiver.Path x y) :
       p.vertices.map CommonWallComplement.val := by
   simp only [Prefunctor.vertices_mapPath, List.map_map, Function.comp_def,
     projectionPrefunctor_obj, projection_val]
+
+/-- Reindexing preserves reversal of edges, hence also reversal of paths. -/
+instance {J' : Type*} (f : J' → J) : (reindexPrefunctor (W := W) f).MapReverse where
+  map_reverse' _ := PLift.ext (Subsingleton.elim _ _)
 
 /-- Any nonempty list of interior vertices can be approximated by a path
 admissible for countably many finite polyhedral wall families simultaneously.
