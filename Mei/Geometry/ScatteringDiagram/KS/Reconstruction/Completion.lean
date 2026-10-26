@@ -7,7 +7,7 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.KS.Reconstruction.PathProduct
 public import Mei.Geometry.ScatteringDiagram.KS.Completion
-public import Mei.Algebra.Lie.BCH.Sign.Chamber
+public import Mei.Geometry.ScatteringDiagram.KS.Chamber
 public import Mei.Algebra.PositiveDegrees.Chamber
 
 /-!
@@ -37,34 +37,6 @@ variable {N V R L : Type*} [AddCommGroup N]
   [LieAlgebra ℚ L] [IsScalarTower ℚ R L] [DecidableEq N]
   (ℒ : N → Submodule R L) [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ]
   {k : ℕ}
-
-/-- The negative factor at a positive chamber point is the identity. -/
-theorem signFactorizationEquiv_neg_of_mem_positiveChamber
-    {θ : V →L[ℝ] ℝ} (hθ : θ ∈ d.monoid.positiveChamber i)
-    (g : d.truncatedGroup ℒ k) :
-    ((signFactorizationEquiv ℒ (θ.toAddMonoidHom.comp i) d k).symm g .neg :
-      d.truncatedGroup ℒ k) = 1 := by
-  have hs : ∀ n, d.truncatedGrading ℒ k n ≠ ⊥ →
-      SignType.sign ((θ.toAddMonoidHom.comp i) n) = .pos := by
-    intro n hn
-    have hc := d.mem_cutoff_of_truncatedGrading_ne_bot ℒ hn
-    exact sign_eq_one_iff.mpr
-      (((AddSubmonoid.mem_positiveChamber d.monoid i).mp hθ) n (d.mem_cutoff.mp hc.1).1 hc.2)
-  simpa using d.signFactorizationEquiv_symm_of_uniformSign ℒ _ .pos hs g .neg
-
-/-- The negative factor at a negative chamber point is the original element. -/
-theorem signFactorizationEquiv_neg_of_mem_negativeChamber
-    {θ : V →L[ℝ] ℝ} (hθ : θ ∈ d.monoid.negativeChamber i)
-    (g : d.truncatedGroup ℒ k) :
-    ((signFactorizationEquiv ℒ (θ.toAddMonoidHom.comp i) d k).symm g .neg :
-      d.truncatedGroup ℒ k) = g := by
-  have hs : ∀ n, d.truncatedGrading ℒ k n ≠ ⊥ →
-      SignType.sign ((θ.toAddMonoidHom.comp i) n) = .neg := by
-    intro n hn
-    have hc := d.mem_cutoff_of_truncatedGrading_ne_bot ℒ hn
-    exact sign_eq_neg_one_iff.mpr
-      (((AddSubmonoid.mem_negativeChamber d.monoid i).mp hθ) n (d.mem_cutoff.mp hc.1).1 hc.2)
-  simpa using d.signFactorizationEquiv_symm_of_uniformSign ℒ _ .neg hs g .neg
 
 /-- The completed KS diagram reconstructed from a completed BCH group element. -/
 def reconstruct (g : d.completedBCHGroup ℒ) :
@@ -130,8 +102,9 @@ theorem transport_reconstruct_of_mem_chambers (g : d.completedBCHGroup ℒ)
       d.truncatedGroup ℒ k) *
     ((signFactorizationEquiv ℒ (x.val.toAddMonoidHom.comp i) d k).symm a .neg :
       d.truncatedGroup ℒ k)⁻¹ = a
-  rw [d.signFactorizationEquiv_neg_of_mem_negativeChamber ℒ hy,
-    d.signFactorizationEquiv_neg_of_mem_positiveChamber ℒ hx, inv_one, mul_one]
+  rw [d.signFactorizationEquiv_symm_of_mem_negativeChamber i ℒ hy,
+    d.signFactorizationEquiv_symm_of_mem_positiveChamber i ℒ hx]
+  simp
 
 /-- Positive-to-negative degree transport in the reconstructed diagram recovers
 its original completed BCH group element. -/
