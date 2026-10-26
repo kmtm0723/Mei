@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
@@ -9,7 +9,6 @@ public import Mei.Analysis.Convex.Intrinsic
 public import Mei.Analysis.Normed.Affine.LineMap
 public import Mei.Geometry.Affine.Segment
 public import Mei.Geometry.Convex.Polyhedron.CommonPath
-public import Mathlib.Combinatorics.Quiver.Path.Vertices
 
 /-!
 # Perturbing admissible segments and polygonal paths
@@ -203,6 +202,43 @@ theorem exists_forall₂_dist_lt [Finite ι] (hpoly : ∀ i, TauCeti.IsConvexPol
     simp [y']
   rw [hx, hy] at hp'
   exact hp'
+
+/-- A closed vertex list can be approximated by an admissible loop, with its
+basepoint also allowed to move, even when there are no interior vertices. -/
+theorem exists_loop_forall₂_dist_lt [Finite ι]
+    (hpoly : ∀ i, TauCeti.IsConvexPolyhedron (W i))
+    (hdim : ∀ i, Module.finrank ℝ (affineSpan ℝ (W i)).direction + 1 = Module.finrank ℝ V)
+    (v : V) {l : List V} {ε : ℝ} (hε : 0 < ε) :
+    ∃ (x : WallComplement W) (p : AdmissiblePLPath x x),
+      List.Forall₂ (fun a b => dist a b < ε) (v :: (l ++ [v]))
+        (p.vertices.map WallComplement.val) := by
+  have hhalf : 0 < ε / 2 := half_pos hε
+  obtain ⟨u, hu, hW⟩ := AffineSubspace.exists_dist_lt_genericLocus
+    (fun i => affineSpan ℝ (W i))
+    (fun i => (affineSpan ℝ (W i)).ne_top_of_finrank_direction_add_one_eq (hdim i)) v hhalf
+  let x : WallComplement W := ⟨u, fun i hi => hW i (subset_affineSpan ℝ _ hi)⟩
+  have hv : dist v x.val < ε / 2 := by simpa only [dist_comm] using hu
+  by_cases hl : l = []
+  · subst l
+    have he : WallComplement.AdmissibleSegment x x := by
+      refine WallComplement.AdmissibleSegment.refl x (fun hs => ?_)
+      obtain ⟨i, hi⟩ := Set.mem_iUnion.mp
+        (singularSupport_subset_iUnion W (fun i => (hpoly i).isClosed) hs)
+      exact x.notMem i hi
+    refine ⟨x, Quiver.Hom.toPath (PLift.up he), ?_⟩
+    have hv' : dist v x.val < ε := hv.trans (half_lt_self hε)
+    simp only [Quiver.Path.vertices_toPath, List.nil_append, List.map_cons, List.map_nil]
+    exact .cons hv' (.cons hv' .nil)
+  obtain ⟨p, hp⟩ := exists_forall₂_dist_lt hpoly hdim hl hhalf x x
+  have hs : List.Forall₂ (fun a b => dist a b < ε / 2)
+      (v :: (l ++ [v])) (x.val :: (l ++ [x.val])) :=
+    .cons hv (List.rel_append (List.forall₂_same.mpr fun _ _ => by simpa using hhalf)
+      (.cons hv .nil))
+  refine ⟨x, p, List.forall₂_of_length_eq_of_get (hs.length_eq.trans hp.length_eq) ?_⟩
+  intro j hj₁ hj₃
+  have hj₂ : j < (x.val :: (l ++ [x.val])).length := by simpa using hj₁
+  exact (dist_triangle _ ((x.val :: (l ++ [x.val])).get ⟨j, hj₂⟩) _).trans_lt
+    (by linarith [hs.get hj₁ hj₂, hp.get hj₂ hj₃])
 
 end AdmissiblePLPath
 

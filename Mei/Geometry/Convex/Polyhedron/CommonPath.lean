@@ -6,8 +6,6 @@ Authors: Codex, Claude
 module
 
 public import Mei.Geometry.Convex.Polyhedron.SimultaneousPath
-public import Mathlib.Combinatorics.Quiver.Path.Vertices
-public import Mei.Combinatorics.Quiver.Path
 
 /-!
 # Common admissible paths for wall families
@@ -89,14 +87,12 @@ theorem reindexPrefunctor_obj_val {K : Type*} (a : K → J) (x : CommonWallCompl
     ((reindexPrefunctor a).obj x).val = x.val := (rfl)
 
 /-- Reindexing a common path retains its ambient vertex list. -/
-@[simp]
 theorem vertices_reindex {K : Type*} (a : K → J) {x y : CommonWallComplement W}
     (p : Quiver.Path x y) :
     ((reindexPrefunctor a).mapPath p).vertices.map CommonWallComplement.val =
       p.vertices.map CommonWallComplement.val := by
-  induction p with
-  | nil => simp
-  | cons p e ih => simp [ih]
+  simp only [Prefunctor.vertices_mapPath, List.map_map, Function.comp_def,
+    reindexPrefunctor_obj_val]
 
 /-- Projecting a reindexed path agrees with projecting directly to that family. -/
 @[simp]
@@ -118,13 +114,11 @@ instance (j : J) : (projectionPrefunctor (W := W) j).MapReverse where
 variable {x y : CommonWallComplement W}
 
 /-- Every projected path has precisely the original ambient vertex list. -/
-@[simp]
 theorem vertices_projection (j : J) (p : Quiver.Path x y) :
     ((projectionPrefunctor j).mapPath p).vertices.map WallComplement.val =
       p.vertices.map CommonWallComplement.val := by
-  induction p with
-  | nil => simp
-  | cons p e ih => simp [ih]
+  simp only [Prefunctor.vertices_mapPath, List.map_map, Function.comp_def,
+    projectionPrefunctor_obj, projection_val]
 
 /-- Any nonempty list of interior vertices can be approximated by a path
 admissible for countably many finite polyhedral wall families simultaneously.

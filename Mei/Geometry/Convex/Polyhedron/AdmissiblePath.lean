@@ -9,7 +9,7 @@ public import Mei.Geometry.Affine.Transverse
 public import Mei.Geometry.Convex.Polyhedron.GenericPath
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
 public import Mathlib.Analysis.Convex.PathConnected
-public import Mathlib.Combinatorics.Quiver.Symmetric
+public import Mei.Combinatorics.Quiver.Path
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -187,6 +187,14 @@ def restrictPrefunctor {κ : Type*} (W : ι → Set V) (f : κ → ι) :
 @[simp]
 theorem restrictPrefunctor_obj_val {κ : Type*} (W : ι → Set V) (f : κ → ι)
     (x : WallComplement W) : ((restrictPrefunctor W f).obj x).val = x.val := (rfl)
+
+/-- Forgetting walls preserves the entire ambient vertex list. -/
+theorem vertices_restrictPrefunctor {κ : Type*} (W : ι → Set V) (f : κ → ι)
+    {x y : WallComplement W} (p : Quiver.Path x y) :
+    ((restrictPrefunctor W f).mapPath p).vertices.map WallComplement.val =
+      p.vertices.map WallComplement.val := by
+  simp only [Prefunctor.vertices_mapPath, List.map_map, Function.comp_def,
+    restrictPrefunctor_obj_val]
 
 /-- Reversal of segments makes the allowed-vertex quiver symmetric. -/
 instance : Quiver.HasInvolutiveReverse (WallComplement W) where
