@@ -10,6 +10,7 @@ public import Mei.LinearAlgebra.Alternating.Conormal
 public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.LinearAlgebra.Finsupp.LSum
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mei.Algebra.BigOperators.Group.Finset.Involution
 
 /-!
 # Polyhedral cochains
@@ -301,19 +302,9 @@ theorem sum_mk_eq_zero_of_existsUnique_reverse {ι : Type*}
     {S : Finset (Σ _ : ι, OrientedCell h k)}
     (hS : ∀ x ∈ S, ∃! j : ι, ⟨j, x.2.reverse⟩ ∈ S ∧ j ≠ x.1) (c : E) :
     ∑ x ∈ S, mk (R := R) x.2 c = 0 := by
-  let g (x) (hx : x ∈ S) : Σ _ : ι, OrientedCell h k := ⟨(hS x hx).choose, x.2.reverse⟩
-  have hgmem (x) (hx : x ∈ S) : g x hx ∈ S := (hS x hx).choose_spec.1.1
-  have hgg (x) (hx : x ∈ S) : g (g x hx) (hgmem x hx) = x := by
-    have hfirst : (hS (g x hx) (hgmem x hx)).choose = x.1 :=
-      ((hS (g x hx) (hgmem x hx)).choose_spec.2 x.1
-        ⟨by simpa only [g, OrientedCell.reverse_reverse] using hx,
-          Ne.symm (hS x hx).choose_spec.1.2⟩).symm
-    exact Sigma.ext hfirst (heq_of_eq (OrientedCell.reverse_reverse x.2))
-  refine Finset.sum_involution g ?_ ?_ hgmem hgg
-  · intro x hx
-    simp only [g, mk_reverse, add_neg_cancel]
-  · intro x hx _ he
-    exact (hS x hx).choose_spec.1.2 (congrArg Sigma.fst he)
+  exact S.sum_eq_zero_of_unique_partner OrientedCell.reverse
+    OrientedCell.reverse_reverse hS (fun σ => mk (R := R) σ c)
+    (fun σ => by rw [mk_reverse, add_neg_cancel])
 
 /-- The class of a generator is the sum of the classes of the pieces of an oriented subdivision. -/
 theorem mk_eq_sum_of_isOrientedSubdivision {σ : OrientedCell h k}

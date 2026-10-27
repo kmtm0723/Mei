@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
@@ -16,10 +16,12 @@ Every iterated incidence `(τ, r)`, with `τ` a signed boundary facet of the cel
 signed boundary facet of `τ`, is matched with the incidence `(υ, r.reverse)` through the
 unique other facet `υ` containing the ridge `r`
 (`OrientedCell.existsUnique_reverse_mem_boundaryFacets`). The two contributions cancel by
-the reversal relation of polyhedral cochains. The matching is a fixed-point-free involution
-on iterated incidences, so the cancellation holds for every coefficient module, including
-modules with `2`-torsion. The involution argument is
-`PolyhedralCochain.sum_mk_eq_zero_of_existsUnique_reverse`, factored out of
+the reversal relation of polyhedral cochains. The more general
+`OrientedCell.sum_boundaryFacets_boundaryFacets_eq_zero` in the ridge module proves this for any
+abelian-group-valued function negated by orientation reversal. The matching is a
+fixed-point-free involution on iterated incidences, so the cancellation holds for every
+coefficient module, including modules with `2`-torsion. The involution argument is shared
+with `PolyhedralCochain.sum_mk_eq_zero_of_existsUnique_reverse`, factored out of
 `OrientedCell.IsOrientedSubdivision.sum_internal_boundaryFacets_eq_zero`.
 
 Consequently, the presentation-level signed facet sum
@@ -28,7 +30,8 @@ whose own signed facet sum vanishes. This identity holds for the source presenta
 it does not require the coboundary to descend through subdivision relations.
 
 Arbitrary codimension, unbounded cells and lineality are allowed. The finite cancellation
-uses Mathlib's `Finset.sum_involution` on iterated incidences.
+uses `Finset.sum_sum_eq_zero_of_unique_partner` and
+`Finset.sum_eq_zero_of_unique_partner`, based on Mathlib's `Finset.sum_involution`.
 -/
 
 public section
@@ -49,13 +52,9 @@ coboundary squares to zero on generators. -/
 theorem sum_cellCoboundary_boundaryFacets_eq_zero (σ : OrientedCell h k) (c : E) :
     ∑ τ ∈ σ.boundaryFacets, τ.cellCoboundary (R := R) c = 0 := by
   classical
-  simp_rw [cellCoboundary_apply]
-  rw [Finset.sum_sigma' σ.boundaryFacets]
-  refine PolyhedralCochain.sum_mk_eq_zero_of_existsUnique_reverse (fun x hx => ?_) c
-  obtain ⟨hτ, hr⟩ := Finset.mem_sigma.mp hx
-  obtain ⟨υ, ⟨hυ, hne, hrυ⟩, huniq⟩ := σ.existsUnique_reverse_mem_boundaryFacets hτ hr
-  exact ⟨υ, ⟨Finset.mem_sigma.mpr ⟨hυ, hrυ⟩, hne⟩, fun η ⟨hη, hηne⟩ =>
-    huniq η ⟨(Finset.mem_sigma.mp hη).1, hηne, (Finset.mem_sigma.mp hη).2⟩⟩
+  simp only [cellCoboundary_apply]
+  exact σ.sum_boundaryFacets_boundaryFacets_eq_zero
+    (fun r => PolyhedralCochain.mk r c) (fun r => PolyhedralCochain.mk_reverse r c)
 
 end OrientedCell
 
