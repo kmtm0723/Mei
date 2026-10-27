@@ -11,6 +11,7 @@ public import Mei.Analysis.Convex.Intrinsic
 public import Mei.LinearAlgebra.Dual.Order
 public import Mathlib.LinearAlgebra.Ray
 public import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
+import Mei.LinearAlgebra.Submodule.Ray
 
 /-!
 # Exposed subsets, relative interiors and affine transport
@@ -35,6 +36,11 @@ the parent direction removes the freedom to add an ambient functional vanishing
 there. This makes the ray independent of the exposing inequality, including for
 lower-dimensional polyhedra with lineality, and supplies the outward conormal
 used to orient boundary faces.
+
+A complement to a facet direction meets the inward half-space in a single ray.
+`exists_halfspace_slice_eq_ray` normalizes its direction by the exposing functional;
+it translates and normalizes `Submodule.exists_neg_ray_of_isCompl` to identify
+the affine slice.
 
 The facet construction uses Mathlib's `ContinuousLinearMap.toExposed`,
 `Submodule.comapSubtypeEquivOfLe` and `Module.Ray`, and
@@ -277,6 +283,64 @@ end DivisionRing
 
 variable {K V : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [TopologicalSpace K] [AddCommGroup V] [Module K V] [TopologicalSpace V] {P : Set V}
+
+/-- A complement to the direction of an exposed facet cuts its inward half-space
+inside the parent affine span in a ray from any point of the facet. The ray is
+normalized so the exposing functional decreases by one at parameter one.
+Only the parent direction needs to be finite-dimensional. -/
+theorem exists_halfspace_slice_eq_ray (l : V →L[K] K)
+    [FiniteDimensional K (vectorSpan K P)] {p : V} (hp : p ∈ l.toExposed P)
+    (hdim : Module.finrank K (vectorSpan K (l.toExposed P)) + 1 =
+      Module.finrank K (vectorSpan K P))
+    (T : Submodule K V) (hT : IsCompl (vectorSpan K (l.toExposed P)) T) :
+    ∃ q : V, q ∈ AffineSubspace.mk' p T ∧ l q = l p - 1 ∧
+      ∀ z ∈ AffineSubspace.mk' p T,
+        (z ∈ affineSpan K P ∧ l z ≤ l p) ↔
+          ∃ t : K, 0 ≤ t ∧ AffineMap.lineMap p q t = z := by
+  -- Translate the facet to a linear half-space and normalize its inward ray.
+  have hproper : l.toExposed P ≠ P := by
+    intro he
+    rw [he] at hdim
+    omega
+  obtain ⟨x, hxP, hxF⟩ := Set.exists_of_ssubset
+    (lt_of_le_of_ne (fun x (hx : x ∈ l.toExposed P) => hx.1) hproper)
+  have hx : l x < l p := lt_of_le_of_ne (hp.2 x hxP)
+    (fun he => hxF ((l.mem_toExposed_iff_of_mem hp).mpr ⟨hxP, he⟩))
+  obtain ⟨w, hw, hlw, hray⟩ := (vectorSpan K P).exists_neg_ray_of_isCompl
+    (vectorSpan K (l.toExposed P)) T (vectorSpan_mono K (fun _ hy => hy.1)) hdim hT
+    l.toLinearMap (l.vectorSpan_toExposed_le_ker P)
+    ⟨x - p, vsub_mem_vectorSpan K hxP hp.1, by simpa using sub_neg.mpr hx⟩
+  simp only [ContinuousLinearMap.coe_coe] at hlw hray
+  let v : V := (-l w)⁻¹ • w
+  have hvT : v ∈ T := T.smul_mem _ hw.2
+  have hlv : l v = -1 := by
+    simp only [v, map_smul, smul_eq_mul]
+    field_simp [hlw.ne]
+  have hvP : v ∈ vectorSpan K P := (vectorSpan K P).smul_mem _ hw.1
+  have hpP : p ∈ affineSpan K P := subset_affineSpan K P hp.1
+  have hqP : p + v ∈ affineSpan K P := by
+    rw [← (affineSpan K P).mk'_eq hpP, AffineSubspace.mem_mk']
+    simpa only [vsub_eq_sub, add_sub_cancel_left, direction_affineSpan] using hvP
+  refine ⟨p + v, ?_, by simp [map_add, hlv, sub_eq_add_neg], fun z hz => ?_⟩
+  · simpa only [AffineSubspace.mem_mk', vsub_eq_sub, add_sub_cancel_left] using hvT
+  constructor
+  · rintro ⟨hzP, hzl⟩
+    have hzT : z - p ∈ T := AffineSubspace.mem_mk'.mp hz
+    have hzP' : z - p ∈ vectorSpan K P := by
+      simpa only [direction_affineSpan, vsub_eq_sub] using
+        (affineSpan K P).vsub_mem_direction hzP hpP
+    obtain ⟨t, ht, htz⟩ := (hray (z - p) hzT).mp
+      ⟨hzP', by simpa only [map_sub] using sub_nonpos.mpr hzl⟩
+    refine ⟨t * (-l w), mul_nonneg ht (neg_pos.mpr hlw).le, ?_⟩
+    have he : (t * (-l w)) • v = z - p := by
+      dsimp only [v]
+      rw [smul_smul, mul_assoc, mul_inv_cancel₀ (neg_ne_zero.mpr hlw.ne), mul_one, htz]
+    simpa [AffineMap.lineMap_apply] using congrArg (fun u : V => u + p) he
+  · rintro ⟨t, ht, rfl⟩
+    refine ⟨AffineMap.lineMap_mem t hpP hqP, ?_⟩
+    simp only [AffineMap.lineMap_apply_module, map_add, map_smul,
+      smul_eq_mul, hlv]
+    linarith
 
 /-- Two functionals exposing the same facet determine the same outward conormal ray
 on the parent direction; their ambient kernels need not coincide. -/
