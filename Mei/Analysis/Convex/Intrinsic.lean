@@ -73,6 +73,17 @@ theorem mem_nhdsWithin_affineSpan_of_mem_intrinsicInterior {P : Set V} {x : V}
   rw [nhdsWithin_eq_map_subtype_coe y.property]
   exact mem_interior_iff_mem_nhds.mp hy
 
+/-- For a set spanning the ambient affine space, relative and ordinary interiors agree. -/
+theorem intrinsicInterior_eq_interior_of_affineSpan_eq_top {𝕜 W P : Type*}
+    [Ring 𝕜] [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace P] [AddTorsor W P]
+    {s : Set P} (hs : affineSpan 𝕜 s = ⊤) : intrinsicInterior 𝕜 s = interior s := by
+  refine Subset.antisymm (fun x hx => ?_) interior_subset_intrinsicInterior
+  obtain ⟨y, hy, rfl⟩ := hx
+  have hn : s ∈ 𝓝[affineSpan 𝕜 s] (y : P) := by
+    rw [nhdsWithin_eq_map_subtype_coe y.property]
+    exact mem_interior_iff_mem_nhds.mp hy
+  simpa [hs, ← mem_interior_iff_mem_nhds] using hn
+
 omit [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] in
 /-- The relative boundary of a closed set is nowhere dense in its affine span. -/
 theorem isNowhereDense_preimage_intrinsicFrontier {P : Set V} (hP : IsClosed P)
