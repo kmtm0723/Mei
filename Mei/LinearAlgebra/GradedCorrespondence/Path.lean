@@ -7,7 +7,7 @@ module
 
 public import Mei.LinearAlgebra.GradedCorrespondence.Hom
 public import Mathlib.Algebra.Category.ModuleCat.Semi
-public import Mathlib.CategoryTheory.PathCategory.Basic
+public import Mathlib.CategoryTheory.PathCategory.MorphismProperty
 
 /-!
 # Homogeneous transfer along admissible paths
@@ -59,32 +59,6 @@ noncomputable def transferPrefunctor : Q ⥤q SemimoduleCat R where
 noncomputable def transferFunctor : Paths Q ⥤ SemimoduleCat R :=
   Paths.lift (transferPrefunctor 𝒜 C p)
 
-/-- A path with no crossings preserves its decoration. -/
-@[simp]
-theorem transferFunctor_nil (u : Q) :
-    (transferFunctor 𝒜 C p).map (Quiver.Path.nil : Quiver.Path u u) = 𝟙 _ := rfl
-
-/-- A one-crossing path acts by the selected homogeneous component of that crossing. -/
-@[simp]
-theorem transferFunctor_toPath {u v : Q} (e : u ⟶ v) :
-    (transferFunctor 𝒜 C p).map e.toPath =
-      SemimoduleCat.ofHom ((C e).transfer (p u) (p v)) := by
-  exact Paths.lift_toPath _ e
-
-/-- Appending a crossing applies its transfer after the preceding propagation. -/
-@[simp]
-theorem transferFunctor_cons {u v w : Q} (γ : Quiver.Path u v) (e : v ⟶ w) :
-    (transferFunctor 𝒜 C p).map (γ.cons e) =
-      (transferFunctor 𝒜 C p).map γ ≫
-        SemimoduleCat.ofHom ((C e).transfer (p v) (p w)) := rfl
-
-/-- Concatenation propagates first along the first itinerary, then along the second. -/
-@[simp]
-theorem transferFunctor_comp {u v w : Q} (γ : Quiver.Path u v) (δ : Quiver.Path v w) :
-    (transferFunctor 𝒜 C p).map (γ.comp δ) =
-      (transferFunctor 𝒜 C p).map γ ≫ (transferFunctor 𝒜 C p).map δ :=
-  (transferFunctor 𝒜 C p).map_comp γ δ
-
 section Naturality
 
 variable {M' : Q → Type v} [∀ q, AddCommMonoid (M' q)] [∀ q, Module R (M' q)]
@@ -120,27 +94,12 @@ private theorem restrict_transfer {u v : Q} (e : u ⟶ v) :
 finite admissible sequence. In particular, coefficient truncations commute with all
 selected component maps along a broken-line itinerary. -/
 noncomputable def transferNatTrans :
-    transferFunctor 𝒜 C p ⟶ transferFunctor 𝒜' D p where
-  app q := by
-    change Q at q
-    exact SemimoduleCat.ofHom ((r q).restrict (hr q (p q)))
-  naturality {u v} γ := by
-    change Q at u v
-    induction γ using @Quiver.Path.rec Q _ u with
-    | nil => rfl
-    | @cons v w γ e ih =>
+    transferFunctor 𝒜 C p ⟶ transferFunctor 𝒜' D p :=
+  Paths.liftNatTrans
+    (fun q ↦ SemimoduleCat.ofHom ((r q).restrict (hr q (p q)))) (by
+      intro u v e
       apply SemimoduleCat.hom_ext
-      ext a
-      have hi := congrArg (fun k => k.hom a) ih
-      change (r v).restrict (hr v (p v)) (((transferFunctor 𝒜 C p).map γ).hom a) =
-        ((transferFunctor 𝒜' D p).map γ).hom ((r u).restrict (hr u (p u)) a) at hi
-      change (r w).restrict (hr w (p w))
-          ((C e).transfer (p v) (p w) (((transferFunctor 𝒜 C p).map γ).hom a)) =
-        (D e).transfer (p v) (p w)
-          (((transferFunctor 𝒜' D p).map γ).hom ((r u).restrict (hr u (p u)) a))
-      exact (LinearMap.congr_fun
-        (restrict_transfer 𝒜 C p 𝒜' D r hr f hl hv e) _).trans
-          (congrArg ((D e).transfer (p v) (p w)) hi)
+      exact restrict_transfer 𝒜 C p 𝒜' D r hr f hl hv e)
 
 end Naturality
 
