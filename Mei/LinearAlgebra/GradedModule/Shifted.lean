@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Algebra.PositiveDegrees.Grading
-public import Mei.LinearAlgebra.ModuleFiltration.Basic
+public import Mei.LinearAlgebra.ModuleFiltration.Completion
 public import TauCeti.Algebra.DirectSum.Internal
 
 /-!
@@ -163,6 +163,13 @@ def shiftedFiltration : ModuleFiltration R (shiftedSubmodule ℳ d.monoid p) whe
         (by simpa using d.degree_nonneg n.property)
     exact hs x.property
 
+omit [DecidableEq Γ] [DirectSum.Decomposition ℳ] in
+/-- Each relative filtration term restricts the corresponding ambient degree tail. -/
+theorem shiftedFiltration_submodule (k : ℕ) :
+    (d.shiftedFiltration ℳ p).submodule k =
+      (Mei.DirectSum.degreeTail ℳ (fun q => d.degree (q - p)) k).comap
+        (shiftedSubmodule ℳ d.monoid p).subtype := (rfl)
+
 /-- Filtration membership means that all components of smaller relative degree vanish. -/
 theorem mem_shiftedFiltration_iff {k : ℕ} {x : shiftedSubmodule ℳ d.monoid p} :
     x ∈ (d.shiftedFiltration ℳ p).submodule k ↔
@@ -210,3 +217,13 @@ theorem shiftedInclusion_mem_shiftedFiltration_iff (n : d.monoid) (x : ℳ (p + 
 
 end PositiveDegrees
 end Mei
+
+namespace Mei.PositiveDegrees
+
+variable {R M Γ : Type*} [Ring R] [AddCommGroup M] [Module R M]
+  [AddCommGroup Γ] (d : Mei.PositiveDegrees Γ) (ℳ : Γ → Submodule R M) (p : Γ)
+
+/-- The completed module supported on `p + P`, with completion taken in relative degree. -/
+abbrev ShiftedCoefficients : Type _ := (d.shiftedFiltration ℳ p).completion
+
+end Mei.PositiveDegrees
