@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.LinearAlgebra.GradedModule.Shifted
+public import Mei.LinearAlgebra.GradedModule.Shifted.Basic
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 
 /-!
@@ -64,14 +64,37 @@ theorem mem_shiftedQuotientGrading_iff {k : ℕ} {n : Γ}
   rw [shiftedQuotientGrading_piece]
   exact Submodule.mem_map
 
+/-- The quotient image of a relative piece above the retained order vanishes.
+This is the simplifier normal form of the finite-piece vanishing law. -/
+@[simp]
+theorem map_shiftedGrading_eq_bot {k : ℕ} {n : Γ} (hn : (k : ℤ) < d.degree n) :
+    (shiftedGrading ℳ d.monoid p n).map
+      ((d.shiftedFiltration ℳ p).submodule (k + 1)).mkQ = ⊥ := by
+  apply eq_bot_iff.mpr
+  intro x hx
+  obtain ⟨a, ha, rfl⟩ := Submodule.mem_map.mp hx
+  rw [Submodule.mem_bot, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero,
+    shiftedFiltration_succ]
+  exact d.le_degreeSubmodule _ hn ha
+
 /-- Relative homogeneous pieces strictly above the retained order vanish. -/
 theorem shiftedQuotientGrading_eq_bot {k : ℕ} {n : Γ} (hn : (k : ℤ) < d.degree n) :
     (d.shiftedQuotientGrading ℳ p k).piece n = ⊥ := by
-  apply eq_bot_iff.mpr
-  intro x hx
-  obtain ⟨a, ha, rfl⟩ := (d.mem_shiftedQuotientGrading_iff ℳ p).mp hx
-  rw [Submodule.mem_bot, Submodule.Quotient.mk_eq_zero, shiftedFiltration_succ]
-  exact d.le_degreeSubmodule _ hn ha
+  rw [shiftedQuotientGrading_piece, d.map_shiftedGrading_eq_bot ℳ p hn]
+
+/-- A retained homogeneous coefficient belongs to the discarded filtration term
+exactly when it is zero. This is the simplifier normal form of the quotient zero test. -/
+@[simp]
+theorem shiftedInclusion_mem_shiftedFiltration_succ_iff (n : d.monoid)
+    (a : ℳ (p + n)) {k : ℕ} (hn : d.degree n ≤ k) :
+    shiftedInclusion ℳ d.monoid p n a ∈ (d.shiftedFiltration ℳ p).submodule (k + 1) ↔
+      a = 0 := by
+  rw [shiftedInclusion_mem_shiftedFiltration_iff]
+  constructor
+  · rintro (ha | hd)
+    · exact ha
+    · omega
+  · exact Or.inl
 
 /-- An allowed homogeneous coefficient survives exactly when it is nonzero,
 provided its relative degree is retained. -/
@@ -79,12 +102,8 @@ theorem mk_shiftedInclusion_eq_zero_iff (n : d.monoid) (a : ℳ (p + n))
     {k : ℕ} (hn : d.degree n ≤ k) :
     (Submodule.Quotient.mk (shiftedInclusion ℳ d.monoid p n a) :
       (d.shiftedFiltration ℳ p).quotient k) = 0 ↔ a = 0 := by
-  rw [Submodule.Quotient.mk_eq_zero, shiftedInclusion_mem_shiftedFiltration_iff]
-  constructor
-  · rintro (ha | hd)
-    · exact ha
-    · omega
-  · exact Or.inl
+  rw [Submodule.Quotient.mk_eq_zero,
+    d.shiftedInclusion_mem_shiftedFiltration_succ_iff ℳ p n a hn]
 
 /-- Changing the cutoff preserves the ambient relative degree of every coefficient. -/
 theorem transition_mem_shiftedQuotientGrading {k l : ℕ} (h : k ≤ l) {n : Γ}
