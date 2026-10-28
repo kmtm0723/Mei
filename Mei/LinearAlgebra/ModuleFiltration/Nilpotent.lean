@@ -17,8 +17,10 @@ each finite quotient. Its `(k + 1)`st power vanishes on the order-`k` quotient.
 The original endomorphism need not be nilpotent. No separatedness, completeness,
 finiteness, or characteristic-zero hypothesis is used.
 
-The construction reuses `Submodule.mapQ`; powers descend by `Submodule.mapQ_pow`.
-The order estimate uses `Module.End.pow_apply_mem_of_map_le`.
+These compatible nilpotent endomorphisms turn power series into finite sums at
+each order, so evaluations can be assembled across the quotient tower. In particular,
+filtration-raising Lie actions use this construction for their finite-order
+representations before exponentiation.
 -/
 
 public section
