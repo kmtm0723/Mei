@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mei.Topology.Sheaves.BasisTransport
-public import Mathlib.Analysis.Convex.Topology
 public import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Tactic.NormNum
 
