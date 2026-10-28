@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.RingTheory.FilteredAlgebra.Algebra
-public import Mei.RingTheory.PowerSeries.Nilpotent
+public import Mei.RingTheory.PowerSeries.Nilpotent.Basic
 import TauCeti.RingTheory.PowerSeries.Evaluation
 import Mathlib.RingTheory.PowerSeries.Inverse
 
