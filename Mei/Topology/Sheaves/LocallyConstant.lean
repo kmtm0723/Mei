@@ -11,10 +11,12 @@ public import Mathlib.Topology.Connected.Basic
 /-!
 # Locally constant sheaves of types
 
-A sheaf is locally constant in the restriction sense when every point has an
-open neighborhood whose sections restrict bijectively to each nonempty
-preconnected open subset. This is the local-constant sheaf condition used for
-coefficient transport and facet descent in the scattering-diagram roadmap.
+A sheaf satisfies the restriction-sense local-constancy condition when every
+point has an open neighborhood whose sections restrict bijectively to each
+nonempty preconnected open subset. On locally connected spaces this agrees
+with being locally isomorphic to a constant sheaf. On arbitrary spaces the
+conditions can differ: the restriction criterion is vacuous when there are no
+nonempty preconnected open subsets.
 -/
 
 public section
@@ -23,17 +25,19 @@ open CategoryTheory TopologicalSpace Opposite
 
 universe u v
 
-namespace TopCat
+namespace TopCat.Sheaf
 
 variable {X : TopCat.{u}}
 
-/-- Locally constant sheaves, expressed by bijective restriction maps on
-nonempty preconnected open subsets of a sufficiently small neighborhood. -/
-class IsLocallyConstantSheaf (F : X.Sheaf (Type v)) : Prop where
+/-- The restriction-sense local-constancy condition: bijective restriction to
+nonempty preconnected subopens of a sufficiently small neighborhood. On locally
+connected spaces this agrees with the usual locally constant sheaf condition.
+On arbitrary spaces the conditions can differ, and this criterion can be vacuous. -/
+class IsLocallyConstant (F : X.Sheaf (Type v)) : Prop where
   /-- Each point has an open neighborhood with the local restriction property. -/
   exists_bijective_restrictions (x : X) :
     ∃ U : Opens X, x ∈ U ∧ ∀ (V : Opens X) (hVU : V ≤ U),
       (V : Set X).Nonempty → IsPreconnected (V : Set X) →
         Function.Bijective (F.presheaf.map (homOfLE hVU).op)
 
-end TopCat
+end TopCat.Sheaf
