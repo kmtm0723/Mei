@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Algebra.Lie.Graded.Shifted
+public import Mei.Algebra.Lie.Graded.Shifted.Basic
 public import Mathlib.Algebra.Lie.SemiDirect
 
 /-!
