@@ -8,6 +8,7 @@ module
 public import Mei.LinearAlgebra.ModuleFiltration.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
 # Completions of filtered modules
@@ -222,6 +223,47 @@ def completedFiltration : ModuleFiltration R F.completion where
 lemma completedFiltration_succ (k : ℕ) :
     F.completedFiltration.submodule (k + 1) = LinearMap.ker (F.projection k) :=
   (rfl)
+
+/-- Every finite quotient element lifts to an element of the completion. -/
+theorem projection_surjective (k : ℕ) : Function.Surjective (F.projection k) := by
+  intro a
+  obtain ⟨x, rfl⟩ := (F.submodule (k + 1)).mkQ_surjective a
+  exact ⟨F.of x, F.projection_of k x⟩
+
+/-- Completing a module does not change its finite-order quotients. -/
+noncomputable def completedQuotientEquiv (k : ℕ) :
+    F.completedFiltration.quotient k ≃ₗ[R] F.quotient k :=
+  (Submodule.quotEquivOfEq _ _ (F.completedFiltration_succ k)).trans
+    ((F.projection k).quotKerEquivOfSurjective (F.projection_surjective k))
+
+/-- The finite comparison sends a completed representative to its projection. -/
+@[simp]
+theorem completedQuotientEquiv_mk (k : ℕ) (x : F.completion) :
+    F.completedQuotientEquiv k (Submodule.Quotient.mk x) = F.projection k x := by
+  simp [completedQuotientEquiv]
+
+/-- On original representatives, the finite comparison recovers the original quotient class. -/
+theorem completedQuotientEquiv_mk_of (k : ℕ) (x : M) :
+    F.completedQuotientEquiv k (Submodule.Quotient.mk (F.of x)) =
+      Submodule.Quotient.mk x := by
+  simp
+
+/-- The inverse finite comparison is induced by the canonical map into the completion. -/
+@[simp]
+theorem completedQuotientEquiv_symm_mk (k : ℕ) (x : M) :
+    (F.completedQuotientEquiv k).symm (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (F.of x) := by
+  apply (F.completedQuotientEquiv k).injective
+  simp
+
+/-- The finite comparisons commute with all quotient transitions. -/
+@[simp]
+theorem completedQuotientEquiv_transition {k l : ℕ} (hkl : k ≤ l)
+    (x : F.completedFiltration.quotient l) :
+    F.completedQuotientEquiv k (F.completedFiltration.transition hkl x) =
+      F.transition hkl (F.completedQuotientEquiv l x) := by
+  obtain ⟨a, rfl⟩ := (F.completedFiltration.submodule (l + 1)).mkQ_surjective x
+  simp
 
 /-- The induced filtration on the completion is separated. -/
 @[simp]
