@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Semi
 public import Mathlib.CategoryTheory.Types.Basic
+public import Mathlib.CategoryTheory.Limits.Final.Type
 public import Mathlib.Algebra.Module.Submodule.Basic
 
 /-!
@@ -18,6 +19,7 @@ hypothesis. The construction follows Mathlib's `ModuleCat.sectionsSubmodule`, us
 same `CategoryTheory.Functor.sections` carrier for semirings and semimodules.
 Natural transformations induce linear maps on these matching families, respecting
 identity and composition. Their underlying maps are Mathlib section maps.
+Index functors restrict sections linearly through Mathlib's `Functor.sectionsPrecomp`.
 -/
 
 public section
@@ -43,6 +45,20 @@ def sectionsSubmodule (F : J ⥤ SemimoduleCat R) : Submodule R (∀ j, F.obj j)
 @[simp]
 theorem mem_sectionsSubmodule {F : J ⥤ SemimoduleCat R} {s : ∀ j, F.obj j} :
     s ∈ sectionsSubmodule F ↔ ∀ {j j'} (f : j ⟶ j'), F.map f (s j) = s j' := Iff.rfl
+
+/-- Restrict matching sections along a functor of index categories, using Mathlib's
+section precomposition on the underlying type-valued diagrams. -/
+def sectionsPrecomp {K : Type*} [Category* K] (p : K ⥤ J) (F : J ⥤ SemimoduleCat R) :
+    sectionsSubmodule F →ₗ[R] sectionsSubmodule (p ⋙ F) where
+  toFun := p.sectionsPrecomp (P := F ⋙ forget (SemimoduleCat R))
+  map_add' _ _ := by ext j; rfl
+  map_smul' _ _ := by ext j; rfl
+
+/-- Restricting a matching section reads its component at the image index. -/
+@[simp]
+theorem sectionsPrecomp_apply {K : Type*} [Category* K] (p : K ⥤ J)
+    (F : J ⥤ SemimoduleCat R) (s : sectionsSubmodule F) (k : K) :
+    (sectionsPrecomp p F s).val k = s.val (p.obj k) := (rfl)
 
 section Maps
 
