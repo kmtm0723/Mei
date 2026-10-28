@@ -14,6 +14,10 @@ Every morphism factors as the canonical transport from its source to the target 
 followed by a morphism in that fiber. This relates Mathlib's `Grothendieck.ιNatTrans`
 and fiber inclusions `Grothendieck.ι` to arbitrary morphisms, allowing cone equations
 on the total category to be checked fiberwise.
+
+`fiberHom` extracts the fiber arrow when its base component is prescribed.
+`verticalFiber` specializes this to a vertical arrow, and `ι_map_verticalFiber`
+reconstructs it under the fiber inclusion.
 -/
 
 public section
@@ -23,6 +27,37 @@ namespace CategoryTheory.Grothendieck
 universe v u w z
 
 variable {D : Type u} [Category.{v} D] {C : D ⥤ Cat.{w, z}}
+
+/-- The fiber arrow of a total arrow with a prescribed base component. -/
+def fiberHom {d e : D} {x : C.obj d} {y : C.obj e}
+    (f : (⟨d, x⟩ : Grothendieck C) ⟶ ⟨e, y⟩) (g : d ⟶ e) (h : f.base = g) :
+    (C.map g).toFunctor.obj x ⟶ y :=
+  eqToHom (by rw [h]) ≫ f.fiber
+
+/-- Reassembling the prescribed base and fiber recovers the total arrow. -/
+@[simp]
+theorem mk_fiberHom {d e : D} {x : C.obj d} {y : C.obj e}
+    (f : (⟨d, x⟩ : Grothendieck C) ⟶ ⟨e, y⟩) (g : d ⟶ e) (h : f.base = g) :
+    (⟨g, fiberHom f g h⟩ : (⟨d, x⟩ : Grothendieck C) ⟶ ⟨e, y⟩) = f := by
+  cases f
+  subst g
+  simp [fiberHom]
+
+/-- A vertical total arrow as an arrow of its fiber. -/
+def verticalFiber {d : D} {x y : C.obj d}
+    (f : (⟨d, x⟩ : Grothendieck C) ⟶ ⟨d, y⟩) (h : f.base = 𝟙 d) : x ⟶ y :=
+  eqToHom (by simp) ≫ fiberHom f (𝟙 d) h
+
+/-- Fiber inclusion recovers the original vertical total arrow. -/
+@[simp↓]
+theorem ι_map_verticalFiber {d : D} {x y : C.obj d}
+    (f : (⟨d, x⟩ : Grothendieck C) ⟶ ⟨d, y⟩) (h : f.base = 𝟙 d) :
+    (ι C d).map (verticalFiber f h) = f := by
+  conv_rhs => rw [← mk_fiberHom f (𝟙 d) h]
+  refine Grothendieck.ext _ _ (by rfl) ?_
+  dsimp [verticalFiber, fiberHom, ι]
+  erw [eqToHom_trans_assoc (C := C.obj d), eqToHom_trans_assoc (C := C.obj d),
+    eqToHom_trans_assoc (C := C.obj d)]
 
 /-- A morphism is canonical transport followed by its fiber morphism. -/
 theorem ιNatTrans_app_comp_ι_map {X Y : Grothendieck C} (h : X ⟶ Y) :
