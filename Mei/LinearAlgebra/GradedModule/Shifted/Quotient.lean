@@ -64,12 +64,8 @@ This is the simplifier normal form of the finite-piece vanishing law. -/
 theorem map_shiftedGrading_eq_bot {k : ℕ} {n : Γ} (hn : (k : ℤ) < d.degree n) :
     (shiftedGrading ℳ d.monoid p n).map
       ((d.shiftedFiltration ℳ p).submodule (k + 1)).mkQ = ⊥ := by
-  apply eq_bot_iff.mpr
-  intro x hx
-  obtain ⟨a, ha, rfl⟩ := Submodule.mem_map.mp hx
-  rw [Submodule.mem_bot, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero,
-    shiftedFiltration_succ]
-  exact d.le_degreeSubmodule _ hn ha
+  rw [← LinearMap.le_ker_iff_map, Submodule.ker_mkQ, shiftedFiltration_succ]
+  exact d.le_degreeSubmodule _ hn
 
 /-- Relative homogeneous pieces strictly above the retained order vanish. -/
 theorem shiftedQuotientGrading_eq_bot {k : ℕ} {n : Γ} (hn : (k : ℤ) < d.degree n) :
