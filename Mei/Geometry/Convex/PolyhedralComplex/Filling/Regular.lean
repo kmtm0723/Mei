@@ -13,16 +13,20 @@ import Mathlib.Tactic.FunProp
 /-!
 # Crossing words of regular affine fillings
 
-A continuous square avoiding the singular support, with affine admissible sides,
-has trivial boundary crossing word. A fixed-boundary admissible grid reduces the
-boundary word to cell words. Each cell lies in a regular transport neighborhood,
-so its word is trivial before any group-valued wall labels are imposed.
-
-The proof uses `Mei.Convex.exists_admissible_filling_grid_fixed_boundary`,
-`FinitePolyhedralComplex.exists_ball_crossingWord_eq`, the normal-closure grid
-boundary theorem, and `segmentCrossingWord_eq_prod_sampling`. The triangle
-cocycle follows by filling a square with one constant side.
+A continuous square avoiding singular support, with affine admissible sides,
+has trivial boundary crossing word. Filling a triangle gives the local segment
+cocycle: transport along two sides agrees with transport along the direct side.
+This identity holds in the free group of walls, so it may be evaluated under
+arbitrary group-valued wall labels, including noncommuting ones. It supplies the
+local compatibility needed to transport coefficients across regular wall points.
 -/
+
+-- The proof uses `Mei.Convex.exists_admissible_filling_grid_fixed_boundary`,
+-- `FinitePolyhedralComplex.exists_ball_crossingWord_eq`, the normal-closure grid
+-- boundary theorem, and `segmentCrossingWord_eq_prod_sampling`. Each grid cell
+-- lies in a regular transport neighborhood, and a triangle is represented by
+-- a square filling with one constant side.
+
 
 public noncomputable section
 
