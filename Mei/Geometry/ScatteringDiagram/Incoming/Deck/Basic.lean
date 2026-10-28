@@ -92,8 +92,10 @@ def transport (g : G) (β : AffineIncomingDeckTail D) : AffineIncomingDeckTail D
   tail := {
     representative := (D.chart g).toContinuousAffineMap.comp β.tail.representative
     velocity := by
-      change (D.chart g).linear (β.tail.representative.linear 1) = _
-      rw [β.tail.velocity, map_neg, D.map_direction]
+      -- The linear projection of a bundled composition is composition of linear maps.
+      have hlin : ((D.chart g).toContinuousAffineMap.comp β.tail.representative).linear 1 =
+          (D.chart g).linear (β.tail.representative.linear 1) := rfl
+      rw [hlin, β.tail.velocity, map_neg, D.map_direction]
     eventually_mem := β.tail.eventually_mem.mono fun t ht =>
       D.maps_carrier g β.source ⟨β.tail t, ht, rfl⟩
     coefficient_ne_zero := by
@@ -122,14 +124,15 @@ instance : MulAction G (AffineIncomingDeckTail D) where
     · exact one_smul G β.source
     · exact one_smul G β.datum
     · intro t
+      -- Expose the smul field of the instance being defined; no action equation exists yet.
       change (transport (1 : G) β).tail t = β.tail t
-      rw [transport_apply, D.chart_one]
-      rfl
+      simp only [transport_apply, D.chart_one, ContinuousAffineEquiv.refl_apply]
   mul_smul g h β := by
     apply ext
     · exact mul_smul g h β.source
     · exact mul_smul g h β.datum
     · intro t
+      -- Expose the same local smul field before applying the public transport equation.
       change (transport (g * h) β).tail t = (transport g (transport h β)).tail t
       simp only [transport_apply, D.chart_mul, ContinuousAffineEquiv.trans_apply]
 
@@ -193,7 +196,10 @@ def orbitType : Orbit D → TypeOrbit (G := G) S :=
     obtain ⟨g, hg⟩ := h
     have hh : MulAction.orbitRel G (I × E) (sourceDatum β) (sourceDatum γ) :=
       ⟨g, (sourceDatum.map_smul g γ).symm.trans (congrArg sourceDatum hg)⟩
-    exact (show MulAction.orbitRel G (I × E) ≤ typeSetoid (S := S) from le_sup_right) hh
+    have hle : MulAction.orbitRel G (I × E) ≤ typeSetoid (G := G) (S := S) := by
+      rw [typeSetoid_eq]
+      exact le_sup_right
+    exact hle hh
 
 omit [TopologicalSpace V] in
 /-- Source inputs giving the same coefficient give the same incoming type datum. -/
@@ -201,8 +207,11 @@ theorem type_mk_eq_of_coefficient_eq (i : I) (a b : E)
     (h : (S i).coefficient a = (S i).coefficient b) :
     (Quotient.mk _ (i, a) : TypeOrbit (G := G) S) = Quotient.mk _ (i, b) := by
   apply Quotient.sound
-  apply (show Setoid.ker (coefficientDatum (S := S)) ≤ typeSetoid (G := G) (S := S)
-    from le_sup_left)
+  have hle : Setoid.ker (coefficientDatum (S := S)) ≤ typeSetoid (G := G) (S := S) := by
+    rw [typeSetoid_eq]
+    exact le_sup_left
+  apply hle
+  rw [Setoid.ker_def, coefficientDatum_apply, coefficientDatum_apply]
   exact congrArg (Sigma.mk i) h
 
 /-- The quotient map has the expected value on every admitted representative. -/
