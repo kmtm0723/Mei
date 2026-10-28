@@ -81,29 +81,37 @@ theorem sectionsCone_π_apply (j : J) (x : (sectionsCone F).pt) :
   erw [sectionsCone_π_app, SemimoduleCat.ofHom_apply, LinearMap.comp_apply,
     LinearEquiv.coe_coe, sectionsEval_apply]
 
+/-- The cone-to-section lift transported into the small matching-family carrier. -/
+noncomputable def sectionsConeLift (c : Cone F) : c.pt ⟶ (sectionsCone F).pt :=
+  SemimoduleCat.ofHom
+    ((Shrink.linearEquiv R (sectionsSubmodule F)).symm.toLinearMap.comp (sectionsLift F c))
+
+/-- Unshrinking the proposed cone lift gives the original matching family. -/
+@[simp]
+theorem sectionsConeLift_apply (c : Cone F) (x : c.pt) :
+    Shrink.linearEquiv R (sectionsSubmodule F) (sectionsConeLift F c x) =
+      sectionsLift F c x := by
+  erw [sectionsConeLift, SemimoduleCat.ofHom_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+
 /-- The matching-family cone satisfies the limit universal property. -/
 noncomputable def sectionsConeIsLimit : IsLimit (sectionsCone F) where
-  lift c := SemimoduleCat.ofHom
-    ((Shrink.linearEquiv R (sectionsSubmodule F)).symm.toLinearMap.comp (sectionsLift F c))
+  lift := sectionsConeLift F
   fac c j := by
-    apply SemimoduleCat.hom_ext
-    ext x
-    erw [SemimoduleCat.hom_comp, sectionsCone_π_app, SemimoduleCat.hom_ofHom,
-      SemimoduleCat.hom_ofHom, LinearMap.comp_apply, LinearMap.comp_apply,
-      LinearEquiv.coe_coe, LinearEquiv.coe_coe, sectionsEval_apply,
-      LinearEquiv.apply_symm_apply, sectionsLift_apply]
+    apply ConcreteCategory.hom_ext
+    intro x
+    rw [SemimoduleCat.comp_apply, sectionsCone_π_apply, sectionsConeLift_apply,
+      sectionsLift_apply]
   uniq c m hm := by
-    apply SemimoduleCat.hom_ext
-    apply LinearMap.ext
+    apply ConcreteCategory.hom_ext
     intro x
     apply (Shrink.linearEquiv R (sectionsSubmodule F)).injective
+    rw [sectionsConeLift_apply]
     apply Subtype.ext
     funext j
     have he := ConcreteCategory.congr_hom (hm j) x
     erw [SemimoduleCat.comp_apply, sectionsCone_π_apply] at he
-    erw [SemimoduleCat.hom_ofHom, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      LinearEquiv.apply_symm_apply, sectionsLift_apply]
-    exact he
+    simpa only [sectionsLift_apply] using he
 
 /-- The type-valued section map of the forgotten cone is the canonical carrier comparison.
 This equality follows componentwise from the public cone projection equation. -/
