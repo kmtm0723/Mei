@@ -7,7 +7,6 @@ module
 
 public import Mei.Algebra.Lie.Graded.Shifted.Basic
 public import Mei.Algebra.Lie.Filtered.Bilinear
-public import Mei.Algebra.Lie.Derivation.Action
 public import Mei.RingTheory.GradedAlgebra.Shifted
 
 /-!
