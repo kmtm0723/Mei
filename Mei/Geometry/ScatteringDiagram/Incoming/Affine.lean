@@ -206,6 +206,18 @@ def endpointEquiv {a : E} (ha : S.coefficient a ≠ 0) (hv : v S.degree ≠ 0) :
     (S.tailAt_apply_zero ha hv ⟨β 0, S.mem_endpoints β⟩)
   right_inv Q := Subtype.ext (S.tailAt_apply_zero ha hv Q)
 
+/-- Classification sends a tail to its reference position with the admission proof. -/
+@[simp]
+theorem endpointEquiv_apply {a : E} (ha : S.coefficient a ≠ 0) (hv : v S.degree ≠ 0)
+    (β : AffineIncomingTail S a) :
+    S.endpointEquiv ha hv β = ⟨β 0, S.mem_endpoints β⟩ := (rfl)
+
+/-- Inverse classification constructs the canonical tail at the given reference position. -/
+@[simp]
+theorem endpointEquiv_symm_apply {a : E} (ha : S.coefficient a ≠ 0)
+    (hv : v S.degree ≠ 0) (Q : S.endpoints) :
+    (S.endpointEquiv ha hv).symm Q = S.tailAt ha hv Q := (rfl)
+
 /-- A source admits tails precisely when its coefficient image and direction are
 nonzero and its carrier is nonempty. In particular zero inputs admit no tails. -/
 theorem nonempty_tail_iff (a : E) : Nonempty (AffineIncomingTail S a) ↔
@@ -290,21 +302,24 @@ def unmapChart {e : V ≃ᴬ[ℝ] W} (γ : AffineIncomingTail (S.mapChart e) a) 
     AffineIncomingTail S a where
   representative := e.symm.toContinuousAffineMap.comp γ.representative
   velocity := by
-    change e.symm.linear (γ.representative.linear 1) = -v S.degree
-    rw [γ.velocity]
-    change e.linear.symm (-e.linear (v S.degree)) = -v S.degree
-    rw [map_neg, e.linear.symm_apply_apply]
+    -- The linear projection of the bundled composition is its composed linear maps.
+    have hlin : (e.symm.toContinuousAffineMap.comp γ.representative).linear 1 =
+        e.symm.linear (γ.representative.linear 1) := rfl
+    have hinv : e.symm.linear = e.linear.symm := by
+      rw [ContinuousAffineEquiv.toAffineEquiv_symm, AffineEquiv.linear_symm]
+    rw [hlin, γ.velocity, hinv]
+    simp only [AffineIncomingSource.mapChart_degree, AddMonoidHom.comp_apply,
+      LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe, map_neg,
+      LinearEquiv.symm_apply_apply]
   eventually_mem := γ.eventually_mem.mono fun t ht => by
     rcases ht with ⟨x, hx, hxt⟩
-    change e.symm (γ t) ∈ S.carrier
-    rw [← hxt, e.symm_apply_apply]
-    exact hx
+    simpa only [ContinuousAffineMap.comp_apply,
+      ContinuousAffineEquiv.coe_toContinuousAffineMap, ← hxt, e.symm_apply_apply] using hx
   coefficient_ne_zero := γ.coefficient_ne_zero
   direction_ne_zero := by
     intro h
     apply γ.direction_ne_zero
-    change e.linear (v S.degree) = 0
-    rw [h, map_zero]
+    simp only [AffineIncomingSource.mapChart_degree, AddMonoidHom.comp_apply, h, map_zero]
 
 /-- Pullback of a transported representative applies the inverse chart pointwise. -/
 @[simp]
@@ -326,6 +341,17 @@ def chartEquiv (e : V ≃ᴬ[ℝ] W) :
     apply ext
     ext t
     exact e.apply_symm_apply (γ t)
+
+/-- The chart equivalence transports the entire tail through the affine chart. -/
+@[simp]
+theorem chartEquiv_apply (e : V ≃ᴬ[ℝ] W) (β : AffineIncomingTail S a) :
+    chartEquiv e β = β.mapChart e := (rfl)
+
+/-- The inverse chart equivalence pulls the entire tail back through the inverse chart. -/
+@[simp]
+theorem chartEquiv_symm_apply (e : V ≃ᴬ[ℝ] W)
+    (γ : AffineIncomingTail (S.mapChart e) a) :
+    (chartEquiv e).symm γ = γ.unmapChart := (rfl)
 
 end AffineIncomingTail
 end Chart
