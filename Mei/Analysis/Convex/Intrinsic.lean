@@ -50,6 +50,7 @@ theorem intrinsicClosure_prod_eq
   tauto
 
 /-- The relative boundary of a cylinder is the cylinder over the relative boundary. -/
+@[simp]
 theorem intrinsicFrontier_prod_univ
     {𝕜 V W P Q : Type*} [Ring 𝕜] [AddCommGroup V] [Module 𝕜 V]
     [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace P] [TopologicalSpace Q]
