@@ -16,7 +16,9 @@ algebra automorphism, with inverse the exponential of its negative. The algebra 
 noncommutative. Exponentiation also commutes with restriction of scalars. This packages
 Mathlib's `Module.End.exp_mul_of_derivation` and
 `IsNilpotent.isUnit_exp`; scalar restriction uses `IsNilpotent.map_exp`, and the
-fixed-vector formula uses `IsNilpotent.exp_smul_eq_sum`.
+fixed-vector formula uses `IsNilpotent.exp_smul_eq_sum`. The finite exponential of a
+nilpotent endomorphism also preserves every submodule stable under that endomorphism,
+via `Module.End.pow_apply_mem_of_forall_mem`.
 -/
 
 public section
