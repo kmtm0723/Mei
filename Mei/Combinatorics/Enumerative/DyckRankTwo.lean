@@ -27,9 +27,9 @@ public section
 
 open Finset Polynomial Mei.RankTwo
 
-namespace Mei.MaximalDyckPath
+namespace Polynomial
 
-variable {S : Type*} [CommRing S]
+variable {S : Type*} [CommSemiring S]
 
 /-- `π_{d - q, s}(P)` is the coefficient of `z^s` in `P ^ (d - min d q)`: for `q > d` both are
 `1` at `s = 0` and `0` otherwise. -/
@@ -39,6 +39,11 @@ theorem powCoeff_sub_eq_coeff_pow (P : S[X]) (d q s : ℕ) :
   · rw [powCoeff_of_nonneg P (by omega), min_eq_right h, show ((d : ℤ) - q).toNat = d - q by omega]
   · rw [powCoeff_of_neg P (by omega), min_eq_left h.le, Nat.sub_self, pow_zero, coeff_one]
 
+end Polynomial
+
+namespace Mei.MaximalDyckPath
+
+variable {S : Type*} [CommSemiring S]
 variable {d₁ d₂ : ℕ} (P₁ P₂ : S[X])
 
 /-- **`(C₊, C₋)` solves the rank-two recursion.** -/
@@ -53,7 +58,7 @@ theorem isRankTwoSolution_cplus_cminus (hP₁ : P₁.coeff 0 = 1) (hP₂ : P₂.
   minus_eq_zero _ _ h0 hpq := cminus_eq_zero P₁ P₂ h0 hpq
 
 /-- **Every solution of the rank-two recursion is `(C₊, C₋)`.** -/
-theorem _root_.Mei.RankTwo.IsRankTwoSolution.eq_cplus_cminus {P₁ P₂ : S[X]}
+theorem _root_.Mei.RankTwo.IsRankTwoSolution.eq_cplus_cminus [IsCancelAdd S] {P₁ P₂ : S[X]}
     {Cp Cm : ℕ → ℕ → S} (h : IsRankTwoSolution d₁ d₂ P₁ P₂ Cp Cm) (hP₁ : P₁.coeff 0 = 1)
     (hP₂ : P₂.coeff 0 = 1) : Cp = cplus d₁ d₂ P₁ P₂ ∧ Cm = cminus d₁ d₂ P₁ P₂ :=
   h.unique (isRankTwoSolution_cplus_cminus P₁ P₂ hP₁ hP₂) hP₁ hP₂
