@@ -38,7 +38,7 @@ variable {Γ V R E : Type*} [AddCommMonoid Γ] [AddCommGroup V] [Module ℝ V]
 
 /-- A finite ray matches an admitted tail precisely when their incoming direction
 and reference position agree. Finite bends do not alter this germ criterion. -/
-theorem eventuallyEq_incomingTail_iff (β : FiniteAffineRay V) (γ : AffineIncomingTail S a) :
+theorem eventuallyEq_incomingTail_iff (β : FiniteAffineRay V V) (γ : AffineIncomingTail S a) :
     (β : ℝ → V) =ᶠ[atBot] γ ↔
       β.incomingDirection = v S.degree ∧ β.incomingReference = γ 0 := by
   constructor
@@ -51,14 +51,15 @@ theorem eventuallyEq_incomingTail_iff (β : FiniteAffineRay V) (γ : AffineIncom
       rw [incomingLine_velocity, γ.velocity] at hv
       exact neg_injective hv
     · have hQ := congrArg (fun f : ℝ →ᴬ[ℝ] V => f 0) hc
-      simpa only [incomingLine_apply, zero_smul, sub_zero] using hQ
+      simpa only [incomingLine_apply, neg_zero, zero_smul, zero_vadd] using hQ
   · rintro ⟨hv, hQ⟩
     filter_upwards [β.eventuallyEq_incomingLine] with t ht
     rw [ht, incomingLine_apply, hv, hQ, γ.apply_eq t]
+    simp only [vadd_eq_add, sub_eq_add_neg, neg_smul, add_comm]
 
 /-- A finite ray admits the source's incoming datum precisely when its incoming
 affine line is admitted, with a nonzero source coefficient and direction. -/
-theorem exists_incomingTail_iff (β : FiniteAffineRay V) (S : AffineIncomingSource R E M v)
+theorem exists_incomingTail_iff (β : FiniteAffineRay V V) (S : AffineIncomingSource R E M v)
     (a : E) :
     (∃ γ : AffineIncomingTail S a, (β : ℝ → V) =ᶠ[atBot] γ) ↔
       S.coefficient a ≠ 0 ∧ v S.degree ≠ 0 ∧
@@ -75,7 +76,7 @@ theorem exists_incomingTail_iff (β : FiniteAffineRay V) (S : AffineIncomingSour
     exact (S.tailAt_apply_zero ha hv ⟨β.incomingReference, hQ⟩).symm
 
 /-- An admitted finite ray has exactly one incoming tail at its source and datum. -/
-theorem existsUnique_incomingTail (β : FiniteAffineRay V)
+theorem existsUnique_incomingTail (β : FiniteAffineRay V V)
     (S : AffineIncomingSource R E M v) (a : E)
     (ha : S.coefficient a ≠ 0) (hv : v S.degree ≠ 0)
     (hd : β.incomingDirection = v S.degree) (hQ : β.incomingReference ∈ S.endpoints) :
@@ -83,13 +84,13 @@ theorem existsUnique_incomingTail (β : FiniteAffineRay V)
   obtain ⟨γ, hγ⟩ := (β.exists_incomingTail_iff S a).mpr ⟨ha, hv, hd, hQ⟩
   refine ⟨γ, hγ, ?_⟩
   intro γ' hγ'
-  apply AffineIncomingTail.ext
-  apply ContinuousAffineMap.toAffineMap_injective
-  exact AffineMap.eq_of_eventuallyEq_atBot (hγ'.symm.trans hγ)
+  apply AffineIncomingTail.germ_eq_iff.mp
+  rw [γ'.germ_eq_ofFun, γ.germ_eq_ofFun]
+  exact (hγ'.symm.trans hγ).germ_eq
 
 /-- Admission by a nonzero incoming tail makes every closed half-line of the bent
 ray proper; no restriction on the intermediate velocities is needed. -/
-theorem isProperMap_restrict_Iic_of_incomingTail [T2Space V] (β : FiniteAffineRay V)
+theorem isProperMap_restrict_Iic_of_incomingTail [T2Space V] (β : FiniteAffineRay V V)
     (γ : AffineIncomingTail S a) (hγ : (β : ℝ → V) =ᶠ[atBot] γ) (b : ℝ) :
     IsProperMap (fun t : Iic b => β t) := by
   apply β.isProperMap_restrict_Iic _ b
