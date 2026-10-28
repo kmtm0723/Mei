@@ -387,6 +387,18 @@ def cminus (p q : ℕ) : S :=
   ∑ γ ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree with Compatible γ ∧ verticalTotal γ = p ∧
     horizontalTotal γ = q ∧ horizontalSupport γ ⊆ totalVerticalShadow γ, weight P₁ P₂ γ
 
+theorem cplus_def (p q : ℕ) :
+    cplus d₁ d₂ P₁ P₂ p q =
+      ∑ γ ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree with Compatible γ ∧ verticalTotal γ = p ∧
+        horizontalTotal γ = q ∧ verticalSupport γ ⊆ totalHorizontalShadow γ, weight P₁ P₂ γ :=
+  (rfl)
+
+theorem cminus_def (p q : ℕ) :
+    cminus d₁ d₂ P₁ P₂ p q =
+      ∑ γ ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree with Compatible γ ∧ verticalTotal γ = p ∧
+        horizontalTotal γ = q ∧ horizontalSupport γ ⊆ totalVerticalShadow γ, weight P₁ P₂ γ :=
+  (rfl)
+
 /-- The zero grading has weight one when both constant coefficients are one. -/
 theorem weight_zero (h₁ : P₁.coeff 0 = 1) (h₂ : P₂.coeff 0 = 1) :
     weight P₁ P₂ (0 : Edge d₁ d₂ → ℕ) = 1 := by
