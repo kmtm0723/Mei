@@ -11,6 +11,7 @@ public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.Ring
 
 /-!
 # Matching tokens with sinks on a cycle
@@ -380,6 +381,59 @@ private theorem unmatched_iff_drop (hT : ∑ i : Fin n, weight B τ i < 0) {i : 
     have := runMin_le B τ ha.le
     rw [walk_succ, weight_of_mem B τ hB] at hlt
     omega
+
+/-- A sink `v` is matched exactly when some cyclic interval `[u, v]` with `u ≠ v` has
+nonnegative weight, that is, when the window ending just before `v` has positive weight. -/
+theorem matched_iff_exists_nonneg {v : Fin n} (hv : v ∈ B) :
+    Matched B τ v ↔ ∃ u, u ≠ v ∧ 0 ≤ ∑ k ∈ cyclicIcc u v, weight B τ k := by
+  have hvn : walk B τ (v.val + n + 1) = walk B τ (v.val + n) - 1 := by
+    rw [walk_succ, pos_add_self, pos_val, weight_of_mem B τ hv]
+    ring_nf
+  have hv1 : walk B τ (v.val + 1) = walk B τ v.val - 1 := by
+    rw [walk_succ, pos_val, weight_of_mem B τ hv]
+    ring_nf
+  have hper := walk_add_self B τ v.val
+  rw [matched_iff B τ hv]
+  constructor
+  · rintro ⟨a, hva, hav, hwa⟩
+    refine ⟨pos a, fun he ↦ ?_, ?_⟩
+    · have hmod : a % n = v.val := by
+        have := congrArg Fin.val he
+        simpa [pos] using this
+      rcases lt_or_ge a n with han | han
+      · rw [Nat.mod_eq_of_lt han] at hmod
+        omega
+      · rw [Nat.mod_eq_sub_mod han, Nat.mod_eq_of_lt (by omega)] at hmod
+        omega
+    · have hdiff : (v - pos a).val = v.val + n - a := by
+        have key : v = pos a + pos (v.val + n - a) := by
+          rw [← pos_add, show a + (v.val + n - a) = v.val + n by omega, pos_add_self, pos_val]
+        rw [sub_eq_iff_eq_add'.mpr key]
+        simp [pos, Nat.mod_eq_of_lt (show v.val + n - a < n by omega)]
+      rw [sum_cyclicIcc, hdiff]
+      have hmod : (pos a : Fin n).val = a % n := by simp [pos]
+      rw [hmod]
+      rcases lt_or_ge a n with han | han
+      · rw [Nat.mod_eq_of_lt han, show a + (v.val + n - a) + 1 = v.val + n + 1 by omega, hvn]
+        omega
+      · have ha : a % n = a - n := by
+          rw [Nat.mod_eq_sub_mod han, Nat.mod_eq_of_lt (by omega)]
+        rw [ha, show a - n + (v.val + n - a) + 1 = v.val + 1 by omega, hv1]
+        have := walk_add_self B τ (a - n)
+        rw [show a - n + n = a by omega] at this
+        omega
+  · rintro ⟨u, huv, hsum⟩
+    rw [sum_cyclicIcc] at hsum
+    rcases le_or_gt u v with hle | hlt
+    · have hlt : u.val < v.val := lt_of_le_of_ne hle (fun e ↦ huv (Fin.ext e))
+      rw [Fin.coe_sub_iff_le.mpr hle, show u.val + (v.val - u.val) + 1 = v.val + 1 by omega,
+        hv1] at hsum
+      refine ⟨u.val + n, by omega, by omega, ?_⟩
+      have := walk_add_self B τ u.val
+      omega
+    · rw [Fin.coe_sub_iff_lt.mpr hlt, show u.val + (n + v.val - u.val) + 1 = v.val + n + 1 by
+        omega, hvn] at hsum
+      exact ⟨u.val, by omega, by omega, by omega⟩
 
 end Walk
 

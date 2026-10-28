@@ -62,6 +62,18 @@ theorem totalHorizontalShadow_eq :
   · rintro ⟨hv, h, hh, hall⟩
     exact ⟨h, hh, hv, hall⟩
 
+/-- A vertical edge lies in the total horizontal shadow exactly when some subpath ending at it,
+of length at least two, carries at least as much horizontal grade as it has vertical edges. -/
+theorem mem_totalHorizontalShadow_iff {v : Edge d₁ d₂} :
+    v ∈ totalHorizontalShadow γ ↔ v ∈ verticalEdges d₁ d₂ ∧
+      ∃ u, u ≠ v ∧ #(cyclicIcc u v ∩ verticalEdges d₁ d₂) ≤
+        ∑ h ∈ cyclicIcc u v ∩ horizontalEdges d₁ d₂, γ h := by
+  rw [totalHorizontalShadow_eq, mem_filter]
+  refine and_congr_right fun hv ↦ ?_
+  have : NeZero (d₁ + d₂) := ⟨v.pos.ne'⟩
+  rw [matched_iff_exists_nonneg _ _ hv]
+  simp only [sum_weight_eq, compl_verticalEdges, sub_nonneg, Nat.cast_le]
+
 /-- **Total horizontal shadow.** It has `min d₂ q` edges. -/
 theorem card_totalHorizontalShadow :
     #(totalHorizontalShadow γ) = min d₂ (horizontalTotal γ) := by
