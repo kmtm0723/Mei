@@ -159,6 +159,18 @@ theorem crossing_mem_intrinsicInterior (h : AdmissibleSegment x y)
   intro hb
   exact h.regular t ht (mem_singularSupport.mpr (Or.inl ⟨i, hb⟩))
 
+/-- A list of distinct actual crossing events cannot repeat a wall index on one
+admissible segment. Simultaneous crossings of different walls are allowed. -/
+theorem nodup_crossing_indices (h : AdmissibleSegment x y) {l : List (ι × ℝ)}
+    (hl : l.Nodup) (hmem : ∀ c ∈ l, c ∈ crossings x y) :
+    (l.map Prod.fst).Nodup := by
+  apply hl.map_on
+  rintro ⟨i, t⟩ ht ⟨j, s⟩ hs hij
+  dsimp at hij
+  subst j
+  exact Prod.ext rfl (h.subsingleton_crossing i
+    ((mem_crossings x y i t).mp (hmem _ ht)) ((mem_crossings x y i s).mp (hmem _ hs)))
+
 /-- A segment has finitely many indexed crossings for a finite wall family. -/
 theorem finite_crossings [Finite ι] (h : AdmissibleSegment x y) : (crossings x y).Finite := by
   have heq : crossings x y = ⋃ i, Prod.mk i ''
