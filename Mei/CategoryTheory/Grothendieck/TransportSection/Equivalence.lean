@@ -52,21 +52,17 @@ def ofSection (s : CategoryTheory.Grothendieck.Section L) : GrothendieckSection 
   map f := Grothendieck.fiberHom ((normalized s).map f) f
     (Grothendieck.liftHom_base _ _ _ _ _ _)
   map_id d := by
-    have h := (Grothendieck.mk_fiberHom ((normalized s).map (𝟙 d)) (𝟙 d)
-      (Grothendieck.liftHom_base _ _ _ _ _ _)).trans ((normalized s).map_id d)
-    have hf := Grothendieck.congr h
-    erw [Grothendieck.id_fiber, eqToHom_trans] at hf
-    exact hf
+    simp only [(normalized s).map_id]
+    -- The identity base lift stores its endpoints through the pullback diagram.
+    -- Default transparency aligns them with the existing fiber extraction law.
+    erw [Grothendieck.fiberHom_id (C := L) (d := d) ((normalized s).obj d).fiber]
   map_comp f g := by
-    have h := (Grothendieck.mk_fiberHom ((normalized s).map (f ≫ g)) (f ≫ g)
-      (Grothendieck.liftHom_base _ _ _ _ _ _)).trans ((normalized s).map_comp f g)
-    rw [← Grothendieck.mk_fiberHom ((normalized s).map f) f
-      (Grothendieck.liftHom_base _ _ _ _ _ _),
-      ← Grothendieck.mk_fiberHom ((normalized s).map g) g
-        (Grothendieck.liftHom_base _ _ _ _ _ _)] at h
-    have hf := Grothendieck.congr h
-    erw [Grothendieck.comp_fiber, eqToHom_trans_assoc] at hf
-    exact hf
+    simp only [(normalized s).map_comp]
+    -- As for identities, align the base-lift endpoints before using the fiber law.
+    erw [Grothendieck.fiberHom_comp (C := L) ((normalized s).map f) ((normalized s).map g) f g
+      (Grothendieck.liftHom_base _ _ _ _ _ _)
+      (Grothendieck.liftHom_base _ _ _ _ _ _)]
+    rfl
 
 /-- The extracted transport data have the original section's underlying total functor. -/
 @[simp]
@@ -86,26 +82,6 @@ theorem toSection_ofSection (s : CategoryTheory.Grothendieck.Section L) :
     (ofSection s).toSection = s := by
   apply CategoryTheory.Functor.Fiber.fiberInclusion_obj_inj
   exact ofSection_toFunctor s
-
-private theorem toFunctor_injective :
-    Function.Injective (toFunctor (L := L)) := by
-  intro s t h
-  rcases s with ⟨so, sm, _, _⟩
-  rcases t with ⟨tobj, tm, _, _⟩
-  have ho : so = tobj := by
-    funext d
-    exact eq_of_heq (Grothendieck.mk.inj
-      (_root_.CategoryTheory.Functor.congr_obj h d)).2
-  subst tobj
-  refine GrothendieckSection.ext ?_ ?_
-  · rfl
-  · apply heq_of_eq
-    funext d e f
-    have hf := _root_.CategoryTheory.Functor.congr_hom h f
-    have hm := (by
-      simpa only [eqToHom_refl, Category.id_comp, Category.comp_id] using hf :
-        (⟨f, sm f⟩ : (⟨d, so d⟩ : Grothendieck L) ⟶ ⟨e, so e⟩) = ⟨f, tm f⟩)
-    exact eq_of_heq (Grothendieck.Hom.mk.inj hm).2
 
 /-- Extracting transport data from its assembled section recovers the original data. -/
 @[simp]
@@ -378,17 +354,6 @@ theorem sectionAutEquiv_apply_hom [∀ d, IsGroupoid (L.obj d)]
   -- Default transparency aligns those endpoints for Mathlib's component formula.
   erw [_root_.CategoryTheory.Functor.FullyFaithful.autMulEquivOfFullyFaithful_symm_apply_asIso_hom]
   simp [_root_.CategoryTheory.Functor.FullyFaithful.ofFullyFaithful]
-
-/-- Including a compatible-family component recovers the original total component
-under the canonical reconstruction of its section. -/
-@[simp↓]
-theorem ι_map_sectionAutEquiv_apply_hom [∀ d, IsGroupoid (L.obj d)]
-    (s : CategoryTheory.Grothendieck.Section L) (a : Aut s) (d : D) :
-    (Grothendieck.ι L d).map (((sectionAutEquiv s a).val d).asIso.hom) =
-      (CategoryTheory.Grothendieck.Section.hom
-        (eqToHom (toSection_ofSection s) ≫ a.asIso.hom ≫
-          eqToHom (toSection_ofSection s).symm)).app d := by
-  rw [sectionAutEquiv_apply_hom, ι_map_fromSectionHom_app]
 
 /-- The inverse comparison includes the chosen family component, transported
 back from the extracted section along object reconstruction. -/
