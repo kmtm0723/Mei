@@ -5,8 +5,8 @@ Authors: Codex
 -/
 module
 
-public import Mei.LinearAlgebra.GradedModule.ShiftedComponent
-public import Mei.Algebra.Lie.Graded.Shifted
+public import Mei.LinearAlgebra.GradedModule.Shifted.Component
+public import Mei.Algebra.Lie.Graded.Shifted.Basic
 public import Mei.Algebra.Lie.Filtered.BCH
 
 /-!
@@ -38,6 +38,7 @@ variable {Γ R L M : Type*} [AddCommGroup Γ] [CommRing R] [Algebra ℚ R]
 
 /-- Completed BCH actions preserve the leading homogeneous component of any shifted
 coefficient, without restricting the other components or the ambient shift. -/
+@[simp]
 theorem shiftedHomogeneousComponent_completedBCHAction (g : d.completedBCHGroup ℒ)
     (x : d.ShiftedCoefficients ℳ p) :
     d.shiftedHomogeneousComponent ℳ p p
@@ -48,14 +49,7 @@ theorem shiftedHomogeneousComponent_completedBCHAction (g : d.completedBCHGroup 
   let g0 : BCHGroup (d.truncatedLie ℒ 0) := CompletedGroup.projection 0 g
   have h0 (a : (d.shiftedLieFiltration ℒ ℳ p).quotient 0) :
       (d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ 0 g0 a = a := by
-    have hz : (d.shiftedLieFiltration ℒ ℳ p).truncatedLieAction d ℒ 0
-        (BCHGroup.log g0) = 0 := by
-      simpa using (d.shiftedLieFiltration ℒ ℳ p).truncatedLieAction_pow_eq_zero d ℒ 0
-        (BCHGroup.log g0)
-    refine ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction_apply d ℒ 0 g0 a).trans ?_
-    refine ((d.shiftedLieFiltration ℒ ℳ p).truncatedExpLieAction_apply d ℒ 0
-      (BCHGroup.log g0) a).trans ?_
-    rw [hz, IsNilpotent.exp_zero]
+    rw [Subsingleton.elim g0 1, map_one]
     rfl
   have ha : (d.shiftedLieFiltration ℒ ℳ p).projection 0
       ((d.shiftedLieFiltration ℒ ℳ p).completedBCHAction d ℒ g x) =
