@@ -25,7 +25,7 @@ open CategoryTheory TopologicalSpace Opposite Set TopCat
 
 public noncomputable section
 
-namespace TopCat.BasisTransport.Examples
+namespace Mei.BasisTransport.Examples
 
 /-- An open metric ball in the real line. -/
 abbrev ballOpen (c r : ℝ) : Opens (TopCat.of ℝ) := ⟨Metric.ball c r, Metric.isOpen_ball⟩
@@ -59,9 +59,10 @@ theorem balls_preconnected (U : Opens (TopCat.of ℝ)) (hU : U ∈ wallTransport
   exact (convex_ball c r).isPreconnected
 
 /-- The Boolean wall transport gives a concrete locally constant sheaf. -/
-instance wallTransport_sheaf_isLocallyConstant : wallTransport.sheaf.IsLocallyConstant :=
-  wallTransport.isLocallyConstantSheaf (fun x =>
-    ⟨ballOpen x 1, ⟨(x, 1), rfl⟩, Metric.mem_ball_self zero_lt_one,
+instance wallTransport_sheaf_hasLocallyBijectivePreconnectedRestrictions :
+    wallTransport.sheaf.HasLocallyBijectivePreconnectedRestrictions :=
+  wallTransport.hasLocallyBijectivePreconnectedRestrictions (fun x =>
+    ⟨ballOpen x 1, ⟨(x, 1), rfl⟩, ballOpen x 1, Metric.mem_ball_self zero_lt_one, le_rfl,
       balls_preconnected _ ⟨(x, 1), rfl⟩⟩)
 
 /-- A parallel global section whose Boolean values change across the wall. -/
@@ -108,9 +109,9 @@ theorem not_exists_const_false : ¬ ∃ s : wallTransport.sheaf.presheaf.obj (op
 theorem restriction_bijective : Function.Bijective (wallTransport.sheaf.presheaf.map
     (homOfLE (Metric.ball_subset_ball (by norm_num)) :
       ballOpen 0 1 ⟶ ballOpen 0 2).op) := by
-  apply wallTransport.restriction_bijective ball02_mem
+  apply wallTransport.restriction_bijective ball02_mem le_rfl
   · exact balls_preconnected _ ball02_mem
   · exact ⟨0, by norm_num [ballOpen, Metric.mem_ball]⟩
   · exact (convex_ball (0 : ℝ) 1).isPreconnected
 
-end TopCat.BasisTransport.Examples
+end Mei.BasisTransport.Examples
