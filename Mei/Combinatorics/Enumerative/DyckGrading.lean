@@ -6,10 +6,10 @@ Authors: Claude
 module
 
 public import Mei.Combinatorics.Enumerative.MaximalDyckPath
+public import Mei.Combinatorics.Enumerative.CyclicMatching
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.Fintype.Fin
-public import Mathlib.Algebra.Group.Fin.Basic
 
 /-!
 # Compatible gradings of maximal Dyck paths
@@ -17,7 +17,7 @@ public import Mathlib.Algebra.Group.Fin.Basic
 A grading of the maximal Dyck path of `(d₁, d₂)` assigns a natural number to every edge; we
 write `γ_V` for its values on vertical edges and `γ_H` for those on horizontal edges, with
 totals `p = ∑ γ_V` and `q = ∑ γ_H`. Subpaths include both endpoint edges and wrap cyclically
-from the last edge to the first.
+from the last edge to the first; they are the cyclic intervals `Mei.CyclicMatching.cyclicIcc`.
 
 * `Compatible`: for every horizontal edge `h` and vertical edge `v`, some proper initial
   subpath `he` of `hv` has as many vertical edges as the horizontal grade sum on it, or some
@@ -45,6 +45,7 @@ coefficients of rank-two wall functions.
 public section
 
 open DyckStep Finset Polynomial
+open Mei.CyclicMatching (cyclicIcc mem_cyclicIcc cyclicIcc_self val_sub_eq_zero_iff val_sub_self)
 
 namespace Mei.MaximalDyckPath
 
@@ -103,31 +104,6 @@ theorem disjoint_horizontalEdges_verticalEdges :
   rw [mem_verticalEdges, hh] at hv
   exact DyckStep.noConfusion hv
 
-/-- The cyclic subpath from `e` to `e'`, both included. It follows the path from `e` and
-continues from the first edge after the last one. -/
-def subpath (e e' : Edge d₁ d₂) : Finset (Edge d₁ d₂) := {k | (k - e).val ≤ (e' - e).val}
-
-@[simp]
-theorem mem_subpath {e e' k : Edge d₁ d₂} : k ∈ subpath e e' ↔ (k - e).val ≤ (e' - e).val := by
-  simp [subpath]
-
-/-- The offset of `k` from `e` vanishes exactly at `e`. -/
-theorem val_sub_eq_zero_iff {k e : Edge d₁ d₂} : (k - e).val = 0 ↔ k = e := by
-  have : NeZero (d₁ + d₂) := ⟨e.pos.ne'⟩
-  rw [Fin.val_eq_zero_iff]
-  exact sub_eq_zero
-
-/-- The offset of an edge from itself is zero. -/
-@[simp]
-theorem val_sub_self (e : Edge d₁ d₂) : (e - e).val = 0 :=
-  val_sub_eq_zero_iff.mpr rfl
-
-/-- The one-edge subpath. -/
-@[simp]
-theorem subpath_self (e : Edge d₁ d₂) : subpath e e = {e} := by
-  ext k
-  rw [mem_subpath, val_sub_self, Nat.le_zero, val_sub_eq_zero_iff, Finset.mem_singleton]
-
 /-- A horizontal edge is not vertical. -/
 theorem notMem_verticalEdges_of_mem {e : Edge d₁ d₂} (he : e ∈ horizontalEdges d₁ d₂) :
     e ∉ verticalEdges d₁ d₂ :=
@@ -171,12 +147,12 @@ theorem mem_horizontalSupport {e : Edge d₁ d₂} :
 /-- On the subpath `ee'`, the number of vertical edges equals the horizontal grade sum. -/
 @[expose]
 def VerticalBalanced (e e' : Edge d₁ d₂) : Prop :=
-  #(subpath e e' ∩ verticalEdges d₁ d₂) = ∑ h ∈ subpath e e' ∩ horizontalEdges d₁ d₂, γ h
+  #(cyclicIcc e e' ∩ verticalEdges d₁ d₂) = ∑ h ∈ cyclicIcc e e' ∩ horizontalEdges d₁ d₂, γ h
 
 /-- On the subpath `ee'`, the number of horizontal edges equals the vertical grade sum. -/
 @[expose]
 def HorizontalBalanced (e e' : Edge d₁ d₂) : Prop :=
-  #(subpath e e' ∩ horizontalEdges d₁ d₂) = ∑ v ∈ subpath e e' ∩ verticalEdges d₁ d₂, γ v
+  #(cyclicIcc e e' ∩ horizontalEdges d₁ d₂) = ∑ v ∈ cyclicIcc e e' ∩ verticalEdges d₁ d₂, γ v
 
 instance (e e' : Edge d₁ d₂) : Decidable (VerticalBalanced γ e e') :=
   inferInstanceAs (Decidable (_ = _))
@@ -301,7 +277,7 @@ theorem horizontalShadow_eq_empty {h : Edge d₁ d₂} (hh : h ∈ horizontalEdg
     (h0 : γ h = 0) : horizontalShadow γ h = ∅ := by
   have hmem : 0 ∈ verticalBalancedOffsets γ h := by
     refine Finset.mem_image.mpr ⟨h, ?_, val_sub_self h⟩
-    rw [Finset.mem_filter, VerticalBalanced, subpath_self, Finset.singleton_inter_of_notMem
+    rw [Finset.mem_filter, VerticalBalanced, cyclicIcc_self, Finset.singleton_inter_of_notMem
       (notMem_verticalEdges_of_mem hh), Finset.singleton_inter_of_mem hh,
       Finset.sum_singleton, h0]
     exact ⟨Finset.mem_univ _, rfl⟩
@@ -319,7 +295,7 @@ theorem verticalShadow_eq_empty {v : Edge d₁ d₂} (hv : v ∈ verticalEdges d
     (h0 : γ v = 0) : verticalShadow γ v = ∅ := by
   have hmem : 0 ∈ horizontalBalancedOffsets γ v := by
     refine Finset.mem_image.mpr ⟨v, ?_, val_sub_self v⟩
-    rw [Finset.mem_filter, HorizontalBalanced, subpath_self, Finset.singleton_inter_of_notMem
+    rw [Finset.mem_filter, HorizontalBalanced, cyclicIcc_self, Finset.singleton_inter_of_notMem
       (notMem_horizontalEdges_of_mem hv), Finset.singleton_inter_of_mem hv,
       Finset.sum_singleton, h0]
     exact ⟨Finset.mem_univ _, rfl⟩
@@ -363,7 +339,7 @@ theorem compatible_zero : Compatible (0 : Edge d₁ d₂ → ℕ) := by
     rw [val_sub_eq_zero_iff] at hvh
     subst hvh
     exact notMem_verticalEdges_of_mem hh hv
-  · rw [VerticalBalanced, subpath_self, Finset.singleton_inter_of_notMem
+  · rw [VerticalBalanced, cyclicIcc_self, Finset.singleton_inter_of_notMem
       (notMem_verticalEdges_of_mem hh)]
     simp
 

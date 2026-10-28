@@ -1,0 +1,465 @@
+/-
+Copyright (c) 2026 Mei contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Claude
+-/
+module
+
+public import Mathlib.Algebra.Group.Fin.Basic
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Abel
+
+/-!
+# Matching tokens with sinks on a cycle
+
+Arrange `n` positions on a cycle, call the positions in `B` sinks, and put `τ k` tokens at
+every other position `k`. Give a sink the weight `-1` and any other position the weight `τ k`.
+A sink `v` is *matched* if some non-sink `h` reaches it before balancing: every cyclic window
+from `h` that stops strictly before `v` has nonzero total weight.
+
+The number of matched sinks is `min #B (∑ k ∉ B, τ k)`. Equivalently a sink is matched
+exactly when some cyclic window ending just before it has positive weight, and the unmatched
+sinks are the record lows of the periodic walk of partial weight sums. Each period lowers that
+walk by `#B - ∑ τ`, one record at a time.
+
+This is a cycle lemma in the style of Dvoretzky–Motzkin; it counts the total shadows of gradings
+of maximal Dyck paths.
+-/
+
+public section
+
+open Finset
+
+namespace Mei.CyclicMatching
+
+variable {n : ℕ}
+
+/-- The cyclic interval from `e` to `e'`, both included. -/
+def cyclicIcc (e e' : Fin n) : Finset (Fin n) := {k | (k - e).val ≤ (e' - e).val}
+
+@[simp]
+theorem mem_cyclicIcc {e e' k : Fin n} : k ∈ cyclicIcc e e' ↔ (k - e).val ≤ (e' - e).val := by
+  simp [cyclicIcc]
+
+/-- The offset of `k` from `e` vanishes exactly at `e`. -/
+theorem val_sub_eq_zero_iff {k e : Fin n} : (k - e).val = 0 ↔ k = e := by
+  have : NeZero n := ⟨e.pos.ne'⟩
+  rw [Fin.val_eq_zero_iff]
+  exact sub_eq_zero
+
+/-- The offset of a position from itself is zero. -/
+@[simp]
+theorem val_sub_self (e : Fin n) : (e - e).val = 0 :=
+  val_sub_eq_zero_iff.mpr rfl
+
+/-- The one-point cyclic interval. -/
+@[simp]
+theorem cyclicIcc_self (e : Fin n) : cyclicIcc e e = {e} := by
+  ext k
+  rw [mem_cyclicIcc, val_sub_self, Nat.le_zero, val_sub_eq_zero_iff, mem_singleton]
+
+/-- A position lies in the cyclic interval `[a, c]` exactly when its distance to `c` is at most
+the length of the interval. -/
+theorem val_sub_le_val_sub_iff (a b c : Fin n) :
+    (c - b).val ≤ (c - a).val ↔ (b - a).val ≤ (c - a).val := by
+  have : NeZero n := ⟨a.pos.ne'⟩
+  have hcb : c - b = (c - a) - (b - a) := by abel
+  rw [hcb]
+  generalize b - a = x
+  generalize c - a = y
+  rcases le_or_gt x y with hxy | hxy
+  · rw [Fin.coe_sub_iff_le.mpr hxy]
+    exact iff_of_true (Nat.sub_le _ _) hxy
+  · rw [Fin.coe_sub_iff_lt.mpr hxy]
+    have := x.isLt
+    exact iff_of_false (by omega) (not_le.mpr hxy)
+
+/-- Negation reverses cyclic intervals. -/
+theorem neg_mem_cyclicIcc {e v x : Fin n} : -x ∈ cyclicIcc e v ↔ x ∈ cyclicIcc (-v) (-e) := by
+  have : NeZero n := ⟨e.pos.ne'⟩
+  rw [mem_cyclicIcc, mem_cyclicIcc, ← val_sub_le_val_sub_iff e (-x) v,
+    show x - -v = v - -x by abel, show -e - -v = v - e by abel]
+
+variable (B : Finset (Fin n)) (τ : Fin n → ℕ)
+
+/-- The weight of a position: `-1` at a sink and the number of tokens elsewhere. -/
+def weight (k : Fin n) : ℤ := if k ∈ B then -1 else τ k
+
+theorem weight_def (k : Fin n) : weight B τ k = if k ∈ B then -1 else (τ k : ℤ) := (rfl)
+
+/-- A sink has weight `-1`. -/
+theorem weight_of_mem {k : Fin n} (hk : k ∈ B) : weight B τ k = -1 := by
+  simp [weight, hk]
+
+/-- A non-sink has nonnegative weight. -/
+theorem weight_nonneg {k : Fin n} (hk : k ∉ B) : 0 ≤ weight B τ k := by
+  simp [weight, hk]
+
+/-- Every weight is at least `-1`. -/
+theorem neg_one_le_weight (k : Fin n) : -1 ≤ weight B τ k := by
+  unfold weight
+  split_ifs
+  · exact le_rfl
+  · exact le_trans (by decide) (Int.natCast_nonneg _)
+
+/-- A position of negative weight is a sink. -/
+theorem mem_of_weight_neg {k : Fin n} (hk : weight B τ k < 0) : k ∈ B := by
+  by_contra h
+  exact absurd hk (not_lt.mpr (weight_nonneg B τ h))
+
+/-- A weight sum counts tokens off the sinks and subtracts the sinks. -/
+theorem sum_weight_eq (S : Finset (Fin n)) :
+    ∑ k ∈ S, weight B τ k = (∑ k ∈ S ∩ Bᶜ, τ k : ℕ) - (#(S ∩ B) : ℤ) := by
+  rw [← sum_filter_add_sum_filter_not S (· ∈ B)]
+  rw [sum_congr rfl fun k hk ↦ weight_of_mem B τ (mem_filter.mp hk).2,
+    sum_congr rfl fun k hk ↦ (show weight B τ k = τ k by simp [weight, (mem_filter.mp hk).2])]
+  rw [filter_mem_eq_inter, show S.filter (· ∉ B) = S ∩ Bᶜ by ext; simp]
+  simp [sub_eq_neg_add]
+
+/-- The total weight is the number of tokens minus the number of sinks. -/
+theorem sum_weight : ∑ i : Fin n, weight B τ i = (∑ k ∈ Bᶜ, τ k : ℕ) - (#B : ℤ) := by
+  rw [← sum_add_sum_compl B, sum_congr rfl fun k hk ↦ weight_of_mem B τ hk,
+    sum_congr rfl fun k hk ↦ (show weight B τ k = τ k by simp [weight, mem_compl.mp hk])]
+  simp [sub_eq_neg_add]
+
+/-- A sink `v` is matched if from some non-sink `h`, every cyclic window `[h, e]` stopping
+strictly before `v` has nonzero total weight. -/
+@[expose]
+def Matched (v : Fin n) : Prop :=
+  ∃ h ∉ B, ∀ e : Fin n, (e - h).val < (v - h).val → ∑ k ∈ cyclicIcc h e, weight B τ k ≠ 0
+
+instance : DecidablePred (Matched B τ) := fun _ ↦
+  inferInstanceAs (Decidable (∃ _, _))
+
+section Walk
+
+variable [NeZero n]
+
+/-- The position of the periodic extension at time `k`. -/
+private def pos (k : ℕ) : Fin n := Fin.ofNat n k
+
+/-- The walk of partial weight sums along the periodic extension. -/
+private def walk (k : ℕ) : ℤ := ∑ j ∈ range k, weight B τ (pos j)
+
+private theorem pos_add_self (k : ℕ) : pos (k + n) = (pos k : Fin n) := by
+  simp [pos, Fin.ext_iff]
+
+private theorem walk_succ (k : ℕ) : walk B τ (k + 1) = walk B τ k + weight B τ (pos k) := by
+  simp [walk, sum_range_succ]
+
+/-- One period changes the walk by the total weight. -/
+private theorem walk_add_self (k : ℕ) :
+    walk B τ (k + n) = walk B τ k + ∑ i : Fin n, weight B τ i := by
+  induction k with
+  | zero =>
+    rw [zero_add, walk, ← Fin.sum_univ_eq_sum_range (fun j ↦ weight B τ (pos j)) n]
+    simp [walk, pos]
+  | succ k ih =>
+    rw [show k + 1 + n = k + n + 1 by omega, walk_succ, ih, walk_succ, pos_add_self,
+      add_right_comm]
+
+/-- A cyclic window sum is an increment of the walk. -/
+private theorem sum_cyclicIcc (h e : Fin n) :
+    ∑ k ∈ cyclicIcc h e, weight B τ k = walk B τ (h.val + (e - h).val + 1) - walk B τ h.val := by
+  have himage : cyclicIcc h e = (range ((e - h).val + 1)).image fun j ↦ h + pos j := by
+    ext k
+    simp only [mem_cyclicIcc, mem_image, mem_range, Nat.lt_succ_iff]
+    constructor
+    · intro hk
+      exact ⟨(k - h).val, hk, by simp [pos]⟩
+    · rintro ⟨j, hj, rfl⟩
+      have hjn : j < n := lt_of_le_of_lt hj (e - h).isLt
+      simpa [pos, Nat.mod_eq_of_lt hjn] using hj
+  have hinj : Set.InjOn (fun j ↦ h + pos j) (range ((e - h).val + 1) : Set ℕ) := by
+    intro i hi j hj hij
+    have hin : i < n := lt_of_le_of_lt (Nat.lt_succ_iff.mp (mem_range.mp hi)) (e - h).isLt
+    have hjn : j < n := lt_of_le_of_lt (Nat.lt_succ_iff.mp (mem_range.mp hj)) (e - h).isLt
+    have := congrArg Fin.val (add_left_cancel hij)
+    simpa [pos, Nat.mod_eq_of_lt hin, Nat.mod_eq_of_lt hjn] using this
+  rw [himage, sum_image hinj, walk, walk, add_assoc,
+    sum_range_add (fun j ↦ weight B τ (pos j)) h.val ((e - h).val + 1), add_sub_cancel_left]
+  refine sum_congr rfl fun j _ ↦ ?_
+  congr 1
+  simp [pos, Fin.ext_iff, Fin.val_add, Nat.add_mod]
+
+
+private theorem pos_add (a b : ℕ) : pos (a + b) = (pos a + pos b : Fin n) := by
+  simp [pos, Fin.ext_iff, Fin.val_add, Nat.add_mod]
+
+private theorem pos_val (k : Fin n) : pos k.val = k := by
+  simp [pos]
+
+/-- The walk is periodic up to the total weight. -/
+private theorem walk_add_self_sub (a b : ℕ) :
+    walk B τ (b + n) - walk B τ (a + n) = walk B τ b - walk B τ a := by
+  rw [walk_add_self, walk_add_self]
+  abel
+
+/-- Starting at a non-sink, a walk whose increments never vanish stays above its start. -/
+private theorem lt_walk_of_ne {a s : ℕ} (ha : pos a ∉ B)
+    (hne : ∀ t < s, walk B τ (a + t + 1) ≠ walk B τ a) :
+    ∀ t < s, walk B τ a < walk B τ (a + t + 1) := by
+  intro t
+  induction t with
+  | zero =>
+    intro hs
+    have h₀ := weight_nonneg B τ ha
+    have h₁ := hne 0 hs
+    rw [add_zero, walk_succ] at h₁ ⊢
+    omega
+  | succ t ih =>
+    intro hs
+    have h₀ := ih (by omega)
+    have h₁ := hne (t + 1) hs
+    have h₂ := neg_one_le_weight B τ (pos (a + t + 1))
+    rw [show a + (t + 1) + 1 = a + t + 1 + 1 by omega, walk_succ] at h₁ ⊢
+    omega
+
+/-- A sink is matched exactly when some cyclic window ending just before it has positive
+weight, read on the walk over the preceding period. -/
+private theorem matched_iff {v : Fin n} (hv : v ∈ B) :
+    Matched B τ v ↔
+      ∃ a, v.val < a ∧ a < v.val + n ∧ walk B τ a < walk B τ (v.val + n) := by
+  constructor
+  · rintro ⟨h, hh, hwin⟩
+    have hhv : h ≠ v := fun e ↦ hh (e ▸ hv)
+    set s := (v - h).val with hs_def
+    have hs0 : s ≠ 0 := fun h0 ↦ hhv (by
+      have : NeZero n := inferInstance
+      rw [hs_def, Fin.val_eq_zero_iff, sub_eq_zero] at h0
+      exact h0.symm)
+    have hne : ∀ t < s, walk B τ (h.val + t + 1) ≠ walk B τ h.val := by
+      intro t ht heq
+      have htn : t < n := lt_trans ht (v - h).isLt
+      have he : (h + pos t - h).val = t := by
+        simp [pos, Nat.mod_eq_of_lt htn]
+      have := hwin (h + pos t) (by rw [he]; exact ht)
+      rw [sum_cyclicIcc, he, heq, sub_self] at this
+      exact this rfl
+    have hlt := lt_walk_of_ne B τ (by rw [pos_val]; exact hh) hne (s - 1) (by omega)
+    rw [show h.val + (s - 1) + 1 = h.val + s by omega] at hlt
+    rcases le_or_gt h v with hle | hlt'
+    · have hs : s = v.val - h.val := Fin.coe_sub_iff_le.mpr hle
+      have hhv' : h.val < v.val := lt_of_le_of_ne hle (fun e ↦ hhv (Fin.ext e))
+      refine ⟨h.val + n, by omega, by omega, ?_⟩
+      have := walk_add_self_sub B τ h.val v.val
+      rw [show h.val + s = v.val by omega] at hlt
+      linarith
+    · have hs : s = n + v.val - h.val := Fin.coe_sub_iff_lt.mpr hlt'
+      refine ⟨h.val, by omega, by omega, ?_⟩
+      rw [show h.val + s = v.val + n by omega] at hlt
+      exact hlt
+  · rintro ⟨a, hva, hai, hwa⟩
+    set i := v.val + n
+    set F := (Ioo v.val i).filter fun a ↦ walk B τ a < walk B τ i
+    have hF : F.Nonempty := ⟨a, by simp [F, hva, hai, hwa]⟩
+    set a' := F.max' hF
+    have ha'F : a' ∈ F := F.max'_mem hF
+    simp only [F, mem_filter, mem_Ioo] at ha'F
+    obtain ⟨⟨hva', ha'i⟩, hwa'⟩ := ha'F
+    have habove : ∀ j, a' < j → j ≤ i → walk B τ a' < walk B τ j := by
+      intro j hj hji
+      rcases lt_or_eq_of_le hji with hji | rfl
+      · by_contra hle
+        have hjF : j ∈ F := by
+          simp only [F, mem_filter, mem_Ioo]
+          exact ⟨⟨by omega, hji⟩, by linarith [not_lt.mp hle]⟩
+        exact absurd (F.le_max' j hjF) (not_le.mpr hj)
+      · exact hwa'
+    refine ⟨pos a', fun hmem ↦ ?_, fun e he ↦ ?_⟩
+    · have h₁ := habove (a' + 1) (by omega) (by omega)
+      rw [walk_succ, weight_of_mem B τ hmem] at h₁
+      omega
+    · have hdiff : (v - pos a').val = i - a' := by
+        have hv' : v = pos a' + pos (i - a') := by
+          rw [← pos_add, show a' + (i - a') = v.val + n by omega, pos_add_self, pos_val]
+        rw [hv', add_sub_cancel_left]
+        simp [pos, Nat.mod_eq_of_lt (show i - a' < n by omega)]
+      rw [hdiff] at he
+      have hshift : walk B τ ((pos a' : Fin n).val + (e - pos a').val + 1) -
+          walk B τ (pos a' : Fin n).val =
+          walk B τ (a' + (e - pos a').val + 1) - walk B τ a' := by
+        have hmod : (pos a' : Fin n).val = a' % n := by simp [pos]
+        generalize (e - pos a').val = t
+        rcases lt_or_ge a' n with han | han
+        · rw [hmod, Nat.mod_eq_of_lt han]
+        · have ha'' : a' = a' % n + n := by
+            rw [Nat.mod_eq_sub_mod han, Nat.mod_eq_of_lt (by omega)]
+            omega
+          rw [hmod]
+          have := walk_add_self_sub B τ (a' % n) (a' % n + t + 1)
+          rw [show a' % n + t + 1 + n = a' + t + 1 by omega, ← ha''] at this
+          exact this.symm
+      rw [sum_cyclicIcc, hshift]
+      have := habove (a' + (e - pos a').val + 1) (by omega) (by omega)
+      linarith
+
+/-- The running minimum of the walk up to time `k`. -/
+private def runMin (k : ℕ) : ℤ := ((range (k + 1)).image (walk B τ)).min' (by simp)
+
+private theorem runMin_le {a k : ℕ} (h : a ≤ k) : runMin B τ k ≤ walk B τ a :=
+  min'_le _ _ (mem_image_of_mem _ (mem_range.mpr (Nat.lt_succ_of_le h)))
+
+private theorem exists_runMin (k : ℕ) : ∃ a ≤ k, walk B τ a = runMin B τ k := by
+  obtain ⟨a, ha, he⟩ := mem_image.mp (min'_mem ((range (k + 1)).image (walk B τ)) (by simp))
+  exact ⟨a, Nat.lt_succ_iff.mp (mem_range.mp ha), he⟩
+
+private theorem runMin_succ (k : ℕ) :
+    runMin B τ (k + 1) = min (runMin B τ k) (walk B τ (k + 1)) := by
+  apply le_antisymm
+  · obtain ⟨a, ha, he⟩ := exists_runMin B τ k
+    exact le_min (he ▸ runMin_le B τ (by omega)) (runMin_le B τ le_rfl)
+  · obtain ⟨a, ha, he⟩ := exists_runMin B τ (k + 1)
+    rw [← he]
+    rcases Nat.lt_or_ge a (k + 1) with h | h
+    · exact min_le_of_left_le (runMin_le B τ (by omega))
+    · exact min_le_of_right_le (le_of_eq (by rw [show a = k + 1 by omega]))
+
+/-- The running minimum drops by at most one per step. -/
+private theorem runMin_succ_ge (k : ℕ) : runMin B τ k - 1 ≤ runMin B τ (k + 1) := by
+  rw [runMin_succ]
+  refine le_min (by omega) ?_
+  have h₁ := runMin_le B τ (le_refl k)
+  have h₂ := neg_one_le_weight B τ (pos k)
+  rw [walk_succ]
+  omega
+
+/-- After a period of negative total weight, the running minimum has dropped by that weight. -/
+private theorem runMin_add_self (hT : ∑ i : Fin n, weight B τ i < 0) :
+    runMin B τ (n + n) = runMin B τ n + ∑ i : Fin n, weight B τ i := by
+  apply le_antisymm
+  · obtain ⟨a, ha, he⟩ := exists_runMin B τ n
+    rw [← he, ← walk_add_self]
+    exact runMin_le B τ (by omega)
+  · obtain ⟨a, ha, he⟩ := exists_runMin B τ (n + n)
+    rw [← he]
+    rcases Nat.lt_or_ge a n with h | h
+    · have := runMin_le B τ h.le
+      omega
+    · obtain ⟨b, rfl⟩ := Nat.exists_eq_add_of_le h
+      rw [add_comm n b, walk_add_self]
+      have := runMin_le B τ (show b ≤ n by omega)
+      omega
+
+/-- When the total weight is negative, an unmatched sink at time `i` of the second period is
+exactly a step at which the running minimum drops. -/
+private theorem unmatched_iff_drop (hT : ∑ i : Fin n, weight B τ i < 0) {i : ℕ} (hni : n ≤ i)
+    (hi : i < n + n) :
+    (pos i ∈ B ∧ ∀ a, i - n < a → a < i → walk B τ i ≤ walk B τ a) ↔
+      runMin B τ (i + 1) < runMin B τ i := by
+  constructor
+  · rintro ⟨hB, hmin⟩
+    have hwi : walk B τ i ≤ runMin B τ i := by
+      obtain ⟨a, ha, he⟩ := exists_runMin B τ i
+      rw [← he]
+      rcases lt_or_eq_of_le ha with ha | rfl
+      · rcases Nat.lt_or_ge (i - n) a with h | h
+        · exact hmin a h ha
+        · have hb : a + n ≤ i := by omega
+          have hwalk := walk_add_self B τ a
+          rcases lt_or_eq_of_le hb with hb | hb
+          · have := hmin (a + n) (by omega) hb
+            omega
+          · rw [hb] at hwalk
+            omega
+      · exact le_rfl
+    have := runMin_le B τ (show i + 1 ≤ i + 1 from le_rfl)
+    rw [walk_succ, weight_of_mem B τ hB] at this
+    omega
+  · intro hdrop
+    rw [runMin_succ] at hdrop
+    have hlt : walk B τ (i + 1) < runMin B τ i := by
+      by_contra h
+      exact absurd hdrop (not_lt.mpr (le_min le_rfl (not_lt.mp h)))
+    have hle := runMin_le B τ (le_refl i)
+    have hB : pos i ∈ B := mem_of_weight_neg B τ (by rw [walk_succ] at hlt; omega)
+    refine ⟨hB, fun a _ ha ↦ ?_⟩
+    have := runMin_le B τ ha.le
+    rw [walk_succ, weight_of_mem B τ hB] at hlt
+    omega
+
+end Walk
+
+/-- **Cyclic matching.** The number of matched sinks is the smaller of the number of sinks and
+the number of tokens. -/
+theorem card_matched : #{v ∈ B | Matched B τ v} = min #B (∑ k ∈ Bᶜ, τ k) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp [Finset.eq_empty_of_isEmpty B]
+  have : NeZero n := ⟨hn.ne'⟩
+  have hT := sum_weight B τ
+  rcases le_or_gt #B (∑ k ∈ Bᶜ, τ k) with hle | hlt
+  · -- Enough tokens: every sink is matched.
+    rw [min_eq_left hle, filter_true_of_mem]
+    intro v hv
+    have hcompl : (Bᶜ).Nonempty := by
+      by_contra hc
+      rw [not_nonempty_iff_eq_empty.mp hc, sum_empty] at hle
+      exact absurd hle (not_le.mpr (card_pos.mpr ⟨v, hv⟩))
+    have hn2 : 1 < n := by
+      by_contra h
+      obtain ⟨k, hk⟩ := hcompl
+      exact mem_compl.mp hk (by
+        have : Subsingleton (Fin n) := Fin.subsingleton_iff_le_one.mpr (by omega)
+        exact Subsingleton.elim v k ▸ hv)
+    refine (matched_iff B τ hv).mpr ⟨v.val + 1, by omega, by omega, ?_⟩
+    have h₁ := walk_add_self B τ v.val
+    rw [walk_succ, pos_val, weight_of_mem B τ hv]
+    omega
+  · -- Too few tokens: the unmatched sinks are the record lows of one period.
+    rw [min_eq_right hlt.le]
+    have hneg : ∑ i : Fin n, weight B τ i < 0 := by omega
+    have hun : #{v ∈ B | ¬Matched B τ v} = #{i ∈ Ico n (n + n) |
+        runMin B τ (i + 1) < runMin B τ i} := by
+      refine card_nbij' (fun v ↦ v.val + n) (fun i ↦ pos i) ?_ ?_ ?_ ?_
+      · intro v hv
+        simp only [coe_filter, Set.mem_ofPred_eq] at hv ⊢
+        obtain ⟨hvB, hvm⟩ := hv
+        refine ⟨mem_Ico.mpr ⟨by omega, by omega⟩, ?_⟩
+        refine (unmatched_iff_drop B τ hneg (by omega) (by omega)).mp ⟨?_, fun a h₁ h₂ ↦ ?_⟩
+        · rw [pos_add_self, pos_val]
+          exact hvB
+        · by_contra hlt'
+          exact hvm ((matched_iff B τ hvB).mpr ⟨a, by omega, h₂, not_le.mp hlt'⟩)
+      · intro i hi
+        simp only [coe_filter, Set.mem_ofPred_eq, mem_Ico] at hi ⊢
+        obtain ⟨⟨hni, hi2⟩, hdrop⟩ := hi
+        obtain ⟨hB, hmin⟩ := (unmatched_iff_drop B τ hneg hni hi2).mpr hdrop
+        have hval : (pos i : Fin n).val = i - n := by
+          simp only [pos, Fin.val_ofNat]
+          rw [Nat.mod_eq_sub_mod hni, Nat.mod_eq_of_lt (by omega)]
+        refine ⟨hB, fun hm ↦ ?_⟩
+        obtain ⟨a, h₁, h₂, h₃⟩ := (matched_iff B τ hB).mp hm
+        rw [hval, show i - n + n = i by omega] at h₂ h₃
+        rw [hval] at h₁
+        exact absurd (hmin a h₁ h₂) (not_le.mpr h₃)
+      · intro v _
+        simp only
+        rw [pos_add_self, pos_val]
+      · intro i hi
+        simp only [coe_filter, Set.mem_ofPred_eq, mem_Ico] at hi
+        simp only [pos, Fin.val_ofNat]
+        rw [Nat.mod_eq_sub_mod hi.1.1, Nat.mod_eq_of_lt (by omega)]
+        omega
+    have hdrops : (#{i ∈ Ico n (n + n) | runMin B τ (i + 1) < runMin B τ i} : ℤ) =
+        runMin B τ n - runMin B τ (n + n) := by
+      rw [card_filter, Nat.cast_sum, sum_Ico_eq_sum_range, show n + n - n = n by omega]
+      have htel := sum_range_sub' (fun k ↦ runMin B τ (n + k)) n
+      simp only [add_zero] at htel
+      rw [← htel]
+      refine sum_congr rfl fun k _ ↦ ?_
+      have h₁ := runMin_succ_ge B τ (n + k)
+      have h₂ : runMin B τ (n + k + 1) ≤ runMin B τ (n + k) := by
+        rw [runMin_succ]; exact min_le_left _ _
+      rw [show n + (k + 1) = n + k + 1 by omega]
+      split_ifs <;> push_cast <;> omega
+    rw [runMin_add_self B τ hneg] at hdrops
+    have htot : #{v ∈ B | Matched B τ v} + #{v ∈ B | ¬Matched B τ v} = #B :=
+      card_filter_add_card_filter_not _
+    rw [hun] at htot
+    omega
+
+
+end Mei.CyclicMatching
