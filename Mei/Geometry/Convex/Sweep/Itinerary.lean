@@ -21,8 +21,6 @@ velocity `-ρ(p)`, use `ρ(p)` here; positive elapsed times impose the correct o
 The sign of the normal applied to the velocity may be negative. Incidence with
 the selected supports does not assert that a segment avoids other walls or meets
 a selected wall for the first time.
-
-This supplies the fixed-itinerary affine calculation in ScatteringDiagrams §5.3.
 -/
 
 public section
@@ -59,6 +57,7 @@ def backwardTime (i : Fin n) : V →ᴬ[ℝ] ℝ :=
     (f i).toContinuousAffineMap.comp (backwardPoint f c v i.castSucc))
 
 /-- The affine backward-time formula. -/
+@[simp]
 theorem backwardTime_apply (i : Fin n) (Q : V) :
     backwardTime f c v i Q =
       (c i - f i (backwardPoint f c v i.castSucc Q)) / f i (v i) := by
@@ -68,6 +67,7 @@ theorem backwardTime_apply (i : Fin n) (Q : V) :
 
 /-- Successive encounter points are separated by the elapsed time times the
 specified backward velocity. -/
+@[simp]
 theorem backwardPoint_succ_apply (i : Fin n) (Q : V) :
     backwardPoint f c v i.succ Q = backwardPoint f c v i.castSucc Q +
       backwardTime f c v i Q • v i := by
@@ -104,26 +104,26 @@ theorem backward_unique (hf : ∀ i, f i (v i) ≠ 0) (Q : V)
 
 /-- Rescaling each normal and its level by the same nonzero scalar preserves
 all encounter points and physical backward times, including negative scalars. -/
-theorem backward_rescale (hf : ∀ i, f i (v i) ≠ 0)
-    (a : Fin n → ℝ) (ha : ∀ i, a i ≠ 0) (Q : V) :
+theorem backward_rescale (a : Fin n → ℝ) (ha : ∀ i, a i ≠ 0) (Q : V) :
     (∀ i, backwardPoint (fun j => a j • f j) (fun j => a j * c j) v i Q =
       backwardPoint f c v i Q) ∧
     ∀ i, backwardTime (fun j => a j • f j) (fun j => a j * c j) v i Q =
       backwardTime f c v i Q := by
-  have hscaled (i : Fin n) : (a i • f i) (v i) ≠ 0 := by
-    simpa only [smul_apply, smul_eq_mul, mul_ne_zero_iff] using
-      And.intro (ha i) (hf i)
-  apply backward_unique f c v hf Q
-    (fun i => backwardPoint (fun j => a j • f j) (fun j => a j * c j) v i Q)
-    (fun i => backwardTime (fun j => a j • f j) (fun j => a j * c j) v i Q)
-  · simp
-  · intro i
-    exact backwardPoint_succ_apply _ _ _ i Q
-  · intro i
-    have h := backwardPoint_height (fun j => a j • f j) (fun j => a j * c j) v
-      i (hscaled i) Q
-    simp only [smul_apply, smul_eq_mul] at h
-    exact mul_left_cancel₀ (ha i) h
+  have ht (i : Fin n)
+      (hi : backwardPoint (fun j => a j • f j) (fun j => a j * c j) v i.castSucc Q =
+        backwardPoint f c v i.castSucc Q) :
+      backwardTime (fun j => a j • f j) (fun j => a j * c j) v i Q =
+        backwardTime f c v i Q := by
+    rw [backwardTime_apply, backwardTime_apply, hi]
+    simp only [smul_apply, smul_eq_mul, ← mul_sub]
+    exact mul_div_mul_left _ _ (ha i)
+  have hp : ∀ i, backwardPoint (fun j => a j • f j) (fun j => a j * c j) v i Q =
+      backwardPoint f c v i Q := by
+    intro i
+    induction i using Fin.induction with
+    | zero => simp
+    | succ i ih => rw [backwardPoint_succ_apply, backwardPoint_succ_apply, ht i ih, ih]
+  exact ⟨hp, fun i => ht i (hp i.castSucc)⟩
 
 
 /-- Endpoints satisfying the selected support incidences and strictly positive
