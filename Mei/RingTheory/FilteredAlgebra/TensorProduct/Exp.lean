@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.RingTheory.FilteredAlgebra.TensorProduct.Completion
-public import Mei.RingTheory.FilteredAlgebra.Exp
+public import Mei.RingTheory.FilteredAlgebra.Exp.Basic
 
 /-!
 # Exponentials in completed tensor products
