@@ -5,8 +5,8 @@ Authors: Codex
 -/
 module
 
-public import Mei.LinearAlgebra.GradedModule.ShiftedMap
-public import Mei.Algebra.Lie.Graded.Shifted
+public import Mei.LinearAlgebra.GradedModule.Shifted.Map
+public import Mei.Algebra.Lie.Graded.Shifted.Basic
 public import Mei.Algebra.Lie.Filtered.Map
 
 /-!
