@@ -77,10 +77,10 @@ section Filtration
 
 variable {Γ Γ' R M M' : Type*} [AddCommGroup Γ] [AddCommGroup Γ']
   [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module R M']
-  [DecidableEq Γ] [DecidableEq Γ']
+  [DecidableEq Γ]
   {d : PositiveDegrees Γ} {e : PositiveDegrees Γ'} (T : PositiveDegreeMap d e)
   (ℳ : Γ → Submodule R M) (𝓝 : Γ' → Submodule R M')
-  [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] (p : Γ)
+  [DirectSum.Decomposition ℳ] (p : Γ)
   (f : M →ₗ[R] M') (hf : ∀ q, ℳ q ≤ (𝓝 (T q)).comap f)
 
 include hf
@@ -91,15 +91,20 @@ theorem shiftedMap_mem_shiftedFiltration (k : ℕ)
     (hx : x ∈ (d.shiftedFiltration ℳ p).submodule (T.modulus k + 1)) :
     T.shiftedMap ℳ 𝓝 p f hf x ∈ (e.shiftedFiltration 𝓝 (T p)).submodule (k + 1) := by
   rw [d.shiftedFiltration_succ ℳ p] at hx
-  rw [e.shiftedFiltration_succ 𝓝 (T p)]
   rw [d.degreeSubmodule_def] at hx
   refine Submodule.iSup_induction _
     (motive := fun x => T.shiftedMap ℳ 𝓝 p f hf x ∈
-      e.degreeSubmodule (shiftedGrading 𝓝 e.monoid (T p)) k) hx ?_ ?_ ?_
+      (e.shiftedFiltration 𝓝 (T p)).submodule (k + 1)) hx ?_ ?_ ?_
   · intro n x hx
     by_cases hn : n.val ∈ d.monoid
-    · exact e.le_degreeSubmodule _ (T.degree_gt k hn n.property)
-        (T.shiftedMap_mem_shiftedGrading ℳ 𝓝 p f hf hx)
+    · rw [e.shiftedFiltration_submodule 𝓝 (T p), Submodule.mem_comap]
+      change (T.shiftedMap ℳ 𝓝 p f hf x : M') ∈ _
+      rw [coe_shiftedMap]
+      apply Mei.DirectSum.le_degreeTail 𝓝 _ (i := T (p + n))
+      · have hd := T.degree_gt k hn n.property
+        simpa only [map_add, add_sub_cancel_left, Nat.cast_add, Nat.cast_one] using
+          (show (k : ℤ) + 1 ≤ e.degree (T n) by omega)
+      · exact hf (p + n) ((mem_shiftedGrading ℳ d.monoid p).mp hx)
     · rw [shiftedGrading_eq_bot ℳ d.monoid p hn, Submodule.mem_bot] at hx
       simp [hx]
   · simp
@@ -112,10 +117,10 @@ section Group
 
 variable {Γ Γ' R M M' : Type*} [AddCommGroup Γ] [AddCommGroup Γ']
   [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module R M']
-  [DecidableEq Γ] [DecidableEq Γ']
+  [DecidableEq Γ]
   {d : PositiveDegrees Γ} {e : PositiveDegrees Γ'} (T : PositiveDegreeMap d e)
   (ℳ : Γ → Submodule R M) (𝓝 : Γ' → Submodule R M')
-  [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] (p : Γ)
+  [DirectSum.Decomposition ℳ] (p : Γ)
   (f : M →ₗ[R] M') (hf : ∀ q, ℳ q ≤ (𝓝 (T q)).comap f)
 
 include hf
