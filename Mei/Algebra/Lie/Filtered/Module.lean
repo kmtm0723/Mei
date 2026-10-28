@@ -7,6 +7,7 @@ module
 
 public import Mei.Algebra.Lie.Filtered.Action
 public import Mei.Algebra.Lie.Graded.Completion
+public import Mei.Algebra.Lie.Graded.PositiveDegreeHom
 public import Mei.LinearAlgebra.ModuleFiltration.Map
 public import Mathlib.RingTheory.Nilpotent.Exp
 
@@ -184,6 +185,49 @@ theorem completedExpLieAction_mem_completedFiltration_iff (x : d.completedLie �
     simp only [completedFiltration_succ, LinearMap.mem_ker, projection_completedExpLieAction,
       LinearEquiv.map_eq_zero_iff]
 
+section GeneralEquivariantMap
+
+variable {d ℒ} {N' L' M' : Type*} [AddCommMonoid N'] [DecidableEq N']
+  [LieRing L'] [LieAlgebra R L']
+  [AddCommGroup M'] [Module R M'] [LieRingModule L' M'] [LieModule R L' M']
+  {e : PositiveDegrees N'} {T : PositiveDegreeMap d e}
+  {ℒ' : N' → Submodule R L'} [GradedLieAlgebra ℒ'] [IsPositiveGrading e ℒ']
+  (G : ModuleFiltration R M') [IsFiltrationRaising e ℒ' G]
+  (φ : GradedLieHom T ℒ ℒ') (ψ : M →ₗ[R] M')
+  (hequiv : ∀ (x : L) (a : M), ψ ⁅x, a⁆ = ⁅φ x, ψ a⁆)
+
+include hequiv
+
+/-- Equivariant coefficient maps intertwine finite exponential actions at any
+source cutoff sufficient for the target order. -/
+theorem mapQ_truncatedExpLieAction_of_gradedLieHom {a : ℕ} (k : ℕ)
+    (h : T.modulus k ≤ a)
+    (hψ : F.submodule (a + 1) ≤ (G.submodule (k + 1)).comap ψ)
+    (x : d.truncatedLie ℒ a) (z : F.quotient a) :
+    (F.submodule (a + 1)).mapQ (G.submodule (k + 1)) ψ
+        hψ
+        (F.truncatedExpLieAction d ℒ a x z) =
+      G.truncatedExpLieAction e ℒ' k (φ.truncatedMap k h x)
+        ((F.submodule (a + 1)).mapQ (G.submodule (k + 1)) ψ
+          hψ z) := by
+  let qψ := (F.submodule (a + 1)).mapQ (G.submodule (k + 1)) ψ
+    hψ
+  have hc : (G.truncatedLieAction e ℒ' k (φ.truncatedMap k h x)).comp qψ =
+      qψ.comp (F.truncatedLieAction d ℒ a x) := by
+    apply LinearMap.ext
+    intro z
+    obtain ⟨x, rfl⟩ := (d.degreeIdeal ℒ a).surjective_mkQ x
+    obtain ⟨m, rfl⟩ := (F.submodule (a + 1)).mkQ_surjective z
+    simp only [LinearMap.comp_apply, qψ, Submodule.mkQ_apply, Submodule.mapQ_apply,
+      LieIdeal.mkQ_apply, GradedLieHom.truncatedMap_mk, truncatedLieAction_mk,
+      quotientLieAction_mk, hequiv]
+  simpa only [truncatedExpLieAction_apply, LinearMap.comp_apply] using
+    (LinearMap.congr_fun (Module.End.commute_exp_left_of_commute
+      ⟨a + 1, F.truncatedLieAction_pow_eq_zero d ℒ a x⟩
+      ⟨k + 1, G.truncatedLieAction_pow_eq_zero e ℒ' k (φ.truncatedMap k h x)⟩ hc) z).symm
+
+end GeneralEquivariantMap
+
 section EquivariantMap
 
 variable {M' : Type*} [AddCommGroup M'] [Module R M']
@@ -202,19 +246,11 @@ theorem mapQ_truncatedExpLieAction (k : ℕ) (x : d.truncatedLie ℒ k)
         (F.truncatedExpLieAction d ℒ k x a) =
       G.truncatedExpLieAction d ℒ k x
         ((F.submodule (k + 1)).mapQ (G.submodule (k + 1)) f (hf k) a) := by
-  let qf := (F.submodule (k + 1)).mapQ (G.submodule (k + 1)) f (hf k)
-  have hc : (G.truncatedLieAction d ℒ k x).comp qf =
-      qf.comp (F.truncatedLieAction d ℒ k x) := by
-    apply LinearMap.ext
-    intro a
-    obtain ⟨x, rfl⟩ := (d.degreeIdeal ℒ k).surjective_mkQ x
-    obtain ⟨m, rfl⟩ := (F.submodule (k + 1)).mkQ_surjective a
-    simp only [LinearMap.comp_apply, LieIdeal.mkQ_apply, truncatedLieAction_mk,
-      Submodule.mkQ_apply, qf, Submodule.mapQ_apply, quotientLieAction_mk, hequiv]
-  simpa only [truncatedExpLieAction_apply, LinearMap.comp_apply] using
-    (LinearMap.congr_fun (Module.End.commute_exp_left_of_commute
-      ⟨k + 1, F.truncatedLieAction_pow_eq_zero d ℒ k x⟩
-      ⟨k + 1, G.truncatedLieAction_pow_eq_zero d ℒ k x⟩ hc) a).symm
+  simpa only [GradedLieHom.truncatedMap_id, LieHom.id_apply] using
+    F.mapQ_truncatedExpLieAction_of_gradedLieHom (d := d) (ℒ := ℒ) G
+      (GradedLieHom.id (d := d) ℒ) f
+      (fun x m => by simpa only [GradedLieHom.id_apply] using hequiv x m)
+      k (by simp) (hf k) x a
 
 /-- Equivariant filtration-preserving linear maps remain equivariant for exponential
 operators of completed Lie elements on completed coefficient modules. -/
