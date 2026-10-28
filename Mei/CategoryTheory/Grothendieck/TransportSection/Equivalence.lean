@@ -113,34 +113,9 @@ theorem ofSection_toSection (s : GrothendieckSection L) : ofSection s.toSection 
   apply toFunctor_injective
   exact ofSection_toFunctor s.toSection
 
-/-- A transformation between transport sections has identity base components. -/
-@[simp]
-theorem sectionHom_base {s t : GrothendieckSection L} (α : s.toSection ⟶ t.toSection) (d : D) :
-    ((CategoryTheory.Grothendieck.Section.hom α).app d).base = 𝟙 d := by
-  have h := CategoryTheory.Grothendieck.Section.hom_over α
-  erw [eqToHom_refl (C := D ⥤ D), Category.id_comp] at h
-  exact NatTrans.congr_app h d
-
-/-- The actual section constructed from transport data has the specified total functor. -/
-@[simp]
-theorem toSection_toFunctor (s : GrothendieckSection L) :
-    s.toSection.toFunctor = s.toFunctor := (rfl)
-
 /-- The actual section and its transport presentation have the same arrow components. -/
 private theorem toSection_toFunctor_map (s : GrothendieckSection L) {d e : D} (f : d ⟶ e) :
     s.toSection.toFunctor.map f = s.toFunctor.map f := (rfl)
-
-/-- An arrow of the total transport functor has its prescribed base and fiber components. -/
-private theorem toFunctor_map (s : GrothendieckSection L) {d e : D} (f : d ⟶ e) :
-    s.toFunctor.map f = ⟨f, s.map f⟩ := (rfl)
-
-/-- The transport arrow factors through the fiber inclusion in the target category. -/
-theorem toFunctor_map_factor (s : GrothendieckSection L) {d e : D} (f : d ⟶ e) :
-    s.toFunctor.map f =
-      (Grothendieck.ιNatTrans f).app (s.obj d) ≫ (Grothendieck.ι L e).map (s.map f) := by
-  rw [toFunctor_map]
-  exact (Grothendieck.ιNatTrans_app_comp_ι_map
-    (⟨f, s.map f⟩ : s.toFunctor.obj d ⟶ s.toFunctor.obj e)).symm
 
 /-- A component of a vertical section morphism, regarded in the actual fiber. -/
 private def sectionHomComponent {s t : GrothendieckSection L} (α : s.toSection ⟶ t.toSection)
