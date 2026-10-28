@@ -6,8 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Algebra.Lie.Graded.Truncation.Basic
-public import Mei.LinearAlgebra.ModuleFiltration.Completion
-public import TauCeti.LinearAlgebra.Submodule.CompleteFiltration
+public import Mei.LinearAlgebra.ModuleFiltration.Nilpotent
 
 /-!
 # Finite-order filtration-raising Lie actions
@@ -104,41 +103,33 @@ theorem quotientLieAction_mk (k : ℕ) (x : L) (m : M) :
     F.quotientLieAction d ℒ k x (Submodule.Quotient.mk m) =
       Submodule.Quotient.mk ⁅x, m⁆ := (rfl)
 
-/-- The underlying endomorphism is the standard induced map of module quotients. -/
-theorem quotientLieAction_eq_mapQ (k : ℕ) (x : L) :
+/-- The underlying endomorphism is the generic filtration-raising quotient map. -/
+theorem quotientLieAction_eq_quotientRaisingEnd (k : ℕ) (x : L) :
     F.quotientLieAction d ℒ k x =
-      (F.submodule (k + 1)).mapQ (F.submodule (k + 1)) (LieModule.toEnd R L M x)
-        (fun _ hm => F.antitone (Nat.le_succ (k + 1)) (F.lie_mem_succ d ℒ x hm)) := (rfl)
+      F.quotientRaisingEnd (LieModule.toEnd R L M x)
+        (fun _ _ hm => F.lie_mem_succ d ℒ x hm) k := by
+  exact (F.quotientRaisingEnd_eq_mapQ (LieModule.toEnd R L M x)
+    (fun _ _ hm => F.lie_mem_succ d ℒ x hm) k).symm
 
 /-- At order `k`, the `(k + 1)`st power of every acting endomorphism vanishes. -/
 theorem quotientLieAction_pow_eq_zero (k : ℕ) (x : L) :
     F.quotientLieAction d ℒ k x ^ (k + 1) = 0 := by
-  rw [quotientLieAction_eq_mapQ, ← Submodule.mapQ_pow]
-  apply LinearMap.ext
-  intro q
-  obtain ⟨m, rfl⟩ := (F.submodule (k + 1)).mkQ_surjective q
-  rw [Submodule.mkQ_apply, Submodule.mapQ_apply, LinearMap.zero_apply,
-    Submodule.Quotient.mk_eq_zero]
-  have h := Module.End.pow_apply_mem_of_map_le
-    (T := LieModule.toEnd R L M x) (F := F.submodule)
-    (fun b => by
-      rintro _ ⟨m, hm, rfl⟩
-      exact F.lie_mem_succ d ℒ x hm)
-    (by simp : m ∈ F.submodule 0) (k + 1)
-  simpa only [Nat.zero_add] using h
+  rw [quotientLieAction_eq_quotientRaisingEnd]
+  exact F.quotientRaisingEnd_pow_eq_zero _ _ k
 
 /-- Every finite-order acting endomorphism is nilpotent, over any commutative ring. -/
 theorem isNilpotent_quotientLieAction (k : ℕ) (x : L) :
-    IsNilpotent (F.quotientLieAction d ℒ k x) :=
-  ⟨k + 1, F.quotientLieAction_pow_eq_zero d ℒ k x⟩
+    IsNilpotent (F.quotientLieAction d ℒ k x) := by
+  rw [quotientLieAction_eq_quotientRaisingEnd]
+  exact F.isNilpotent_quotientRaisingEnd _ _ k
 
 /-- Coefficient transitions intertwine the finite-order representations. -/
 @[simp]
 theorem transition_quotientLieAction {k l : ℕ} (h : k ≤ l) (x : L) (q : F.quotient l) :
     F.transition h (F.quotientLieAction d ℒ l x q) =
       F.quotientLieAction d ℒ k x (F.transition h q) := by
-  obtain ⟨m, rfl⟩ := (F.submodule (l + 1)).mkQ_surjective q
-  simp
+  simp only [quotientLieAction_eq_quotientRaisingEnd]
+  exact F.transition_quotientRaisingEnd _ _ h q
 
 end Module
 
