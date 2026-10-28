@@ -20,6 +20,11 @@ transfers, regardless of the degree of the input.
 
 For doubling on `ℚ`, with both sides concentrated in degree zero, this gives
 `B^{0,0}(1) = 2` and `B^{0,η}(1) = 0` for `η ≠ 0`.
+
+The two transfer formulas and the two check values are not simp lemmas: `simp` already
+evaluates such transfers through `GradedCorrespondence.transfer_apply`, the `graph` field
+lemmas and `TauCeti.proj_trivialGrading`, and for the doubling graph through its field lemmas
+below.
 -/
 
 public section
@@ -57,6 +62,12 @@ noncomputable def double : ℚ ≃ₗ[ℚ] ℚ :=
 @[simp]
 theorem double_apply (a : ℚ) : double a = 2 * a := (rfl)
 
+/-- The inverse of doubling sends `a` to `2⁻¹ * a`. -/
+@[simp]
+theorem double_symm_apply (a : ℚ) : double.symm a = 2⁻¹ * a := by
+  rw [LinearEquiv.symm_apply_eq, double_apply, ← mul_assoc, mul_inv_cancel₀ two_ne_zero,
+    one_mul]
+
 /-- The graph of doubling, with `ℚ` concentrated in degree zero on both sides. -/
 noncomputable def doubleGraph :
     GradedCorrespondence (B := ℚ) (trivialGrading ℚ ℚ) (trivialGrading ℚ ℚ)
@@ -66,6 +77,28 @@ noncomputable def doubleGraph :
 /-- The doubling correspondence is the graph of `double`. -/
 theorem doubleGraph_def :
     doubleGraph = graph (trivialGrading ℚ ℚ) (trivialGrading ℚ ℚ) double := (rfl)
+
+/-- The left leg of the doubling graph is the identity. -/
+@[simp]
+theorem doubleGraph_left : doubleGraph.left = LinearMap.id := by
+  rw [doubleGraph_def, graph_left]
+
+/-- The right leg of the doubling graph is doubling. -/
+@[simp]
+theorem doubleGraph_right : doubleGraph.right = double.toLinearMap := by
+  rw [doubleGraph_def, graph_right]
+
+/-- The left lifts of the doubling graph are the inclusions. -/
+@[simp]
+theorem doubleGraph_liftLeft (i : (Set.univ : Set ℤ)) :
+    doubleGraph.liftLeft i = (trivialGrading ℚ ℚ i).subtype := by
+  rw [doubleGraph_def, graph_liftLeft]
+
+/-- The right lifts of the doubling graph are the inclusions followed by halving. -/
+@[simp]
+theorem doubleGraph_liftRight (j : (Set.univ : Set ℤ)) :
+    doubleGraph.liftRight j = double.symm.toLinearMap.comp (trivialGrading ℚ ℚ j).subtype := by
+  rw [doubleGraph_def, graph_liftRight]
 
 /-- The unit in degree zero, as an admissible homogeneous input. -/
 def unitInput : trivialGrading ℚ ℚ ((⟨0, Set.mem_univ 0⟩ : (Set.univ : Set ℤ)) : ℤ) :=
