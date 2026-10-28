@@ -9,7 +9,7 @@ public import Mathlib.Topology.Sheaves.Sheaf
 public import Mathlib.Topology.Connected.Basic
 
 /-!
-# Locally constant sheaves of types
+# Locally bijective restrictions to preconnected opens
 
 A sheaf satisfies the restriction-sense local-constancy condition when every
 point has an open neighborhood whose sections restrict bijectively to each
@@ -33,7 +33,7 @@ variable {X : TopCat.{u}}
 nonempty preconnected subopens of a sufficiently small neighborhood. On locally
 connected spaces this agrees with the usual locally constant sheaf condition.
 On arbitrary spaces the conditions can differ, and this criterion can be vacuous. -/
-class IsLocallyConstant (F : X.Sheaf (Type v)) : Prop where
+class HasLocallyBijectivePreconnectedRestrictions (F : X.Sheaf (Type v)) : Prop where
   /-- Each point has an open neighborhood with the local restriction property. -/
   exists_bijective_restrictions (x : X) :
     ∃ U : Opens X, x ∈ U ∧ ∀ (V : Opens X) (hVU : V ≤ U),
