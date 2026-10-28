@@ -38,18 +38,6 @@ theorem monomial_mul_mem_shiftedSubmodule {x : QuantumMonoidAlgebra q β}
     simpa only [add_zero] using (mem_grade_iff q β p _).mpr ⟨1, one_smul _ _⟩
   exact shiftedSubmodule_mul_le (grade q β) P p s (Submodule.mul_mem_mul hp hx)
 
-private theorem diagonal_smul_monomial_neg_mul :
-    ((q ^ β p p : Rˣ) : R) • (monomial q β (-p) * monomial q β p) = 1 := by
-  simp only [monomial_mul, map_neg, LinearMap.neg_apply, neg_add_cancel, monomial_zero,
-    smul_smul, ← Units.val_mul, ← zpow_add, add_neg_cancel, zpow_zero, Units.val_one,
-    one_smul]
-
-private theorem diagonal_smul_monomial_mul_neg :
-    ((q ^ β p p : Rˣ) : R) • (monomial q β p * monomial q β (-p)) = 1 := by
-  simp only [monomial_mul, map_neg, add_neg_cancel, monomial_zero,
-    smul_smul, ← Units.val_mul, ← zpow_add, add_neg_cancel, zpow_zero, Units.val_one,
-    one_smul]
-
 /-- Multiplication by a monomial is a linear equivalence between translated supports. -/
 def shiftedMonomialEquiv :
     shiftedSubmodule (grade q β) P s ≃ₗ[R]
