@@ -216,6 +216,16 @@ theorem sectionFunctor_obj (s : GrothendieckSection L) :
 theorem sectionFunctor_map {s t : GrothendieckSection L} (α : s ⟶ t) :
     sectionFunctor.map α = toSectionHom α := (rfl)
 
+instance : (sectionFunctor (L := L)).Faithful where
+  map_injective {s t} α β h := by
+    apply Hom.ext
+    funext d
+    apply (Grothendieck.ι L d).map_injective
+    have hd := congrArg (fun γ => (CategoryTheory.Grothendieck.Section.hom γ).app d) h
+    rw [sectionFunctor_map, sectionFunctor_map, hom_toSectionHom, hom_toSectionHom,
+      toNatTrans_app, toNatTrans_app] at hd
+    exact hd
+
 /-- The total functor factors through the existing section category and its inclusion. -/
 def totalFunctor : GrothendieckSection L ⥤ (D ⥤ Grothendieck L) :=
   sectionFunctor ⋙ CategoryTheory.Functor.Fiber.fiberInclusion
