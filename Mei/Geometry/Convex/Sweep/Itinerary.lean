@@ -9,12 +9,15 @@ public import Mei.Geometry.Convex.Sweep.Topology
 public import TauCeti.Analysis.Convex.Polyhedron.Basic
 
 /-!
-# Backward affine propagation along a fixed transverse itinerary
+# Backward affine propagation along a fixed itinerary
 
-Starting at an endpoint, successively meet specified hyperplanes along specified
-vectors. The encounter points and elapsed times are continuous affine functions
-of the endpoint, obtained by composing the existing `sweepProjection` maps.
-Transversality gives uniqueness, without a genericity assumption.
+Starting at an endpoint, propagate backwards along specified vectors toward
+specified hyperplanes. The propagation points and times are continuous affine
+functions of the endpoint, obtained by composing the existing `sweepProjection`
+maps. A step is an actual hyperplane encounter when `f i (v i) ≠ 0`; this
+transversality also gives uniqueness, without a genericity assumption. When
+`f i (v i) = 0`, the totalized formulas assign zero time and leave the point
+unchanged, which may lie outside the selected hyperplane.
 
 The vectors point backwards along the itinerary. For a broken line with forward
 velocity `-ρ(p)`, use `ρ(p)` here; positive elapsed times impose the correct order.
@@ -32,8 +35,9 @@ namespace Mei.Convex
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   {n : ℕ} (f : Fin n → V →L[ℝ] ℝ) (c : Fin n → ℝ) (v : Fin n → V)
 
-/-- The encounter points, as affine functions of the final endpoint. Index zero
-is the endpoint; each successor is the preceding encounter in backward order. -/
+/-- Backward propagation points as affine functions of the endpoint. A transverse
+step encounters its selected hyperplane; a tangent step leaves its point unchanged.
+Index zero is the endpoint. -/
 def backwardPoint : Fin (n + 1) → (V →ᴬ[ℝ] V) :=
   Fin.induction (ContinuousAffineMap.id ℝ V)
     (fun i X => (sweepProjection (f i) (c i) ((f i (v i))⁻¹ • v i)).comp X)
@@ -43,15 +47,16 @@ def backwardPoint : Fin (n + 1) → (V →ᴬ[ℝ] V) :=
 theorem backwardPoint_zero : backwardPoint f c v 0 = ContinuousAffineMap.id ℝ V := by
   simp only [backwardPoint, Fin.induction_zero]
 
-/-- Each encounter is obtained by the normalized transverse sweep projection. -/
+/-- Each propagation step uses the normalized sweep; a tangent step is the identity. -/
 theorem backwardPoint_succ (i : Fin n) :
     backwardPoint f c v i.succ =
       (sweepProjection (f i) (c i) ((f i (v i))⁻¹ • v i)).comp
         (backwardPoint f c v i.castSucc) := by
   simp only [backwardPoint, Fin.induction_succ]
 
-/-- Elapsed backward time to the next selected hyperplane. Its positivity, rather
-than the sign of the unnormalized height difference, orders the encounters. -/
+/-- The backward-time formula, zero at tangent steps. At a transverse step this is
+the physical elapsed time to the next selected hyperplane; its positivity orders
+the encounters independently of the sign of the unnormalized height difference. -/
 def backwardTime (i : Fin n) : V →ᴬ[ℝ] ℝ :=
   (f i (v i))⁻¹ • (ContinuousAffineMap.const ℝ V (c i) -
     (f i).toContinuousAffineMap.comp (backwardPoint f c v i.castSucc))
@@ -65,8 +70,8 @@ theorem backwardTime_apply (i : Fin n) (Q : V) :
     ContinuousAffineMap.coe_const, Function.const_apply, ContinuousAffineMap.comp_apply,
     ContinuousLinearMap.coe_toContinuousAffineMap, smul_eq_mul, div_eq_mul_inv, mul_comm]
 
-/-- Successive encounter points are separated by the elapsed time times the
-specified backward velocity. -/
+/-- Successive propagation points differ by the backward-time formula times the
+specified velocity, including tangent steps with zero time. -/
 @[simp]
 theorem backwardPoint_succ_apply (i : Fin n) (Q : V) :
     backwardPoint f c v i.succ Q = backwardPoint f c v i.castSucc Q +
@@ -103,7 +108,7 @@ theorem backward_unique (hf : ∀ i, f i (v i) ≠ 0) (Q : V)
   exact ⟨hp, fun i => by rw [htime, backwardTime_apply, hp]⟩
 
 /-- Rescaling each normal and its level by the same nonzero scalar preserves
-all encounter points and physical backward times, including negative scalars. -/
+all propagation points and time formulas, including tangent steps and negative scalars. -/
 theorem backward_rescale (a : Fin n → ℝ) (ha : ∀ i, a i ≠ 0) (Q : V) :
     (∀ i, backwardPoint (fun j => a j • f j) (fun j => a j * c j) v i Q =
       backwardPoint f c v i Q) ∧
@@ -166,6 +171,21 @@ theorem convex_backwardDomain {P : Fin n → Set V} (hP : ∀ i, Convex ℝ (P i
     ((convex_Ioi (0 : ℝ)).affine_preimage (backwardTime f c v i).toAffineMap).inter
       ((hP i).affine_preimage (backwardPoint f c v i.succ).toAffineMap)
 
+/-- Convex support constraints give a convex weak endpoint domain, even when
+no strict endpoint exists. -/
+theorem convex_weakBackwardDomain {P : Fin n → Set V} (hP : ∀ i, Convex ℝ (P i)) :
+    Convex ℝ (weakBackwardDomain f c v P) := by
+  have he : weakBackwardDomain f c v P = ⋂ i,
+      (backwardTime f c v i) ⁻¹' Set.Ici 0 ∩
+        (backwardPoint f c v i.succ) ⁻¹' P i := by
+    ext Q
+    simp only [mem_weakBackwardDomain, Set.mem_iInter, Set.mem_inter_iff,
+      Set.mem_preimage, Set.mem_Ici]
+  rw [he]
+  exact convex_iInter fun i =>
+    ((convex_Ici (0 : ℝ)).affine_preimage (backwardTime f c v i).toAffineMap).inter
+      ((hP i).affine_preimage (backwardPoint f c v i.succ).toAffineMap)
+
 /-- Closed support constraints give a closed weak endpoint domain. -/
 theorem isClosed_weakBackwardDomain {P : Fin n → Set V} (hP : ∀ i, IsClosed (P i)) :
     IsClosed (weakBackwardDomain f c v P) := by
@@ -180,21 +200,29 @@ theorem isClosed_weakBackwardDomain {P : Fin n → Set V} (hP : ∀ i, IsClosed 
     (isClosed_Ici.preimage (backwardTime f c v i).continuous).inter
       ((hP i).preimage (backwardPoint f c v i.succ).continuous)
 
-/-- Strict times define an open condition inside the closed support-incidence
-locus, so the strict endpoint domain is locally closed. -/
+/-- Locally closed support constraints give a locally closed strict endpoint domain. -/
 theorem isLocallyClosed_backwardDomain {P : Fin n → Set V}
-    (hP : ∀ i, IsClosed (P i)) : IsLocallyClosed (backwardDomain f c v P) := by
-  have he : backwardDomain f c v P =
-      (⋂ i, (backwardTime f c v i) ⁻¹' Set.Ioi 0) ∩
-      (⋂ i, (backwardPoint f c v i.succ) ⁻¹' P i) := by
+    (hP : ∀ i, IsLocallyClosed (P i)) : IsLocallyClosed (backwardDomain f c v P) := by
+  classical
+  choose U Z hU hZ he using fun i =>
+    (hP i).preimage (backwardPoint f c v i.succ).continuous
+  have hd : backwardDomain f c v P =
+      (⋂ i, (backwardTime f c v i) ⁻¹' Set.Ioi 0 ∩ U i) ∩ ⋂ i, Z i := by
     ext Q
     simp only [mem_backwardDomain, Set.mem_inter_iff, Set.mem_iInter,
-      Set.mem_preimage, Set.mem_Ioi, forall_and]
-  rw [he]
+      Set.mem_preimage, Set.mem_Ioi]
+    constructor
+    · intro h
+      have hm (i) : Q ∈ U i ∩ Z i := by rw [← he i]; exact (h i).2
+      exact ⟨fun i => ⟨(h i).1, (hm i).1⟩, fun i => (hm i).2⟩
+    · rintro ⟨h, hz⟩ i
+      refine ⟨(h i).1, ?_⟩
+      have hm : Q ∈ U i ∩ Z i := ⟨(h i).2, hz i⟩
+      rwa [← he i] at hm
+  rw [hd]
   exact (isOpen_iInter_of_finite fun i =>
-    isOpen_Ioi.preimage (backwardTime f c v i).continuous).isLocallyClosed.inter
-      (isClosed_iInter fun i => (hP i).preimage
-        (backwardPoint f c v i.succ).continuous).isLocallyClosed
+    (isOpen_Ioi.preimage (backwardTime f c v i).continuous).inter (hU i)).isLocallyClosed.inter
+      (isClosed_iInter hZ).isLocallyClosed
 
 /-- Polyhedral support constraints pull back to a polyhedron when zero elapsed
 times are admitted. No boundedness or finite-dimensionality is assumed. -/
