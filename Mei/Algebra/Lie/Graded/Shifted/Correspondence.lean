@@ -5,9 +5,9 @@ Authors: Codex
 -/
 module
 
-public import Mei.Algebra.Lie.Graded.Shifted
+public import Mei.Algebra.Lie.Graded.Shifted.Basic
 public import Mei.Algebra.Lie.Filtered.BCH
-public import Mei.LinearAlgebra.GradedModule.ShiftedQuotient
+public import Mei.LinearAlgebra.GradedModule.Shifted.Quotient
 public import Mei.LinearAlgebra.GradedCorrespondence.Hom
 
 /-!
