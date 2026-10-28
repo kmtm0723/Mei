@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.RingTheory.FilteredAlgebra.Exp
+public import Mei.RingTheory.FilteredAlgebra.Exp.Basic
 public import Mei.RingTheory.FilteredAlgebra.Map
 
 /-!
@@ -29,23 +29,6 @@ variable {A B : Type*} [Ring A] [Ring B]
   (f : A →+* B) (l : ℕ → ℕ) (hl : Monotone l)
   (hf : ∀ k, F.ideal (l k + 1) ≤ (G.ideal (k + 1)).comap f)
   (h₁ : F.ideal 1 ≤ (G.ideal 1).comap f)
-
-include h₁ in
-/-- A map preserving the first original ideal preserves the first completed ideal,
-even when its chosen cutoff modulus does not send zero to zero. -/
-theorem mapCompletion_mem_first {x : F.completion} (hx : x ∈ F.completionIdeal 1) :
-    F.mapCompletion G f l hl hf x ∈ G.completionIdeal 1 := by
-  have hx₀ : F.projection 0 x = 0 := by
-    simpa only [completionIdeal_succ, RingHom.mem_ker] using hx
-  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (F.projection (l 0) x)
-  have ha₀ : Ideal.Quotient.mk (F.ideal 1) a = 0 := by
-    have he := F.factor_projection (Nat.zero_le (l 0)) x
-    rw [← ha, Ideal.Quotient.factor_mk, hx₀] at he
-    exact he
-  have hfa := h₁ ((Ideal.Quotient.eq_zero_iff_mem).mp ha₀)
-  rw [completionIdeal_succ, RingHom.mem_ker,
-    projection_mapCompletion, ← ha, Ideal.quotientMap_mk]
-  exact Ideal.Quotient.eq_zero_iff_mem.mpr hfa
 
 variable [Algebra ℚ A] [Algebra ℚ B]
 
