@@ -7,7 +7,6 @@ module
 
 public import Mei.Geometry.Toric.Algebraic.RationalFunctional
 public import Mei.Analysis.Convex.Exposed
-public import Mei.LinearAlgebra.AffineSpace.Equiv
 public import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
@@ -215,14 +214,6 @@ noncomputable def ofLatticeEquiv (h : IsIntegralLattice i) (h' : IsIntegralLatti
     (h' : IsIntegralLattice i') (σ : N ≃+ N') :
     (ofLatticeEquiv h h' σ).latticeEquiv = σ := by rfl
 
-/-- The real linear part of the zero-translation lift is scalar extension. -/
-theorem ofLatticeEquiv_linear (h : IsIntegralLattice i)
-    (h' : IsIntegralLattice i') (σ : N ≃+ N') :
-    (ofLatticeEquiv h h' σ).toAffineEquiv.linear.toLinearMap =
-      h.extend i' σ.toAddMonoidHom := by
-  rw [ofLatticeEquiv_toAffineEquiv, LinearEquiv.linear_toAffineEquiv,
-    IsIntegralLattice.extendEquiv_toLinearMap]
-
 /-- Extending the identity lattice equivalence gives the identity affine equivalence. -/
 @[simp] theorem ofLatticeEquiv_refl (h : IsIntegralLattice i) :
     ofLatticeEquiv h h (AddEquiv.refl N) = refl h := by
@@ -347,12 +338,6 @@ noncomputable def latticeLift : Multiplicative (AddAut N) →* IntegralAffineEqu
 /-- The affine projection of a lifted lattice automorphism is its zero-translation extension. -/
 @[simp] theorem latticeLift_toAffineEquiv (σ : Multiplicative (AddAut N)) :
     (latticeLift h σ).toAffineEquiv = (h.extendEquiv h σ.toAdd).toAffineEquiv := by rfl
-
-/-- The real linear part of the lifted lattice automorphism is scalar extension. -/
-theorem latticeLift_linear (σ : Multiplicative (AddAut N)) :
-    (latticeLift h σ).toAffineEquiv.linear.toLinearMap =
-      h.extend i σ.toAdd.toAddMonoidHom :=
-  ofLatticeEquiv_linear h h σ.toAdd
 
 /-- The lift retains its input lattice automorphism. -/
 @[simp] theorem latticeLift_latticeEquiv (σ : Multiplicative (AddAut N)) :
