@@ -7,7 +7,7 @@ module
 
 public import Mei.Algebra.Lie.Filtered.BCH
 public import Mei.LinearAlgebra.ModuleFiltration.Bilinear
-public import Mei.LinearAlgebra.End.BilinearExp
+public import Mei.LinearAlgebra.End.Exp
 
 /-!
 # BCH actions and filtered bilinear pairings
