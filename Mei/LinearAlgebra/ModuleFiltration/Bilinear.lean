@@ -127,8 +127,7 @@ variable {M' N' P' : Type*}
   (hw : ∀ k, H.submodule (τ k + 1) ≤ (H'.submodule (k + 1)).comap w)
 
 /-- Linear maps intertwining bilinear pairings also intertwine their completions.
-The three maps may use independent cutoff moduli; a common finer cutoff computes
-all three projections using the same original representatives. -/
+The three linear maps may use independent cutoff moduli. -/
 theorem completionMap_completionBilinear (h : ∀ x y, w (f x y) = f' (u x) (v y))
     (x : F.completion) (y : G.completion) :
     H.completionMap H' w τ hτ hw (completionBilinear F G H f hf x y) =
@@ -136,6 +135,7 @@ theorem completionMap_completionBilinear (h : ∀ x y, w (f x y) = f' (u x) (v y
         (F.completionMap F' u ρ hρ hu x) (G.completionMap G' v σ hσ hv y) := by
   apply H'.completion_ext
   intro k
+  -- A common finer cutoff computes all three projections using the same representatives.
   let n := max (ρ k) (max (σ k) (τ k))
   have hρn : ρ k ≤ n := le_max_left _ _
   have hσn : σ k ≤ n := (le_max_left _ _).trans (le_max_right _ _)
