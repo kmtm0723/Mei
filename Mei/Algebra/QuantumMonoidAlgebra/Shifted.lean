@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Algebra.QuantumMonoidAlgebra.Basic
-public import Mei.RingTheory.GradedAlgebra.Shifted
+public import Mei.RingTheory.GradedAlgebra.Shifted.Basic
 public import Mei.LinearAlgebra.ModuleFiltration.Equiv
 public import Mei.Algebra.DirectSum.Degree.Map
 
