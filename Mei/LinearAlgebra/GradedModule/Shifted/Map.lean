@@ -101,8 +101,8 @@ theorem shiftedMap_mem_shiftedFiltration (k : ℕ)
         Submodule.subtype_apply, coe_shiftedMap]
       apply Mei.DirectSum.le_degreeTail 𝓝 _ (i := T (p + n))
       · have hd := T.degree_gt k hn n.property
-        simpa only [map_add, add_sub_cancel_left, Nat.cast_add, Nat.cast_one] using
-          (show (k : ℤ) + 1 ≤ e.degree (T n) by omega)
+        simp only [map_add, add_sub_cancel_left, Nat.cast_add, Nat.cast_one]
+        omega
       · exact hf (p + n) ((mem_shiftedGrading ℳ d.monoid p).mp hx)
     · rw [shiftedGrading_eq_bot ℳ d.monoid p hn, Submodule.mem_bot] at hx
       simp [hx]
