@@ -68,6 +68,7 @@ theorem shiftedCompletedMap_completedBCHAction
   rw [shiftedCompletedMap_def]
   exact (d.shiftedLieFiltration ℒ ℳ p).completionMap_completedBCHAction_of_gradedLieHom
     (e.shiftedLieFiltration ℒ' 𝓝 (T p)) φ ψ
+    T.modulus T.monotone_modulus
     (fun k _ hx => T.shiftedMap_mem_shiftedFiltration ℳ 𝓝 p f hf k hx) hrestricted g a
 
 end Mei.PositiveDegreeMap
