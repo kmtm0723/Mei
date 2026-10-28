@@ -16,7 +16,9 @@ The strictly positive quantum Lie algebra embeds in every quantum coefficient
 algebra whose allowed monoid contains the positive Lie degrees. Restricting the
 commutator along this embedding gives a graded action by derivations. If the
 coefficient degrees are nonnegative, the action raises their degree filtration.
-The existing filtered exponential and completed BCH actions therefore apply;
+The action and filtration statements hold over arbitrary commutative rings.
+When the coefficient ring additionally carries an `Algebra ℚ R` structure, the
+existing filtered exponential and completed BCH actions apply;
 `AlgFiltration.expAction_apply_eq_completedExp_mul` identifies the exponential
 with conjugation by the completed exponential of the included Lie element.
 
@@ -41,7 +43,7 @@ variable {R Γ : Type*} [CommRing R] [AddCommGroup Γ]
 
 /-- Positive quantum Lie elements belong to every coefficient algebra containing
 their allowed exponent monoid. -/
-theorem positiveLieAlgebra_le_coefficientSubalgebra (hQ : d.monoid ≤ Q) :
+theorem positiveLieAlgebra_le_positiveSubalgebra_of_le (hQ : d.monoid ≤ Q) :
     (positiveLieAlgebra q β d).toSubmodule ≤ (positiveSubalgebra q β Q).toSubmodule := by
   classical
   intro x hx
@@ -55,7 +57,7 @@ def coefficientLieHom (hQ : d.monoid ≤ Q) :
     positiveLieAlgebra q β d →ₗ⁅R⁆ positiveSubalgebra q β Q where
   toLinearMap := (positiveLieAlgebra q β d).toSubmodule.subtype.codRestrict
     (positiveSubalgebra q β Q).toSubmodule
-    (fun x => positiveLieAlgebra_le_coefficientSubalgebra q β d Q hQ x.property)
+    (fun x => positiveLieAlgebra_le_positiveSubalgebra_of_le q β d Q hQ x.property)
   map_lie' {x y} := by
     apply Subtype.ext
     rfl
@@ -88,16 +90,9 @@ theorem coefficientLieHom_mem_positiveFiltration {k : ℕ} {x : positiveLieAlgeb
       coefficientLieHom_mem_grading q β d Q hQ hx) k
   have hx' := h (Submodule.mem_map.mpr ⟨x, by
     simpa only [PositiveDegreeMap.id_modulus] using hx, rfl⟩)
-  rw [mem_positiveFiltration_iff]
-  intro n hn
-  have hz := (d.mem_degreeSubmodule_iff
-    ((positiveSubalgebra q β Q).grading (grade q β))).mp hx' n (by omega)
-  apply (decompose_eq_zero_iff q β _ n).mp
-  have he := congrArg (fun a : positiveSubalgebra q β Q =>
-    (a : QuantumMonoidAlgebra q β)) hz
-  simp only [Subalgebra.coe_decompose_grading, ZeroMemClass.coe_zero] at he
-  apply Subtype.ext
-  exact he
+  rw [d.degreeSubmodule_eq_degreeTail] at hx'
+  rw [← Submodule.restrictScalars_mem R, positiveFiltration_ideal_restrictScalars]
+  exact hx'
 
 namespace QuantumCoefficientAction
 
@@ -128,12 +123,10 @@ scoped instance instGradedBracket :
     intro n p x a hx ha
     rw [lie_eq]
     apply (Subalgebra.mem_grading_iff _ _).mpr
-    exact (grade q β (n + p)).sub_mem
-      (SetLike.mul_mem_graded ((mem_positiveLieGrading q β d n x).mp hx)
-        ((Subalgebra.mem_grading_iff _ _).mp ha))
-      (add_comm p n ▸ SetLike.mul_mem_graded
+    simpa only [Ring.lie_def, Subalgebra.coe_sub, Subalgebra.coe_mul,
+      coe_coefficientLieHom] using
+      SetLike.GradedBracket.bracket_mem ((mem_positiveLieGrading q β d n x).mp hx)
         ((Subalgebra.mem_grading_iff _ _).mp ha)
-        ((mem_positiveLieGrading q β d n x).mp hx))
 
 /-- Inner quantum coefficient actions satisfy the associative Leibniz rule. -/
 scoped instance instIsDerivationAction :
@@ -147,8 +140,8 @@ scoped instance instIsFiltrationRaising :
   lie_mem {a b x y} hx hy := by
     let F := positiveFiltration q β Q d.degree hδ
     have hx' := coefficientLieHom_mem_positiveFiltration q β d Q Fact.out hδ hx
-    change y ∈ F.ideal b at hy
-    change ⁅x, y⁆ ∈ F.ideal (a + b + 1)
+    rw [AlgFiltration.toModuleFiltration_submodule,
+      Submodule.restrictScalars_mem] at hy ⊢
     rw [lie_eq]
     exact (F.ideal _).sub_mem (by simpa [Nat.add_assoc, Nat.add_comm 1 b] using F.mul_mem hx' hy)
       (by simpa [Nat.add_assoc, Nat.add_comm b a, Nat.add_left_comm] using F.mul_mem hy hx')
