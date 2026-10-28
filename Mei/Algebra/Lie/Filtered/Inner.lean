@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Algebra.Lie.Filtered.Exp
-public import Mei.RingTheory.FilteredAlgebra.Exp
+public import Mei.RingTheory.FilteredAlgebra.Exp.Basic
 public import TauCeti.Algebra.Lie.InnerAutomorphism
 
 /-!
