@@ -24,7 +24,8 @@ map at incident edges, induce a natural transformation of the transfer functors.
 This proves compatibility along arbitrary admissible sequences, including coefficient
 truncations. It does not assert invertibility of a selected homogeneous component.
 
-Only source degrees of arrows must be admissible. A terminal vertex needs no lift,
+Each arrow has independent left and right admissible sets. Only its source degree
+must be admissible on its left side. A terminal vertex needs no lift,
 so its selected degree may lie outside the admissible set. The prefunctor and functor
 bodies are exposed to compute their object types; value calculations use the public
 object, edge, and natural-transformation component lemmas below.
@@ -45,14 +46,15 @@ variable {R Q : Type*} [Semiring R] [Quiver Q]
   {M : Q → Type v} [∀ q, AddCommMonoid (M q)] [∀ q, Module R (M q)]
   {ι : Q → Type*} [∀ q, DecidableEq (ι q)]
   (𝒜 : ∀ q, ι q → Submodule R (M q)) [∀ q, DirectSum.Decomposition (𝒜 q)]
-  {I : ∀ q, Set (ι q)}
+  {I : ∀ {u v : Q}, (u ⟶ v) → Set (ι u)}
+  {J : ∀ {u v : Q}, (u ⟶ v) → Set (ι v)}
   {B : ∀ {u v : Q}, (u ⟶ v) → Type*}
   [∀ (u v : Q) (e : u ⟶ v), AddCommMonoid (B e)]
   [∀ (u v : Q) (e : u ⟶ v), Module R (B e)]
   (C : ∀ {u v : Q} (e : u ⟶ v),
-    GradedCorrespondence (B := B e) (𝒜 u) (𝒜 v) (I u) (I v))
+    GradedCorrespondence (B := B e) (𝒜 u) (𝒜 v) (I e) (J e))
   (p : ∀ q, ι q)
-  (hp : ∀ {u v : Q} (_e : u ⟶ v), p u ∈ I u)
+  (hp : ∀ {u v : Q} (e : u ⟶ v), p u ∈ I e)
 
 /-- Select one homogeneous transfer on every arrow of an admissible itinerary quiver. -/
 @[expose]
@@ -97,9 +99,10 @@ variable {M' : Q → Type v} [∀ q, AddCommMonoid (M' q)] [∀ q, Module R (M' 
   {B' : ∀ {u v : Q}, (u ⟶ v) → Type*}
   [∀ (u v : Q) (e : u ⟶ v), AddCommMonoid (B' e)]
   [∀ (u v : Q) (e : u ⟶ v), Module R (B' e)]
-  {I' : ∀ q, Set (ι q)}
+  {I' : ∀ {u v : Q}, (u ⟶ v) → Set (ι u)}
+  {J' : ∀ {u v : Q}, (u ⟶ v) → Set (ι v)}
   (D : ∀ {u v : Q} (e : u ⟶ v),
-    GradedCorrespondence (B := B' e) (𝒜' u) (𝒜' v) (I' u) (I' v))
+    GradedCorrespondence (B := B' e) (𝒜' u) (𝒜' v) (I' e) (J' e))
   (r : ∀ q, M q →ₗ[R] M' q)
   (hr : ∀ q i a, a ∈ 𝒜 q i → r q a ∈ 𝒜' q i)
 
