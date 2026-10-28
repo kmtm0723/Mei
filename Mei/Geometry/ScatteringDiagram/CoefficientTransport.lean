@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Geometry.ScatteringDiagram.Finite
-public import Mei.Geometry.Convex.PolyhedralComplex.RegularFilling
+public import Mei.Geometry.Convex.PolyhedralComplex.Filling.Regular
 public import Mathlib.Algebra.Group.Action.Basic
 
 /-!
@@ -66,11 +66,20 @@ theorem coefficientPathTransport_nil :
   simp
 
 /-- Successive paths transport coefficients in traversal order. -/
+@[simp]
 theorem coefficientPathTransport_comp (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y z) :
     D.coefficientPathTransport M (p.comp q) =
       (D.coefficientPathTransport M p).trans (D.coefficientPathTransport M q) := by
   ext a
   simp [mul_smul]
+
+/-- Appending a segment transports along the previous path and then that segment. -/
+@[simp]
+theorem coefficientPathTransport_cons (p : AdmissiblePLPath x y) (e : y ⟶ z) :
+    D.coefficientPathTransport M (p.cons e) =
+      (D.coefficientPathTransport M p).trans (D.coefficientPathTransport M e.toPath) := by
+  ext a
+  simp only [Equiv.trans_apply, coefficientPathTransport_apply, pathProduct_cons, mul_smul]
 
 /-- Reversing a path inverts its coefficient transport. -/
 @[simp]
