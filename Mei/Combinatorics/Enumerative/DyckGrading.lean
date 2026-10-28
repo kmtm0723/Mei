@@ -10,6 +10,7 @@ public import Mei.Combinatorics.Enumerative.CyclicMatching
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.Fintype.Fin
+import Mathlib.Tactic.FinCases
 
 /-!
 # Compatible gradings of maximal Dyck paths
@@ -354,6 +355,62 @@ theorem eq_zero_of_totals_eq_zero (h₁ : verticalTotal γ = 0) (h₂ : horizont
   · exact h₁ e he
 
 end Grading
+
+/-- On the path `UDD`, grading the first and last edges by one gives a nondegenerate
+shadowed, tight grading. Both totals are one, and `p d₂ - q d₁ = 1`. The horizontal
+support lies in the total vertical shadow; the vertical support does not lie in the
+horizontal shadow. -/
+theorem exists_tight_one_two :
+    ∃ γ : Edge 1 2 → ℕ, verticalTotal γ = 1 ∧ horizontalTotal γ = 1 ∧
+      Shadowed γ ∧ Tight γ ∧ ¬verticalSupport γ ⊆ totalHorizontalShadow γ := by
+  have hH : horizontalEdges 1 2 = {0} := by
+    ext e
+    fin_cases e <;> simp [horizontalEdges, step, maximalDyckPath_of_ne_zero (d₁ := 1) 2 (by decide),
+      List.range_succ]
+  have hV : verticalEdges 1 2 = {1, 2} := by
+    ext e
+    fin_cases e <;> simp [verticalEdges, step, maximalDyckPath_of_ne_zero (d₁ := 1) 2 (by decide),
+      List.range_succ]
+  have hI (e e' : Edge 1 2) :
+      cyclicIcc e e' = ({k | (k - e).val ≤ (e' - e).val} : Finset (Edge 1 2)) := by
+    ext k
+    simp [mem_cyclicIcc]
+  refine ⟨fun e ↦ if e.val = 1 then 0 else 1, ?_⟩
+  simp only [Tight, Shadowed, verticalTotal, horizontalTotal, Compatible, Finset.subset_iff,
+    mem_horizontalSupport, mem_verticalSupport, mem_totalHorizontalShadow,
+    mem_totalVerticalShadow, mem_horizontalShadow, mem_verticalShadow,
+    VerticalBalanced, HorizontalBalanced, hH, hV]
+  simp only [hI]
+  have hcard : #(({x : Fin 3 | x - 1 ≤ 1} : Finset (Fin 3)) ∩ {0}) ≠ 1 := by decide
+  simpa [Fin.forall_fin_succ, Fin.exists_fin_succ] using hcard
+
+/-- On the path `UUD`, grading the first and last edges by one gives a nondegenerate
+shadowed, tight grading. Both totals are one, and `p d₂ - q d₁ = -1`. Here the vertical
+support lies in the total horizontal shadow; the horizontal support does not lie in
+the vertical shadow. Thus this example uses the other alternative in `Shadowed`. -/
+theorem exists_tight_two_one :
+    ∃ γ : Edge 2 1 → ℕ, verticalTotal γ = 1 ∧ horizontalTotal γ = 1 ∧
+      Shadowed γ ∧ Tight γ ∧ ¬horizontalSupport γ ⊆ totalVerticalShadow γ := by
+  have hH : horizontalEdges 2 1 = {0, 1} := by
+    ext e
+    fin_cases e <;> simp [horizontalEdges, step, maximalDyckPath_of_ne_zero (d₁ := 2) 1 (by decide),
+      List.range_succ]
+  have hV : verticalEdges 2 1 = {2} := by
+    ext e
+    fin_cases e <;> simp [verticalEdges, step, maximalDyckPath_of_ne_zero (d₁ := 2) 1 (by decide),
+      List.range_succ]
+  have hI (e e' : Edge 2 1) :
+      cyclicIcc e e' = ({k | (k - e).val ≤ (e' - e).val} : Finset (Edge 2 1)) := by
+    ext k
+    simp [mem_cyclicIcc]
+  refine ⟨fun e ↦ if e.val = 1 then 0 else 1, ?_⟩
+  simp only [Tight, Shadowed, verticalTotal, horizontalTotal, Compatible, Finset.subset_iff,
+    mem_horizontalSupport, mem_verticalSupport, mem_totalHorizontalShadow,
+    mem_totalVerticalShadow, mem_horizontalShadow, mem_verticalShadow,
+    VerticalBalanced, HorizontalBalanced, hH, hV]
+  simp only [hI]
+  have hcard : #(({x : Fin 3 | x - 1 ≤ 1} : Finset (Fin 3)) ∩ {0, 1}) = 1 := by decide
+  simpa [Fin.forall_fin_succ, Fin.exists_fin_succ] using hcard
 
 section Weights
 
