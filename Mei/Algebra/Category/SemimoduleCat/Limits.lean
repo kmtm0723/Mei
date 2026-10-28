@@ -16,6 +16,11 @@ public import Mathlib.Algebra.Module.Shrink
 Matching families give small limits of semimodule diagrams over arbitrary
 semirings. The limit projections are linear evaluations, and the forgetful
 functor preserves these limits. No additive inverses are required.
+
+The size handling follows Mathlib's module-limit construction in
+`Mathlib.Algebra.Category.ModuleCat.Limits`: shrink the matching-family carrier
+into the coefficient universe and transport its universal property. The present
+construction uses `SemimoduleCat R` over a semiring.
 -/
 
 public section
@@ -113,11 +118,12 @@ noncomputable def sectionsConeIsLimit : IsLimit (sectionsCone F) where
     erw [SemimoduleCat.comp_apply, sectionsCone_π_apply] at he
     simpa only [sectionsLift_apply] using he
 
-/-- The type-valued section map of the forgotten cone is the canonical carrier comparison.
-This equality follows componentwise from the public cone projection equation. -/
+/-- The type-valued section map of the forgotten cone unshrinks its carrier and
+then applies `sectionsEquivTypes` to recover the matching family. -/
 theorem sectionOfCone_forget_sectionsCone :
     Types.sectionOfCone ((forget (SemimoduleCat R)).mapCone (sectionsCone F)) =
       fun x => sectionsEquivTypes F (Shrink.linearEquiv R (sectionsSubmodule F) x) := by
+  -- Check the comparison componentwise using the public cone projection equation.
   funext x
   apply Subtype.ext
   funext j
