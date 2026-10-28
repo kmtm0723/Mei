@@ -108,6 +108,7 @@ theorem mapPositiveCompletionOfDegree_algebraMap (r : R) :
       ((congrArg (G).toCompletion (positiveMap_algebraMap φ f h P P' hP r)).trans hG))
 
 /-- Completed coefficient transport is semilinear over its coefficient homomorphism. -/
+@[simp high]
 theorem mapPositiveCompletionOfDegree_smul (r : R) (x : (F).completion) :
     mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut (r • x) =
       φ r • mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut x := by
@@ -126,6 +127,33 @@ theorem mapPositiveCompletionOfDegree_eq (m : ℕ → ℕ) (hm : Monotone m)
     mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut =
       mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' m hm hcut' :=
   (F).mapCompletion_eq _ _ _ _ m hm _
+
+/-- Identity scalar and exponent maps act identically on the general completion. -/
+@[simp]
+theorem mapPositiveCompletionOfDegree_id :
+    mapPositiveCompletionOfDegree (q := q) (β := β) (RingHom.id R) (AddMonoidHom.id Γ)
+      (fun _ _ => by simp) P P (fun _ hn => hn) δ δ hδ hδ id monotone_id
+      (fun _ _ _ hn => hn) = RingHom.id (F).completion := by
+  simpa only [mapPositiveCompletionOfDegree, positiveMap_id] using (F).mapCompletion_id
+
+variable (P'' : AddSubmonoid Γ'') (g : Γ' →+ Γ'') (ψ' : S →+* U)
+  (h' : ∀ p r, Units.map ψ'.toMonoidHom (q' ^ β' p r) = q'' ^ β'' (g p) (g r))
+  (hP' : ∀ n ∈ P', g n ∈ P'') (δ'' : Γ'' →+ ℤ) (hδ'' : ∀ n ∈ P'', 0 ≤ δ'' n)
+  (m : ℕ → ℕ) (hm : Monotone m)
+  (hcut' : ∀ k n, n ∈ P' → (m k : ℤ) < δ' n → (k : ℤ) < δ'' (g n))
+
+/-- Successive general quantum maps compose with the source cutoff `l ∘ m`. -/
+theorem mapPositiveCompletionOfDegree_comp :
+    mapPositiveCompletionOfDegree (ψ'.comp φ) (g.comp f) (fun p r => by
+      rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, ← h', ← h]; rfl)
+      P P'' (fun n hn => hP' _ (hP n hn)) δ δ'' hδ hδ'' (l ∘ m) (hl.comp hm)
+      (fun k n hn hd => hcut' k (f n) (hP n hn) (hcut (m k) n hn hd)) =
+      (mapPositiveCompletionOfDegree ψ' g h' P' P'' hP' δ' δ'' hδ' hδ'' m hm hcut').comp
+        (mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut) := by
+  unfold mapPositiveCompletionOfDegree
+  rw [← (F).mapCompletion_comp]
+  congr 1
+  exact (positiveMap_comp φ ψ' f g h h' P P' P'' hP hP').symm
 
 end General
 
