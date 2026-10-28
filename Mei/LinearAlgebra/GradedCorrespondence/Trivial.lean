@@ -62,12 +62,6 @@ noncomputable def double : ℚ ≃ₗ[ℚ] ℚ :=
 @[simp]
 theorem double_apply (a : ℚ) : double a = 2 * a := (rfl)
 
-/-- The inverse of doubling sends `a` to `2⁻¹ * a`. -/
-@[simp]
-theorem double_symm_apply (a : ℚ) : double.symm a = 2⁻¹ * a := by
-  rw [LinearEquiv.symm_apply_eq, double_apply, ← mul_assoc, mul_inv_cancel₀ two_ne_zero,
-    one_mul]
-
 /-- The graph of doubling, with `ℚ` concentrated in degree zero on both sides. -/
 noncomputable def doubleGraph :
     GradedCorrespondence (B := ℚ) (trivialGrading ℚ ℚ) (trivialGrading ℚ ℚ)
