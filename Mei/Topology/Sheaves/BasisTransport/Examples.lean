@@ -49,7 +49,6 @@ def wallTransport : BasisTransport (fun _ : TopCat.of ℝ => Bool) where
   basis := balls
   isBasis := balls_isBasis
   transport _ _ x y := (twist x).symm.trans (twist y)
-  transport_self := by intro U hU x; ext a; simp
   transport_trans := by intro U hU x y z; ext a; simp
   transport_restrict _ _ _ _ _ := rfl
 
@@ -60,8 +59,10 @@ theorem balls_preconnected (U : Opens (TopCat.of ℝ)) (hU : U ∈ wallTransport
   exact (convex_ball c r).isPreconnected
 
 /-- The Boolean wall transport gives a concrete locally constant sheaf. -/
-instance wallTransport_isLocallyConstantSheaf : IsLocallyConstantSheaf wallTransport.sheaf :=
-  wallTransport.isLocallyConstantSheaf balls_preconnected
+instance wallTransport_sheaf_isLocallyConstant : wallTransport.sheaf.IsLocallyConstant :=
+  wallTransport.isLocallyConstantSheaf (fun x =>
+    ⟨ballOpen x 1, ⟨(x, 1), rfl⟩, Metric.mem_ball_self zero_lt_one,
+      balls_preconnected _ ⟨(x, 1), rfl⟩⟩)
 
 /-- A parallel global section whose Boolean values change across the wall. -/
 def jump (b : Bool) : wallTransport.sheaf.presheaf.obj (op ⊤) :=
