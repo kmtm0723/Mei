@@ -83,7 +83,7 @@ theorem map_algebraMap (φ : R →+* S) (f : Γ →+ Γ')
   exact TwistedMonoidAlgebra.map_algebraMap _ _ _ r
 
 /-- Quantum algebra maps are semilinear for their coefficient homomorphism. -/
-@[simp]
+@[simp↓]
 theorem map_smul (φ : R →+* S) (f : Γ →+ Γ')
     (h : ∀ p r, Units.map φ.toMonoidHom (q ^ β p r) = q' ^ β' (f p) (f r))
     (r : R) (x : QuantumMonoidAlgebra q β) :
@@ -127,6 +127,34 @@ theorem map_mem_grade (φ : R →+* S) (f : Γ →+ Γ')
     map φ f h x ∈ grade q' β' (f p) := by
   unfold map
   exact TwistedMonoidAlgebra.map_mem_grade φ f _ hx
+
+/-- A coefficient algebra map and a compatible exponent map induce an algebra map
+over the common scalar ring. -/
+def mapAlgHom {k : Type*} [CommRing k] [Algebra k R] [Algebra k S]
+    (φ : R →ₐ[k] S) (f : Γ →+ Γ')
+    (h : ∀ p r, Units.map φ.toMonoidHom (q ^ β p r) = q' ^ β' (f p) (f r)) :
+    QuantumMonoidAlgebra q β →ₐ[k] QuantumMonoidAlgebra q' β' where
+  toRingHom := map φ.toRingHom f h
+  commutes' r := by
+    simpa only [RingHom.toFun_eq_coe, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, φ.commutes,
+      ← IsScalarTower.algebraMap_apply] using
+      map_algebraMap φ.toRingHom f h (algebraMap k R r)
+
+/-- Forgetting the common scalar structure recovers the simultaneous quantum map. -/
+@[simp]
+theorem coe_mapAlgHom {k : Type*} [CommRing k] [Algebra k R] [Algebra k S]
+    (φ : R →ₐ[k] S) (f : Γ →+ Γ')
+    (h : ∀ p r, Units.map φ.toMonoidHom (q ^ β p r) = q' ^ β' (f p) (f r)) :
+    (mapAlgHom φ f h : QuantumMonoidAlgebra q β →+* QuantumMonoidAlgebra q' β') =
+      map φ.toRingHom f h := (rfl)
+
+/-- The common-base algebra map agrees pointwise with the quantum ring map. -/
+@[simp]
+theorem mapAlgHom_apply {k : Type*} [CommRing k] [Algebra k R] [Algebra k S]
+    (φ : R →ₐ[k] S) (f : Γ →+ Γ')
+    (h : ∀ p r, Units.map φ.toMonoidHom (q ^ β p r) = q' ^ β' (f p) (f r))
+    (x : QuantumMonoidAlgebra q β) :
+    mapAlgHom φ f h x = map φ.toRingHom f h x := (rfl)
 
 /-- An exponent map compatible with the factor sets, with fixed coefficients,
 is an algebra map. -/
