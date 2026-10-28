@@ -114,6 +114,7 @@ theorem ofSection_toSection (s : GrothendieckSection L) : ofSection s.toSection 
   exact ofSection_toFunctor s.toSection
 
 /-- A transformation between transport sections has identity base components. -/
+@[simp]
 theorem sectionHom_base {s t : GrothendieckSection L} (α : s.toSection ⟶ t.toSection) (d : D) :
     ((CategoryTheory.Grothendieck.Section.hom α).app d).base = 𝟙 d := by
   have h := CategoryTheory.Grothendieck.Section.hom_over α
@@ -243,7 +244,7 @@ instance : (sectionFunctor (L := L)).IsEquivalence where
 
 /-- The inverse comparison extracts transport data, including its morphisms.
 The reconstruction equalities identify the endpoints before vertical extraction. -/
-abbrev sectionInverseFunctor : CategoryTheory.Grothendieck.Section L ⥤ GrothendieckSection L where
+def sectionInverseFunctor : CategoryTheory.Grothendieck.Section L ⥤ GrothendieckSection L where
   obj := ofSection
   map {s t} α := fromSectionHom
     (eqToHom (toSection_ofSection s) ≫ α ≫ eqToHom (toSection_ofSection t).symm)
@@ -263,33 +264,55 @@ abbrev sectionInverseFunctor : CategoryTheory.Grothendieck.Section L ⥤ Grothen
 theorem sectionInverseFunctor_obj (s : CategoryTheory.Grothendieck.Section L) :
     (sectionInverseFunctor (L := L)).obj s = ofSection s := (rfl)
 
-/-- The inverse functor extracts the vertical transformation after reconstruction. -/
+/-- The inverse functor extracts the vertical transformation, with its endpoints
+identified by the public object projection equations. -/
 @[simp]
 theorem sectionInverseFunctor_map {s t : CategoryTheory.Grothendieck.Section L} (α : s ⟶ t) :
-    (sectionInverseFunctor (L := L)).map α = fromSectionHom
-      (eqToHom (toSection_ofSection s) ≫ α ≫ eqToHom (toSection_ofSection t).symm) := (rfl)
+    (sectionInverseFunctor (L := L)).map α =
+      eqToHom (sectionInverseFunctor_obj s) ≫ fromSectionHom
+        (eqToHom (toSection_ofSection s) ≫ α ≫ eqToHom (toSection_ofSection t).symm) ≫
+          eqToHom (sectionInverseFunctor_obj t).symm := by
+  dsimp only [sectionInverseFunctor]
+  -- Only the bundled functor is unfolded. Its object projection equalities
+  -- become reflexive; default transparency aligns these dependent endpoints.
+  erw [eqToHom_refl, eqToHom_refl, Category.id_comp, Category.comp_id]
+
+/-- Extracting the assembled section recovers the transport object. -/
+private theorem sectionInverseFunctor_obj_toSection (s : GrothendieckSection L) :
+    (sectionInverseFunctor (L := L)).obj s.toSection = s := by
+  rw [sectionInverseFunctor_obj, ofSection_toSection]
+
+/-- Assembling an extracted section object recovers the actual section. -/
+private theorem toSection_sectionInverseFunctor_obj (s : CategoryTheory.Grothendieck.Section L) :
+    ((sectionInverseFunctor (L := L)).obj s).toSection = s := by
+  rw [sectionInverseFunctor_obj, toSection_ofSection]
 
 private theorem toSectionHom_eqToHom {s t : GrothendieckSection L} (h : s = t) :
     toSectionHom (eqToHom h) = eqToHom (congrArg toSection h) :=
   eqToHom_map sectionFunctor h
 
+private theorem toSectionHom_comp {s t r : GrothendieckSection L}
+    (α : s ⟶ t) (β : t ⟶ r) :
+    toSectionHom (α ≫ β) = toSectionHom α ≫ toSectionHom β :=
+  sectionFunctor.map_comp α β
+
 /-- Fiberwise transport data and actual sections are equivalent categories.
 The inverse is the explicit extraction functor; the unit and counit are the
 isomorphisms given by the two object reconstruction equalities. -/
-abbrev sectionEquivalence : GrothendieckSection L ≌ CategoryTheory.Grothendieck.Section L where
+def sectionEquivalence : GrothendieckSection L ≌ CategoryTheory.Grothendieck.Section L where
   functor := sectionFunctor
   inverse := sectionInverseFunctor
-  unitIso := NatIso.ofComponents (fun s => eqToIso (ofSection_toSection s).symm) (by
+  unitIso := NatIso.ofComponents (fun s => eqToIso (sectionInverseFunctor_obj_toSection s).symm) (by
     intro s t α
     apply (sectionFunctor (L := L)).map_injective
     rw [_root_.CategoryTheory.Functor.map_comp, _root_.CategoryTheory.Functor.map_comp]
-    simp [toSectionHom_eqToHom])
-  counitIso := NatIso.ofComponents (fun s => eqToIso (toSection_ofSection s)) (by
+    simp [toSectionHom_eqToHom, toSectionHom_comp, Category.assoc])
+  counitIso := NatIso.ofComponents (fun s => eqToIso (toSection_sectionInverseFunctor_obj s)) (by
     intro s t α
-    simp [Category.assoc])
+    simp [toSectionHom_comp, toSectionHom_eqToHom, Category.assoc])
   functor_unitIso_comp s := by
-    change toSectionHom (eqToHom (ofSection_toSection s).symm) ≫
-      eqToHom (toSection_ofSection s.toSection) = 𝟙 s.toSection
+    change toSectionHom (eqToHom (sectionInverseFunctor_obj_toSection s).symm) ≫
+      eqToHom (toSection_sectionInverseFunctor_obj s.toSection) = 𝟙 s.toSection
     rw [toSectionHom_eqToHom]
     simp
 
@@ -302,23 +325,51 @@ theorem sectionEquivalence_functor : (sectionEquivalence (L := L)).functor = sec
 theorem sectionEquivalence_inverse_obj (s : CategoryTheory.Grothendieck.Section L) :
     (sectionEquivalence (L := L)).inverse.obj s = ofSection s := (rfl)
 
-/-- The inverse map is the explicitly extracted vertical transformation. -/
+/-- The inverse map extracts the vertical transformation, transporting its
+endpoints by the public inverse-object projection equations. -/
 @[simp]
 theorem sectionEquivalence_inverse_map {s t : CategoryTheory.Grothendieck.Section L}
-    (α : s ⟶ t) : (sectionEquivalence (L := L)).inverse.map α = fromSectionHom
-      (eqToHom (toSection_ofSection s) ≫ α ≫ eqToHom (toSection_ofSection t).symm) := (rfl)
+    (α : s ⟶ t) : (sectionEquivalence (L := L)).inverse.map α =
+      eqToHom (sectionEquivalence_inverse_obj s) ≫ fromSectionHom
+        (eqToHom (toSection_ofSection s) ≫ α ≫ eqToHom (toSection_ofSection t).symm) ≫
+          eqToHom (sectionEquivalence_inverse_obj t).symm := by
+  simp only [sectionEquivalence, sectionInverseFunctor_map]
 
-/-- The unit is the reverse transport-data reconstruction equality. -/
+/-- The unit's target object is the original transport datum. -/
+theorem sectionEquivalence_unit_obj (s : GrothendieckSection L) :
+    ((sectionEquivalence (L := L)).functor ⋙ (sectionEquivalence (L := L)).inverse).obj s = s := by
+  change (sectionInverseFunctor (L := L)).obj s.toSection = s
+  exact sectionInverseFunctor_obj_toSection s
+
+/-- The counit's source object is the original actual section. -/
+theorem sectionEquivalence_counit_obj (s : CategoryTheory.Grothendieck.Section L) :
+    ((sectionEquivalence (L := L)).inverse ⋙ (sectionEquivalence (L := L)).functor).obj s = s := by
+  change ((sectionInverseFunctor (L := L)).obj s).toSection = s
+  exact toSection_sectionInverseFunctor_obj s
+
+/-- The unit is the canonical equality isomorphism to the reconstructed object. -/
 @[simp]
 theorem sectionEquivalence_unitIso_hom_app (s : GrothendieckSection L) :
     (sectionEquivalence (L := L)).unitIso.hom.app s =
-      eqToHom (ofSection_toSection s).symm := (rfl)
+      eqToHom (sectionEquivalence_unit_obj s).symm := (rfl)
 
-/-- The counit is the actual-section reconstruction equality. -/
+/-- The counit is the canonical equality isomorphism from the reconstructed object. -/
 @[simp]
 theorem sectionEquivalence_counitIso_hom_app (s : CategoryTheory.Grothendieck.Section L) :
     (sectionEquivalence (L := L)).counitIso.hom.app s =
-      eqToHom (toSection_ofSection s) := (rfl)
+      eqToHom (sectionEquivalence_counit_obj s) := (rfl)
+
+/-- The inverse unit is the reverse equality isomorphism. -/
+@[simp]
+theorem sectionEquivalence_unitIso_inv_app (s : GrothendieckSection L) :
+    (sectionEquivalence (L := L)).unitIso.inv.app s =
+      eqToHom (sectionEquivalence_unit_obj s) := (rfl)
+
+/-- The inverse counit is the reverse equality isomorphism. -/
+@[simp]
+theorem sectionEquivalence_counitIso_inv_app (s : CategoryTheory.Grothendieck.Section L) :
+    (sectionEquivalence (L := L)).counitIso.inv.app s =
+      eqToHom (sectionEquivalence_counit_obj s).symm := (rfl)
 
 /-- The fully faithful comparison extracts the vertical components of a section morphism. -/
 @[simp]
