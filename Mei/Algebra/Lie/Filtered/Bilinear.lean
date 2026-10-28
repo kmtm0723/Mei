@@ -65,7 +65,7 @@ theorem truncatedExpLieAction_quotientBilinear (k : ℕ) (z : d.truncatedLie ℒ
   let : Module ℚ (G.quotient k) := Module.compHom _ (algebraMap ℚ R)
   let : Module ℚ (H.quotient k) := Module.compHom _ (algebraMap ℚ R)
   simp only [truncatedExpLieAction_apply]
-  exact Mei.Module.End.exp_bilinear_of_leibniz (quotientBilinear F G H f hf k)
+  exact Module.End.exp_bilinear_of_leibniz (quotientBilinear F G H f hf k)
     (F.truncatedLieAction d ℒ k z) (G.truncatedLieAction d ℒ k z)
     (H.truncatedLieAction d ℒ k z)
     (truncatedLieAction_quotientBilinear F G H d ℒ f hf hequiv k z)
