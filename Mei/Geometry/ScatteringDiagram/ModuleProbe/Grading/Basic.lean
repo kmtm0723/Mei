@@ -25,7 +25,7 @@ variable {R M Γ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   (ℳ : Γ → Submodule R M) (p : Γ)
   {L : Type*} [LieRing L] [LieAlgebra R L]
   [LieRingModule L M] [LieModule R L M]
-  (ℒ : Γ → Submodule R L) [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ]
+  (ℒ : Γ → Submodule R L) [DirectSum.Decomposition ℒ] [IsPositiveGrading d ℒ]
   [SetLike.GradedBracket ℒ ℳ]
 
 /-- The charge-zero and charge-one homogeneous pieces of the module probe. -/
@@ -73,18 +73,15 @@ theorem grading_normal_eq_bot (q : Γ) (c l : ℤ) (hl : l ≠ 0) :
 variable [DirectSum.Decomposition ℳ]
 
 private def baseToPiece (n : Γ) : ℒ n →ₗ[R] grading d ℳ p ℒ (n, 0, 0) :=
-  LinearMap.codRestrict _ ((baseInclusion d ℳ p ℒ).toLinearMap.comp (ℒ n).subtype)
-    (fun x => by simp only [grading, and_self, ↓reduceIte]; exact ⟨x.val, x.property, rfl⟩)
+  (LinearEquiv.ofEq _ _ (grading_base d ℳ p ℒ n).symm).toLinearMap.comp
+    ((baseInclusion d ℳ p ℒ).toLinearMap.submoduleMap (ℒ n))
 
 private def moduleToPiece (n : Γ) :
     shiftedGrading ℳ d.monoid p n →ₗ[R] grading d ℳ p ℒ (p + n, 1, 0) :=
-  LinearMap.codRestrict _ (((moduleInclusion d ℳ p ℒ).toLinearMap.comp
-      (moduleCoefficientsEquiv d ℳ p).symm.toLinearMap).comp
-    (shiftedGrading ℳ d.monoid p n).subtype)
-    (fun x => by
-      simp only [grading, one_ne_zero, false_and, ↓reduceIte, and_self,
-        add_sub_cancel_left]
-      exact ⟨x.val, x.property, rfl⟩)
+  (LinearEquiv.ofEq _ _ (by rw [grading_module, add_sub_cancel_left])).symm.toLinearMap.comp
+    (((moduleInclusion d ℳ p ℒ).toLinearMap.comp
+      (moduleCoefficientsEquiv d ℳ p).symm.toLinearMap).submoduleMap
+        (shiftedGrading ℳ d.monoid p n))
 
 private def probeDecompose : ProbeLie d ℳ p ℒ →ₗ[R]
     ⨁ a, grading d ℳ p ℒ a :=
@@ -101,25 +98,14 @@ private def probeDecompose : ProbeLie d ℳ p ℒ →ₗ[R]
 private theorem probeDecompose_base (n : Γ) (x : ℒ n) :
     probeDecompose d ℳ p ℒ (baseInclusion d ℳ p ℒ x) =
       DirectSum.lof R _ _ (n, 0, 0) (baseToPiece d ℳ p ℒ n x) := by
-  simp only [probeDecompose, LinearMap.add_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_toLinearMap, LieHom.coe_toLinearMap]
-  rw [LieAlgebra.SemiDirectSum.projr_inr_apply,
-    LieAlgebra.SemiDirectSum.projl_inr_apply, map_zero, map_zero, map_zero, add_zero,
-    DirectSum.decomposeLinearEquiv_apply_coe, DirectSum.toModule_lof]
-  rfl
+  simp [probeDecompose, baseInclusion, DirectSum.decomposeLinearEquiv_apply_coe]
 
 private theorem probeDecompose_module (n : Γ)
     (x : shiftedGrading ℳ d.monoid p n) :
     probeDecompose d ℳ p ℒ
       (moduleInclusion d ℳ p ℒ ((moduleCoefficientsEquiv d ℳ p).symm x.val)) =
       DirectSum.lof R _ _ (p + n, 1, 0) (moduleToPiece d ℳ p ℒ n x) := by
-  simp only [probeDecompose, LinearMap.add_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_toLinearMap, LieHom.coe_toLinearMap]
-  rw [LieAlgebra.SemiDirectSum.projr_inl_apply,
-    LieAlgebra.SemiDirectSum.projl_inl_apply, LinearEquiv.apply_symm_apply,
-    map_zero, map_zero, zero_add,
-    DirectSum.decomposeLinearEquiv_apply_coe, DirectSum.toModule_lof]
-  rfl
+  simp [probeDecompose, moduleInclusion, DirectSum.decomposeLinearEquiv_apply_coe]
 
 private theorem probeDecompose_of_mem (a : Γ × ℤ × ℤ)
     (x : grading d ℳ p ℒ a) :
@@ -144,6 +130,7 @@ private theorem probeDecompose_of_mem (a : Γ × ℤ × ℤ)
       rfl
     · simp only [grading, h0, h1, ↓reduceIte, Submodule.mem_bot] at hx
       subst x
+      -- Both sides are linear maps evaluated at the zero element of the zero piece.
       change probeDecompose d ℳ p ℒ 0 = DirectSum.lof R _ _ (q, c, l) 0
       simp only [map_zero]
 
@@ -158,6 +145,7 @@ private theorem coe_comp_probeDecompose :
     intro n
     apply LinearMap.ext
     intro x
+    -- Expose evaluation of the composed maps on a homogeneous base element.
     change C (D (baseInclusion d ℳ p ℒ x)) = baseInclusion d ℳ p ℒ x
     rw [probeDecompose_base]
     exact DirectSum.coeLinearMap_lof _ _ _
@@ -169,6 +157,7 @@ private theorem coe_comp_probeDecompose :
     intro n
     apply LinearMap.ext
     intro x
+    -- Expose evaluation after the coefficient equivalence and homogeneous inclusion.
     change C (D (moduleInclusion d ℳ p ℒ ((moduleCoefficientsEquiv d ℳ p).symm x.val))) =
       moduleInclusion d ℳ p ℒ ((moduleCoefficientsEquiv d ℳ p).symm x.val)
     rw [probeDecompose_module]
@@ -177,6 +166,7 @@ private theorem coe_comp_probeDecompose :
   intro x
   have hx : x = moduleInclusion d ℳ p ℒ x.left + baseInclusion d ℳ p ℒ x.right := by
     ext <;> simp [moduleInclusion, baseInclusion, LieAlgebra.SemiDirectSum.add_eq_mk]
+  -- Express the linear-map identity pointwise using the local names C and D.
   change C (D x) = x
   rw [hx, map_add, map_add]
   apply congrArg₂ (· + ·)

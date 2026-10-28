@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Geometry.ScatteringDiagram.ModuleProbe.Grading.Basic
+public import Mei.Geometry.ScatteringDiagram.ModuleProbe.Degree
 
 /-!
 # Positive grading on the module probe
@@ -25,7 +26,7 @@ variable {R M Γ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   (ℳ : Γ → Submodule R M) (p : Γ)
   {L : Type*} [LieRing L] [LieAlgebra R L]
   [LieRingModule L M] [LieModule R L M]
-  (ℒ : Γ → Submodule R L) [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ]
+  (ℒ : Γ → Submodule R L) [DirectSum.Decomposition ℒ] [IsPositiveGrading d ℒ]
   [SetLike.GradedBracket ℒ ℳ]
 
 private theorem bracket_base_module {n q : Γ} {x : L}
@@ -45,7 +46,7 @@ private theorem bracket_base_module {n q : Γ} {x : L}
       LinearEquiv.symm_apply_apply, LieHom.coe_toLinearMap]
 
 /-- The semidirect Lie bracket respects ambient degree and module charge. -/
-instance instGradedBracketGrading :
+instance instGradedBracketGrading [SetLike.GradedBracket ℒ ℒ] :
     SetLike.GradedBracket (grading d ℳ p ℒ) (grading d ℳ p ℒ) where
   bracket_mem := by
     rintro ⟨n, c, l⟩ ⟨q, e, k⟩ x y hx hy
@@ -57,6 +58,7 @@ instance instGradedBracketGrading :
       · rcases h0' with ⟨rfl, rfl⟩
         rw [grading_base] at hy
         rcases hy with ⟨y, hy, rfl⟩
+        -- Evaluate product-degree addition and the linear inclusions before using map_lie.
         change ⁅baseInclusion d ℳ p ℒ x, baseInclusion d ℳ p ℒ y⁆ ∈
           grading d ℳ p ℒ (n + q, 0, 0)
         rw [← LieHom.map_lie, grading_base]
@@ -87,6 +89,7 @@ instance instGradedBracketGrading :
           · rcases h1' with ⟨rfl, rfl⟩
             rw [grading_module] at hy
             rcases hy with ⟨b, hb, rfl⟩
+            -- Reveal the two module inclusions hidden by the image linear maps.
             change ⁅moduleInclusion d ℳ p ℒ _, moduleInclusion d ℳ p ℒ _⁆ ∈ _
             rw [lie_moduleInclusion]
             exact Submodule.zero_mem _
@@ -102,7 +105,8 @@ instance instGradedBracketGrading :
 variable [DirectSum.Decomposition ℳ]
 
 /-- The module probe is graded by the ambient degree and two auxiliary coordinates. -/
-instance instGradedLieAlgebraGrading : GradedLieAlgebra (grading d ℳ p ℒ) where
+instance instGradedLieAlgebraGrading [SetLike.GradedBracket ℒ ℒ] :
+    GradedLieAlgebra (grading d ℳ p ℒ) where
   toDecomposition := inferInstance
   toGradedBracket := inferInstance
 
