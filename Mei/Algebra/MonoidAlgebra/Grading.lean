@@ -8,12 +8,15 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 
 /-!
-# Components and currying of monoid algebras
+# Components, currying and coefficient maps of monoid algebras
 
 The homogeneous component in the exponent grading is the corresponding coefficient
 times its monomial. Currying a product exponent preserves its first homogeneous
 degree, and its coefficients retain both exponent coordinates. These formulas
 relate full exponent gradings to coarser gradings over a monoid coefficient algebra.
+
+Changing coefficients also preserves the pieces of any grading given by a degree
+function on monomials, including when coefficients vanish under the map.
 
 We use Mathlib's `AddMonoidAlgebra.grade` and `curryAlgEquiv`.
 -/
@@ -23,6 +26,18 @@ public section
 noncomputable section
 
 namespace AddMonoidAlgebra
+
+section CoefficientChange
+
+variable {K R S M ι : Type*} [CommSemiring K] [CommSemiring R] [CommSemiring S]
+  [Algebra K R] [Algebra K S] [AddMonoid M]
+
+/-- Coefficient change preserves homogeneous support for an arbitrary degree function. -/
+theorem mapAlgHom_mem_gradeBy (φ : R →ₐ[K] S) {f : M → ι} {i : ι} {u : R[M]}
+    (hu : u ∈ gradeBy R f i) : mapAlgHom M φ u ∈ gradeBy S f i := by
+  exact fun m hm => hu m (Finsupp.support_mapRange (hf := φ.map_zero) hm)
+
+end CoefficientChange
 
 variable {R M N : Type*} [CommSemiring R] [AddMonoid M]
 
