@@ -22,11 +22,11 @@ opens may have monodromy.
 
 public section
 
-open CategoryTheory TopologicalSpace Opposite Set Filter Topology
+open CategoryTheory TopologicalSpace Opposite Set Filter Topology TopCat
 
 universe u v
 
-namespace TopCat
+namespace Mei
 
 variable {X : TopCat.{u}} (E : X → Type v)
 
@@ -225,9 +225,9 @@ theorem evaluationEquiv_symm_apply {U V : Opens X} (hU : U ∈ T.basis) (hVU : V
     T.value ((T.evaluationEquiv hU hVU x).symm a) y =
       T.transport U hU ⟨x, hVU x.property⟩ ⟨y, hVU y.property⟩ a := (rfl)
 
-/-- Restriction from a preconnected basis chart to a nonempty preconnected open
-is bijective. The inverse retains the value at any point of the smaller open. -/
-theorem restriction_bijective {U V : Opens X} (hU : U ∈ T.basis)
+/-- Restriction between nonempty preconnected subopens of a single basis chart
+is bijective. The subopens need not themselves belong to the supplied basis. -/
+theorem restriction_bijective {B U V : Opens X} (hB : B ∈ T.basis) (hUB : U ≤ B)
     (hcU : IsPreconnected (U : Set X)) (hVU : V ≤ U)
     (hne : (V : Set X).Nonempty) (hcV : IsPreconnected (V : Set X)) :
     Function.Bijective (T.sheaf.presheaf.map (homOfLE hVU).op) := by
@@ -238,23 +238,26 @@ theorem restriction_bijective {U V : Opens X} (hU : U ∈ T.basis)
   let z : U := ⟨x, hVU hx⟩
   constructor
   · intro s t h
-    apply (T.evaluationEquiv hU le_rfl z).injective
+    apply (T.evaluationEquiv hB hUB z).injective
     simpa only [evaluationEquiv_apply, value_restrict] using
       congrArg (fun r => T.value r y) h
   · intro t
-    refine ⟨(T.evaluationEquiv hU le_rfl z).symm (T.value t y), ?_⟩
-    apply (T.evaluationEquiv hU hVU y).injective
+    refine ⟨(T.evaluationEquiv hB hUB z).symm (T.value t y), ?_⟩
+    apply (T.evaluationEquiv hB (hVU.trans hUB) y).injective
     simp only [evaluationEquiv_apply, value_restrict, evaluationEquiv_symm_apply,
       y, z, transport_self, Equiv.refl_apply]
 
-/-- Coherent transport gives a restriction-sense locally constant sheaf whenever
-each point lies in a preconnected basis chart. Other basis opens may be disconnected. -/
-theorem isLocallyConstantSheaf
-    (hc : ∀ x : X, ∃ U ∈ T.basis, x ∈ U ∧ IsPreconnected (U : Set X)) :
-    T.sheaf.IsLocallyConstant where
+/-- Coherent transport has locally bijective preconnected restrictions if each
+point has a preconnected open neighborhood contained in a basis chart. Neither
+these neighborhoods nor their subopens need belong to the supplied basis. -/
+theorem hasLocallyBijectivePreconnectedRestrictions
+    (hc : ∀ x : X, ∃ B ∈ T.basis, ∃ U : Opens X,
+      x ∈ U ∧ U ≤ B ∧ IsPreconnected (U : Set X)) :
+    T.sheaf.HasLocallyBijectivePreconnectedRestrictions where
   exists_bijective_restrictions x := by
-    obtain ⟨U, hU, hxU, hcU⟩ := hc x
-    exact ⟨U, hxU, fun V hVU hne hcV => T.restriction_bijective hU hcU hVU hne hcV⟩
+    obtain ⟨B, hB, U, hxU, hUB, hcU⟩ := hc x
+    exact ⟨U, hxU,
+      fun V hVU hne hcV => T.restriction_bijective hB hUB hcU hVU hne hcV⟩
 
 end BasisTransport
-end TopCat
+end Mei
