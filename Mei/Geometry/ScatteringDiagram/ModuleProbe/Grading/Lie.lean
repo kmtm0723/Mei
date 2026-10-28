@@ -7,6 +7,7 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.ModuleProbe.Grading.Basic
 public import Mei.Geometry.ScatteringDiagram.ModuleProbe.Degree
+public import Mei.Algebra.Lie.Graded.Map
 
 /-!
 # Positive grading on the module probe
@@ -53,17 +54,16 @@ instance instGradedBracketGrading [SetLike.GradedBracket ℒ ℒ] :
     by_cases h0 : c = 0 ∧ l = 0
     · rcases h0 with ⟨rfl, rfl⟩
       rw [grading_base] at hx
-      rcases hx with ⟨x, hx, rfl⟩
       by_cases h0' : e = 0 ∧ k = 0
       · rcases h0' with ⟨rfl, rfl⟩
         rw [grading_base] at hy
-        rcases hy with ⟨y, hy, rfl⟩
-        -- Evaluate product-degree addition and the linear inclusions before using map_lie.
-        change ⁅baseInclusion d ℳ p ℒ x, baseInclusion d ℳ p ℒ y⁆ ∈
-          grading d ℳ p ℒ (n + q, 0, 0)
-        rw [← LieHom.map_lie, grading_base]
-        exact Submodule.mem_map.mpr ⟨⁅x, y⁆, SetLike.GradedBracket.bracket_mem hx hy, rfl⟩
-      · by_cases h1' : e = 1 ∧ k = 0
+        let := (baseInclusion d ℳ p ℒ).gradedBracket_map ℒ
+        simpa only [vadd_eq_add, Prod.mk_add_mk, zero_add, grading_base] using
+          SetLike.GradedBracket.bracket_mem
+            (ℒ := fun i => (ℒ i).map (baseInclusion d ℳ p ℒ).toLinearMap)
+            (ℳ := fun i => (ℒ i).map (baseInclusion d ℳ p ℒ).toLinearMap) hx hy
+      · rcases hx with ⟨x, hx, rfl⟩
+        by_cases h1' : e = 1 ∧ k = 0
         · rcases h1' with ⟨rfl, rfl⟩
           rw [grading_module] at hy
           rcases hy with ⟨a, ha, rfl⟩

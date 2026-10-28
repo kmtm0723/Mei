@@ -60,6 +60,31 @@ theorem grading_module (q : Γ) : grading d ℳ p ℒ (q, 1, 0) =
         (moduleCoefficientsEquiv d ℳ p).symm.toLinearMap) := by
   simp only [grading, one_ne_zero, false_and, ↓reduceIte, and_self]
 
+/-- A charge-zero element has no coefficient part and has homogeneous base part. -/
+@[simp↓]
+theorem mem_grading_base (q : Γ) (x : ProbeLie d ℳ p ℒ) :
+    x ∈ grading d ℳ p ℒ (q, 0, 0) ↔ x.left = 0 ∧ x.right ∈ ℒ q := by
+  rw [grading_base]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    simpa using hy
+  · rintro ⟨hl, hr⟩
+    refine Submodule.mem_map.mpr ⟨x.right, hr, ?_⟩
+    apply LieAlgebra.SemiDirectSum.ext <;> simp [hl]
+
+/-- A charge-one element has no base part and has homogeneous shifted coefficient part. -/
+@[simp↓]
+theorem mem_grading_module (q : Γ) (x : ProbeLie d ℳ p ℒ) :
+    x ∈ grading d ℳ p ℒ (q, 1, 0) ↔ x.right = 0 ∧
+      moduleCoefficientsEquiv d ℳ p x.left ∈ shiftedGrading ℳ d.monoid p (q - p) := by
+  rw [grading_module]
+  constructor
+  · rintro ⟨a, ha, rfl⟩
+    simpa using ha
+  · rintro ⟨hr, ha⟩
+    refine Submodule.mem_map.mpr ⟨moduleCoefficientsEquiv d ℳ p x.left, ha, ?_⟩
+    apply LieAlgebra.SemiDirectSum.ext <;> simp [hr]
+
 /-- Only charges zero and one occur in the module probe. -/
 theorem grading_charge_eq_bot (q : Γ) (c l : ℤ) (hc₀ : c ≠ 0) (hc₁ : c ≠ 1) :
     grading d ℳ p ℒ (q, c, l) = ⊥ := by
