@@ -97,6 +97,10 @@ theorem ext {β γ : AffineIncomingTail S a}
 def germ (β : AffineIncomingTail S a) : Filter.Germ (atBot : Filter ℝ) V :=
   Filter.Germ.ofFun (fun t => β t)
 
+/-- The geometric germ is represented by the underlying affine path. -/
+theorem germ_eq_ofFun (β : AffineIncomingTail S a) :
+    β.germ = Filter.Germ.ofFun (fun t => β t) := (rfl)
+
 /-- For a fixed source and datum, its affine germ determines the tail. -/
 @[simp]
 theorem germ_eq_iff {β γ : AffineIncomingTail S a} : β.germ = γ.germ ↔ β = γ := by
@@ -383,6 +387,11 @@ def regrade (β : AffineIncomingTail S a) (ha : ψ S.degree (S.coefficient a) �
   direction_ne_zero := by
     have hd : w (T S.degree) = v S.degree := DFunLike.congr_fun hw S.degree
     simpa only [AffineIncomingSource.regrade_degree, hd] using β.direction_ne_zero
+
+/-- Regrading a surviving coefficient retains its entire affine representative. -/
+theorem regrade_representative (β : AffineIncomingTail S a)
+    (ha : ψ S.degree (S.coefficient a) ≠ 0) :
+    (β.regrade T w hw ψ ha).representative = β.representative := (rfl)
 
 /-- Regrading a surviving coefficient retains every point of its representative. -/
 @[simp]
