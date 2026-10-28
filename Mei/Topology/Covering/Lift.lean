@@ -129,6 +129,10 @@ noncomputable def liftEquiv (f : C(A, X)) (a : A) :
   left_inv F := (hp.liftOfFiber_unique f a ⟨F.val a, congrFun F.property a⟩ F rfl).symm
   right_inv e := Subtype.ext (hp.liftOfFiber_apply_at f a e)
 
+/-- The inverse lift equivalence is the named lift with the prescribed reference value. -/
+theorem liftEquiv_symm_apply (f : C(A, X)) (a : A) (e : p ⁻¹' {f a}) :
+    (hp.liftEquiv f a).symm e = hp.liftOfFiber f a e := (rfl)
+
 /-- Evaluation is the forward direction of the lift equivalence. -/
 @[simp]
 theorem liftEquiv_apply_val (f : C(A, X)) (a : A) (F : coveringLifts p f) :
