@@ -7,7 +7,6 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.WallSpace.Group
 public import Mei.Algebra.Lie.Filtered.BCH
-public import Mei.LinearAlgebra.End.Exp
 
 /-!
 # Wall actions on tangent coefficients
@@ -19,16 +18,22 @@ and completed wall labels fix such coefficients, including every coefficient of
 zero geometric direction.
 
 The condition is independent of the graded-action condition and applies to Lie
-modules as well as coefficient algebras. The fixed-vector statement uses
-`Module.End.exp_apply_eq_self`, and the completed statement is checked through
-the projections of the existing completed BCH representation.
+modules as well as coefficient algebras. Exponential component statements require
+a nilpotent acting endomorphism. For a filtration-raising action, the finite
+quotient actions are nilpotent and completed wall labels fix the coefficient
+images in the completion.
+
+The annihilation condition is from Travis Mandel, *Scattering diagrams, theta
+functions, and refined tropical curve counts*, §2.1 (arXiv:1503.06183).
 -/
 
 public section
 
 namespace Mei
 
-variable {Γ Λ R L M : Type*} [AddCommGroup Γ] [AddCommMonoid Λ]
+section Monoid
+
+variable {Γ Λ R L M : Type*} [AddCommMonoid Γ] [AddCommMonoid Λ]
   [CommRing R] [LieRing L] [LieAlgebra R L]
   [AddCommGroup M] [Module R M] [LieRingModule L M]
   {ρ : Γ →+ Λ} {ℒ : Γ → Submodule R L}
@@ -40,6 +45,45 @@ class IsWallAnnihilating (H : DirectedWallSpaces ρ ℒ) (𝒜 : Γ → Submodul
   /-- A wall normal vanishing on the coefficient degree forces the action to vanish. -/
   lie_eq_zero : ∀ {n p : Γ} {m : Λ →+ ℤ} {x : L} {a : M},
     x ∈ H.wall n m → a ∈ 𝒜 p → m (ρ p) = 0 → ⁅x, a⁆ = 0
+
+namespace DirectedWallSpaces
+
+variable (H : DirectedWallSpaces ρ ℒ) (𝒜 : Γ → Submodule R M)
+  [IsWallAnnihilating H 𝒜] {d : PositiveDegrees Γ}
+
+variable [DecidableEq Γ] [DirectSum.Decomposition 𝒜] [SetLike.GradedBracket ℒ 𝒜]
+
+/-- A homogeneous wall action has no component at a degree tangent to its normal. -/
+theorem decompose_lie_eq_zero_of_mem_wall_of_normal_eq_zero
+    {n q : Γ} {m : Λ →+ ℤ} {x : L} (hx : x ∈ H.wall n m)
+    (hq : m (ρ q) = 0) (a : M) : DirectSum.decompose 𝒜 ⁅x, a⁆ q = 0 := by
+  by_cases hx0 : x = 0
+  · simp [hx0]
+  have hn := H.normal_apply_eq_zero hx hx0
+  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | @homogeneous p a =>
+    by_cases hp : m (ρ p) = 0
+    · rw [IsWallAnnihilating.lie_eq_zero (H := H) (𝒜 := 𝒜) hx a.property hp]
+      simp
+    · have hne : n + p ≠ q := by
+        intro he
+        exact hp (by simpa only [← he, map_add, hn, zero_add] using hq)
+      apply Subtype.ext
+      simpa only [ZeroMemClass.coe_zero] using
+        DirectSum.decompose_of_mem_ne 𝒜
+          (SetLike.GradedBracket.bracket_mem (H.wall_le_piece n m hx) a.property) hne
+  | add a b ha hb =>
+    simp only [lie_add, DirectSum.decompose_add, DirectSum.add_apply, ha, hb, add_zero]
+
+end DirectedWallSpaces
+
+end Monoid
+
+variable {Γ Λ R L M : Type*} [AddCommGroup Γ] [AddCommMonoid Λ]
+  [CommRing R] [LieRing L] [LieAlgebra R L]
+  [AddCommGroup M] [Module R M] [LieRingModule L M]
+  {ρ : Γ →+ Λ} {ℒ : Γ → Submodule R L}
 
 namespace DirectedWallSpaces
 
@@ -68,27 +112,6 @@ theorem lie_eq_zero_of_mem_ray_of_direction_eq_zero {w : SupportedRay d}
 section Components
 
 variable [DecidableEq Γ] [DirectSum.Decomposition 𝒜] [SetLike.GradedBracket ℒ 𝒜]
-
-/-- A homogeneous wall action has no component at a degree tangent to its normal. -/
-theorem decompose_lie_eq_zero_of_mem_wall_of_normal_eq_zero
-    {n q : Γ} {m : Λ →+ ℤ} {x : L} (hx : x ∈ H.wall n m)
-    (hq : m (ρ q) = 0) (a : M) : DirectSum.decompose 𝒜 ⁅x, a⁆ q = 0 := by
-  by_cases hx0 : x = 0
-  · simp [hx0]
-  have hn := H.normal_apply_eq_zero hx hx0
-  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | @homogeneous p a =>
-    by_cases hp : m (ρ p) = 0
-    · rw [IsWallAnnihilating.lie_eq_zero (H := H) (𝒜 := 𝒜) hx a.property hp]
-      simp
-    · apply Subtype.ext
-      simpa only [ZeroMemClass.coe_zero] using
-        DirectSum.decompose_of_mem_ne 𝒜
-          (SetLike.GradedBracket.bracket_mem (H.wall_le_piece n m hx) a.property)
-          (show n + p ≠ q from fun he => hp (by simpa only [← he, map_add, hn, zero_add] using hq))
-  | add a b ha hb =>
-    simp only [lie_add, DirectSum.decompose_add, DirectSum.add_apply, ha, hb, add_zero]
 
 /-- A supported-ray wall action has no component at a degree tangent to its normal. -/
 theorem decompose_lie_eq_zero_of_mem_ray_of_normal_eq_zero
