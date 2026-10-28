@@ -57,6 +57,7 @@ theorem quotientRaisingEnd_pow_mk (k n : ℕ) (x : M) :
   rw [quotientRaisingEnd_eq_mapQ, ← Submodule.mapQ_pow, Submodule.mapQ_apply]
 
 /-- On the order-`k` quotient, the `(k + 1)`st power vanishes. -/
+@[simp]
 theorem quotientRaisingEnd_pow_eq_zero (k : ℕ) :
     F.quotientRaisingEnd f hf k ^ (k + 1) = 0 := by
   apply LinearMap.ext
