@@ -47,8 +47,7 @@ def regrade (D : AffineIncomingDeckData (G := G) S)
   chart_mul := D.chart_mul
   coefficientEquiv := μ
   coefficient_map g i a := by
-    change ψ (S (g • i)).degree ((S (g • i)).coefficient (g • a)) = _
-    rw [D.coefficient_map, hμ]
+    simp only [AffineIncomingSource.regrade_coefficient, D.coefficient_map, hμ]
     rfl
   maps_carrier := D.maps_carrier
   map_direction g i := by
@@ -63,6 +62,14 @@ theorem regrade_chart (D : AffineIncomingDeckData (G := G) S)
       μ g i (ψ (S i).degree c)) (g : G) :
     (D.regrade T w hw ψ μ hμ).chart g = D.chart g := (rfl)
 
+/-- The transported deck coefficient identification is the specified target equivalence. -/
+@[simp]
+theorem regrade_coefficientEquiv (D : AffineIncomingDeckData (G := G) S)
+    (μ : ∀ (g : G) (i : I), M' (T (S i).degree) ≃ₗ[R] M' (T (S (g • i)).degree))
+    (hμ : ∀ g i c, ψ (S (g • i)).degree (D.coefficientEquiv g i c) =
+      μ g i (ψ (S i).degree c)) (g : G) (i : I) :
+    (D.regrade T w hw ψ μ hμ).coefficientEquiv g i = μ g i := (rfl)
+
 end AffineIncomingDeckData
 
 namespace AffineIncomingDeckTail
@@ -76,16 +83,16 @@ of incoming type data. -/
 def regradeType : TypeOrbit (G := G) S →
     TypeOrbit (G := G) (fun i => (S i).regrade T w hw ψ) :=
   Quotient.map id (by
-    change typeSetoid (G := G) (S := S) ≤
-      typeSetoid (G := G) (S := fun i => (S i).regrade T w hw ψ)
-    rw [typeSetoid_eq, typeSetoid_eq]
-    apply sup_le_sup ?_ le_rfl
-    intro a b h
-    change coefficientDatum a = coefficientDatum b at h
-    change coefficientDatum a = coefficientDatum b
-    simp only [coefficientDatum_apply] at h ⊢
-    exact congrArg (fun q : Σ i, M (S i).degree =>
-      (⟨q.1, ψ (S q.1).degree q.2⟩ : Σ i, M' (T (S i).degree))) h)
+    have hle : typeSetoid (G := G) (S := S) ≤
+        typeSetoid (G := G) (S := fun i => (S i).regrade T w hw ψ) := by
+      rw [typeSetoid_eq, typeSetoid_eq]
+      apply sup_le_sup ?_ le_rfl
+      intro a b h
+      rw [Setoid.ker_def] at h ⊢
+      simp only [coefficientDatum_apply] at h ⊢
+      exact congrArg (fun q : Σ i, M (S i).degree =>
+        (⟨q.1, ψ (S q.1).degree q.2⟩ : Σ i, M' (T (S i).degree))) h
+    exact fun _ _ h => hle h)
 
 /-- Transport a surviving labelled tail, keeping its source, datum and geometry. -/
 def regrade (β : AffineIncomingDeckTail D)
@@ -120,6 +127,14 @@ noncomputable def regrade? (β : AffineIncomingDeckTail D) : Option (AffineIncom
   exact if h : ψ (S β.source).degree ((S β.source).coefficient β.datum) = 0 then none
     else some (regrade T w hw ψ D' β h)
 
+/-- A surviving labelled tail is exactly the specified transport of the original tail. -/
+@[simp]
+theorem regrade?_eq_some (β : AffineIncomingDeckTail D)
+    (ha : ψ (S β.source).degree ((S β.source).coefficient β.datum) ≠ 0) :
+    regrade? T w hw ψ D' β = some (regrade T w hw ψ D' β ha) := by
+  classical
+  simp only [regrade?, dite_eq_right ha]
+
 /-- A zero transported coefficient gives no tail. -/
 @[simp]
 theorem regrade?_eq_none_iff (β : AffineIncomingDeckTail D) :
@@ -134,8 +149,12 @@ include D' in
 theorem regrade_coefficient_smul_eq_zero_iff (g : G) (β : AffineIncomingDeckTail D) :
     ψ (S (g • β.source)).degree ((S (g • β.source)).coefficient (g • β.datum)) = 0 ↔
       ψ (S β.source).degree ((S β.source).coefficient β.datum) = 0 := by
-  change ((S (g • β.source)).regrade T w hw ψ).coefficient (g • β.datum) = 0 ↔ _
-  rw [D'.coefficient_map, (D'.coefficientEquiv g β.source).map_eq_zero_iff]
+  -- Coefficient modules depend on the transported degree; allow its projection to reduce
+  -- while rewriting the public coefficient equations.
+  erw [← AffineIncomingSource.regrade_coefficient T w hw ψ (S (g • β.source))
+    (g • β.datum), D'.coefficient_map,
+    (D'.coefficientEquiv g β.source).map_eq_zero_iff,
+    AffineIncomingSource.regrade_coefficient]
   rfl
 
 include hchart in
