@@ -15,7 +15,7 @@ Base normals ignore both coordinates; the probe normal reads the last one.
 Their mixed contracted bracket is again a probe normal, with coefficient given by
 the base normal evaluated on the coefficient's spatial degree. Two module normals
 have zero contracted bracket. These identities supply the normal calculations
-for the module-probe wall spaces in scattering-diagram roadmap §5.5.
+for the module-probe wall spaces.
 -/
 
 public section
@@ -25,10 +25,8 @@ namespace Mei.ModuleProbe
 variable {Γ Λ : Type*} [AddCommMonoid Γ] [AddCommMonoid Λ]
 
 /-- Extend spatial directions by the module charge and probe coordinates. -/
-def spatialMap (ρ : Γ →+ Λ) : (Γ × ℤ × ℤ) →+ (Λ × ℤ × ℤ) where
-  toFun a := (ρ a.1, a.2)
-  map_zero' := by simp
-  map_add' := by intros; simp
+def spatialMap (ρ : Γ →+ Λ) : (Γ × ℤ × ℤ) →+ (Λ × ℤ × ℤ) :=
+  ρ.prodMap (AddMonoidHom.id (ℤ × ℤ))
 
 /-- The extended spatial map preserves both extra coordinates. -/
 @[simp]
@@ -103,6 +101,7 @@ theorem mem_range_baseNormal (m : (Λ × ℤ × ℤ) →+ ℤ) :
   · intro h
     refine ⟨m.comp (AddMonoidHom.inl Λ (ℤ × ℤ)), ?_⟩
     ext ⟨v, c, l⟩
+    -- Evaluate the composite normal on the base inclusion; the product zero is (0, 0).
     change m (v, 0, 0) = m (v, c, l)
     simpa [h.1, h.2] using (normal_apply_eq m v c l).symm
 

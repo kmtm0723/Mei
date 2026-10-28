@@ -5,7 +5,6 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.ModuleProbe.Degree
 public import Mei.Algebra.Lie.Graded.Shifted
 public import Mathlib.Algebra.Lie.SemiDirect
 
@@ -31,10 +30,9 @@ noncomputable section
 namespace Mei.ModuleProbe
 
 variable {R M Γ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup Γ] (d : PositiveDegrees Γ) (ℳ : Γ → Submodule R M) (p : Γ)
+  [AddCommMonoid Γ] (d : PositiveDegrees Γ) (ℳ : Γ → Submodule R M) (p : Γ)
 
 /-- Shifted coefficients, regarded as an abelian Lie algebra for the module probe. -/
-@[expose]
 def ModuleCoefficients : Type _ := ↥(shiftedSubmodule ℳ d.monoid p)
 
 instance : AddCommGroup (ModuleCoefficients d ℳ p) :=
@@ -68,29 +66,42 @@ def moduleCoefficientsEquiv : ModuleCoefficients d ℳ p ≃ₗ[R] shiftedSubmod
 
 variable [DecidableEq Γ] {L : Type*} [LieRing L] [LieAlgebra R L]
   [LieRingModule L M] [LieModule R L M]
-  (ℒ : Γ → Submodule R L) [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ]
+  (ℒ : Γ → Submodule R L) [DirectSum.Decomposition ℒ] [IsPositiveGrading d ℒ]
   [SetLike.GradedBracket ℒ ℳ]
+
+attribute [local instance] LieRing.ofAssociativeRing LieAlgebra.ofAssociativeAlgebra
+
+/-- Transport the restricted representation through the coefficient equivalence. -/
+private def actionEndHom : L →ₗ⁅R⁆ Module.End R (ModuleCoefficients d ℳ p) :=
+  (moduleCoefficientsEquiv d ℳ p).symm.lieConj.toLieHom.comp
+    (LieModule.toEnd R L (d.shiftedLieSubmodule ℒ ℳ p))
 
 /-- The original Lie action acts by derivations on the abelian coefficient summand. -/
 def actionDerivationHom :
     L →ₗ⁅R⁆ LieDerivation R (ModuleCoefficients d ℳ p) (ModuleCoefficients d ℳ p) where
   toFun x :=
-    { toLinearMap := LieModule.toEnd R L (d.shiftedLieSubmodule ℒ ℳ p) x
+    { toLinearMap := actionEndHom d ℳ p ℒ x
       leibniz' a b := by
         simp only [moduleCoefficients_lie, sub_zero]
         exact map_zero _ }
-  map_add' x y := by ext a; exact add_lie x y (show d.shiftedLieSubmodule ℒ ℳ p from a)
-  map_smul' r x := by ext a; exact smul_lie r x (show d.shiftedLieSubmodule ℒ ℳ p from a)
+  map_add' x y := by
+    ext a
+    exact LinearMap.congr_fun (map_add (actionEndHom d ℳ p ℒ) x y) a
+  map_smul' r x := by
+    ext a
+    exact LinearMap.congr_fun (map_smul (actionEndHom d ℳ p ℒ) r x) a
   map_lie' {x y} := by
     ext a
-    exact lie_lie x y (show d.shiftedLieSubmodule ℒ ℳ p from a)
+    exact LinearMap.congr_fun (LieHom.map_lie (actionEndHom d ℳ p ℒ) x y) a
 
 /-- Forgetting the abelian internal bracket recovers the restricted Lie action. -/
 theorem moduleCoefficientsEquiv_actionDerivationHom (x : L) (a : ModuleCoefficients d ℳ p) :
     moduleCoefficientsEquiv d ℳ p (actionDerivationHom d ℳ p (ℒ := ℒ) x a) =
+      -- The carrier of the restricted Lie submodule is the shifted submodule;
+      -- this annotation selects its restricted action rather than the zero bracket.
       ⁅x, (show d.shiftedLieSubmodule ℒ ℳ p from moduleCoefficientsEquiv d ℳ p a)⁆ := by
-  unfold moduleCoefficientsEquiv actionDerivationHom
-  rfl
+  simp [actionDerivationHom, actionEndHom, LinearEquiv.conj_apply_apply,
+    LieModule.toEnd]
 
 /-- The semidirect Lie algebra of the module probe. Its coefficient summand is
 Mathlib's left factor and its original Lie algebra is the right factor. -/
@@ -122,9 +133,8 @@ theorem actionDerivationHom_mem_shiftedGrading {n q : Γ} {x : L}
     (ha : moduleCoefficientsEquiv d ℳ p a ∈ shiftedGrading ℳ d.monoid p q) :
     moduleCoefficientsEquiv d ℳ p (actionDerivationHom d ℳ p (ℒ := ℒ) x a) ∈
       shiftedGrading ℳ d.monoid p (n + q) := by
-  rw [moduleCoefficientsEquiv_actionDerivationHom, mem_shiftedGrading]
-  change ⁅x, ((moduleCoefficientsEquiv d ℳ p a : shiftedSubmodule ℳ d.monoid p) : M)⁆ ∈
-    ℳ (p + (n + q))
+  rw [moduleCoefficientsEquiv_actionDerivationHom, mem_shiftedGrading,
+    LieSubmodule.coe_bracket]
   simpa only [vadd_eq_add, add_left_comm] using
     SetLike.GradedBracket.bracket_mem hx ((mem_shiftedGrading ℳ d.monoid p).mp ha)
 
