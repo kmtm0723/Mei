@@ -35,38 +35,41 @@ end AffineMap
 
 section Prod
 
-variable {k V E : Type*} [Ring k]
-  [AddCommGroup V] [Module k V] [AddCommGroup E] [Module k E]
+variable {k V E P Q : Type*} [Ring k]
+  [AddCommGroup V] [Module k V] [AddTorsor V P]
+  [AddCommGroup E] [Module k E] [AddTorsor E Q]
 
 /-- Adding an unrestricted factor preserves and reflects equality of affine spans,
 including for empty sets. -/
-theorem affineSpan_prod_univ_eq_iff (s t : Set V) :
-    affineSpan k (s ×ˢ (Set.univ : Set E)) = affineSpan k (t ×ˢ (Set.univ : Set E)) ↔
+theorem affineSpan_prod_univ_eq_iff (s t : Set P) :
+    affineSpan k (s ×ˢ (Set.univ : Set Q)) = affineSpan k (t ×ˢ (Set.univ : Set Q)) ↔
       affineSpan k s = affineSpan k t := by
+  classical
+  let q₀ : Q := Classical.arbitrary Q
   rw [affineSpan_prod_eq, affineSpan_prod_eq, AffineSubspace.span_univ]
   constructor
   · intro h
-    ext v
-    have := congrArg (fun A : AffineSubspace k (V × E) => (v, 0) ∈ A) h
+    ext p
+    have := congrArg (fun A : AffineSubspace k (P × Q) => (p, q₀) ∈ A) h
     simpa using this
-  · exact fun h => congrArg (fun A : AffineSubspace k V => A.prod ⊤) h
+  · exact fun h => congrArg (fun A : AffineSubspace k P => A.prod ⊤) h
 
 namespace AffineSubspace
 
 /-- The direction of the affine span of a nonempty cylinder has an unrestricted
 second factor. Nonemptiness is needed because the empty span has zero direction. -/
-theorem direction_affineSpan_prod_univ {s : Set V} (hs : s.Nonempty) :
-    (affineSpan k (s ×ˢ (Set.univ : Set E))).direction =
+theorem direction_affineSpan_prod_univ {s : Set P} (hs : s.Nonempty) :
+    (affineSpan k (s ×ˢ (Set.univ : Set Q))).direction =
       (affineSpan k s).direction.prod ⊤ := by
   rw [direction_affineSpan, vectorSpan_prod_eq hs Set.univ_nonempty]
   rw [← direction_affineSpan, ← direction_affineSpan, span_univ, direction_top]
 
 /-- Adding unrestricted coordinates preserves and reflects equality of supporting
 directions for nonempty sets. -/
-theorem direction_affineSpan_prod_univ_eq_iff {s t : Set V}
+theorem direction_affineSpan_prod_univ_eq_iff {s t : Set P}
     (hs : s.Nonempty) (ht : t.Nonempty) :
-    (affineSpan k (s ×ˢ (Set.univ : Set E))).direction =
-      (affineSpan k (t ×ˢ (Set.univ : Set E))).direction ↔
+    (affineSpan k (s ×ˢ (Set.univ : Set Q))).direction =
+      (affineSpan k (t ×ˢ (Set.univ : Set Q))).direction ↔
       (affineSpan k s).direction = (affineSpan k t).direction := by
   rw [direction_affineSpan_prod_univ hs, direction_affineSpan_prod_univ ht]
   constructor
