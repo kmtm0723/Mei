@@ -37,7 +37,7 @@ def shiftedQuotientGrading (k : ℕ) :
     TauCeti.InternalGrading R ((d.shiftedFiltration ℳ p).quotient k) Γ :=
   (TauCeti.InternalGrading.ofDecomposition (shiftedGrading ℳ d.monoid p)).quotient
     ((d.shiftedFiltration ℳ p).submodule (k + 1))
-    (by simpa using d.shiftedFiltration_isHomogeneous ℳ p k)
+    (by simpa using d.shiftedFiltration_succ_isHomogeneous ℳ p k)
 
 /-- A finite relative piece is the quotient image of its original piece. -/
 @[simp]
