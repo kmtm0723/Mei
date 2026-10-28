@@ -19,6 +19,10 @@ representation of a filtration-raising Lie action can be used on the original qu
 The underlying module completion is canonically linearly equivalent to the algebra
 completion. The equivalence identifies projections, original elements, and every
 completed filtration term, without a separatedness hypothesis.
+
+The module/algebra completion comparison API `moduleCompletionEquiv`, including
+its projection and filtration compatibility lemmas, incorporates the comparison
+introduced in [Mei #419](https://github.com/yuma-mizuno-lean/Mei/pull/419).
 -/
 
 public section
@@ -58,63 +62,50 @@ theorem factor_restrictScalarsEquiv {k l : ℕ} (h : k ≤ l)
   obtain ⟨a, rfl⟩ := ((F.toModuleFiltration R).submodule (l + 1)).mkQ_surjective a
   simp
 
-private def moduleCompletionToAlgebra : (F.toModuleFiltration R).completion →ₗ[R]
-    F.completion where
-  toFun x := ⟨fun k => Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k.unop + 1))
-    ((F.toModuleFiltration R).projection k.unop x),
-    (F.mem_completion_iff _).mpr (by
-      intro k l h
-      rw [F.factor_restrictScalarsEquiv h,
-        (F.toModuleFiltration R).transition_projection h x])⟩
-  map_add' x y := by
-    apply F.completion_ext
-    intro k
-    simp only [map_add, projection_apply]
-  map_smul' r x := by
-    apply F.completion_ext
-    intro k
-    have hs (z : F.completion) : F.projection k (r • z) = r • F.projection k z := by
-      simpa only [projectionₐ_apply] using map_smul (F.projectionₐ (R := R) k) r z
-    rw [RingHom.id_apply, hs]
-    simp only [projection_apply]
-    exact map_smul
-      ((Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))).toLinearMap.comp
-        ((F.toModuleFiltration R).projection k)) r x
-
-private theorem projection_moduleCompletionToAlgebra (k : ℕ)
-    (x : (F.toModuleFiltration R).completion) :
-    F.projection k (F.moduleCompletionToAlgebra x) =
-      Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))
-        ((F.toModuleFiltration R).projection k x) := by
-  rw [projection_apply]
-  rfl
-
 /-- The module and algebra completions of an ideal filtration are linearly equivalent. -/
-def moduleCompletionEquiv : (F.toModuleFiltration R).completion ≃ₗ[R] F.completion where
-  __ := F.moduleCompletionToAlgebra
-  invFun := (F.toModuleFiltration R).lift
-    (fun k => (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))).symm.toLinearMap.comp
-      (F.projectionₐ k).toLinearMap) (by
-        intro k l h
+def moduleCompletionEquiv : (F.toModuleFiltration R).completion ≃ₗ[R] F.completion := by
+  let e := (LinearEquiv.piCongrRight fun k : ℕᵒᵖ =>
+    Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k.unop + 1))).ofSubmodules
+      (F.toModuleFiltration R).completionSubmodule
+      (F.completionSubalgebra (R := R)).toSubmodule (by
         ext x
-        apply (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))).injective
-        simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply,
-          projectionₐ_apply, ← factor_restrictScalarsEquiv, LinearEquiv.apply_symm_apply]
-        exact F.factor_projection h x)
-  left_inv x := by
-    apply (F.toModuleFiltration R).completion_ext
-    intro k
-    simp only [LinearMap.toFun_eq_coe, ModuleFiltration.projection_lift, LinearMap.comp_apply,
-      LinearEquiv.coe_coe,
-      AlgHom.toLinearMap_apply, projectionₐ_apply, projection_moduleCompletionToAlgebra,
-      LinearEquiv.symm_apply_apply]
-  right_inv x := by
+        rw [Submodule.mem_map_equiv]
+        change _ ∈ (F.toModuleFiltration R).completionSubmodule ↔
+          x ∈ F.completionSubalgebra
+        rw [F.mem_completionSubalgebra_iff]
+        rw [ModuleFiltration.mem_completionSubmodule_iff, F.mem_completion_iff]
+        simp only [LinearEquiv.piCongrRight_symm, LinearEquiv.piCongrRight_apply]
+        constructor
+        · intro hx k l h
+          have he := congrArg (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1)))
+            (hx k l h)
+          simpa only [← factor_restrictScalarsEquiv, LinearEquiv.apply_symm_apply] using he
+        · intro hx k l h
+          apply (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))).injective
+          simpa only [← factor_restrictScalarsEquiv, LinearEquiv.apply_symm_apply] using hx h)
+  let E : (F.toModuleFiltration R).completion ≃ F.completion :=
+    e.toEquiv.trans (Equiv.subtypeEquivRight fun x =>
+      F.mem_completionSubalgebra_iff (R := R) x)
+  have hproj (k : ℕ) (x : (F.toModuleFiltration R).completion) :
+      F.projection k (E x) =
+        Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))
+          ((F.toModuleFiltration R).projection k x) := by
+    obtain ⟨x, hx⟩ := x
+    rw [projection_apply, ModuleFiltration.projection_mk]
+    rfl
+  refine { E with map_add' := ?_, map_smul' := ?_ }
+  · intro x y
+    change E (x + y) = E x + E y
     apply F.completion_ext
     intro k
-    simp only [LinearMap.toFun_eq_coe, projection_moduleCompletionToAlgebra,
-      ModuleFiltration.projection_lift,
-      LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply, projectionₐ_apply,
-      LinearEquiv.apply_symm_apply]
+    rw [map_add (F.projection k), hproj, hproj, hproj, map_add, map_add]
+  · intro r x
+    change E (r • x) = r • E x
+    apply F.completion_ext
+    intro k
+    have hs := map_smul (F.projectionₐ (R := R) k) r (E x)
+    simp only [projectionₐ_apply] at hs
+    rw [hproj, hs, hproj, map_smul, map_smul]
 
 /-- The comparison uses the scalar-restriction equivalence at every finite order. -/
 @[simp]
@@ -123,7 +114,10 @@ theorem projection_moduleCompletionEquiv (k : ℕ)
     F.projection k (F.moduleCompletionEquiv x) =
       Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))
         ((F.toModuleFiltration R).projection k x) :=
-  F.projection_moduleCompletionToAlgebra k x
+  by
+    obtain ⟨x, hx⟩ := x
+    simp only [moduleCompletionEquiv, projection_apply, ModuleFiltration.projection_mk]
+    rfl
 
 /-- The inverse comparison uses the inverse scalar-restriction equivalence. -/
 @[simp]
