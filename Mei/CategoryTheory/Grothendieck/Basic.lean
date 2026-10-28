@@ -34,6 +34,13 @@ def fiberHom {d e : D} {x : C.obj d} {y : C.obj e}
     (C.map g).toFunctor.obj x ⟶ y :=
   eqToHom (by rw [h]) ≫ f.fiber
 
+/-- Extracting an explicitly assembled arrow returns its fiber component. -/
+@[simp]
+theorem fiberHom_mk {d e : D} {x : C.obj d} {y : C.obj e}
+    (g : d ⟶ e) (a : (C.map g).toFunctor.obj x ⟶ y) :
+    fiberHom (⟨g, a⟩ : (⟨d, x⟩ : Grothendieck C) ⟶ ⟨e, y⟩) g rfl = a := by
+  simp [fiberHom]
+
 /-- Reassembling the prescribed base and fiber recovers the total arrow. -/
 @[simp]
 theorem mk_fiberHom {d e : D} {x : C.obj d} {y : C.obj e}
@@ -58,6 +65,13 @@ theorem ι_map_verticalFiber {d : D} {x y : C.obj d}
   dsimp [verticalFiber, fiberHom, ι]
   erw [eqToHom_trans_assoc (C := C.obj d), eqToHom_trans_assoc (C := C.obj d),
     eqToHom_trans_assoc (C := C.obj d)]
+
+/-- Extracting an arrow included from a fiber returns the original fiber arrow. -/
+@[simp↓]
+theorem verticalFiber_ι_map {d : D} {x y : C.obj d} (a : x ⟶ y)
+    (h : ((ι C d).map a).base = 𝟙 d) : verticalFiber ((ι C d).map a) h = a := by
+  apply (ι C d).map_injective
+  exact ι_map_verticalFiber _ h
 
 /-- A morphism is canonical transport followed by its fiber morphism. -/
 theorem ιNatTrans_app_comp_ι_map {X Y : Grothendieck C} (h : X ⟶ Y) :
