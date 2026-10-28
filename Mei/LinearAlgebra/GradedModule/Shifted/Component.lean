@@ -38,6 +38,14 @@ private def shiftedPieceToAmbient (q : Γ) :
   exact ((shiftedSubmodule ℳ d.monoid p).subtype.submoduleComap (ℳ q)).comp
     (Submodule.inclusion (by rw [shiftedGrading_def, hpq]))
 
+omit [DecidableEq Γ] [DirectSum.Decomposition ℳ] in
+/-- The ambient transport preserves the underlying coefficient. -/
+private theorem coe_shiftedPieceToAmbient (q : Γ)
+    (x : shiftedGrading ℳ d.monoid p (q - p)) :
+    (d.shiftedPieceToAmbient ℳ p q x : M) = (x : shiftedSubmodule ℳ d.monoid p) := by
+  -- Both constituent maps are submodule inclusions; the index transport changes only membership.
+  rfl
+
 /-- The ambient degree-`q` component of a finite shifted quotient retaining that degree. -/
 def shiftedQuotientComponent (q : Γ) (k : ℕ) (h : d.degree (q - p) ≤ k) :
     (d.shiftedFiltration ℳ p).quotient k →ₗ[R] ℳ q :=
@@ -53,9 +61,7 @@ theorem shiftedQuotientComponent_mk (q : Γ) (k : ℕ) (h : d.degree (q - p) ≤
       DirectSum.decompose ℳ (x : M) q := by
   rw [shiftedQuotientComponent, LinearMap.comp_apply, quotientComponent_mk]
   apply Subtype.ext
-  change ((DirectSum.decompose (shiftedGrading ℳ d.monoid p) x (q - p) :
-    shiftedSubmodule ℳ d.monoid p) : M) = _
-  rw [coe_decompose_shiftedGrading]
+  rw [coe_shiftedPieceToAmbient, coe_decompose_shiftedGrading]
   congr 2 <;> abel_nf
 
 /-- Lowering the cutoff leaves every retained homogeneous component unchanged. -/
@@ -87,9 +93,7 @@ theorem shiftedHomogeneousComponent_of (q : Γ) (x : shiftedSubmodule ℳ d.mono
       DirectSum.decompose ℳ (x : M) q := by
   rw [shiftedHomogeneousComponent, LinearMap.comp_apply, completionComponent_of]
   apply Subtype.ext
-  change ((DirectSum.decompose (shiftedGrading ℳ d.monoid p) x (q - p) :
-    shiftedSubmodule ℳ d.monoid p) : M) = _
-  rw [coe_decompose_shiftedGrading]
+  rw [coe_shiftedPieceToAmbient, coe_decompose_shiftedGrading]
   congr 2 <;> abel_nf
 
 /-- Completed coefficients have no components outside the shifted support. -/
@@ -103,6 +107,7 @@ theorem shiftedHomogeneousComponent_eq_zero {q : Γ} (hq : q - p ∉ d.monoid)
       shiftedSubmodule ℳ d.monoid p) = 0 := by
     simpa only [shiftedGrading_eq_bot ℳ d.monoid p hq, Submodule.mem_bot] using hz
   apply Subtype.ext
+  rw [shiftedHomogeneousComponent, LinearMap.comp_apply, coe_shiftedPieceToAmbient]
   exact congrArg (fun a : shiftedSubmodule ℳ d.monoid p => (a : M)) hz'
 
 /-- All homogeneous components together distinguish completed shifted coefficients. -/
@@ -115,12 +120,9 @@ theorem shiftedCoefficients_ext {x y : d.ShiftedCoefficients ℳ p}
   simp only [completionEquivPi_apply]
   apply Subtype.ext
   apply Subtype.ext
-  let read (r : Γ) (z : d.ShiftedCoefficients ℳ p) : M :=
-    ((d.completionComponent (shiftedGrading ℳ d.monoid p) (d.shiftedFiltration ℳ p)
-      (d.shiftedFiltration_succ ℳ p) r z : shiftedSubmodule ℳ d.monoid p) : M)
-  change read n x = read n y
   have he := congrArg Subtype.val (h (p + n))
-  change read (p + n - p) x = read (p + n - p) y at he
+  simp only [shiftedHomogeneousComponent, LinearMap.comp_apply,
+    coe_shiftedPieceToAmbient] at he
   have hn : p + n - p = n := by abel
   rw [hn] at he
   exact he
