@@ -5,8 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.Incoming.Deck
-public import Mei.Geometry.ScatteringDiagram.Incoming.Transport
+public import Mei.Geometry.ScatteringDiagram.Incoming.Deck.Basic
 
 /-!
 # Coefficient transport on deck quotients of incoming tails
