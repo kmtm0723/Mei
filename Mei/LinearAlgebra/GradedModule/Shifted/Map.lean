@@ -97,9 +97,8 @@ theorem shiftedMap_mem_shiftedFiltration (k : ℕ)
       (e.shiftedFiltration 𝓝 (T p)).submodule (k + 1)) hx ?_ ?_ ?_
   · intro n x hx
     by_cases hn : n.val ∈ d.monoid
-    · rw [e.shiftedFiltration_submodule 𝓝 (T p), Submodule.mem_comap]
-      change (T.shiftedMap ℳ 𝓝 p f hf x : M') ∈ _
-      rw [coe_shiftedMap]
+    · rw [e.shiftedFiltration_submodule 𝓝 (T p), Submodule.mem_comap,
+        Submodule.subtype_apply, coe_shiftedMap]
       apply Mei.DirectSum.le_degreeTail 𝓝 _ (i := T (p + n))
       · have hd := T.degree_gt k hn n.property
         simpa only [map_add, add_sub_cancel_left, Nat.cast_add, Nat.cast_one] using
@@ -148,30 +147,30 @@ theorem shiftedQuotientMap_mk (k : ℕ) (x : shiftedSubmodule ℳ d.monoid p) :
       Submodule.Quotient.mk (T.shiftedMap ℳ 𝓝 p f hf x) := (rfl)
 
 /-- The induced map on the existing shifted coefficient completions. -/
-def shiftedCompletedMap : d.ShiftedCoefficients ℳ p →ₗ[R] e.ShiftedCoefficients 𝓝 (T p) :=
+def shiftedCompletionMap : d.ShiftedCoefficients ℳ p →ₗ[R] e.ShiftedCoefficients 𝓝 (T p) :=
   (d.shiftedFiltration ℳ p).completionMap (e.shiftedFiltration 𝓝 (T p))
     (T.shiftedMap ℳ 𝓝 p f hf) T.modulus T.monotone_modulus
     (fun k _ hx => T.shiftedMap_mem_shiftedFiltration ℳ 𝓝 p f hf k hx)
 
 /-- The shifted extension is the existing completion map for the restricted coefficient map. -/
-theorem shiftedCompletedMap_def :
-    T.shiftedCompletedMap ℳ 𝓝 p f hf =
+theorem shiftedCompletionMap_def :
+    T.shiftedCompletionMap ℳ 𝓝 p f hf =
       (d.shiftedFiltration ℳ p).completionMap (e.shiftedFiltration 𝓝 (T p))
         (T.shiftedMap ℳ 𝓝 p f hf) T.modulus T.monotone_modulus
         (fun k _ hx => T.shiftedMap_mem_shiftedFiltration ℳ 𝓝 p f hf k hx) := (rfl)
 
 /-- A target finite projection is computed at the source cutoff given by the modulus. -/
 @[simp]
-theorem projection_shiftedCompletedMap (k : ℕ) (x : d.ShiftedCoefficients ℳ p) :
-    (e.shiftedFiltration 𝓝 (T p)).projection k (T.shiftedCompletedMap ℳ 𝓝 p f hf x) =
+theorem projection_shiftedCompletionMap (k : ℕ) (x : d.ShiftedCoefficients ℳ p) :
+    (e.shiftedFiltration 𝓝 (T p)).projection k (T.shiftedCompletionMap ℳ 𝓝 p f hf x) =
       T.shiftedQuotientMap ℳ 𝓝 p f hf k ((d.shiftedFiltration ℳ p).projection (T.modulus k) x) :=
   (d.shiftedFiltration ℳ p).projection_completionMap (e.shiftedFiltration 𝓝 (T p))
     (T.shiftedMap ℳ 𝓝 p f hf) T.modulus T.monotone_modulus _ k x
 
 /-- The completed shifted map extends the original homogeneous coefficient map. -/
 @[simp]
-theorem shiftedCompletedMap_of (x : shiftedSubmodule ℳ d.monoid p) :
-    T.shiftedCompletedMap ℳ 𝓝 p f hf ((d.shiftedFiltration ℳ p).of x) =
+theorem shiftedCompletionMap_of (x : shiftedSubmodule ℳ d.monoid p) :
+    T.shiftedCompletionMap ℳ 𝓝 p f hf ((d.shiftedFiltration ℳ p).of x) =
       (e.shiftedFiltration 𝓝 (T p)).of (T.shiftedMap ℳ 𝓝 p f hf x) :=
   (d.shiftedFiltration ℳ p).completionMap_of (e.shiftedFiltration 𝓝 (T p))
     (T.shiftedMap ℳ 𝓝 p f hf) T.modulus T.monotone_modulus _ x
