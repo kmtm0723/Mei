@@ -60,25 +60,18 @@ abbrev shape : MultispanShape where
 /-- Forget the copied indices and send each identity face to its old chamber.
 The body is exposed so pulled-back coefficient objects have their original carriers. -/
 @[expose]
-def projection : WalkingMultispan D.shape ⥤ WalkingMultispan J where
-  obj
-    | .left (.inl ⟨b, _⟩) => .left b
-    | .left (.inr ⟨j, _⟩) => .right j
-    | .right ⟨j, _⟩ => .right j
-  map {x y} f := by
-    cases f with
-    | id x => exact 𝟙 _
-    | fst b =>
-      rcases b with (⟨b, c⟩ | ⟨j, e⟩)
-      · exact WalkingMultispan.Hom.fst b
-      · exact 𝟙 _
-    | snd b =>
-      rcases b with (⟨b, c⟩ | ⟨j, e⟩)
-      · exact WalkingMultispan.Hom.snd b
-      · exact 𝟙 _
-  map_id := by rintro (_ | _) <;> rfl
-  map_comp := by
-    rintro (_ | _) (_ | _) (_ | _) (_ | _ | _) (_ | _ | _) <;> cat_disch
+def projection : WalkingMultispan D.shape ⥤ WalkingMultispan J :=
+  MultispanIndex.multispan
+    { left
+        | .inl ⟨b, _⟩ => .left b
+        | .inr ⟨j, _⟩ => .right j
+      right j := .right j.1
+      fst
+        | .inl ⟨b, _⟩ => WalkingMultispan.Hom.fst b
+        | .inr ⟨_, _⟩ => 𝟙 _
+      snd
+        | .inl ⟨b, _⟩ => WalkingMultispan.Hom.snd b
+        | .inr ⟨_, _⟩ => 𝟙 _ }
 
 /-- A copied face projects to its original face. -/
 @[simp] theorem projection_obj_left_copy (b : J.L) (a : D.faces b) :
