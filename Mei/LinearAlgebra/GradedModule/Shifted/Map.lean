@@ -73,10 +73,10 @@ theorem shiftedMap_mem_shiftedGrading {n : Γ} {x : shiftedSubmodule ℳ d.monoi
 
 end Monoid
 
-section Group
+section Filtration
 
 variable {Γ Γ' R M M' : Type*} [AddCommGroup Γ] [AddCommGroup Γ']
-  [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module R M']
+  [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module R M']
   [DecidableEq Γ] [DecidableEq Γ']
   {d : PositiveDegrees Γ} {e : PositiveDegrees Γ'} (T : PositiveDegreeMap d e)
   (ℳ : Γ → Submodule R M) (𝓝 : Γ' → Submodule R M')
@@ -105,6 +105,20 @@ theorem shiftedMap_mem_shiftedFiltration (k : ℕ)
   · simp
   · intro x y hx hy
     simpa only [_root_.map_add] using Submodule.add_mem _ hx hy
+
+end Filtration
+
+section Group
+
+variable {Γ Γ' R M M' : Type*} [AddCommGroup Γ] [AddCommGroup Γ']
+  [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module R M']
+  [DecidableEq Γ] [DecidableEq Γ']
+  {d : PositiveDegrees Γ} {e : PositiveDegrees Γ'} (T : PositiveDegreeMap d e)
+  (ℳ : Γ → Submodule R M) (𝓝 : Γ' → Submodule R M')
+  [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] (p : Γ)
+  (f : M →ₗ[R] M') (hf : ∀ q, ℳ q ≤ (𝓝 (T q)).comap f)
+
+include hf
 
 /-- The finite quotient map at the source cutoff specified by the degree modulus. -/
 def shiftedQuotientMap (k : ℕ) :
