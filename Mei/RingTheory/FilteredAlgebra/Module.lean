@@ -120,38 +120,19 @@ theorem projection_moduleCompletionEquiv_symm (k : ℕ) (x : F.completion) :
     (F.toModuleFiltration R).projection k ((F.moduleCompletionEquiv (R := R)).symm x) =
       (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))).symm
         (F.projection k x) := by
-  have h := (F.toModuleFiltration A).projection_completionRestrictScalarsEquiv_symm R
-    ((F.toModuleFiltration A).completionRestrictScalarsEquiv R
-      ((F.moduleCompletionEquiv (R := R)).symm x)) k
-  have he := congrArg (((F.toModuleFiltration A).restrictScalars R).projection k)
-    (((F.toModuleFiltration A).completionRestrictScalarsEquiv R).symm_apply_apply
-      ((F.moduleCompletionEquiv (R := R)).symm x))
-  have h' := he.symm.trans h
-  rw [(F.toModuleFiltration A).projection_mk] at h'
-  have hp :
-      ((F.toModuleFiltration A).completionRestrictScalarsEquiv R
-        ((F.moduleCompletionEquiv (R := R)).symm x)).val (Opposite.op k) =
-      F.projection k (F.moduleCompletionEquiv
-        ((F.moduleCompletionEquiv (R := R)).symm x)) := by
-    rw [projection_apply]
-    rfl
-  have h'' := h'.trans (congrArg
-    (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))).symm hp)
-  rw [LinearEquiv.apply_symm_apply] at h''
-  exact h''
+  conv_rhs =>
+    rw [← (F.moduleCompletionEquiv (R := R)).apply_symm_apply x,
+      projection_moduleCompletionEquiv]
+  rw [LinearEquiv.symm_apply_apply]
 
 /-- The comparison sends original elements to their canonical algebra completion images. -/
 @[simp]
 theorem moduleCompletionEquiv_of (x : A) :
     F.moduleCompletionEquiv ((F.toModuleFiltration R).of x) = F.toCompletion x := by
-  have h := (F.toModuleFiltration A).completionRestrictScalarsEquiv_of R x
   apply F.completion_ext
   intro k
-  have hk := congrArg ((F.toModuleFiltration A).projection k) h
-  rw [(F.toModuleFiltration A).projection_of,
-    (F.toModuleFiltration A).projection_mk] at hk
-  rw [projection_apply, projection_toCompletion]
-  exact hk
+  simp [projection_moduleCompletionEquiv, ModuleFiltration.projection_of,
+    projection_toCompletion]
 
 /-- Every completed module filtration term corresponds exactly to the completion ideal. -/
 @[simp]
@@ -159,20 +140,12 @@ theorem moduleCompletionEquiv_mem_completionIdeal_iff (k : ℕ)
     (x : (F.toModuleFiltration R).completion) :
     F.moduleCompletionEquiv x ∈ F.completionIdeal k ↔
       x ∈ (F.toModuleFiltration R).completedFiltration.submodule k := by
-  have h := (F.toModuleFiltration A).comap_completedFiltration_completionRestrictScalarsEquiv
-    R k
-  have hx := (congrArg (fun S => x ∈ S) h).to_iff
-  have hc : F.moduleCompletionEquiv x ∈ F.completionIdeal k ↔
-      (F.toModuleFiltration A).completionRestrictScalarsEquiv R x ∈
-        (F.toModuleFiltration A).completedFiltration.submodule k := by
-    cases k with
-    | zero => simp
-    | succ k =>
-      rw [F.completionIdeal_succ, (F.toModuleFiltration A).completedFiltration_succ]
-      simp only [RingHom.mem_ker, LinearMap.mem_ker]
-      rw [projection_apply, (F.toModuleFiltration A).projection_mk]
-      rfl
-  exact hc.trans hx
+  cases k with
+  | zero => simp
+  | succ k =>
+    simp only [completionIdeal_succ, ModuleFiltration.completedFiltration_succ,
+      RingHom.mem_ker, LinearMap.mem_ker, projection_moduleCompletionEquiv,
+      LinearEquiv.map_eq_zero_iff]
 
 /-- The inverse comparison recovers the module image of an original element. -/
 @[simp]
