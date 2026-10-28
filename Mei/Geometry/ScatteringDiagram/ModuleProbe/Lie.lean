@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mei.Algebra.Lie.Abelian
 public import Mei.Algebra.Lie.Graded.Shifted.Basic
 public import Mathlib.Algebra.Lie.SemiDirect
 
@@ -33,36 +34,16 @@ variable {R M Γ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommMonoid Γ] (d : PositiveDegrees Γ) (ℳ : Γ → Submodule R M) (p : Γ)
 
 /-- Shifted coefficients, regarded as an abelian Lie algebra for the module probe. -/
-def ModuleCoefficients : Type _ := ↥(shiftedSubmodule ℳ d.monoid p)
-
-instance : AddCommGroup (ModuleCoefficients d ℳ p) :=
-  inferInstanceAs (AddCommGroup (shiftedSubmodule ℳ d.monoid p))
-
-instance : Module R (ModuleCoefficients d ℳ p) :=
-  inferInstanceAs (Module R (shiftedSubmodule ℳ d.monoid p))
-
-instance : LieRing (ModuleCoefficients d ℳ p) where
-  __ := (inferInstance : AddCommGroup (ModuleCoefficients d ℳ p))
-  bracket _ _ := 0
-  add_lie _ _ _ := (add_zero _).symm
-  lie_add _ _ _ := (add_zero _).symm
-  lie_self _ := rfl
-  leibniz_lie _ _ _ := (add_zero _).symm
-
-instance : LieAlgebra R (ModuleCoefficients d ℳ p) where
-  __ := (inferInstance : Module R (ModuleCoefficients d ℳ p))
-  lie_smul r _ _ := (smul_zero r).symm
+abbrev ModuleCoefficients : Type _ := AbelianLie (shiftedSubmodule ℳ d.monoid p)
 
 /-- The coefficient summand has zero internal bracket. -/
 @[simp]
-theorem moduleCoefficients_lie (a b : ModuleCoefficients d ℳ p) : ⁅a, b⁆ = 0 := rfl
-
-instance : IsLieAbelian (ModuleCoefficients d ℳ p) where
-  trivial := moduleCoefficients_lie d ℳ p
+theorem moduleCoefficients_lie (a b : ModuleCoefficients d ℳ p) : ⁅a, b⁆ = 0 :=
+  AbelianLie.lie_eq_zero a b
 
 /-- Forget the zero bracket on the shifted coefficient summand. -/
 def moduleCoefficientsEquiv : ModuleCoefficients d ℳ p ≃ₗ[R] shiftedSubmodule ℳ d.monoid p :=
-  LinearEquiv.refl R _
+  AbelianLie.linearEquiv R
 
 variable [DecidableEq Γ] {L : Type*} [LieRing L] [LieAlgebra R L]
   [LieRingModule L M] [LieModule R L M]
