@@ -91,14 +91,6 @@ local notation "F" => degreeFiltration ℒ d.degree
 
 local notation "j" => ((ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U)
 
-private theorem ι_filtered (k : ℕ) :
-    d.degreeSubmodule ℒ k ≤ (((F).ideal (k + 1)).restrictScalars R).comap j := by
-  intro x hx
-  apply ι_mem_degreeFiltration_of_mem_degreeIdeal d ℒ
-  have hx' : x ∈ (d.degreeIdeal ℒ k).toSubmodule := by
-    simpa only [d.degreeIdeal_toSubmodule ℒ k] using hx
-  exact hx'
-
 variable [Algebra ℚ R]
 
 /-- Rational scalars on the enveloping algebra are induced from the coefficient ring. -/
@@ -113,8 +105,16 @@ theorem truncatedExpLieAction_apply (k : ℕ) (x : d.truncatedLie ℒ k)
     (F).truncatedExpLieAction d ℒ k x a =
       IsNilpotent.exp (truncatedLieToU d ℒ k x) * a *
         IsNilpotent.exp (-truncatedLieToU d ℒ k x) := by
+  have hj : ∀ k, d.degreeSubmodule ℒ k ≤
+      (((F).ideal (k + 1)).restrictScalars R).comap j := by
+    intro k y hy
+    apply ι_mem_degreeFiltration_of_mem_degreeIdeal d ℒ
+    have hy' : y ∈ (d.degreeIdeal ℒ k).toSubmodule := by
+      simpa only [d.degreeIdeal_toSubmodule ℒ k] using hy
+    exact hy'
   simpa only [truncatedInnerMap_eq_truncatedLieToU, LieHom.coe_toLinearMap] using
-    (F).truncatedExpLieAction_eq_inner d ℒ j (ι_filtered d ℒ) lie_eq k x a
+    (F).truncatedExpLieAction_eq_inner d ℒ j
+      hj lie_eq k x a
 
 variable [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
 
@@ -154,12 +154,21 @@ theorem completedBCHAction_exp_apply (x : d.completedLie ℒ) (a : (F).completio
         completedLieToU_mem_completionIdeal_one d ℒ x⟩ * a *
       (F).completedExp (-⟨completedLieToU d ℒ x,
         completedLieToU_mem_completionIdeal_one d ℒ x⟩) := by
-  have he : (F).completedInnerElement d ℒ j (ι_filtered d ℒ) x =
+  have hj : ∀ k, d.degreeSubmodule ℒ k ≤
+      (((F).ideal (k + 1)).restrictScalars R).comap j := by
+    intro k y hy
+    apply ι_mem_degreeFiltration_of_mem_degreeIdeal d ℒ
+    have hy' : y ∈ (d.degreeIdeal ℒ k).toSubmodule := by
+      simpa only [d.degreeIdeal_toSubmodule ℒ k] using hy
+    exact hy'
+  have he : (F).completedInnerElement d ℒ j
+      hj x =
       ⟨completedLieToU d ℒ x, completedLieToU_mem_completionIdeal_one d ℒ x⟩ := by
     apply Subtype.ext
     simp only [Mei.AlgFiltration.coe_completedInnerElement,
       completedInnerMap_eq_completedLieToU, LieHom.coe_toLinearMap]
   simpa only [he] using
-    (F).completedBCHAction_exp_eq_inner d ℒ j (ι_filtered d ℒ) lie_eq x a
+    (F).completedBCHAction_exp_eq_inner d ℒ j
+      hj lie_eq x a
 
 end UniversalEnvelopingAlgebra.InnerAction
