@@ -1,0 +1,388 @@
+/-
+Copyright (c) 2026 Mei contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Claude
+-/
+module
+
+public import Mei.Combinatorics.Enumerative.MaximalDyckPath
+public import Mathlib.Algebra.Polynomial.Degree.Defs
+public import Mathlib.Data.Fintype.Pi
+public import Mathlib.Data.Fintype.Fin
+public import Mathlib.Algebra.Group.Fin.Basic
+
+/-!
+# Compatible gradings of maximal Dyck paths
+
+A grading of the maximal Dyck path of `(d₁, d₂)` assigns a natural number to every edge; we
+write `γ_V` for its values on vertical edges and `γ_H` for those on horizontal edges, with
+totals `p = ∑ γ_V` and `q = ∑ γ_H`. Subpaths include both endpoint edges and wrap cyclically
+from the last edge to the first.
+
+* `Compatible`: for every horizontal edge `h` and vertical edge `v`, some proper initial
+  subpath `he` of `hv` has as many vertical edges as the horizontal grade sum on it, or some
+  proper final subpath `ev` of `hv` has as many horizontal edges as the vertical grade sum on
+  it. One-edge subpaths are allowed.
+* `horizontalShadow γ h`: the local shadow of a horizontal edge `h`, namely the vertical edges
+  of the shortest subpath starting at `h` whose vertical edge count equals its horizontal grade
+  sum, or all vertical edges if there is no such subpath. `verticalShadow` is dual, using
+  subpaths ending at a vertical edge. The total shadows are the unions of local shadows.
+* `Shadowed`: a compatible grading whose nonzero horizontal support lies in the total vertical
+  shadow, or whose nonzero vertical support lies in the total horizontal shadow.
+* `Tight`: a shadowed grading with `p ≤ d₁`, `q ≤ d₂` and `p d₂ - q d₁ = ± gcd(p, q)`.
+* `cplus` and `cminus`: for polynomials `P₁, P₂`, the sums of the weights
+  `∏_v [x^{γ_V(v)}] P₁ ∏_h [y^{γ_H(h)}] P₂` of compatible gradings with totals `(p, q)` whose
+  nonzero vertical support lies in the total horizontal shadow, respectively whose nonzero
+  horizontal support lies in the total vertical shadow. Grades are bounded by the degrees.
+
+When `P₁` and `P₂` have constant coefficient `1`, both sums equal `1` at `(p, q) = (0, 0)`,
+the only contribution being the zero grading.
+
+These are the gradings of Lee–Li–Zelevinsky and Rupel used by Burcroff–Lee–Mou for the
+coefficients of rank-two wall functions.
+-/
+
+public section
+
+open DyckStep Finset Polynomial
+
+namespace Mei.MaximalDyckPath
+
+/-- The edges of the maximal Dyck path of `(d₁, d₂)`, indexed in traversal order. -/
+abbrev Edge (d₁ d₂ : ℕ) := Fin (d₁ + d₂)
+
+variable {d₁ d₂ : ℕ}
+
+/-- The step taken along an edge of the maximal Dyck path. -/
+def step (e : Edge d₁ d₂) : DyckStep :=
+  (maximalDyckPath d₁ d₂)[e.val]'(by rw [length_maximalDyckPath]; exact e.isLt)
+
+variable (d₁ d₂) in
+/-- The vertical edges of the maximal Dyck path. -/
+def verticalEdges : Finset (Edge d₁ d₂) := {e | step e = D}
+
+variable (d₁ d₂) in
+/-- The horizontal edges of the maximal Dyck path. -/
+def horizontalEdges : Finset (Edge d₁ d₂) := {e | step e = U}
+
+@[simp]
+theorem mem_verticalEdges {e : Edge d₁ d₂} : e ∈ verticalEdges d₁ d₂ ↔ step e = D := by
+  simp [verticalEdges]
+
+@[simp]
+theorem mem_horizontalEdges {e : Edge d₁ d₂} : e ∈ horizontalEdges d₁ d₂ ↔ step e = U := by
+  simp [horizontalEdges]
+
+/-- Counting edges of a given step type counts that step in the path. -/
+private theorem card_step_eq (s : DyckStep) :
+    #{e : Edge d₁ d₂ | step e = s} = (maximalDyckPath d₁ d₂).count s :=
+  Fin.card_filter_univ_eq_vector_get_eq_count s
+    ⟨maximalDyckPath d₁ d₂, length_maximalDyckPath d₁ d₂⟩
+
+/-- The path has `d₂` vertical edges. -/
+@[simp]
+theorem card_verticalEdges : #(verticalEdges d₁ d₂) = d₂ := by
+  rw [verticalEdges, card_step_eq, count_D_maximalDyckPath]
+
+/-- The path has `d₁` horizontal edges. -/
+@[simp]
+theorem card_horizontalEdges : #(horizontalEdges d₁ d₂) = d₁ := by
+  rw [horizontalEdges, card_step_eq, count_U_maximalDyckPath]
+
+/-- Every edge is horizontal or vertical. -/
+theorem mem_horizontalEdges_or_mem_verticalEdges (e : Edge d₁ d₂) :
+    e ∈ horizontalEdges d₁ d₂ ∨ e ∈ verticalEdges d₁ d₂ := by
+  simpa using (step e).dichotomy
+
+/-- No edge is both horizontal and vertical. -/
+theorem disjoint_horizontalEdges_verticalEdges :
+    Disjoint (horizontalEdges d₁ d₂) (verticalEdges d₁ d₂) := by
+  rw [Finset.disjoint_left]
+  intro e hh hv
+  rw [mem_horizontalEdges] at hh
+  rw [mem_verticalEdges, hh] at hv
+  exact DyckStep.noConfusion hv
+
+/-- The cyclic subpath from `e` to `e'`, both included. It follows the path from `e` and
+continues from the first edge after the last one. -/
+def subpath (e e' : Edge d₁ d₂) : Finset (Edge d₁ d₂) := {k | (k - e).val ≤ (e' - e).val}
+
+@[simp]
+theorem mem_subpath {e e' k : Edge d₁ d₂} : k ∈ subpath e e' ↔ (k - e).val ≤ (e' - e).val := by
+  simp [subpath]
+
+/-- The offset of `k` from `e` vanishes exactly at `e`. -/
+theorem val_sub_eq_zero_iff {k e : Edge d₁ d₂} : (k - e).val = 0 ↔ k = e := by
+  have : NeZero (d₁ + d₂) := ⟨e.pos.ne'⟩
+  rw [Fin.val_eq_zero_iff]
+  exact sub_eq_zero
+
+/-- The offset of an edge from itself is zero. -/
+@[simp]
+theorem val_sub_self (e : Edge d₁ d₂) : (e - e).val = 0 :=
+  val_sub_eq_zero_iff.mpr rfl
+
+/-- The one-edge subpath. -/
+@[simp]
+theorem subpath_self (e : Edge d₁ d₂) : subpath e e = {e} := by
+  ext k
+  rw [mem_subpath, val_sub_self, Nat.le_zero, val_sub_eq_zero_iff, Finset.mem_singleton]
+
+/-- A horizontal edge is not vertical. -/
+theorem notMem_verticalEdges_of_mem {e : Edge d₁ d₂} (he : e ∈ horizontalEdges d₁ d₂) :
+    e ∉ verticalEdges d₁ d₂ :=
+  Finset.disjoint_left.mp disjoint_horizontalEdges_verticalEdges he
+
+/-- A vertical edge is not horizontal. -/
+theorem notMem_horizontalEdges_of_mem {e : Edge d₁ d₂} (he : e ∈ verticalEdges d₁ d₂) :
+    e ∉ horizontalEdges d₁ d₂ :=
+  Finset.disjoint_right.mp disjoint_horizontalEdges_verticalEdges he
+
+section Grading
+
+variable (γ : Edge d₁ d₂ → ℕ)
+
+/-- The total grade `p` of the vertical edges. -/
+def verticalTotal : ℕ := ∑ v ∈ verticalEdges d₁ d₂, γ v
+
+/-- The total grade `q` of the horizontal edges. -/
+def horizontalTotal : ℕ := ∑ h ∈ horizontalEdges d₁ d₂, γ h
+
+/-- The vertical edges with nonzero grade. -/
+def verticalSupport : Finset (Edge d₁ d₂) := {v ∈ verticalEdges d₁ d₂ | γ v ≠ 0}
+
+/-- The horizontal edges with nonzero grade. -/
+def horizontalSupport : Finset (Edge d₁ d₂) := {h ∈ horizontalEdges d₁ d₂ | γ h ≠ 0}
+
+/-- On the subpath `ee'`, the number of vertical edges equals the horizontal grade sum. -/
+@[expose]
+def VerticalBalanced (e e' : Edge d₁ d₂) : Prop :=
+  #(subpath e e' ∩ verticalEdges d₁ d₂) = ∑ h ∈ subpath e e' ∩ horizontalEdges d₁ d₂, γ h
+
+/-- On the subpath `ee'`, the number of horizontal edges equals the vertical grade sum. -/
+@[expose]
+def HorizontalBalanced (e e' : Edge d₁ d₂) : Prop :=
+  #(subpath e e' ∩ horizontalEdges d₁ d₂) = ∑ v ∈ subpath e e' ∩ verticalEdges d₁ d₂, γ v
+
+instance (e e' : Edge d₁ d₂) : Decidable (VerticalBalanced γ e e') :=
+  inferInstanceAs (Decidable (_ = _))
+
+instance (e e' : Edge d₁ d₂) : Decidable (HorizontalBalanced γ e e') :=
+  inferInstanceAs (Decidable (_ = _))
+
+/-- A grading is compatible if for every horizontal edge `h` and vertical edge `v`, some proper
+initial subpath `he` of `hv` is vertically balanced, or some proper final subpath `ev` of `hv`
+is horizontally balanced. -/
+@[expose]
+def Compatible : Prop :=
+  ∀ h ∈ horizontalEdges d₁ d₂, ∀ v ∈ verticalEdges d₁ d₂,
+    (∃ e, (e - h).val < (v - h).val ∧ VerticalBalanced γ h e) ∨
+      ∃ e, (v - e).val < (v - h).val ∧ HorizontalBalanced γ e v
+
+instance : Decidable (Compatible γ) := by
+  unfold Compatible; infer_instance
+
+/-- Offsets `(e - h)` of the vertically balanced subpaths `he` starting at `h`. -/
+def verticalBalancedOffsets (h : Edge d₁ d₂) : Finset ℕ :=
+  (univ.filter fun e ↦ VerticalBalanced γ h e).image fun e ↦ (e - h).val
+
+/-- Offsets `(v - e)` of the horizontally balanced subpaths `ev` ending at `v`. -/
+def horizontalBalancedOffsets (v : Edge d₁ d₂) : Finset ℕ :=
+  (univ.filter fun e ↦ HorizontalBalanced γ e v).image fun e ↦ (v - e).val
+
+/-- The local shadow of a horizontal edge `h`: the vertical edges of the shortest vertically
+balanced subpath starting at `h`, or all vertical edges if there is none. -/
+def horizontalShadow (h : Edge d₁ d₂) : Finset (Edge d₁ d₂) :=
+  if hS : (verticalBalancedOffsets γ h).Nonempty then
+    {k ∈ verticalEdges d₁ d₂ | (k - h).val ≤ (verticalBalancedOffsets γ h).min' hS}
+  else verticalEdges d₁ d₂
+
+/-- The local shadow of a vertical edge `v`: the horizontal edges of the shortest horizontally
+balanced subpath ending at `v`, or all horizontal edges if there is none. -/
+def verticalShadow (v : Edge d₁ d₂) : Finset (Edge d₁ d₂) :=
+  if hS : (horizontalBalancedOffsets γ v).Nonempty then
+    {k ∈ horizontalEdges d₁ d₂ | (v - k).val ≤ (horizontalBalancedOffsets γ v).min' hS}
+  else horizontalEdges d₁ d₂
+
+/-- The total horizontal shadow, a set of vertical edges. -/
+def totalHorizontalShadow : Finset (Edge d₁ d₂) :=
+  (horizontalEdges d₁ d₂).biUnion (horizontalShadow γ)
+
+/-- The total vertical shadow, a set of horizontal edges. -/
+def totalVerticalShadow : Finset (Edge d₁ d₂) :=
+  (verticalEdges d₁ d₂).biUnion (verticalShadow γ)
+
+/-- A local shadow of a horizontal edge consists of vertical edges. -/
+theorem horizontalShadow_subset (h : Edge d₁ d₂) :
+    horizontalShadow γ h ⊆ verticalEdges d₁ d₂ := by
+  unfold horizontalShadow
+  split_ifs
+  · exact Finset.filter_subset _ _
+  · exact subset_rfl
+
+/-- A local shadow of a vertical edge consists of horizontal edges. -/
+theorem verticalShadow_subset (v : Edge d₁ d₂) :
+    verticalShadow γ v ⊆ horizontalEdges d₁ d₂ := by
+  unfold verticalShadow
+  split_ifs
+  · exact Finset.filter_subset _ _
+  · exact subset_rfl
+
+/-- The total horizontal shadow consists of vertical edges. -/
+theorem totalHorizontalShadow_subset : totalHorizontalShadow γ ⊆ verticalEdges d₁ d₂ :=
+  Finset.biUnion_subset.mpr fun h _ ↦ horizontalShadow_subset γ h
+
+/-- The total vertical shadow consists of horizontal edges. -/
+theorem totalVerticalShadow_subset : totalVerticalShadow γ ⊆ horizontalEdges d₁ d₂ :=
+  Finset.biUnion_subset.mpr fun v _ ↦ verticalShadow_subset γ v
+
+/-- A horizontal edge of grade zero has empty local shadow. -/
+theorem horizontalShadow_eq_empty {h : Edge d₁ d₂} (hh : h ∈ horizontalEdges d₁ d₂)
+    (h0 : γ h = 0) : horizontalShadow γ h = ∅ := by
+  have hmem : 0 ∈ verticalBalancedOffsets γ h := by
+    refine Finset.mem_image.mpr ⟨h, ?_, val_sub_self h⟩
+    rw [Finset.mem_filter, VerticalBalanced, subpath_self, Finset.singleton_inter_of_notMem
+      (notMem_verticalEdges_of_mem hh), Finset.singleton_inter_of_mem hh,
+      Finset.sum_singleton, h0]
+    exact ⟨Finset.mem_univ _, rfl⟩
+  have hS : (verticalBalancedOffsets γ h).Nonempty := ⟨0, hmem⟩
+  have hmin : (verticalBalancedOffsets γ h).min' hS = 0 :=
+    Nat.eq_zero_of_le_zero (Finset.min'_le _ _ hmem)
+  rw [horizontalShadow, dite_eq_left hS, hmin, Finset.eq_empty_iff_forall_notMem]
+  intro k hk
+  rw [Finset.mem_filter, Nat.le_zero, val_sub_eq_zero_iff] at hk
+  obtain ⟨hkv, rfl⟩ := hk
+  exact notMem_verticalEdges_of_mem hh hkv
+
+/-- A vertical edge of grade zero has empty local shadow. -/
+theorem verticalShadow_eq_empty {v : Edge d₁ d₂} (hv : v ∈ verticalEdges d₁ d₂)
+    (h0 : γ v = 0) : verticalShadow γ v = ∅ := by
+  have hmem : 0 ∈ horizontalBalancedOffsets γ v := by
+    refine Finset.mem_image.mpr ⟨v, ?_, val_sub_self v⟩
+    rw [Finset.mem_filter, HorizontalBalanced, subpath_self, Finset.singleton_inter_of_notMem
+      (notMem_horizontalEdges_of_mem hv), Finset.singleton_inter_of_mem hv,
+      Finset.sum_singleton, h0]
+    exact ⟨Finset.mem_univ _, rfl⟩
+  have hS : (horizontalBalancedOffsets γ v).Nonempty := ⟨0, hmem⟩
+  have hmin : (horizontalBalancedOffsets γ v).min' hS = 0 :=
+    Nat.eq_zero_of_le_zero (Finset.min'_le _ _ hmem)
+  rw [verticalShadow, dite_eq_left hS, hmin, Finset.eq_empty_iff_forall_notMem]
+  intro k hk
+  rw [Finset.mem_filter, Nat.le_zero, val_sub_eq_zero_iff] at hk
+  obtain ⟨hkh, rfl⟩ := hk
+  exact notMem_horizontalEdges_of_mem hv hkh
+
+/-- A compatible grading is shadowed if its nonzero horizontal support lies in the total
+vertical shadow, or its nonzero vertical support lies in the total horizontal shadow. -/
+@[expose]
+def Shadowed : Prop :=
+  Compatible γ ∧ (horizontalSupport γ ⊆ totalVerticalShadow γ ∨
+    verticalSupport γ ⊆ totalHorizontalShadow γ)
+
+instance : Decidable (Shadowed γ) := by
+  unfold Shadowed; infer_instance
+
+/-- A shadowed grading is tight if `p ≤ d₁`, `q ≤ d₂` and `p d₂ - q d₁ = ± gcd(p, q)`. -/
+@[expose]
+def Tight : Prop :=
+  Shadowed γ ∧ verticalTotal γ ≤ d₁ ∧ horizontalTotal γ ≤ d₂ ∧
+    ((verticalTotal γ * d₂ : ℤ) - horizontalTotal γ * d₁).natAbs =
+      (verticalTotal γ).gcd (horizontalTotal γ)
+
+instance : Decidable (Tight γ) := by
+  unfold Tight; infer_instance
+
+/-- The zero grading is compatible: the one-edge subpath at each horizontal edge is
+vertically balanced. -/
+theorem compatible_zero : Compatible (0 : Edge d₁ d₂ → ℕ) := by
+  intro h hh v hv
+  left
+  refine ⟨h, ?_, ?_⟩
+  · rw [val_sub_self]
+    refine Nat.pos_of_ne_zero fun hvh ↦ ?_
+    rw [val_sub_eq_zero_iff] at hvh
+    subst hvh
+    exact notMem_verticalEdges_of_mem hh hv
+  · rw [VerticalBalanced, subpath_self, Finset.singleton_inter_of_notMem
+      (notMem_verticalEdges_of_mem hh)]
+    simp
+
+/-- A grading with vanishing totals is zero. -/
+theorem eq_zero_of_totals_eq_zero (h₁ : verticalTotal γ = 0) (h₂ : horizontalTotal γ = 0) :
+    γ = 0 := by
+  rw [verticalTotal, Finset.sum_eq_zero_iff] at h₁
+  rw [horizontalTotal, Finset.sum_eq_zero_iff] at h₂
+  funext e
+  rcases mem_horizontalEdges_or_mem_verticalEdges e with he | he
+  · exact h₂ e he
+  · exact h₁ e he
+
+end Grading
+
+section Weights
+
+variable (d₁ d₂) in
+/-- Gradings with vertical grades at most `ℓ₁` and horizontal grades at most `ℓ₂`. -/
+def gradings (ℓ₁ ℓ₂ : ℕ) : Finset (Edge d₁ d₂ → ℕ) :=
+  Fintype.piFinset fun e ↦ range ((if step e = D then ℓ₁ else ℓ₂) + 1)
+
+@[simp]
+theorem mem_gradings {ℓ₁ ℓ₂ : ℕ} {γ : Edge d₁ d₂ → ℕ} :
+    γ ∈ gradings d₁ d₂ ℓ₁ ℓ₂ ↔ ∀ e, γ e ≤ if step e = D then ℓ₁ else ℓ₂ := by
+  simp [gradings]
+
+variable {S : Type*} [CommSemiring S] (P₁ P₂ : S[X])
+
+/-- The weight `∏_v [x^{γ_V(v)}] P₁ ∏_h [y^{γ_H(h)}] P₂` of a grading. -/
+def weight (γ : Edge d₁ d₂ → ℕ) : S :=
+  (∏ v ∈ verticalEdges d₁ d₂, P₁.coeff (γ v)) * ∏ h ∈ horizontalEdges d₁ d₂, P₂.coeff (γ h)
+
+variable (d₁ d₂) in
+/-- `C₊(p, q)`: the weight sum of the compatible gradings with totals `(p, q)` whose nonzero
+vertical support lies in the total horizontal shadow. -/
+def cplus (p q : ℕ) : S :=
+  ∑ γ ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree with Compatible γ ∧ verticalTotal γ = p ∧
+    horizontalTotal γ = q ∧ verticalSupport γ ⊆ totalHorizontalShadow γ, weight P₁ P₂ γ
+
+variable (d₁ d₂) in
+/-- `C₋(p, q)`: the weight sum of the compatible gradings with totals `(p, q)` whose nonzero
+horizontal support lies in the total vertical shadow. -/
+def cminus (p q : ℕ) : S :=
+  ∑ γ ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree with Compatible γ ∧ verticalTotal γ = p ∧
+    horizontalTotal γ = q ∧ horizontalSupport γ ⊆ totalVerticalShadow γ, weight P₁ P₂ γ
+
+/-- The zero grading has weight one when both constant coefficients are one. -/
+theorem weight_zero (h₁ : P₁.coeff 0 = 1) (h₂ : P₂.coeff 0 = 1) :
+    weight P₁ P₂ (0 : Edge d₁ d₂ → ℕ) = 1 := by
+  simp [weight, h₁, h₂]
+
+/-- The only grading with totals `(0, 0)` satisfying a condition true of the zero grading. -/
+private theorem filter_totals_zero {ℓ₁ ℓ₂ : ℕ} (C : (Edge d₁ d₂ → ℕ) → Prop) [DecidablePred C]
+    (hC : C 0) :
+    {γ ∈ gradings d₁ d₂ ℓ₁ ℓ₂ | Compatible γ ∧ verticalTotal γ = 0 ∧ horizontalTotal γ = 0 ∧
+      C γ} = {0} := by
+  ext γ
+  simp only [Finset.mem_filter, Finset.mem_singleton]
+  constructor
+  · rintro ⟨-, -, h₁, h₂, -⟩
+    exact eq_zero_of_totals_eq_zero γ h₁ h₂
+  · rintro rfl
+    refine ⟨mem_gradings.mpr fun e ↦ Nat.zero_le _, compatible_zero, ?_, ?_, hC⟩
+    · simp [verticalTotal]
+    · simp [horizontalTotal]
+
+/-- `C₊(0, 0) = 1` when both constant coefficients are one. -/
+theorem cplus_zero_zero (h₁ : P₁.coeff 0 = 1) (h₂ : P₂.coeff 0 = 1) :
+    cplus d₁ d₂ P₁ P₂ 0 0 = 1 := by
+  rw [cplus, filter_totals_zero _ (by simp [verticalSupport]), Finset.sum_singleton,
+    weight_zero _ _ h₁ h₂]
+
+/-- `C₋(0, 0) = 1` when both constant coefficients are one. -/
+theorem cminus_zero_zero (h₁ : P₁.coeff 0 = 1) (h₂ : P₂.coeff 0 = 1) :
+    cminus d₁ d₂ P₁ P₂ 0 0 = 1 := by
+  rw [cminus, filter_totals_zero _ (by simp [horizontalSupport]), Finset.sum_singleton,
+    weight_zero _ _ h₁ h₂]
+
+end Weights
+
+end Mei.MaximalDyckPath
