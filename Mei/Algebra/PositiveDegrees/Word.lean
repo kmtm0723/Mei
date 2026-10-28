@@ -6,8 +6,6 @@ Authors: Codex
 module
 
 public import Mei.Algebra.PositiveDegrees.Map
-public import Mathlib.Algebra.Group.Submonoid.BigOperators
-public import Mathlib.Algebra.Order.BigOperators.Group.List
 public import Mathlib.Data.Set.Finite.List
 public import Mathlib.Data.Fintype.List
 
@@ -73,8 +71,7 @@ theorem finite_degree_words (k : ℕ) :
     ⟨n.val, d.mem_cutoff.mpr ⟨(hl.1 n.val n.property).1,
       (d.degree_le_list_sum l (fun n hn => (hl.1 n hn).1) n.property).trans hl.2⟩⟩
   refine ⟨lifted, ?_, ?_⟩
-  · change lifted.length ≤ k
-    simp only [lifted, List.length_map, List.length_attach]
+  · simp only [Set.mem_ofPred_eq, lifted, List.length_map, List.length_attach]
     exact_mod_cast (d.length_le_degree_sum l (fun n hn => (hl.1 n hn).1)
       (fun n hn => (hl.1 n hn).2)).trans hl.2
   · simp only [lifted, List.map_map, Function.comp_def]
