@@ -138,12 +138,12 @@ theorem singularSupport_prod_univ {E : Type*} [NormedAddCommGroup E] [NormedSpac
   · rintro (hfront | ⟨i, j, hne, hi, hj⟩)
     · exact Or.inl hfront
     · exact Or.inr ⟨i, j, fun he => hne
-        ((AffineSubspace.direction_affineSpan_prod_univ_eq_iff
+        ((Mei.direction_affineSpan_prod_univ_eq_iff
           ⟨x.1, hi⟩ ⟨x.1, hj⟩).mpr he), hi, hj⟩
   · rintro (hfront | ⟨i, j, hne, hi, hj⟩)
     · exact Or.inl hfront
     · exact Or.inr ⟨i, j, fun he => hne
-        ((AffineSubspace.direction_affineSpan_prod_univ_eq_iff
+        ((Mei.direction_affineSpan_prod_univ_eq_iff
           ⟨x.1, hi⟩ ⟨x.1, hj⟩).mp he), hi, hj⟩
 
 /-- The singular support of finitely many codimension-one polyhedra has a
