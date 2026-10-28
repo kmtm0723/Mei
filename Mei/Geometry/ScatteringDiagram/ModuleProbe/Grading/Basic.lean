@@ -86,11 +86,13 @@ theorem mem_grading_module (q : Γ) (x : ProbeLie d ℳ p ℒ) :
     apply LieAlgebra.SemiDirectSum.ext <;> simp [hr]
 
 /-- Only charges zero and one occur in the module probe. -/
+@[simp]
 theorem grading_charge_eq_bot (q : Γ) (c l : ℤ) (hc₀ : c ≠ 0) (hc₁ : c ≠ 1) :
     grading d ℳ p ℒ (q, c, l) = ⊥ := by
   simp only [grading, hc₀, hc₁, false_and, ↓reduceIte]
 
 /-- The module probe has zero degree in the final coordinate. -/
+@[simp]
 theorem grading_normal_eq_bot (q : Γ) (c l : ℤ) (hl : l ≠ 0) :
     grading d ℳ p ℒ (q, c, l) = ⊥ := by
   simp only [grading, hl, and_false, ↓reduceIte]
