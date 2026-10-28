@@ -18,6 +18,12 @@ faces connect each chamber's copies, compatible chamber families descend uniquel
 If the original face spans are jointly injective, this gives an equivalence of
 matching sections. Individual incidence maps need not be injective and the index
 sets may be infinite.
+
+Surjectivity permits chambers with no copies, assigning them zero. Injectivity
+of section pullback requires joint injectivity only at faces without copies;
+with full face coverage it holds for arbitrary spans. Pullback combines the
+linear version of Mathlib's section precomposition with the canonical
+coefficient-diagram isomorphism.
 -/
 
 public section
@@ -59,7 +65,7 @@ theorem eq_of_eqvGen_edgeRel (x : (D.index I).compatibleFamilies) (j : J.R)
   let f : D.chambers j → I.right j := fun c => x.val ⟨j, c⟩
   have h' : Relation.EqvGen (InvImage Eq f) a b := by
     apply Relation.EqvGen.mono (fun a b h => ?_) a b hab
-    simp only [edgeRel] at h
+    rw [edgeRel_iff] at h
     obtain ⟨e, rfl, rfl⟩ := h
     obtain ⟨z, hs, ht⟩ := (D.index I).mem_compatibleFamilies.mp x.property (.inr ⟨j, e⟩)
     simp only [SemimoduleCat.hom_id, LinearMap.id_apply] at hs ht
@@ -68,41 +74,44 @@ theorem eq_of_eqvGen_edgeRel (x : (D.index I).compatibleFamilies) (j : J.R)
 
 /-- Restrict an original matching section to the copied objects and identity faces. -/
 def sectionsPullback : SemimoduleCat.sectionsSubmodule I.multispan →ₗ[R]
-    SemimoduleCat.sectionsSubmodule (D.index I).multispan where
-  toFun s := ⟨fun j => match j with
-    | .left (.inl ⟨b, _⟩) => s.val (.left b)
-    | .left (.inr ⟨j, _⟩) => s.val (.right j)
-    | .right ⟨j, _⟩ => s.val (.right j), by
-      apply (D.index I).mem_sectionsSubmodule_multispan.mpr
-      constructor <;> rintro (⟨b, c⟩ | ⟨j, e⟩)
-      · exact (SemimoduleCat.mem_sectionsSubmodule.mp s.property) (.fst b)
-      · rfl
-      · exact (SemimoduleCat.mem_sectionsSubmodule.mp s.property) (.snd b)
-      · rfl⟩
-  map_add' _ _ := by ext j; cases j with
-    | left b => cases b <;> rfl
-    | right j => rfl
-  map_smul' _ _ := by ext j; cases j with
-    | left b => cases b <;> rfl
-    | right j => rfl
+    SemimoduleCat.sectionsSubmodule (D.index I).multispan :=
+  (SemimoduleCat.sectionsMap (D.multispanIso I).inv).comp
+    (SemimoduleCat.sectionsPrecomp D.projection I.multispan)
+
+/-- Pullback is section precomposition followed by the canonical coefficient comparison. -/
+theorem sectionsPullback_apply (s : SemimoduleCat.sectionsSubmodule I.multispan)
+    (x : WalkingMultispan D.shape) :
+    (D.sectionsPullback I s).val x =
+      ((D.multispanIso I).inv.app x).hom (s.val (D.projection.obj x)) := by
+  rw [sectionsPullback, LinearMap.comp_apply, SemimoduleCat.sectionsMap_apply,
+    SemimoduleCat.sectionsPrecomp_apply]
 
 /-- Restriction preserves the value at every chamber copy. -/
 @[simp]
 theorem sectionsPullback_apply_right (s : SemimoduleCat.sectionsSubmodule I.multispan)
     (j : J.R) (a : D.chambers j) :
-    (D.sectionsPullback I s).val (.right ⟨j, a⟩) = s.val (.right j) := (rfl)
+    (D.sectionsPullback I s).val (.right ⟨j, a⟩) = s.val (.right j) := by
+  rw [sectionsPullback_apply, multispanIso_inv_app]
+  erw [eqToHom_refl (C := SemimoduleCat.{m} R), SemimoduleCat.hom_id, LinearMap.id_apply]
+  rfl
 
 /-- Restriction preserves each copied original face value. -/
 @[simp]
 theorem sectionsPullback_apply_copy (s : SemimoduleCat.sectionsSubmodule I.multispan)
     (b : J.L) (a : D.faces b) :
-    (D.sectionsPullback I s).val (.left (.inl ⟨b, a⟩)) = s.val (.left b) := (rfl)
+    (D.sectionsPullback I s).val (.left (.inl ⟨b, a⟩)) = s.val (.left b) := by
+  rw [sectionsPullback_apply, multispanIso_inv_app]
+  erw [eqToHom_refl (C := SemimoduleCat.{m} R), SemimoduleCat.hom_id, LinearMap.id_apply]
+  rfl
 
 /-- An identity face receives the old chamber value. -/
 @[simp]
 theorem sectionsPullback_apply_edge (s : SemimoduleCat.sectionsSubmodule I.multispan)
     (j : J.R) (e : D.edges j) :
-    (D.sectionsPullback I s).val (.left (.inr ⟨j, e⟩)) = s.val (.right j) := (rfl)
+    (D.sectionsPullback I s).val (.left (.inr ⟨j, e⟩)) = s.val (.right j) := by
+  rw [sectionsPullback_apply, multispanIso_inv_app]
+  erw [eqToHom_refl (C := SemimoduleCat.{m} R), SemimoduleCat.hom_id, LinearMap.id_apply]
+  rfl
 
 variable [∀ j, Nonempty (D.chambers j)]
 
@@ -116,17 +125,22 @@ theorem compatibleMap_injective : Function.Injective (D.compatibleMap I) := by
   erw [compatibleMap_apply, compatibleMap_apply] at he
   exact he
 
-/-- If every original chamber and face has a copy and each chamber's identity-face graph is
-connected, every compatible refined family descends to a compatible original family. -/
+omit [∀ j, Nonempty (D.chambers j)] in
+/-- If every face has a copy and each chamber's identity-face graph is connected,
+every compatible refined family descends. Missing isolated chambers receive zero. -/
 theorem compatibleMap_surjective [∀ b, Nonempty (D.faces b)]
     (hc : ∀ j a b, Relation.EqvGen (D.edgeRel j) a b) :
     Function.Surjective (D.compatibleMap I) := by
   classical
   intro y
-  let a (j : J.R) : D.chambers j := Classical.choice inferInstance
-  have hconst (j : J.R) (b : D.chambers j) : y.val ⟨j, b⟩ = y.val ⟨j, a j⟩ :=
-    D.eq_of_eqvGen_edgeRel I y j (hc j b (a j))
-  let x : I.compatibleFamilies := ⟨fun j => y.val ⟨j, a j⟩, by
+  let value (j : J.R) : I.right j :=
+    if h : Nonempty (D.chambers j) then y.val ⟨j, Classical.choice h⟩ else 0
+  have hconst (j : J.R) (b : D.chambers j) : y.val ⟨j, b⟩ = value j := by
+    have h : Nonempty (D.chambers j) := ⟨b⟩
+    dsimp only [value]
+    rw [dite_eq_left h]
+    exact D.eq_of_eqvGen_edgeRel I y j (hc j b (Classical.choice h))
+  let x : I.compatibleFamilies := ⟨value, by
     apply I.mem_compatibleFamilies.mpr
     intro b
     let c : D.faces b := Classical.choice inferInstance
@@ -173,22 +187,47 @@ theorem index_jointly_injective
     simpa only [index_fst_edge, SemimoduleCat.hom_id, LinearMap.prod_apply, Function.prod_apply,
       LinearMap.id_apply] using congrArg _root_.Prod.fst h
 
-/-- Pullback is injective if every chamber has a copy and the old face spans are
-jointly injective. -/
+/-- Pullback is injective when every chamber has a copy and the spans at faces
+without copies are jointly injective. Copied faces retain their values directly. -/
 theorem sectionsPullback_injective
-    (hinj : ∀ b, Function.Injective ((I.fst b).hom.prod (I.snd b).hom)) :
+    (hinj : ∀ b, IsEmpty (D.faces b) →
+      Function.Injective ((I.fst b).hom.prod (I.snd b).hom)) :
     Function.Injective (D.sectionsPullback I) := by
   classical
   intro s t h
-  apply I.restrictSections_injective hinj
-  ext j
-  simpa only [MultispanIndex.multispan_obj_right, index_right,
-    MultispanIndex.restrictSections_apply, sectionsPullback_apply_right] using
-    congrArg (fun z : SemimoduleCat.sectionsSubmodule (D.index I).multispan =>
+  have hch (j : J.R) : s.val (.right j) = t.val (.right j) := by
+    have he := congrArg (fun z : SemimoduleCat.sectionsSubmodule (D.index I).multispan =>
       z.val (.right ⟨j, Classical.choice inferInstance⟩)) h
+    erw [sectionsPullback_apply_right, sectionsPullback_apply_right] at he
+    exact he
+  apply Subtype.ext
+  funext x
+  cases x with
+  | right j => exact hch j
+  | left b =>
+    by_cases hb : Nonempty (D.faces b)
+    · have he := congrArg (fun z : SemimoduleCat.sectionsSubmodule (D.index I).multispan =>
+        z.val (.left (.inl ⟨b, Classical.choice hb⟩))) h
+      erw [sectionsPullback_apply_copy, sectionsPullback_apply_copy] at he
+      exact he
+    · apply hinj b (not_nonempty_iff.mp hb)
+      apply Prod.ext
+      · exact ((SemimoduleCat.mem_sectionsSubmodule.mp s.property) (.fst b)).trans
+          ((hch _).trans ((SemimoduleCat.mem_sectionsSubmodule.mp t.property) (.fst b)).symm)
+      · exact ((SemimoduleCat.mem_sectionsSubmodule.mp s.property) (.snd b)).trans
+          ((hch _).trans ((SemimoduleCat.mem_sectionsSubmodule.mp t.property) (.snd b)).symm)
 
-/-- If every chamber and face has a copy, the identity graphs are connected and old face
-spans are jointly injective, every refined matching section descends. -/
+/-- When every chamber and face has a copy, section pullback is injective for
+arbitrary face spans, including spans with a nonzero common kernel. -/
+theorem sectionsPullback_injective_of_face_coverage [∀ b, Nonempty (D.faces b)] :
+    Function.Injective (D.sectionsPullback I) := by
+  classical
+  exact D.sectionsPullback_injective I (fun b hb =>
+    (hb.false (Classical.choice inferInstance)).elim)
+
+omit [∀ j, Nonempty (D.chambers j)] in
+/-- If every face has a copy, identity graphs are connected and old spans are
+jointly injective, every refined matching section descends without chamber coverage. -/
 theorem sectionsPullback_surjective [∀ b, Nonempty (D.faces b)]
     (hc : ∀ j a b, Relation.EqvGen (D.edgeRel j) a b)
     (hinj : ∀ b, Function.Injective ((I.fst b).hom.prod (I.snd b).hom)) :
@@ -218,7 +257,7 @@ noncomputable def sectionsEquiv [∀ b, Nonempty (D.faces b)]
     SemimoduleCat.sectionsSubmodule I.multispan ≃ₗ[R]
       SemimoduleCat.sectionsSubmodule (D.index I).multispan :=
   LinearEquiv.ofBijective (D.sectionsPullback I)
-    ⟨D.sectionsPullback_injective I hinj, D.sectionsPullback_surjective I hc hinj⟩
+    ⟨D.sectionsPullback_injective_of_face_coverage I, D.sectionsPullback_surjective I hc hinj⟩
 
 /-- The section comparison is the actual pullback along the incidence projection. -/
 @[simp]
