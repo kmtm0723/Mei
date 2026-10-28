@@ -41,7 +41,7 @@ variable {R Γ : Type*} [CommRing R] [AddCommGroup Γ]
 
 /-- Positive quantum Lie elements belong to every coefficient algebra containing
 their allowed exponent monoid. -/
-theorem positiveLieAlgebra_le_positiveSubalgebra (hQ : d.monoid ≤ Q) :
+theorem positiveLieAlgebra_le_coefficientSubalgebra (hQ : d.monoid ≤ Q) :
     (positiveLieAlgebra q β d).toSubmodule ≤ (positiveSubalgebra q β Q).toSubmodule := by
   classical
   intro x hx
@@ -55,7 +55,7 @@ def coefficientLieHom (hQ : d.monoid ≤ Q) :
     positiveLieAlgebra q β d →ₗ⁅R⁆ positiveSubalgebra q β Q where
   toLinearMap := (positiveLieAlgebra q β d).toSubmodule.subtype.codRestrict
     (positiveSubalgebra q β Q).toSubmodule
-    (fun x => positiveLieAlgebra_le_positiveSubalgebra q β d Q hQ x.property)
+    (fun x => positiveLieAlgebra_le_coefficientSubalgebra q β d Q hQ x.property)
   map_lie' {x y} := by
     apply Subtype.ext
     rfl
