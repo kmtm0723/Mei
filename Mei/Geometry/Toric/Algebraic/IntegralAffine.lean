@@ -204,7 +204,7 @@ noncomputable def ofLatticeEquiv (h : IsIntegralLattice i) (h' : IsIntegralLatti
   map_lattice n := h.extend_apply i' σ.toAddMonoidHom n
 
 /-- The zero-translation lift evaluates by the canonical real-linear extension. -/
-@[simp] theorem ofLatticeEquiv_apply (h : IsIntegralLattice i) (h' : IsIntegralLattice i')
+@[simp↓] theorem ofLatticeEquiv_apply (h : IsIntegralLattice i) (h' : IsIntegralLattice i')
     (σ : N ≃+ N') (x : V) :
     ofLatticeEquiv h h' σ x = h.extend i' σ.toAddMonoidHom x := by rfl
 
@@ -212,6 +212,36 @@ noncomputable def ofLatticeEquiv (h : IsIntegralLattice i) (h' : IsIntegralLatti
 @[simp] theorem ofLatticeEquiv_latticeEquiv (h : IsIntegralLattice i)
     (h' : IsIntegralLattice i') (σ : N ≃+ N') :
     (ofLatticeEquiv h h' σ).latticeEquiv = σ := by rfl
+
+/-- The real linear part of the zero-translation lift is scalar extension. -/
+@[simp] theorem ofLatticeEquiv_linear (h : IsIntegralLattice i)
+    (h' : IsIntegralLattice i') (σ : N ≃+ N') :
+    (ofLatticeEquiv h h' σ).toAffineEquiv.linear.toLinearMap =
+      h.extend i' σ.toAddMonoidHom := by rfl
+
+/-- Extending the identity lattice equivalence gives the identity affine equivalence. -/
+@[simp] theorem ofLatticeEquiv_refl (h : IsIntegralLattice i) :
+    ofLatticeEquiv h h (AddEquiv.refl N) = refl h := by
+  ext x
+  simp [ofLatticeEquiv_apply, h.extend_id, refl]
+
+/-- Inversion commutes with the zero-translation extension of a lattice equivalence. -/
+@[simp] theorem ofLatticeEquiv_symm (h : IsIntegralLattice i)
+    (h' : IsIntegralLattice i') (σ : N ≃+ N') :
+    (ofLatticeEquiv h h' σ).symm = ofLatticeEquiv h' h σ.symm := by
+  ext x
+  rfl
+
+/-- Zero-translation extension respects composition between arbitrary integral lattices. -/
+@[simp] theorem ofLatticeEquiv_trans {N'' V'' : Type*} [AddCommGroup N'']
+    [AddCommGroup V''] [Module ℝ V''] {i'' : N'' →+ V''}
+    (h : IsIntegralLattice i) (h' : IsIntegralLattice i')
+    (h'' : IsIntegralLattice i'') (σ : N ≃+ N') (τ : N' ≃+ N'') :
+    (ofLatticeEquiv h h' σ).trans (ofLatticeEquiv h' h'' τ) =
+      ofLatticeEquiv h h'' (σ.trans τ) := by
+  ext x
+  exact congrArg (fun F : V →ₗ[ℝ] V'' => F x)
+    (h.extend_comp h' σ.toAddMonoidHom τ.toAddMonoidHom)
 
 /-- Integral affine self-equivalences form a group under function composition. -/
 instance (h : IsIntegralLattice i) : Group (IntegralAffineEquiv h h) where
@@ -303,20 +333,18 @@ def latticeHom : IntegralAffineEquiv h h →* Multiplicative (AddAut N) where
 noncomputable def latticeLift : Multiplicative (AddAut N) →* IntegralAffineEquiv h h where
   toFun σ := ofLatticeEquiv h h σ.toAdd
   map_one' := by
-    ext x
-    rw [ofLatticeEquiv_apply, one_apply]
-    rw [toAdd_one, AddAut.zero_def, AddEquiv.toAddMonoidHom_eq_coe,
-      AddEquiv.toAddMonoidHom_refl, h.extend_id]
-    rfl
-  map_mul' σ τ := by
-    ext x
-    rw [ofLatticeEquiv_apply, mul_apply, ofLatticeEquiv_apply, ofLatticeEquiv_apply]
-    exact (congrArg (fun F : V →ₗ[ℝ] V => F x)
-      (h.extend_comp h τ.toAdd.toAddMonoidHom σ.toAdd.toAddMonoidHom)).symm
+    exact ofLatticeEquiv_refl h
+  map_mul' σ τ := (ofLatticeEquiv_trans h h h τ.toAdd σ.toAdd).symm
 
 /-- The lifted lattice action evaluates by scalar extension. -/
-@[simp] theorem latticeLift_apply (σ : Multiplicative (AddAut N)) (x : V) :
+@[simp↓] theorem latticeLift_apply (σ : Multiplicative (AddAut N)) (x : V) :
     latticeLift h σ x = h.extend i σ.toAdd.toAddMonoidHom x := by rfl
+
+/-- The real linear part of the lifted lattice automorphism is scalar extension. -/
+@[simp] theorem latticeLift_linear (σ : Multiplicative (AddAut N)) :
+    (latticeLift h σ).toAffineEquiv.linear.toLinearMap =
+      h.extend i σ.toAdd.toAddMonoidHom :=
+  ofLatticeEquiv_linear h h σ.toAdd
 
 /-- The lift retains its input lattice automorphism. -/
 @[simp] theorem latticeLift_latticeEquiv (σ : Multiplicative (AddAut N)) :
@@ -345,8 +373,12 @@ def constVAddHom : Multiplicative V →* IntegralAffineEquiv h h where
     exact AffineEquiv.constVAdd_add ℝ V v.toAdd w.toAdd
 
 /-- The translation homomorphism acts by addition of its real vector. -/
-@[simp] theorem constVAddHom_apply (v : Multiplicative V) (x : V) :
+@[simp↓] theorem constVAddHom_apply (v : Multiplicative V) (x : V) :
     constVAddHom h v x = v.toAdd + x := by rfl
+
+/-- The underlying affine equivalence is translation by the given real vector. -/
+@[simp] theorem constVAddHom_toAffineEquiv (v : Multiplicative V) :
+    (constVAddHom h v).toAffineEquiv = AffineEquiv.constVAdd ℝ V v.toAdd := by rfl
 
 /-- A real translation has the identity integral linear part. -/
 @[simp] theorem constVAddHom_latticeEquiv (v : Multiplicative V) :
