@@ -106,8 +106,7 @@ theorem completionEquiv_mem_completedFiltration_iff (k : ℕ) (x : F.completion)
   | succ k =>
     rw [G.completedFiltration_succ, F.completedFiltration_succ]
     simp only [LinearMap.mem_ker, projection_completionEquiv]
-    obtain ⟨a, ha⟩ := (F.submodule (k + 1)).mkQ_surjective (F.projection k x)
-    rw [← ha, Submodule.mkQ_apply, Submodule.mapQ_apply]
-    simp only [Submodule.Quotient.mk_eq_zero, ← Submodule.mem_comap, he]
+    rw [← LinearMap.mem_ker, Submodule.ker_mapQ, he, Submodule.mkQ_map_self,
+      Submodule.mem_bot]
 
 end Mei.ModuleFiltration
