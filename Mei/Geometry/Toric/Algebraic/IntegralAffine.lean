@@ -265,13 +265,16 @@ theorem inv_toAffineEquiv (e : IntegralAffineEquiv h h) :
     e⁻¹.toAffineEquiv = e.toAffineEquiv.symm := (rfl)
 
 /-- Multiplication applies the right-hand map first. -/
+@[simp↓]
 theorem mul_apply (e f : IntegralAffineEquiv h h) (x : V) :
     (e * f) x = e (f x) := by rfl
 
 /-- The group identity is the identity on the ambient vector space. -/
+@[simp↓]
 theorem one_apply (x : V) : (1 : IntegralAffineEquiv h h) x = x := by rfl
 
 /-- Group inversion agrees with the existing inverse equivalence. -/
+@[simp↓]
 theorem inv_apply (e : IntegralAffineEquiv h h) (x : V) :
     e⁻¹ x = e.symm x := by rfl
 
