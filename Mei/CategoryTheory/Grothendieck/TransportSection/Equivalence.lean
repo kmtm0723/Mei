@@ -311,8 +311,7 @@ def sectionEquivalence : GrothendieckSection L ≌ CategoryTheory.Grothendieck.S
     intro s t α
     simp [toSectionHom_comp, toSectionHom_eqToHom, Category.assoc])
   functor_unitIso_comp s := by
-    change toSectionHom (eqToHom (sectionInverseFunctor_obj_toSection s).symm) ≫
-      eqToHom (toSection_sectionInverseFunctor_obj s.toSection) = 𝟙 s.toSection
+    dsimp only [NatIso.ofComponents, eqToIso]
     rw [toSectionHom_eqToHom]
     simp
 
@@ -338,14 +337,14 @@ theorem sectionEquivalence_inverse_map {s t : CategoryTheory.Grothendieck.Sectio
 /-- The unit's target object is the original transport datum. -/
 theorem sectionEquivalence_unit_obj (s : GrothendieckSection L) :
     ((sectionEquivalence (L := L)).functor ⋙ (sectionEquivalence (L := L)).inverse).obj s = s := by
-  change (sectionInverseFunctor (L := L)).obj s.toSection = s
-  exact sectionInverseFunctor_obj_toSection s
+  simp only [Functor.comp_obj, sectionEquivalence_functor, sectionEquivalence_inverse_obj,
+    ofSection_toSection]
 
 /-- The counit's source object is the original actual section. -/
 theorem sectionEquivalence_counit_obj (s : CategoryTheory.Grothendieck.Section L) :
     ((sectionEquivalence (L := L)).inverse ⋙ (sectionEquivalence (L := L)).functor).obj s = s := by
-  change ((sectionInverseFunctor (L := L)).obj s).toSection = s
-  exact toSection_sectionInverseFunctor_obj s
+  simp only [Functor.comp_obj, sectionEquivalence_functor, sectionEquivalence_inverse_obj,
+    toSection_ofSection]
 
 /-- The unit is the canonical equality isomorphism to the reconstructed object. -/
 @[simp]
