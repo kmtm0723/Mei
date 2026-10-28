@@ -104,6 +104,7 @@ theorem verticalFiber_comp {d : D} {x y z : C.obj d}
 
 /-- Fiber extraction of a composite transports the first fiber arrow and then
 composes with the second, after the diagram's canonical composition identification. -/
+@[simp]
 theorem fiberHom_comp {d e b : D} {x : C.obj d} {y : C.obj e} {z : C.obj b}
     (f : (⟨d, x⟩ : Grothendieck C) ⟶ ⟨e, y⟩)
     (g : (⟨e, y⟩ : Grothendieck C) ⟶ ⟨b, z⟩)
