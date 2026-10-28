@@ -108,10 +108,15 @@ theorem quotientLieAction_eq_quotientRaisingEnd (k : ℕ) (x : L) :
     F.quotientLieAction d ℒ k x =
       F.quotientRaisingEnd (LieModule.toEnd R L M x)
         (fun _ _ hm => F.lie_mem_succ d ℒ x hm) k := by
-  exact (F.quotientRaisingEnd_eq_mapQ (LieModule.toEnd R L M x)
-    (fun _ _ hm => F.lie_mem_succ d ℒ x hm) k).symm
+  apply LinearMap.ext
+  intro a
+  obtain ⟨m, rfl⟩ := (F.submodule (k + 1)).mkQ_surjective a
+  exact (F.quotientLieAction_mk d ℒ k x m).trans
+    (F.quotientRaisingEnd_mk (LieModule.toEnd R L M x)
+      (fun _ _ hm => F.lie_mem_succ d ℒ x hm) k m).symm
 
 /-- At order `k`, the `(k + 1)`st power of every acting endomorphism vanishes. -/
+@[simp]
 theorem quotientLieAction_pow_eq_zero (k : ℕ) (x : L) :
     F.quotientLieAction d ℒ k x ^ (k + 1) = 0 := by
   rw [quotientLieAction_eq_quotientRaisingEnd]
