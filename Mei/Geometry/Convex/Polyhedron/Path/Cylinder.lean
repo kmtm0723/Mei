@@ -37,7 +37,7 @@ def cylinderProjection : WallComplement (fun j => W j ×ˢ (univ : Set E)) ⥤q
     transverse := fun j hj hm => by
       obtain ⟨t, ht, hmem⟩ := hj
       apply a.down.transverse j ⟨t, ht, hmem, mem_univ _⟩
-      rw [AffineSubspace.direction_affineSpan_prod_univ ⟨_, hmem⟩]
+      rw [Mei.direction_affineSpan_prod_univ ⟨_, hmem⟩]
       exact ⟨hm, Submodule.mem_top⟩
     regular := fun t ht hm => by
       apply a.down.regular t ht
@@ -121,7 +121,7 @@ theorem wallPathProduct_cylinderProjection {G : Type*} [Group G]
     (p : AdmissiblePLPath x y) :
     ((cylinderProjection W).mapPath p).wallPathProduct ν label comm =
       p.wallPathProduct (fun j => (ν j).comp (LinearMap.fst ℝ V E)) label
-        (fun i j h => comm i j ((affineSpan_prod_univ_eq_iff (W i) (W j)).mp h)) := by
+        (fun i j h => comm i j ((Mei.affineSpan_prod_univ_eq_iff (W i) (W j)).mp h)) := by
   rw [wallPathProduct_eq_prod_signedCrossingEvents,
     wallPathProduct_eq_prod_signedCrossingEvents, signedCrossingEvents_cylinderProjection]
 
