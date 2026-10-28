@@ -377,6 +377,11 @@ variable {S : Type*} [CommSemiring S] (P₁ P₂ : S[X])
 def weight (γ : Edge d₁ d₂ → ℕ) : S :=
   (∏ v ∈ verticalEdges d₁ d₂, P₁.coeff (γ v)) * ∏ h ∈ horizontalEdges d₁ d₂, P₂.coeff (γ h)
 
+theorem weight_eq_prod (γ : Edge d₁ d₂ → ℕ) :
+    weight P₁ P₂ γ =
+      (∏ v ∈ verticalEdges d₁ d₂, P₁.coeff (γ v)) * ∏ h ∈ horizontalEdges d₁ d₂, P₂.coeff (γ h) :=
+  (rfl)
+
 variable (d₁ d₂) in
 /-- `C₊(p, q)`: the weight sum of the compatible gradings with totals `(p, q)` whose nonzero
 vertical support lies in the total horizontal shadow. -/
