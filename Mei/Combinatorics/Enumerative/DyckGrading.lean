@@ -58,6 +58,10 @@ variable {d₁ d₂ : ℕ}
 def step (e : Edge d₁ d₂) : DyckStep :=
   (maximalDyckPath d₁ d₂)[e.val]'(by rw [length_maximalDyckPath]; exact e.isLt)
 
+theorem step_eq_getElem (e : Edge d₁ d₂) :
+    step e = (maximalDyckPath d₁ d₂)[e.val]'(by rw [length_maximalDyckPath]; exact e.isLt) :=
+  (rfl)
+
 variable (d₁ d₂) in
 /-- The vertical edges of the maximal Dyck path. -/
 def verticalEdges : Finset (Edge d₁ d₂) := {e | step e = D}

@@ -92,6 +92,25 @@ theorem sum_cyclicIcc_neg {M : Type*} [AddCommMonoid M] (f : Fin n → M) (a b :
     (fun _ hk ↦ neg_mem_cyclicIcc.mpr (by rwa [neg_neg, neg_neg])) (fun k _ ↦ neg_neg k)
     (fun k _ ↦ neg_neg k) (fun k _ ↦ by rw [neg_neg])
 
+/-- Membership in a cyclic interval in terms of positions: for `e ≤ e'` it is the ordinary
+interval, and otherwise it wraps around the end. -/
+theorem mem_cyclicIcc_iff {e e' k : Fin n} :
+    k ∈ cyclicIcc e e' ↔ e ≤ e' ∧ e ≤ k ∧ k ≤ e' ∨ e' < e ∧ (e ≤ k ∨ k ≤ e') := by
+  rw [mem_cyclicIcc]
+  rcases le_or_gt e k with hk | hk <;> rcases le_or_gt e e' with he | he
+  · rw [Fin.coe_sub_iff_le.mpr hk, Fin.coe_sub_iff_le.mpr he]
+    simp only [Fin.le_def, Fin.lt_def] at *
+    omega
+  · rw [Fin.coe_sub_iff_le.mpr hk, Fin.coe_sub_iff_lt.mpr he]
+    simp only [Fin.le_def, Fin.lt_def] at *
+    omega
+  · rw [Fin.coe_sub_iff_lt.mpr hk, Fin.coe_sub_iff_le.mpr he]
+    simp only [Fin.le_def, Fin.lt_def] at *
+    omega
+  · rw [Fin.coe_sub_iff_lt.mpr hk, Fin.coe_sub_iff_lt.mpr he]
+    simp only [Fin.le_def, Fin.lt_def] at *
+    omega
+
 variable (B : Finset (Fin n)) (τ : Fin n → ℕ)
 
 /-- The weight of a position: `-1` at a sink and the number of tokens elsewhere. -/
@@ -146,6 +165,87 @@ def Matched (v : Fin n) : Prop :=
 
 instance : DecidablePred (Matched B τ) := fun _ ↦
   inferInstanceAs (Decidable (∃ _, _))
+
+/-- The reflection of the non-sinks, `{k | -k ∉ B}`: the sinks of the reversed cycle. -/
+private def reflect : Finset (Fin n) := Bᶜ.map (Equiv.neg (Fin n)).toEmbedding
+
+private theorem mem_reflect {k : Fin n} : k ∈ reflect B ↔ -k ∉ B := by
+  rw [reflect, mem_map_equiv, Equiv.neg_symm, Equiv.neg_apply, mem_compl]
+
+private theorem mem_compl_reflect {k : Fin n} : k ∈ (reflect B)ᶜ ↔ -k ∈ B := by
+  rw [mem_compl, mem_reflect, not_not]
+
+private theorem compl_reflect : (reflect B)ᶜ = B.map (Equiv.neg (Fin n)).toEmbedding := by
+  ext k
+  rw [mem_compl_reflect, mem_map_equiv, Equiv.neg_symm, Equiv.neg_apply]
+
+private theorem sum_reflect (ρ : Fin n → ℕ) : ∑ k ∈ reflect B, (ρ ∘ Neg.neg) k = ∑ k ∈ Bᶜ, ρ k := by
+  rw [reflect, sum_map]
+  simp
+
+private theorem sum_compl_reflect (ρ : Fin n → ℕ) :
+    ∑ k ∈ (reflect B)ᶜ, (ρ ∘ Neg.neg) k = ∑ k ∈ B, ρ k := by
+  rw [compl_reflect, sum_map]
+  simp
+
+private theorem card_reflect : #(reflect B) = #Bᶜ := card_map _
+
+private theorem card_compl_reflect : #(reflect B)ᶜ = #B := by rw [compl_reflect, card_map]
+
+/-- Windows of the reversed cycle with reflected sinks are reversed windows with non-sinks as
+sinks. -/
+private theorem sum_weight_reflect (ρ : Fin n → ℕ) (x y : Fin n) :
+    ∑ k ∈ cyclicIcc x y, weight (reflect B) (ρ ∘ Neg.neg) k =
+      ∑ k ∈ cyclicIcc (-y) (-x), weight Bᶜ ρ k := by
+  rw [sum_cyclicIcc_neg]
+  refine sum_congr rfl fun k _ ↦ ?_
+  simp only [weight_def, mem_reflect, mem_compl, Function.comp_apply]
+
+private theorem sum_weight_compl_reflect (ρ : Fin n → ℕ) (x y : Fin n) :
+    ∑ k ∈ cyclicIcc x y, weight (reflect B)ᶜ (ρ ∘ Neg.neg) k =
+      ∑ k ∈ cyclicIcc (-y) (-x), weight B ρ k := by
+  rw [sum_cyclicIcc_neg]
+  refine sum_congr rfl fun k _ ↦ ?_
+  simp only [weight_def, mem_compl_reflect, Function.comp_apply]
+
+private theorem card_inter_reflect (x y : Fin n) :
+    #(cyclicIcc x y ∩ reflect B) = #(cyclicIcc (-y) (-x) ∩ Bᶜ) :=
+  card_nbij' Neg.neg Neg.neg
+    (fun k hk ↦ by
+      rw [mem_coe, mem_inter] at hk ⊢
+      exact ⟨neg_mem_cyclicIcc.mpr (by rw [neg_neg, neg_neg]; exact hk.1),
+        mem_compl.mpr ((mem_reflect B).mp hk.2)⟩)
+    (fun k hk ↦ by
+      rw [mem_coe, mem_inter] at hk ⊢
+      exact ⟨neg_mem_cyclicIcc.mpr hk.1,
+        (mem_reflect B).mpr (by rw [neg_neg]; exact mem_compl.mp hk.2)⟩)
+    (fun k _ ↦ neg_neg k) (fun k _ ↦ neg_neg k)
+
+private theorem card_inter_compl_reflect (x y : Fin n) :
+    #(cyclicIcc x y ∩ (reflect B)ᶜ) = #(cyclicIcc (-y) (-x) ∩ B) :=
+  card_nbij' Neg.neg Neg.neg
+    (fun k hk ↦ by
+      rw [mem_coe, mem_inter] at hk ⊢
+      exact ⟨neg_mem_cyclicIcc.mpr (by rw [neg_neg, neg_neg]; exact hk.1),
+        (mem_compl_reflect B).mp hk.2⟩)
+    (fun k hk ↦ by
+      rw [mem_coe, mem_inter] at hk ⊢
+      exact ⟨neg_mem_cyclicIcc.mpr hk.1,
+        (mem_compl_reflect B).mpr (by rw [neg_neg]; exact hk.2)⟩)
+    (fun k _ ↦ neg_neg k) (fun k _ ↦ neg_neg k)
+
+/-- A non-sink carrying `τ` tokens that is matched backwards for `(Bᶜ, σ)` becomes a matched
+sink of the reversed cycle. -/
+private theorem forall_matched_reflect (σ : Fin n → ℕ)
+    (hm : ∀ h ∉ B, τ h ≠ 0 → ∃ v ∈ B,
+      ∀ e, (v - e).val < (v - h).val → ∑ k ∈ cyclicIcc e v, weight Bᶜ σ k ≠ 0) :
+    ∀ v' ∈ reflect B, (τ ∘ Neg.neg) v' ≠ 0 → Matched (reflect B) (σ ∘ Neg.neg) v' := by
+  intro v' hv' hτv
+  have : NeZero n := ⟨v'.pos.ne'⟩
+  obtain ⟨v, hv, hall⟩ := hm (-v') ((mem_reflect B).mp hv') hτv
+  refine ⟨-v, by rw [mem_reflect, neg_neg, not_not]; exact hv, fun e' he' ↦ ?_⟩
+  have := hall (-e') (by rwa [show v - -e' = e' - -v by abel, show v - -v' = v' - -v by abel])
+  rwa [sum_weight_reflect, neg_neg]
 
 section Walk
 
@@ -698,6 +798,52 @@ private theorem walk_compl_eq_of_sinks (σ : Fin n → ℕ)
       sigma_eq_zero_of_isBase B τ σ hm (by omega) hbase hB]
     simp
 
+/-- The first return of the first walk to the level of a running minimum `a`, before a later
+running minimum `b`, is again a running minimum. -/
+private theorem exists_first_return {a b : ℕ} (hab : a < b) (hba : IsBase B τ a)
+    (hbb : IsBase B τ b) :
+    ∃ c, a < c ∧ c ≤ b ∧ walk B τ c ≤ walk B τ a ∧
+      (∀ y, a < y → y < c → walk B τ a < walk B τ y) ∧ IsBase B τ c := by
+  set F := (Ioc a b).filter fun y ↦ walk B τ y ≤ walk B τ a
+  have hF : F.Nonempty := ⟨b, mem_filter.mpr ⟨mem_Ioc.mpr ⟨hab, le_rfl⟩, hbb a hab.le⟩⟩
+  obtain ⟨c, hcF, hcmin⟩ : ∃ c ∈ F, ∀ y ∈ F, c ≤ y :=
+    ⟨F.min' hF, F.min'_mem hF, fun y hy ↦ F.min'_le y hy⟩
+  obtain ⟨hcI, hcα⟩ := mem_filter.mp hcF
+  obtain ⟨hac, hcb⟩ := mem_Ioc.mp hcI
+  have hbetween : ∀ y, a < y → y < c → walk B τ a < walk B τ y := by
+    intro y h₁ h₂
+    by_contra hle
+    have hyF : y ∈ F := mem_filter.mpr ⟨mem_Ioc.mpr ⟨h₁, by omega⟩, not_lt.mp hle⟩
+    exact absurd (hcmin y hyF) (by omega)
+  refine ⟨c, hac, hcb, hcα, hbetween, fun x hx ↦ ?_⟩
+  rcases Nat.lt_or_ge a x with h | h
+  · rcases lt_or_eq_of_le hx with h' | rfl
+    · have := hbetween x h h'; linarith
+    · exact le_rfl
+  · exact le_trans hcα (hba x h)
+
+/-- When the total weight is negative, some time in the second period and the same time one
+period later are running minima. -/
+private theorem exists_base_period (hA : ∑ i : Fin n, weight B τ i < 0) :
+    ∃ a, n ≤ a ∧ IsBase B τ a ∧ IsBase B τ (a + n) := by
+  obtain ⟨a, haI, hamin⟩ := (Icc n (n + n)).exists_min_image (walk B τ)
+    ⟨n, mem_Icc.mpr ⟨le_rfl, by omega⟩⟩
+  obtain ⟨ha₁, ha₂⟩ := mem_Icc.mp haI
+  have hper (x : ℕ) := walk_add_self B τ x
+  have hba : IsBase B τ a := by
+    intro x hx
+    rcases Nat.lt_or_ge x n with h | h
+    · have := hamin (x + n) (mem_Icc.mpr ⟨by omega, by omega⟩)
+      linarith [hper x]
+    · exact hamin x (mem_Icc.mpr ⟨h, by omega⟩)
+  refine ⟨a, ha₁, hba, fun x hx ↦ ?_⟩
+  rcases Nat.lt_or_ge a x with h | h
+  · obtain ⟨t, rfl⟩ : ∃ t, x = t + n := ⟨x - n, by omega⟩
+    have := hba t (by omega)
+    linarith [hper t, hper a]
+  · have := hba x h
+    linarith [hper a]
+
 /-- Between two running minima across which the second walk does not decrease and which
 contain a non-sink, there is an excursion of the first walk over which the second walk does not
 decrease. -/
@@ -712,24 +858,8 @@ private theorem exists_segment (σ : Fin n → ℕ) (hm : ∀ v ∈ B, σ v ≠ 
   | _ d ih =>
   intro a b hd ha hab hba hbb hβ ⟨j, hj₁, hj₂, hjB⟩
   -- The next return of the first walk to the level at `a`.
-  set F := (Ioc a b).filter fun y ↦ walk B τ y ≤ walk B τ a
-  have hF : F.Nonempty := ⟨b, mem_filter.mpr ⟨mem_Ioc.mpr ⟨by omega, le_rfl⟩, hbb a hab⟩⟩
-  obtain ⟨c, hcF, hcmin⟩ : ∃ c ∈ F, ∀ y ∈ F, c ≤ y :=
-    ⟨F.min' hF, F.min'_mem hF, fun y hy ↦ F.min'_le y hy⟩
-  obtain ⟨hcI, hcα⟩ := mem_filter.mp hcF
-  obtain ⟨hac, hcb⟩ := mem_Ioc.mp hcI
-  have hbetween : ∀ y, a < y → y < c → walk B τ a < walk B τ y := by
-    intro y h₁ h₂
-    by_contra hle
-    have hyF : y ∈ F := mem_filter.mpr ⟨mem_Ioc.mpr ⟨h₁, by omega⟩, not_lt.mp hle⟩
-    exact absurd (hcmin y hyF) (by omega)
-  have hcb' : IsBase B τ c := by
-    intro x hx
-    rcases Nat.lt_or_ge a x with h | h
-    · rcases lt_or_eq_of_le hx with h' | rfl
-      · have := hbetween x h h'; linarith
-      · exact le_rfl
-    · exact le_trans hcα (hba x h)
+  obtain ⟨c, hac, hcb, hcα, hbetween, hcb'⟩ :=
+    exists_first_return B τ (show a < b by omega) hba hbb
   -- If `[c, b)` had no non-sink, the second walk would not move there.
   have hHc : walk Bᶜ σ c < walk Bᶜ σ b → ∃ j, c ≤ j ∧ j < b ∧ pos j ∉ B := by
     intro hlt
@@ -751,11 +881,10 @@ private theorem exists_segment (σ : Fin n → ℕ) (hm : ∀ v ∈ B, σ v ≠ 
   by_cases haB : pos a ∈ B
   · -- A sink step: an unmatched sink, so the second walk stays put.
     have hc1 : c = a + 1 := by
-      have h₁ : a + 1 ∈ F := mem_filter.mpr ⟨mem_Ioc.mpr ⟨by omega, by
-        rcases eq_or_lt_of_le hj₁ with rfl | h
-        · exact absurd haB hjB
-        · omega⟩, by rw [walk_succ, weight_of_mem B τ haB]; omega⟩
-      exact le_antisymm (hcmin _ h₁) (by omega)
+      by_contra hne
+      have := hbetween (a + 1) (by omega) (by omega)
+      rw [walk_succ, weight_of_mem B τ haB] at this
+      omega
     have hβc : walk Bᶜ σ c = walk Bᶜ σ a := by
       rw [hc1, walk_succ, weight_compl_of_mem B σ haB,
         sigma_eq_zero_of_isBase B τ σ hm ha hba haB]
@@ -775,9 +904,10 @@ private theorem exists_segment (σ : Fin n → ℕ) (hm : ∀ v ∈ B, σ v ≠ 
     by_cases hτa : τ (pos a) = 0
     · -- A non-sink without tokens: the second walk drops.
       have hc1 : c = a + 1 := by
-        have h₁ : a + 1 ∈ F := mem_filter.mpr ⟨mem_Ioc.mpr ⟨by omega, by omega⟩, by
-          rw [walk_succ, weight_of_notMem B τ haB, hτa]; simp⟩
-        exact le_antisymm (hcmin _ h₁) (by omega)
+        by_contra hne
+        have := hbetween (a + 1) (by omega) (by omega)
+        rw [walk_succ, weight_of_notMem B τ haB, hτa] at this
+        simp at this
       exact hrec (by rw [hc1, hβa1]; omega)
     · -- An excursion of the first walk.
       have hca : a + 1 < c := by
@@ -805,24 +935,7 @@ theorem exists_mutual_of_forall_matched (σ : Fin n → ℕ) (hBc : Bᶜ.Nonempt
   have hAσ : 0 ≤ ∑ i : Fin n, weight Bᶜ σ i := by
     rw [sum_weight, compl_compl]; exact sub_nonneg.mpr (by exact_mod_cast hσ)
   -- A running minimum `a` in the second period, and the same point one period later.
-  obtain ⟨a, haI, hamin⟩ := (Icc n (n + n)).exists_min_image (walk B τ)
-    ⟨n, mem_Icc.mpr ⟨le_rfl, by omega⟩⟩
-  obtain ⟨ha₁, ha₂⟩ := mem_Icc.mp haI
-  have hper (x : ℕ) := walk_add_self B τ x
-  have hba : IsBase B τ a := by
-    intro x hx
-    rcases Nat.lt_or_ge x n with h | h
-    · have := hamin (x + n) (mem_Icc.mpr ⟨by omega, by omega⟩)
-      linarith [hper x]
-    · exact hamin x (mem_Icc.mpr ⟨h, by omega⟩)
-  have hbb : IsBase B τ (a + n) := by
-    intro x hx
-    rcases Nat.lt_or_ge a x with h | h
-    · obtain ⟨t, rfl⟩ : ∃ t, x = t + n := ⟨x - n, by omega⟩
-      have := hba t (by omega)
-      linarith [hper t, hper a]
-    · have := hba x h
-      linarith [hper a]
+  obtain ⟨a, ha₁, hba, hbb⟩ := exists_base_period B τ hA
   have hβ : walk Bᶜ σ a ≤ walk Bᶜ σ (a + n) := by
     linarith [walk_add_self Bᶜ σ a]
   obtain ⟨k, hk⟩ := hBc
@@ -846,42 +959,242 @@ theorem exists_mutual_of_forall_matched_rev (σ : Fin n → ℕ) (hB : B.Nonempt
       ∀ e, (v - e).val < (v - h).val → ∑ k ∈ cyclicIcc e v, weight Bᶜ σ k ≠ 0 := by
   -- Reflect the cycle: the reflected non-sinks are the sinks, with the roles of `τ` and `σ`
   -- exchanged.
-  set ν := (Equiv.neg (Fin n)).toEmbedding
-  set B' := Bᶜ.map ν
-  have hmem (k : Fin n) : k ∈ B' ↔ -k ∉ B := by
-    rw [mem_map_equiv, Equiv.neg_symm, Equiv.neg_apply, mem_compl]
-  have hcompl : B'ᶜ = B.map ν := by
-    ext k
-    rw [mem_compl, hmem, not_not, mem_map_equiv, Equiv.neg_symm, Equiv.neg_apply]
-  have hw (k : Fin n) : weight B' (σ ∘ Neg.neg) k = weight Bᶜ σ (-k) := by
-    simp only [weight_def, hmem, mem_compl, Function.comp_apply]
-  have hw' (k : Fin n) : weight B'ᶜ (τ ∘ Neg.neg) k = weight B τ (-k) := by
-    simp only [weight_def, mem_compl, hmem, not_not, Function.comp_apply]
-  have hA (x y : Fin n) : ∑ k ∈ cyclicIcc (-y) (-x), weight Bᶜ σ k =
-      ∑ k ∈ cyclicIcc x y, weight B' (σ ∘ Neg.neg) k :=
-    (sum_cyclicIcc_neg _ x y).trans (sum_congr rfl fun k _ ↦ (hw k).symm)
-  have hA' (x y : Fin n) : ∑ k ∈ cyclicIcc (-y) (-x), weight B τ k =
-      ∑ k ∈ cyclicIcc x y, weight B'ᶜ (τ ∘ Neg.neg) k :=
-    (sum_cyclicIcc_neg _ x y).trans (sum_congr rfl fun k _ ↦ (hw' k).symm)
-  obtain ⟨h', hh', v', hv', hfwd, hbwd⟩ := exists_mutual_of_forall_matched B' (σ ∘ Neg.neg)
-    (τ ∘ Neg.neg) (by
+  obtain ⟨h', hh', v', hv', hfwd, hbwd⟩ := exists_mutual_of_forall_matched (reflect B)
+    (σ ∘ Neg.neg) (τ ∘ Neg.neg) (by
       obtain ⟨k, hk⟩ := hB
-      refine ⟨-k, ?_⟩
-      rw [hcompl, mem_map_equiv, Equiv.neg_symm, Equiv.neg_apply, neg_neg]
-      exact hk)
-    (fun v' hv' hτv ↦ by
-      obtain ⟨v, hv, hall⟩ := hm (-v') ((hmem v').mp hv') hτv
-      refine ⟨-v, by rw [hmem, neg_neg, not_not]; exact hv, fun e' he' ↦ ?_⟩
-      have := hall (-e') (by rwa [show v - -e' = e' - -v by abel, show v - -v' = v' - -v by abel])
-      rw [← hA (-v) e', neg_neg]
-      exact this)
-    (by rw [hcompl, card_map, sum_map]; simpa [ν] using hτ)
-  rw [hmem, not_not] at hh'
-  refine ⟨-v', (hmem v').mp hv', -h', hh', fun e he ↦ ?_, fun e he ↦ ?_⟩
+      exact ⟨-k, by rw [mem_compl_reflect, neg_neg]; exact hk⟩)
+    (forall_matched_reflect B τ σ hm) (by rw [card_compl_reflect, sum_reflect]; exact hτ)
+  rw [mem_reflect, not_not] at hh'
+  refine ⟨-v', (mem_reflect B).mp hv', -h', hh', fun e he ↦ ?_, fun e he ↦ ?_⟩
   · have := hbwd (-e) (by rwa [show v' - -e = e - -v' by abel, show v' - h' = -h' - -v' by abel])
-    rwa [← hA' (-e) v', neg_neg] at this
+    rwa [sum_weight_compl_reflect, neg_neg] at this
   · have := hfwd (-e) (by rwa [show -e - h' = -h' - e by abel, show v' - h' = -h' - -v' by abel])
-    rwa [← hA h' (-e), neg_neg] at this
+    rwa [sum_weight_reflect, neg_neg] at this
+
+/-- The offset from `pos y` to `pos (y + t)` is `t`, for `t < n`. -/
+private theorem val_pos_add_sub (y t : ℕ) (ht : t < n) : (pos (y + t) - pos y : Fin n).val = t := by
+  rw [pos_add, add_sub_cancel_left]
+  simp [pos, Nat.mod_eq_of_lt ht]
+
+/-- Every position is reached from `pos y` after its offset. -/
+private theorem pos_add_val_sub (y : ℕ) (e : Fin n) : pos (y + (e - pos y).val) = e := by
+  rw [pos_add, pos_val, add_sub_cancel]
+
+/-- A cyclic window read from time `y` is an increment of the walk. -/
+private theorem sum_cyclicIcc_pos (y t : ℕ) (ht : t < n) :
+    ∑ k ∈ cyclicIcc (pos y) (pos (y + t)), weight B τ k = walk B τ (y + t + 1) - walk B τ y := by
+  have hps : (pos y : Fin n).val = y % n := by simp [pos]
+  rw [sum_cyclicIcc, val_pos_add_sub y t ht, hps, add_assoc, walk_mod_sub, ← add_assoc]
+
+/-- The `τ` tokens on the non-sinks between times `x` and `y` of the periodic extension. -/
+private def tokens (x y : ℕ) : ℤ := (walk B τ y - walk B τ x) - (walk B 0 y - walk B 0 x)
+
+private theorem tokens_add (x y z : ℕ) : tokens B τ x y + tokens B τ y z = tokens B τ x z := by
+  unfold tokens
+  ring
+
+private theorem tokens_self (x : ℕ) : tokens B τ x x = 0 := by
+  unfold tokens
+  ring
+
+private theorem tokens_succ (x : ℕ) :
+    tokens B τ x (x + 1) = if pos x ∈ B then 0 else (τ (pos x) : ℤ) := by
+  unfold tokens
+  rw [walk_succ, walk_succ]
+  by_cases h : pos x ∈ B
+  · simp [weight_of_mem B τ h, weight_of_mem B 0 h, h]
+  · simp [weight_of_notMem B τ h, weight_of_notMem B 0 h, h]
+
+private theorem tokens_add_self (x : ℕ) : tokens B τ x (x + n) = ∑ k ∈ Bᶜ, τ k := by
+  unfold tokens
+  rw [walk_add_self, walk_add_self, sum_weight, sum_weight]
+  simp only [Pi.zero_apply, sum_const_zero, Nat.cast_zero]
+  ring
+
+/-- On an excursion of the first walk from a non-sink `a` back to its level at `c`, if no
+non-sink and sink see each other, then the `σ` tokens are fewer than the non-sinks, and a slope
+bound on windows gives `α σ < β τ` there. -/
+private theorem excursion_lt (σ : Fin n → ℕ) (α β : ℕ)
+    (hchr : ∀ h ∉ B, ∀ e ∈ B, α * #(cyclicIcc h e ∩ Bᶜ) < α + β * #(cyclicIcc h e ∩ B))
+    (hcomp : ∀ h ∉ B, ∀ v ∈ B,
+      (∀ e, (e - h).val < (v - h).val → ∑ k ∈ cyclicIcc h e, weight B τ k ≠ 0) →
+      ∃ e, (v - e).val < (v - h).val ∧ ∑ k ∈ cyclicIcc e v, weight Bᶜ σ k = 0)
+    {a c : ℕ} (hac : a + 1 < c) (hcn : c ≤ a + n) (haB : pos a ∉ B)
+    (habove : ∀ y, a < y → y < c → walk B τ a < walk B τ y) (hc : walk B τ c ≤ walk B τ a) :
+    (α : ℤ) * tokens Bᶜ σ a c < β * tokens B τ a c := by
+  -- The last step returns the first walk to its starting level, at a sink.
+  have hc1 := habove (c - 1) (by omega) (by omega)
+  have hstep : walk B τ c = walk B τ (c - 1) + weight B τ (pos (c - 1)) := by
+    rw [← walk_succ, show c - 1 + 1 = c by omega]
+  have hcB : pos (c - 1) ∈ B := by
+    by_contra hnot
+    have := weight_nonneg B τ hnot
+    linarith
+  have hceq : walk B τ c = walk B τ a := by
+    have := neg_one_le_weight B τ (pos (c - 1))
+    omega
+  -- Going back from `c`, the second walk never ends above its value at `c` before `a + 1`.
+  have key : ∀ x, a < x → x ≤ c → walk Bᶜ σ c ≤ walk Bᶜ σ x →
+      walk Bᶜ σ c ≤ walk Bᶜ σ (a + 1) := by
+    intro x
+    induction x using Nat.strong_induction_on with
+    | _ x ih =>
+    intro hax hxc hXx
+    rcases eq_or_lt_of_le (show a + 1 ≤ x by omega) with rfl | hx
+    · exact hXx
+    by_cases hle : walk Bᶜ σ c ≤ walk Bᶜ σ (x - 1)
+    · exact ih (x - 1) (by omega) (by omega) (by omega) hle
+    have hstepX : walk Bᶜ σ x = walk Bᶜ σ (x - 1) + weight Bᶜ σ (pos (x - 1)) := by
+      rw [← walk_succ, show x - 1 + 1 = x by omega]
+    have hvB : pos (x - 1) ∈ B := by
+      by_contra hnot
+      rw [weight_of_mem Bᶜ σ (mem_compl.mpr hnot)] at hstepX
+      linarith [not_le.mp hle]
+    rw [weight_compl_of_mem B σ hvB] at hstepX
+    have hvh : (pos (x - 1) - pos a : Fin n).val = x - 1 - a := by
+      have := val_pos_add_sub (n := n) a (x - 1 - a) (by omega)
+      rwa [show a + (x - 1 - a) = x - 1 by omega] at this
+    obtain ⟨e, he, hsum⟩ := hcomp (pos a) haB (pos (x - 1)) hvB fun e he ↦ by
+      rw [hvh] at he
+      rw [← pos_add_val_sub a e, sum_cyclicIcc_pos B τ a _ (e - pos a).isLt]
+      have := habove (a + (e - pos a).val + 1) (by omega) (by omega)
+      exact sub_ne_zero.mpr (ne_of_gt this)
+    rw [hvh] at he
+    set u := (pos (x - 1) - e).val with hu
+    have hpu : pos u = pos (x - 1) - e := pos_val _
+    have h1 : (pos (x - 1 - u) + pos u : Fin n) = pos (x - 1) := by
+      rw [← pos_add, show x - 1 - u + u = x - 1 by omega]
+    rw [hpu] at h1
+    have hey : pos (x - 1 - u) = e := (eq_sub_of_add_eq h1).trans (sub_sub_cancel _ _)
+    have hwin := sum_cyclicIcc_pos Bᶜ σ (x - 1 - u) u (by omega)
+    rw [show x - 1 - u + u = x - 1 by omega, hey, hsum, show x - 1 + 1 = x by omega] at hwin
+    have hu0 : u ≠ 0 := by
+      intro h0
+      rw [h0, Nat.sub_zero] at hwin
+      have : (0 : ℤ) < σ (pos (x - 1)) := by linarith [not_le.mp hle]
+      linarith
+    exact ih (x - 1 - u) (by omega) (by omega) (by omega) (by linarith)
+  have hXc := key c (by omega) le_rfl le_rfl
+  have hXa : walk Bᶜ σ (a + 1) = walk Bᶜ σ a - 1 := by
+    rw [walk_succ, weight_of_mem Bᶜ σ (mem_compl.mpr haB)]
+    ring
+  -- The counts of sinks and non-sinks on the window from `a` to `c - 1`.
+  have ht : c - 1 - a < n := by omega
+  have hpc : (pos (a + (c - 1 - a)) : Fin n) = pos (c - 1) := by
+    rw [show a + (c - 1 - a) = c - 1 by omega]
+  have hV : (#(cyclicIcc (pos a) (pos (c - 1)) ∩ B) : ℤ) = -(walk B 0 c - walk B 0 a) := by
+    have h1 := sum_cyclicIcc_pos B 0 a (c - 1 - a) ht
+    rw [hpc, show a + (c - 1 - a) + 1 = c by omega, sum_weight_eq] at h1
+    simp only [Pi.zero_apply, sum_const_zero, Nat.cast_zero, zero_sub] at h1
+    linarith
+  have hH : (#(cyclicIcc (pos a) (pos (c - 1)) ∩ Bᶜ) : ℤ) = -(walk Bᶜ 0 c - walk Bᶜ 0 a) := by
+    have h1 := sum_cyclicIcc_pos Bᶜ 0 a (c - 1 - a) ht
+    rw [hpc, show a + (c - 1 - a) + 1 = c by omega, sum_weight_eq] at h1
+    simp only [Pi.zero_apply, sum_const_zero, Nat.cast_zero, zero_sub] at h1
+    linarith
+  have hchrZ : (α : ℤ) * #(cyclicIcc (pos a) (pos (c - 1)) ∩ Bᶜ) <
+      α + β * #(cyclicIcc (pos a) (pos (c - 1)) ∩ B) := by
+    exact_mod_cast hchr (pos a) haB (pos (c - 1)) hcB
+  have hP : tokens Bᶜ σ a c ≤ #(cyclicIcc (pos a) (pos (c - 1)) ∩ Bᶜ) - 1 := by
+    unfold tokens
+    linarith
+  have hQ : tokens B τ a c = #(cyclicIcc (pos a) (pos (c - 1)) ∩ B) := by
+    unfold tokens
+    linarith
+  have := mul_le_mul_of_nonneg_left hP (Nat.cast_nonneg (α : ℕ) : (0 : ℤ) ≤ α)
+  rw [hQ]
+  linarith
+
+/-- Between running minima `a ≤ b` at most a period apart, the comparison of `excursion_lt`
+holds for the tokens, strictly when there are `τ` tokens. -/
+private theorem segment_le (σ : Fin n → ℕ) (α β : ℕ)
+    (hchr : ∀ h ∉ B, ∀ e ∈ B, α * #(cyclicIcc h e ∩ Bᶜ) < α + β * #(cyclicIcc h e ∩ B))
+    (hcomp : ∀ h ∉ B, ∀ v ∈ B,
+      (∀ e, (e - h).val < (v - h).val → ∑ k ∈ cyclicIcc h e, weight B τ k ≠ 0) →
+      ∃ e, (v - e).val < (v - h).val ∧ ∑ k ∈ cyclicIcc e v, weight Bᶜ σ k = 0)
+    (hm : ∀ v ∈ B, σ v ≠ 0 → Matched B τ v) :
+    ∀ d a b, b - a = d → n ≤ a → a ≤ b → b ≤ a + n → IsBase B τ a → IsBase B τ b →
+      (α : ℤ) * tokens Bᶜ σ a b ≤ β * tokens B τ a b ∧
+        (0 < tokens B τ a b → (α : ℤ) * tokens Bᶜ σ a b < β * tokens B τ a b) := by
+  intro d
+  induction d using Nat.strong_induction_on with
+  | _ d ih =>
+  intro a b hd ha hab hbn hba hbb
+  rcases eq_or_lt_of_le hab with rfl | hab
+  · simp [tokens_self]
+  obtain ⟨c, hac, hcb, hcα, hbetween, hcb'⟩ := exists_first_return B τ hab hba hbb
+  have hd' : b - c < d := hd ▸ Nat.sub_lt_sub_left hab hac
+  obtain ⟨ih₁, ih₂⟩ := ih (b - c) hd' c b rfl (ha.trans hac.le) hcb (by omega) hcb' hbb
+  rw [← tokens_add Bᶜ σ a c b, ← tokens_add B τ a c b]
+  by_cases hca : a + 1 < c
+  · have haB : pos a ∉ B := by
+      intro haB
+      have := hbetween (a + 1) (by omega) hca
+      rw [walk_succ, weight_of_mem B τ haB] at this
+      omega
+    have hlt := excursion_lt B τ σ α β hchr hcomp hca (by omega) haB hbetween hcα
+    exact ⟨by linarith, fun _ ↦ by linarith⟩
+  · have hc1 : c = a + 1 := by omega
+    subst hc1
+    have h0 : tokens Bᶜ σ a (a + 1) = 0 ∧ tokens B τ a (a + 1) = 0 := by
+      rw [tokens_succ, tokens_succ]
+      by_cases haB : pos a ∈ B
+      · simp [haB, sigma_eq_zero_of_isBase B τ σ hm ha hba haB]
+      · rw [walk_succ, weight_of_notMem B τ haB] at hcα
+        simp only [mem_compl, haB, not_false_eq_true, ↓reduceIte, true_and, Nat.cast_eq_zero]
+        omega
+    rw [h0.1, h0.2, zero_add, zero_add]
+    exact ⟨ih₁, ih₂⟩
+
+/-- **Slope comparison.** Suppose every window from a non-sink to a sink satisfies
+`α · #non-sinks < α + β · #sinks`, no non-sink `h` and sink `v` see each other as in
+`exists_mutual`, every sink carrying `σ` tokens is matched for `(B, τ)`, and there are fewer
+`τ` tokens than sinks but at least one. Then `α ∑_B σ < β ∑_{Bᶜ} τ`. -/
+theorem mul_sum_lt_of_forall_matched (σ : Fin n → ℕ) (α β : ℕ)
+    (hchr : ∀ h ∉ B, ∀ e ∈ B, α * #(cyclicIcc h e ∩ Bᶜ) < α + β * #(cyclicIcc h e ∩ B))
+    (hcomp : ∀ h ∉ B, ∀ v ∈ B,
+      (∀ e, (e - h).val < (v - h).val → ∑ k ∈ cyclicIcc h e, weight B τ k ≠ 0) →
+      ∃ e, (v - e).val < (v - h).val ∧ ∑ k ∈ cyclicIcc e v, weight Bᶜ σ k = 0)
+    (hm : ∀ v ∈ B, σ v ≠ 0 → Matched B τ v) (hτ : ∑ k ∈ Bᶜ, τ k < #B)
+    (hτ0 : ∑ k ∈ Bᶜ, τ k ≠ 0) :
+    α * ∑ k ∈ B, σ k < β * ∑ k ∈ Bᶜ, τ k := by
+  have hA : ∑ i : Fin n, weight B τ i < 0 := by
+    rw [sum_weight]; exact sub_neg.mpr (by exact_mod_cast hτ)
+  obtain ⟨a, ha, hba, hbb⟩ := exists_base_period B τ hA
+  obtain ⟨-, h⟩ := segment_le B τ σ α β hchr hcomp hm n a (a + n) (by omega) ha (by omega)
+    le_rfl hba hbb
+  rw [tokens_add_self, tokens_add_self, compl_compl] at h
+  exact_mod_cast h (by exact_mod_cast Nat.pos_of_ne_zero hτ0)
+
+/-- **Slope comparison, reversed.** The reflection of `mul_sum_lt_of_forall_matched`: the
+windows are read backwards from sinks, and every non-sink carrying `τ` tokens is matched
+backwards for `(Bᶜ, σ)`. -/
+theorem mul_sum_lt_of_forall_matched_rev (σ : Fin n → ℕ) (α β : ℕ)
+    (hchr : ∀ h ∉ B, ∀ v ∈ B, α * #(cyclicIcc h v ∩ B) < α + β * #(cyclicIcc h v ∩ Bᶜ))
+    (hcomp : ∀ h ∉ B, ∀ v ∈ B,
+      (∀ e, (v - e).val < (v - h).val → ∑ k ∈ cyclicIcc e v, weight Bᶜ σ k ≠ 0) →
+      ∃ e, (e - h).val < (v - h).val ∧ ∑ k ∈ cyclicIcc h e, weight B τ k = 0)
+    (hm : ∀ h ∉ B, τ h ≠ 0 → ∃ v ∈ B,
+      ∀ e, (v - e).val < (v - h).val → ∑ k ∈ cyclicIcc e v, weight Bᶜ σ k ≠ 0)
+    (hσ : ∑ k ∈ B, σ k < #Bᶜ) (hσ0 : ∑ k ∈ B, σ k ≠ 0) :
+    α * ∑ k ∈ Bᶜ, τ k < β * ∑ k ∈ B, σ k := by
+  have h := mul_sum_lt_of_forall_matched (reflect B) (σ ∘ Neg.neg) (τ ∘ Neg.neg) α β
+    (fun h' hh' e' he' ↦ by
+      rw [card_inter_compl_reflect, card_inter_reflect]
+      exact hchr (-e') ((mem_reflect B).mp he') (-h')
+        ((mem_compl_reflect B).mp (mem_compl.mpr hh')))
+    (fun h' hh' v' hv' hfwd ↦ by
+      rw [mem_reflect, not_not] at hh'
+      obtain ⟨e, he, hsum⟩ := hcomp (-v') ((mem_reflect B).mp hv') (-h') hh' fun e he ↦ by
+        have := hfwd (-e) (by
+          rwa [show -e - h' = -h' - e by abel, show v' - h' = -h' - -v' by abel])
+        rwa [sum_weight_reflect, neg_neg] at this
+      refine ⟨-e, by rwa [show v' - -e = e - -v' by abel, show v' - h' = -h' - -v' by abel], ?_⟩
+      rw [sum_weight_compl_reflect, neg_neg]
+      exact hsum)
+    (forall_matched_reflect B τ σ hm) (by rw [card_reflect, sum_compl_reflect]; exact hσ)
+    (by rw [sum_compl_reflect]; exact hσ0)
+  rwa [sum_reflect, sum_compl_reflect] at h
 
 end Walk
 
