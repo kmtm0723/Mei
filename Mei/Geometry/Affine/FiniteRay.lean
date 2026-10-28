@@ -65,7 +65,7 @@ theorem eval_zero (β : FiniteAffineRay V P) : β 0 = β.endpoint := by
   classical
   rw [eval_def, zero_smul, sub_zero]
   have h : β.bends.sum (fun b v => max (b - 0) 0 • v) = 0 := by
-    change ∑ b ∈ β.bends.support, max (b - 0) 0 • β.bends b = 0
+    simp only [Finsupp.sum]
     apply Finset.sum_eq_zero
     intro b hb
     rw [sub_zero, max_eq_right (β.bend_neg b hb).le, zero_smul]
@@ -226,7 +226,7 @@ theorem directionAt_insert (β : FiniteAffineRay V P) (b : ℝ) (δ : V) (hb : b
   abel
 
 /-- On any interval without an interior bend, realization has the stated constant velocity. -/
-theorem eval_sub_eval (β : FiniteAffineRay V P) {s t : ℝ} (hst : s ≤ t)
+theorem eval_vsub_eval (β : FiniteAffineRay V P) {s t : ℝ} (hst : s ≤ t)
     (hb : ∀ b ∈ β.bends.support, b ≤ s ∨ t ≤ b) :
     β t -ᵥ β s = (s - t) • β.directionAt t := by
   classical
