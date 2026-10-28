@@ -14,8 +14,9 @@ public import Mei.RingTheory.FilteredAlgebra.Algebra
 # Maps of completed positive quantum algebras
 
 Simultaneous coefficient and exponent maps restrict to positive quantum algebras.
-A positive degree map controls the required source cutoff, so these restrictions
-extend to their degree completions. The extension is independent of the chosen
+An explicit degree bound on the whole coefficient monoid controls the source
+cutoff, so these restrictions extend to nonnegative degree completions. Positive
+degree maps give the standard specialization. The extension is independent of the chosen
 cutoff modulus and respects identity and composition. In particular, coefficient
 specialization and changes of exponent lattice can be applied to quantum series,
 including maps that merge exponents or kill coefficients.
@@ -40,6 +41,122 @@ variable {R S U Γ Γ' Γ'' : Type*}
   {β : LinearMap.BilinForm ℤ Γ} {β' : LinearMap.BilinForm ℤ Γ'}
   {β'' : LinearMap.BilinForm ℤ Γ''}
 
+section General
+
+variable (φ : R →+* S) (f : Γ →+ Γ')
+  (h : ∀ p r, Units.map φ.toMonoidHom (q ^ β p r) = q' ^ β' (f p) (f r))
+  (P : AddSubmonoid Γ) (P' : AddSubmonoid Γ') (hP : ∀ n ∈ P, f n ∈ P')
+  (δ : Γ →+ ℤ) (δ' : Γ' →+ ℤ)
+  (hδ : ∀ n ∈ P, 0 ≤ δ n) (hδ' : ∀ n ∈ P', 0 ≤ δ' n)
+
+local notation "F" => positiveFiltration q β P δ hδ
+local notation "G" => positiveFiltration q' β' P' δ' hδ'
+local notation "ψ" => positiveMap φ f h P P' hP
+
+private local instance : Ring (positiveSubalgebra q β P) := inferInstance
+private local instance : Ring (F).completion := inferInstance
+
+-- These are the inherited structures. Direct instances avoid repeatedly searching
+-- through the positive subalgebra, quotient, product, and subring layers.
+private instance positiveCompletionSemiring : Semiring (F).completion :=
+  (inferInstance : Ring (F).completion).toSemiring
+
+private instance positiveQuotientSemiring (k : ℕ) :
+    Semiring (positiveSubalgebra q β P ⧸ (F).ideal k) :=
+  (inferInstance : Ring (positiveSubalgebra q β P ⧸ (F).ideal k)).toSemiring
+
+variable (l : ℕ → ℕ) (hl : Monotone l)
+  (hcut : ∀ k n, n ∈ P → (l k : ℤ) < δ n → (k : ℤ) < δ' (f n))
+
+/-- Extend simultaneous scalar and exponent maps to general nonnegative coefficient
+completions using their specified cutoff modulus. -/
+def mapPositiveCompletionOfDegree : (F).completion →+* (G).completion :=
+  (F).mapCompletion G ψ l hl (fun k =>
+    positiveMap_ideal_le_of_degree φ f h P P' hP δ δ' hδ hδ' (l k + 1) (k + 1)
+      (fun n hn hd => by have := hcut k n hn (by omega); omega))
+
+/-- The order-`k` component uses the prescribed source cutoff. -/
+@[simp]
+theorem projection_mapPositiveCompletionOfDegree (k : ℕ) (x : (F).completion) :
+    (G).projection k
+        (mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut x) =
+      Ideal.quotientMap ((G).ideal (k + 1)) ψ
+        (positiveMap_ideal_le_of_degree φ f h P P' hP δ δ' hδ hδ' (l k + 1) (k + 1)
+          (fun n hn hd => by have := hcut k n hn (by omega); omega))
+        ((F).projection (l k) x) :=
+  (F).projection_mapCompletion _ _ _ _ _ k x
+
+/-- Completed transport agrees with the original map on finite coefficients. -/
+@[simp]
+theorem mapPositiveCompletionOfDegree_toCompletion (x : positiveSubalgebra q β P) :
+    mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut
+        ((F).toCompletion x) = (G).toCompletion (ψ x) :=
+  (F).mapCompletion_toCompletion _ _ _ _ _ x
+
+/-- Completed transport applies the specified coefficient homomorphism to scalars. -/
+@[simp]
+theorem mapPositiveCompletionOfDegree_algebraMap (r : R) :
+    mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut
+        (algebraMap R (F).completion r) = algebraMap S (G).completion (φ r) := by
+  have hF := ((F).toCompletionₐ (R := R)).commutes r
+  have hG := ((G).toCompletionₐ (R := S)).commutes (φ r)
+  simp only [AlgFiltration.toCompletionₐ_apply] at hF hG
+  exact (congrArg (mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut)
+    hF.symm).trans
+    ((mapPositiveCompletionOfDegree_toCompletion φ f h P P' hP δ δ' hδ hδ' l hl hcut
+      (algebraMap R _ r)).trans
+      ((congrArg (G).toCompletion (positiveMap_algebraMap φ f h P P' hP r)).trans hG))
+
+/-- Completed coefficient transport is semilinear over its coefficient homomorphism. -/
+@[simp high]
+theorem mapPositiveCompletionOfDegree_smul (r : R) (x : (F).completion) :
+    mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut (r • x) =
+      φ r • mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut x := by
+  let Φ := mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut
+  calc
+    Φ (r • x) = Φ (algebraMap R (F).completion r * x) := congrArg Φ (Algebra.smul_def r x)
+    _ = Φ (algebraMap R (F).completion r) * Φ x := Φ.map_mul _ _
+    _ = algebraMap S (G).completion (φ r) * Φ x :=
+      congrArg (fun z => z * Φ x)
+        (mapPositiveCompletionOfDegree_algebraMap φ f h P P' hP δ δ' hδ hδ' l hl hcut r)
+    _ = φ r • Φ x := (Algebra.smul_def (φ r) (Φ x)).symm
+
+/-- Any two valid cutoff moduli give the same completed quantum map. -/
+theorem mapPositiveCompletionOfDegree_eq (m : ℕ → ℕ) (hm : Monotone m)
+    (hcut' : ∀ k n, n ∈ P → (m k : ℤ) < δ n → (k : ℤ) < δ' (f n)) :
+    mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut =
+      mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' m hm hcut' :=
+  (F).mapCompletion_eq _ _ _ _ m hm _
+
+/-- Identity scalar and exponent maps act identically on the general completion. -/
+@[simp]
+theorem mapPositiveCompletionOfDegree_id :
+    mapPositiveCompletionOfDegree (q := q) (β := β) (RingHom.id R) (AddMonoidHom.id Γ)
+      (fun _ _ => by simp) P P (fun _ hn => hn) δ δ hδ hδ id monotone_id
+      (fun _ _ _ hn => hn) = RingHom.id (F).completion := by
+  simpa only [mapPositiveCompletionOfDegree, positiveMap_id] using (F).mapCompletion_id
+
+variable (P'' : AddSubmonoid Γ'') (g : Γ' →+ Γ'') (ψ' : S →+* U)
+  (h' : ∀ p r, Units.map ψ'.toMonoidHom (q' ^ β' p r) = q'' ^ β'' (g p) (g r))
+  (hP' : ∀ n ∈ P', g n ∈ P'') (δ'' : Γ'' →+ ℤ) (hδ'' : ∀ n ∈ P'', 0 ≤ δ'' n)
+  (m : ℕ → ℕ) (hm : Monotone m)
+  (hcut' : ∀ k n, n ∈ P' → (m k : ℤ) < δ' n → (k : ℤ) < δ'' (g n))
+
+/-- Successive general quantum maps compose with the source cutoff `l ∘ m`. -/
+theorem mapPositiveCompletionOfDegree_comp :
+    mapPositiveCompletionOfDegree (ψ'.comp φ) (g.comp f) (fun p r => by
+      rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, ← h', ← h]; rfl)
+      P P'' (fun n hn => hP' _ (hP n hn)) δ δ'' hδ hδ'' (l ∘ m) (hl.comp hm)
+      (fun k n hn hd => hcut' k (f n) (hP n hn) (hcut (m k) n hn hd)) =
+      (mapPositiveCompletionOfDegree ψ' g h' P' P'' hP' δ' δ'' hδ' hδ'' m hm hcut').comp
+        (mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut) := by
+  unfold mapPositiveCompletionOfDegree
+  rw [← (F).mapCompletion_comp]
+  congr 1
+  exact (positiveMap_comp φ ψ' f g h h' P P' P'' hP hP').symm
+
+end General
+
 variable (d : PositiveDegrees Γ) (e : PositiveDegrees Γ')
   (T : PositiveDegreeMap d e) (φ : R →+* S)
   (h : ∀ p r, Units.map φ.toMonoidHom (q ^ β p r) = q' ^ β' (T p) (T r))
@@ -52,27 +169,19 @@ Neither the coefficient homomorphism nor the exponent map need be injective. -/
 theorem positiveMap_ideal_le (k : ℕ) :
     (F).ideal (T.modulus k + 1) ≤ ((G).ideal (k + 1)).comap
       (positiveMap φ T.toAddMonoidHom h d.monoid e.monoid (fun _ hn => T.map_mem hn)) := by
-  classical
-  rw [positiveFiltration_ideal, GradedAlgebra.degreeIdeal_le_iff]
-  intro n hn x hx
-  by_cases hp : n ∈ d.monoid
-  · have hd : (k + 1 : ℕ) ≤ e.degree (T n) := by
-      have := T.degree_gt k hp (by omega)
-      omega
-    rw [Ideal.mem_comap, positiveFiltration_ideal]
-    exact GradedAlgebra.le_degreeIdeal _ e.degree _ hd _
-      (positiveMap_mem_grading φ T.toAddMonoidHom h d.monoid e.monoid
-        (fun _ hn => T.map_mem hn) hx)
-  · have hz := supportedSubalgebra_grading_eq_bot (grade q β) d.monoid hp
-    have : x = 0 := by simpa only [hz, Submodule.mem_bot] using hx
-    subst x
-    simp
+  apply positiveMap_ideal_le_of_degree φ T.toAddMonoidHom h d.monoid e.monoid
+    (fun _ hn => T.map_mem hn) d.degree e.degree
+    (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+  intro n hn hd
+  have := T.degree_gt k hn (by omega)
+  omega
 
 /-- Extend a quantum map to the degree completions of its positive coefficient algebras. -/
 def mapPositiveCompletion : (F).completion →+* (G).completion :=
-  (F).mapCompletion G
-    (positiveMap φ T.toAddMonoidHom h d.monoid e.monoid (fun _ hn => T.map_mem hn))
-    T.modulus T.monotone_modulus (positiveMap_ideal_le d e T φ h)
+  mapPositiveCompletionOfDegree φ T.toAddMonoidHom h d.monoid e.monoid
+    (fun _ hn => T.map_mem hn) d.degree e.degree
+    (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+    T.modulus T.monotone_modulus (fun k _ hn hd => T.degree_gt k hn hd)
 
 /-- The order-`k` component is the induced quotient map at the prescribed source cutoff. -/
 @[simp]
@@ -81,7 +190,10 @@ theorem projection_mapPositiveCompletion (k : ℕ) (x : (F).completion) :
       Ideal.quotientMap ((G).ideal (k + 1))
         (positiveMap φ T.toAddMonoidHom h d.monoid e.monoid (fun _ hn => T.map_mem hn))
         (positiveMap_ideal_le d e T φ h k) ((F).projection (T.modulus k) x) :=
-  (F).projection_mapCompletion _ _ _ _ _ k x
+  projection_mapPositiveCompletionOfDegree φ T.toAddMonoidHom h d.monoid e.monoid
+    (fun _ hn => T.map_mem hn) d.degree e.degree
+    (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+    T.modulus T.monotone_modulus (fun k _ hn hd => T.degree_gt k hn hd) k x
 
 /-- Completed quantum maps agree with the original map on finite positive coefficients. -/
 @[simp]
@@ -89,21 +201,20 @@ theorem mapPositiveCompletion_toCompletion (x : positiveSubalgebra q β d.monoid
     mapPositiveCompletion d e T φ h ((F).toCompletion x) =
       (G).toCompletion (positiveMap φ T.toAddMonoidHom h d.monoid e.monoid
         (fun _ hn => T.map_mem hn) x) :=
-  (F).mapCompletion_toCompletion _ _ _ _ _ x
+  mapPositiveCompletionOfDegree_toCompletion φ T.toAddMonoidHom h d.monoid e.monoid
+    (fun _ hn => T.map_mem hn) d.degree e.degree
+    (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+    T.modulus T.monotone_modulus (fun k _ hn hd => T.degree_gt k hn hd) x
 
 /-- The completed map applies the specified coefficient homomorphism to scalars. -/
 @[simp]
 theorem mapPositiveCompletion_algebraMap (r : R) :
     mapPositiveCompletion d e T φ h (algebraMap R (F).completion r) =
-      algebraMap S (G).completion (φ r) := by
-  have hF := ((F).toCompletionₐ (R := R)).commutes r
-  have hG := ((G).toCompletionₐ (R := S)).commutes (φ r)
-  simp only [AlgFiltration.toCompletionₐ_apply] at hF hG
-  exact (congrArg (mapPositiveCompletion d e T φ h) hF.symm).trans
-    ((mapPositiveCompletion_toCompletion d e T φ h (algebraMap R _ r)).trans
-      ((congrArg (G).toCompletion
-        (positiveMap_algebraMap φ T.toAddMonoidHom h d.monoid e.monoid
-          (fun _ hn => T.map_mem hn) r)).trans hG))
+      algebraMap S (G).completion (φ r) :=
+  mapPositiveCompletionOfDegree_algebraMap φ T.toAddMonoidHom h d.monoid e.monoid
+    (fun _ hn => T.map_mem hn) d.degree e.degree
+    (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+    T.modulus T.monotone_modulus (fun k _ hn hd => T.degree_gt k hn hd) r
 
 /-- With fixed coefficients, a compatible exponent map extends as an algebra homomorphism. -/
 def mapDomainPositiveCompletion
@@ -132,8 +243,10 @@ theorem mapPositiveCompletion_enlarge (μ : ℕ → ℕ) (hμ : Monotone μ)
     exact PositiveDegreeMap.enlarge_apply T μ hμ hle n
   unfold mapPositiveCompletion
   simp only [hf, PositiveDegreeMap.enlarge_modulus]
-  exact ((F).mapCompletion_eq (G) _ T.monotone_modulus
-    (positiveMap_ideal_le d e T φ h) μ hμ _).symm
+  exact mapPositiveCompletionOfDegree_eq φ T.toAddMonoidHom h d.monoid e.monoid
+    (fun _ hn => T.map_mem hn) d.degree e.degree
+    (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+    μ hμ _ T.modulus T.monotone_modulus _
 
 /-- Identity quantum maps induce the identity on the positive degree completion. -/
 @[simp]
@@ -145,7 +258,9 @@ theorem mapPositiveCompletion_id :
     exact PositiveDegreeMap.id_apply n
   have hm : (PositiveDegreeMap.id d).modulus = id :=
     funext PositiveDegreeMap.id_modulus
-  simpa only [mapPositiveCompletion, hf, hm, positiveMap_id] using (F).mapCompletion_id
+  simpa only [mapPositiveCompletion, hf, hm] using
+    mapPositiveCompletionOfDegree_id (q := q) (β := β) d.monoid d.degree
+      (fun _ hn => d.degree_nonneg hn)
 
 variable (a : PositiveDegrees Γ'') (T' : PositiveDegreeMap e a) (ψ : S →+* U)
   (h' : ∀ p r, Units.map ψ.toMonoidHom (q' ^ β' p r) = q'' ^ β'' (T' p) (T' r))
@@ -155,15 +270,18 @@ theorem mapPositiveCompletion_comp :
     mapPositiveCompletion d a (T'.comp T) (ψ.comp φ) (fun p r => by
       rw [PositiveDegreeMap.comp_apply, PositiveDegreeMap.comp_apply, ← h', ← h]; rfl) =
       (mapPositiveCompletion e a T' ψ h').comp (mapPositiveCompletion d e T φ h) := by
-  unfold mapPositiveCompletion
-  rw [← (F).mapCompletion_comp]
-  congr 1
-  · have hf : (T'.comp T).toAddMonoidHom = T'.toAddMonoidHom.comp T.toAddMonoidHom := by
-      ext n
-      exact PositiveDegreeMap.comp_apply T' T n
-    simpa only [hf] using (positiveMap_comp φ ψ T.toAddMonoidHom T'.toAddMonoidHom h h'
-      d.monoid e.monoid a.monoid (fun _ hn => T.map_mem hn)
-      (fun _ hn => T'.map_mem hn)).symm
-  · exact funext (PositiveDegreeMap.comp_modulus T' T)
+  have hf : (T'.comp T).toAddMonoidHom = T'.toAddMonoidHom.comp T.toAddMonoidHom := by
+    ext n
+    exact PositiveDegreeMap.comp_apply T' T n
+  have hm : (T'.comp T).modulus = T.modulus ∘ T'.modulus :=
+    funext (PositiveDegreeMap.comp_modulus T' T)
+  simpa only [mapPositiveCompletion, hf, hm] using
+    mapPositiveCompletionOfDegree_comp φ T.toAddMonoidHom h d.monoid e.monoid
+      (fun _ hn => T.map_mem hn) d.degree e.degree
+      (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+      T.modulus T.monotone_modulus (fun k _ hn hd => T.degree_gt k hn hd)
+      a.monoid T'.toAddMonoidHom ψ h' (fun _ hn => T'.map_mem hn) a.degree
+      (fun _ hn => a.degree_nonneg hn) T'.modulus T'.monotone_modulus
+      (fun k _ hn hd => T'.degree_gt k hn hd)
 
 end Mei.QuantumMonoidAlgebra
