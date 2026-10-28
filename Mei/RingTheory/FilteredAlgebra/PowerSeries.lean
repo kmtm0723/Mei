@@ -18,8 +18,7 @@ power series at these projections and use the existing inverse-limit algebra lif
 an algebra homomorphism into the completion. Its finite projections are finite sums.
 
 The scalar ring is any commutative ring, and the filtered algebra can be noncommutative.
-No topology or separatedness assumption is needed. This supplies evaluation for
-[quantum coefficients](https://github.com/yuma-mizuno/TauCetiRoadmap/blob/mei/TauCetiRoadmap/ScatteringDiagrams/README.md#43-quantum-coefficients).
+No topology or separatedness assumption is needed.
 -/
 
 public section
@@ -34,8 +33,7 @@ noncomputable def completedAeval (x : F.completionIdeal 1) :
   F.liftₐ (fun k => PowerSeries.nilpotentAeval (F.isNilpotent_projection x.property k))
     (fun {k l} h => by
       ext f
-      change Ideal.Quotient.factorₐ R (F.antitone (Nat.add_le_add_right h 1))
-        (PowerSeries.nilpotentAeval (F.isNilpotent_projection x.property l) f) = _
+      rw [AlgHom.comp_apply]
       rw [PowerSeries.map_nilpotentAeval]
       congr 2
       exact F.factor_projection h x)
