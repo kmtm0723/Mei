@@ -128,6 +128,7 @@ theorem singularSupport_image {U : Type*} [NormedAddCommGroup U] [NormedSpace �
 
 /-- A cylinder family has precisely the singularities of the original family.
 Empty members are allowed. -/
+@[simp]
 theorem singularSupport_prod_univ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (W : ι → Set V) :
     singularSupport (fun j => W j ×ˢ (univ : Set E)) = singularSupport W ×ˢ univ := by
