@@ -154,6 +154,20 @@ def verticalSupport : Finset (Edge d₁ d₂) := {v ∈ verticalEdges d₁ d₂ 
 /-- The horizontal edges with nonzero grade. -/
 def horizontalSupport : Finset (Edge d₁ d₂) := {h ∈ horizontalEdges d₁ d₂ | γ h ≠ 0}
 
+theorem verticalTotal_eq : verticalTotal γ = ∑ v ∈ verticalEdges d₁ d₂, γ v := (rfl)
+
+theorem horizontalTotal_eq : horizontalTotal γ = ∑ h ∈ horizontalEdges d₁ d₂, γ h := (rfl)
+
+@[simp]
+theorem mem_verticalSupport {e : Edge d₁ d₂} :
+    e ∈ verticalSupport γ ↔ e ∈ verticalEdges d₁ d₂ ∧ γ e ≠ 0 := by
+  simp [verticalSupport]
+
+@[simp]
+theorem mem_horizontalSupport {e : Edge d₁ d₂} :
+    e ∈ horizontalSupport γ ↔ e ∈ horizontalEdges d₁ d₂ ∧ γ e ≠ 0 := by
+  simp [horizontalSupport]
+
 /-- On the subpath `ee'`, the number of vertical edges equals the horizontal grade sum. -/
 @[expose]
 def VerticalBalanced (e e' : Edge d₁ d₂) : Prop :=
@@ -211,6 +225,52 @@ def totalHorizontalShadow : Finset (Edge d₁ d₂) :=
 /-- The total vertical shadow, a set of horizontal edges. -/
 def totalVerticalShadow : Finset (Edge d₁ d₂) :=
   (verticalEdges d₁ d₂).biUnion (verticalShadow γ)
+
+/-- A vertical edge lies in the local shadow of `h` exactly when no vertically balanced
+subpath from `h` stops before it. -/
+theorem mem_horizontalShadow {h k : Edge d₁ d₂} :
+    k ∈ horizontalShadow γ h ↔
+      k ∈ verticalEdges d₁ d₂ ∧ ∀ e, (e - h).val < (k - h).val → ¬VerticalBalanced γ h e := by
+  unfold horizontalShadow
+  split_ifs with hS
+  · rw [mem_filter]
+    refine and_congr_right fun _ ↦ ⟨fun hk e he hbal ↦ ?_, fun hall ↦ ?_⟩
+    · have hmem : (e - h).val ∈ verticalBalancedOffsets γ h :=
+        mem_image.mpr ⟨e, mem_filter.mpr ⟨mem_univ _, hbal⟩, rfl⟩
+      exact absurd (lt_of_le_of_lt (min'_le _ _ hmem) (lt_of_lt_of_le he hk)) (lt_irrefl _)
+    · obtain ⟨e, he, heq⟩ := mem_image.mp (min'_mem _ hS)
+      rw [← heq]
+      by_contra hlt
+      exact hall e (not_le.mp hlt) (mem_filter.mp he).2
+  · refine ⟨fun hk ↦ ⟨hk, fun e _ hbal ↦ hS ?_⟩, And.left⟩
+    exact ⟨_, mem_image.mpr ⟨e, mem_filter.mpr ⟨mem_univ _, hbal⟩, rfl⟩⟩
+
+/-- A horizontal edge lies in the local shadow of `v` exactly when no horizontally balanced
+subpath ending at `v` starts after it. -/
+theorem mem_verticalShadow {v k : Edge d₁ d₂} :
+    k ∈ verticalShadow γ v ↔
+      k ∈ horizontalEdges d₁ d₂ ∧ ∀ e, (v - e).val < (v - k).val → ¬HorizontalBalanced γ e v := by
+  unfold verticalShadow
+  split_ifs with hS
+  · rw [mem_filter]
+    refine and_congr_right fun _ ↦ ⟨fun hk e he hbal ↦ ?_, fun hall ↦ ?_⟩
+    · have hmem : (v - e).val ∈ horizontalBalancedOffsets γ v :=
+        mem_image.mpr ⟨e, mem_filter.mpr ⟨mem_univ _, hbal⟩, rfl⟩
+      exact absurd (lt_of_le_of_lt (min'_le _ _ hmem) (lt_of_lt_of_le he hk)) (lt_irrefl _)
+    · obtain ⟨e, he, heq⟩ := mem_image.mp (min'_mem _ hS)
+      rw [← heq]
+      by_contra hlt
+      exact hall e (not_le.mp hlt) (mem_filter.mp he).2
+  · refine ⟨fun hk ↦ ⟨hk, fun e _ hbal ↦ hS ?_⟩, And.left⟩
+    exact ⟨_, mem_image.mpr ⟨e, mem_filter.mpr ⟨mem_univ _, hbal⟩, rfl⟩⟩
+
+theorem mem_totalHorizontalShadow {k : Edge d₁ d₂} :
+    k ∈ totalHorizontalShadow γ ↔ ∃ h ∈ horizontalEdges d₁ d₂, k ∈ horizontalShadow γ h := by
+  simp [totalHorizontalShadow]
+
+theorem mem_totalVerticalShadow {k : Edge d₁ d₂} :
+    k ∈ totalVerticalShadow γ ↔ ∃ v ∈ verticalEdges d₁ d₂, k ∈ verticalShadow γ v := by
+  simp [totalVerticalShadow]
 
 /-- A local shadow of a horizontal edge consists of vertical edges. -/
 theorem horizontalShadow_subset (h : Edge d₁ d₂) :
