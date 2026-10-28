@@ -6,7 +6,6 @@ Authors: Claude
 module
 
 public import Mathlib.Algebra.Polynomial.Eval.Coeff
-public import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
 # The rank-two recursion for Dyck-grading sums
@@ -24,37 +23,50 @@ for all `(p, q)`, and off `(0, 0)` the vanishing conditions (V): `C₊(p, q) = 0
 When the constant coefficients of `P₁` and `P₂` are `1`, an `IsRankTwoSolution` is unique: the
 `s = 0` terms of (R) are `C₊(p, q)` and `C₋(p, q)`, all other terms have smaller total degree,
 and (V) kills one of the two new values. Hence two families satisfying (R), (V) and the initial
-values coincide, by induction on `p + q`.
+values coincide, by induction on `p + q`. The definitions and recursion work over any
+commutative semiring; uniqueness additionally requires additive cancellation.
+
+The recursion, vanishing conditions and uniqueness are from Burcroff–Lee–Mou,
+*Positivity of generalized cluster scattering diagrams*, Corollary 5.29
+(https://arxiv.org/abs/2503.03719).
 -/
 
 public section
 
 open Finset Polynomial
 
-namespace Mei.RankTwo
+namespace Polynomial
 
-variable {S : Type*} [CommRing S]
+variable {S : Type*} [CommSemiring S]
 
 /-- `π_{r,s}(P)`: the coefficient of `z^s` in `P^r` for `r ≥ 0`; for `r < 0` it is `1` at
 `s = 0` and `0` otherwise. -/
 noncomputable def powCoeff (P : S[X]) (r : ℤ) (s : ℕ) : S :=
   if 0 ≤ r then (P ^ r.toNat).coeff s else if s = 0 then 1 else 0
 
+@[simp]
 theorem powCoeff_of_nonneg (P : S[X]) {r : ℤ} (hr : 0 ≤ r) (s : ℕ) :
     powCoeff P r s = (P ^ r.toNat).coeff s := by
   simp [powCoeff, hr]
 
+@[simp]
 theorem powCoeff_of_neg (P : S[X]) {r : ℤ} (hr : r < 0) (s : ℕ) :
     powCoeff P r s = if s = 0 then 1 else 0 := by
   simp [powCoeff, not_le.mpr hr]
 
 /-- `π_{r,0}(P) = 1` when `P` has constant coefficient `1`. -/
+@[simp]
 theorem powCoeff_zero {P : S[X]} (hP : P.coeff 0 = 1) (r : ℤ) : powCoeff P r 0 = 1 := by
   rcases le_or_gt 0 r with hr | hr
   · rw [powCoeff_of_nonneg P hr, coeff_zero_eq_eval_zero, eval_pow, ← coeff_zero_eq_eval_zero,
       hP, one_pow]
   · simp [powCoeff_of_neg P hr]
 
+end Polynomial
+
+namespace Mei.RankTwo
+
+variable {S : Type*} [CommSemiring S]
 variable (d₁ d₂ : ℕ) (P₁ P₂ : S[X])
 
 /-- The initial values, the recursion (R) and the vanishing conditions (V) for a pair of
@@ -89,7 +101,7 @@ private theorem IsRankTwoSolution.recursion_succ {Cp Cm : ℕ → ℕ → S}
 
 /-- **Uniqueness.** When `P₁` and `P₂` have constant coefficient `1`, the initial values, (R)
 and (V) determine `C₊` and `C₋`. -/
-theorem IsRankTwoSolution.unique {Cp Cm Cp' Cm' : ℕ → ℕ → S}
+theorem IsRankTwoSolution.unique [IsCancelAdd S] {Cp Cm Cp' Cm' : ℕ → ℕ → S}
     (h : IsRankTwoSolution d₁ d₂ P₁ P₂ Cp Cm) (h' : IsRankTwoSolution d₁ d₂ P₁ P₂ Cp' Cm')
     (hP₁ : P₁.coeff 0 = 1) (hP₂ : P₂.coeff 0 = 1) : Cp = Cp' ∧ Cm = Cm' := by
   have key : ∀ n p q, p + q = n → Cp p q = Cp' p q ∧ Cm p q = Cm' p q := by
