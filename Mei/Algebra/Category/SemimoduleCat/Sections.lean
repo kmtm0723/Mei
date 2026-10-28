@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Semi
 public import Mathlib.CategoryTheory.Types.Basic
 public import Mathlib.Algebra.Module.Submodule.Basic
+public import Mathlib.LinearAlgebra.Pi
 
 /-!
 # Matching sections of semimodule diagrams
@@ -36,6 +37,30 @@ def sectionsSubmodule (F : J ⥤ SemimoduleCat R) : Submodule R (∀ j, F.obj j)
   smul_mem' := by
     intro r x hx j j' f
     exact (map_smul (F.map f).hom r _).trans (congrArg (r • ·) (hx f))
+
+section
+
+variable (F : J ⥤ SemimoduleCat R)
+
+/-- The matching-family carrier agrees with Mathlib's sections of the underlying diagram. -/
+def sectionsEquivTypes : sectionsSubmodule F ≃ (F ⋙ forget (SemimoduleCat R)).sections :=
+  Equiv.refl _
+
+/-- The carrier comparison preserves each component. -/
+@[simp]
+theorem sectionsEquivTypes_apply (s : sectionsSubmodule F) (j : J) :
+    (sectionsEquivTypes F s).val j = s.val j := (rfl)
+
+/-- Evaluate a matching family at one object, independently of the index universe. -/
+def sectionsEval (j : J) : sectionsSubmodule F →ₗ[R] F.obj j :=
+  (LinearMap.proj j).domRestrict (sectionsSubmodule F)
+
+/-- Linear evaluation reads the specified component. -/
+@[simp]
+theorem sectionsEval_apply (j : J) (s : sectionsSubmodule F) :
+    sectionsEval F j s = s.val j := (rfl)
+
+end
 
 /-- Membership means compatibility along all arrows. -/
 @[simp]
