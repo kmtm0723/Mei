@@ -220,4 +220,97 @@ theorem isInternal_grading : DirectSum.IsInternal (grading d ℳ p ℒ) := by
 instance instDecompositionGrading : DirectSum.Decomposition (grading d ℳ p ℒ) :=
   (isInternal_grading d ℳ p ℒ).chooseDecomposition
 
+/-- The charge-zero component of any probe is the corresponding component of its base part. -/
+@[simp]
+theorem coe_decompose_grading_base (x : ProbeLie d ℳ p ℒ) (q : Γ) :
+    (DirectSum.decompose (grading d ℳ p ℒ) x (q, 0, 0) : ProbeLie d ℳ p ℒ) =
+      baseInclusion d ℳ p ℒ (DirectSum.decompose ℒ x.right q) := by
+  induction x using DirectSum.Decomposition.inductionOn (grading d ℳ p ℒ) with
+  | zero =>
+    simp only [← LieAlgebra.SemiDirectSum.projr_mk, map_zero, DirectSum.decompose_zero,
+      DirectSum.zero_apply, ZeroMemClass.coe_zero]
+  | add x y hx hy =>
+    have hright : (x + y).right = x.right + y.right :=
+      map_add (LieAlgebra.SemiDirectSum.projr _) x y
+    simpa only [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add,
+      hright, map_add] using congrArg₂ (· + ·) hx hy
+  | @homogeneous a x =>
+    rcases a with ⟨r, c, l⟩
+    by_cases h0 : c = 0 ∧ l = 0
+    · rcases h0 with ⟨rfl, rfl⟩
+      obtain ⟨hl, hr⟩ := (mem_grading_base d ℳ p ℒ r x).mp x.property
+      by_cases hq : r = q
+      · subst r
+        rw [DirectSum.decompose_of_mem_same _ x.property,
+          DirectSum.decompose_of_mem_same _ hr]
+        apply LieAlgebra.SemiDirectSum.ext <;> simp [hl]
+      · rw [DirectSum.decompose_of_mem_ne _ x.property (by simpa using hq),
+          DirectSum.decompose_of_mem_ne _ hr hq, map_zero]
+    · by_cases h1 : c = 1 ∧ l = 0
+      · rcases h1 with ⟨rfl, rfl⟩
+        obtain ⟨hr, -⟩ := (mem_grading_module d ℳ p ℒ r x).mp x.property
+        rw [DirectSum.decompose_of_mem_ne _ x.property (by simp)]
+        simp [hr]
+      · have hx : (x : ProbeLie d ℳ p ℒ) = 0 := by
+          simpa only [grading, h0, h1, ↓reduceIte, Submodule.mem_bot] using x.property
+        rw [hx]
+        simp only [← LieAlgebra.SemiDirectSum.projr_mk, map_zero, DirectSum.decompose_zero,
+          DirectSum.zero_apply, ZeroMemClass.coe_zero]
+
+/-- The charge-one component of any probe is its shifted coefficient component. -/
+@[simp]
+theorem coe_decompose_grading_module (x : ProbeLie d ℳ p ℒ) (q : Γ) :
+    (DirectSum.decompose (grading d ℳ p ℒ) x (q, 1, 0) : ProbeLie d ℳ p ℒ) =
+      moduleInclusion d ℳ p ℒ ((moduleCoefficientsEquiv d ℳ p).symm
+        (DirectSum.decompose (shiftedGrading ℳ d.monoid p)
+          (moduleCoefficientsEquiv d ℳ p x.left) (q - p))) := by
+  induction x using DirectSum.Decomposition.inductionOn (grading d ℳ p ℒ) with
+  | zero =>
+    simp only [← LieAlgebra.SemiDirectSum.projl_mk, map_zero, DirectSum.decompose_zero,
+      DirectSum.zero_apply, ZeroMemClass.coe_zero]
+  | add x y hx hy =>
+    have hleft : (x + y).left = x.left + y.left :=
+      map_add (LieAlgebra.SemiDirectSum.projl _) x y
+    simpa only [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add,
+      hleft, map_add] using congrArg₂ (· + ·) hx hy
+  | @homogeneous a x =>
+    rcases a with ⟨r, c, l⟩
+    by_cases h0 : c = 0 ∧ l = 0
+    · rcases h0 with ⟨rfl, rfl⟩
+      obtain ⟨hl, -⟩ := (mem_grading_base d ℳ p ℒ r x).mp x.property
+      rw [DirectSum.decompose_of_mem_ne _ x.property (by simp)]
+      simp [hl]
+    · by_cases h1 : c = 1 ∧ l = 0
+      · rcases h1 with ⟨rfl, rfl⟩
+        obtain ⟨hr, hl⟩ := (mem_grading_module d ℳ p ℒ r x).mp x.property
+        by_cases hq : r = q
+        · subst r
+          rw [DirectSum.decompose_of_mem_same _ x.property,
+            DirectSum.decompose_of_mem_same _ hl]
+          apply LieAlgebra.SemiDirectSum.ext <;> simp [hr]
+        · rw [DirectSum.decompose_of_mem_ne _ x.property (by simpa using hq),
+            DirectSum.decompose_of_mem_ne _ hl (sub_left_inj.ne.mpr hq),
+            map_zero, map_zero]
+      · have hx : (x : ProbeLie d ℳ p ℒ) = 0 := by
+          simpa only [grading, h0, h1, ↓reduceIte, Submodule.mem_bot] using x.property
+        rw [hx]
+        simp only [← LieAlgebra.SemiDirectSum.projl_mk, map_zero, DirectSum.decompose_zero,
+          DirectSum.zero_apply, ZeroMemClass.coe_zero]
+
+/-- All components with charge different from zero and one vanish. -/
+@[simp]
+theorem coe_decompose_grading_charge (x : ProbeLie d ℳ p ℒ) (q : Γ) (c l : ℤ)
+    (hc₀ : c ≠ 0) (hc₁ : c ≠ 1) :
+    (DirectSum.decompose (grading d ℳ p ℒ) x (q, c, l) : ProbeLie d ℳ p ℒ) = 0 := by
+  have h := (DirectSum.decompose (grading d ℳ p ℒ) x (q, c, l)).property
+  simpa only [grading_charge_eq_bot d ℳ p ℒ q c l hc₀ hc₁, Submodule.mem_bot] using h
+
+/-- All components with nonzero final coordinate vanish. -/
+@[simp]
+theorem coe_decompose_grading_normal (x : ProbeLie d ℳ p ℒ) (q : Γ) (c l : ℤ)
+    (hl : l ≠ 0) :
+    (DirectSum.decompose (grading d ℳ p ℒ) x (q, c, l) : ProbeLie d ℳ p ℒ) = 0 := by
+  have h := (DirectSum.decompose (grading d ℳ p ℒ) x (q, c, l)).property
+  simpa only [grading_normal_eq_bot d ℳ p ℒ q c l hl, Submodule.mem_bot] using h
+
 end Mei.ModuleProbe
