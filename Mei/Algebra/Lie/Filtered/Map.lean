@@ -11,7 +11,9 @@ public import Mei.Algebra.Lie.Filtered.BCH
 # Naturality of filtered BCH actions
 
 An equivariant coefficient map along a graded Lie homomorphism intertwines the
-finite and completed BCH actions. The positive degree map's modulus permits
+finite and completed BCH actions. Finite comparison requires only the filtration
+bound at the selected source and target orders; completed comparison requires
+the compatible bounds at every target order. The positive degree map's modulus permits
 different source and target cutoffs. Coefficient and Lie maps may have kernels,
 and degrees may merge.
 
@@ -44,7 +46,6 @@ variable {N N' R L L' M M' : Type*} [AddCommMonoid N] [AddCommMonoid N']
   (F : ModuleFiltration R M) (G : ModuleFiltration R M')
   [IsFiltrationRaising d ℒ F] [IsFiltrationRaising e ℒ' G]
   (φ : GradedLieHom T ℒ ℒ') (ψ : M →ₗ[R] M')
-  (hψ : ∀ k, F.submodule (T.modulus k + 1) ≤ (G.submodule (k + 1)).comap ψ)
   (hequiv : ∀ (x : L) (a : M), ψ ⁅x, a⁆ = ⁅φ x, ψ a⁆)
 
 /-- Rational scalars on source coefficient quotients come from the coefficient ring. -/
@@ -60,15 +61,17 @@ include hequiv
 /-- Equivariant coefficient maps intertwine finite exponential actions at any
 source cutoff sufficient for the target order. -/
 theorem mapQ_truncatedExpLieAction_of_gradedLieHom {a : ℕ} (k : ℕ)
-    (h : T.modulus k ≤ a) (x : d.truncatedLie ℒ a) (z : F.quotient a) :
+    (h : T.modulus k ≤ a)
+    (hψ : F.submodule (a + 1) ≤ (G.submodule (k + 1)).comap ψ)
+    (x : d.truncatedLie ℒ a) (z : F.quotient a) :
     (F.submodule (a + 1)).mapQ (G.submodule (k + 1)) ψ
-        ((F.antitone (Nat.add_le_add_right h 1)).trans (hψ k))
+        hψ
         (F.truncatedExpLieAction d ℒ a x z) =
       G.truncatedExpLieAction e ℒ' k (φ.truncatedMap k h x)
         ((F.submodule (a + 1)).mapQ (G.submodule (k + 1)) ψ
-          ((F.antitone (Nat.add_le_add_right h 1)).trans (hψ k)) z) := by
+          hψ z) := by
   let qψ := (F.submodule (a + 1)).mapQ (G.submodule (k + 1)) ψ
-    ((F.antitone (Nat.add_le_add_right h 1)).trans (hψ k))
+    hψ
   have hc : (G.truncatedLieAction e ℒ' k (φ.truncatedMap k h x)).comp qψ =
       qψ.comp (F.truncatedLieAction d ℒ a x) := by
     apply LinearMap.ext
@@ -89,15 +92,17 @@ variable [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
 /-- Equivariant coefficient maps intertwine finite BCH actions along the induced
 map of Lie truncations, allowing different source and target orders. -/
 theorem mapQ_truncatedBCHAction_of_gradedLieHom {a : ℕ} (k : ℕ)
-    (h : T.modulus k ≤ a) (g : BCHGroup (d.truncatedLie ℒ a)) (z : F.quotient a) :
+    (h : T.modulus k ≤ a)
+    (hψ : F.submodule (a + 1) ≤ (G.submodule (k + 1)).comap ψ)
+    (g : BCHGroup (d.truncatedLie ℒ a)) (z : F.quotient a) :
     (F.submodule (a + 1)).mapQ (G.submodule (k + 1)) ψ
-        ((F.antitone (Nat.add_le_add_right h 1)).trans (hψ k))
+        hψ
         (F.truncatedBCHAction d ℒ a g z) =
       G.truncatedBCHAction e ℒ' k ((φ.truncatedMap k h).bchGroupMap g)
         ((F.submodule (a + 1)).mapQ (G.submodule (k + 1)) ψ
-          ((F.antitone (Nat.add_le_add_right h 1)).trans (hψ k)) z) := by
+          hψ z) := by
   rw [F.truncatedBCHAction_apply, G.truncatedBCHAction_apply, LieHom.log_bchGroupMap]
-  exact F.mapQ_truncatedExpLieAction_of_gradedLieHom G φ ψ hψ hequiv k h (BCHGroup.log g) z
+  exact F.mapQ_truncatedExpLieAction_of_gradedLieHom G φ ψ hequiv k h hψ (BCHGroup.log g) z
 
 end Finite
 
@@ -148,7 +153,7 @@ theorem completionMap_completedBCHAction_of_gradedLieHom
       (congrArg₂ (fun g z => G.truncatedBCHAction e ℒ' k g z)
         (φ.projection_completedMap k g)
         (F.projection_completionMap G ψ T.modulus T.monotone_modulus hψ k z))
-  exact hl.trans ((F.mapQ_truncatedBCHAction_of_gradedLieHom G φ ψ hψ hequiv k le_rfl
+  exact hl.trans ((F.mapQ_truncatedBCHAction_of_gradedLieHom G φ ψ hequiv k le_rfl (hψ k)
     gk (F.projection (T.modulus k) z)).trans hr.symm)
 
 end Completed
