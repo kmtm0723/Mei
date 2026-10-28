@@ -225,15 +225,54 @@ instance (h : IsIntegralLattice i) : Group (IntegralAffineEquiv h h) where
 
 variable (h : IsIntegralLattice i)
 
+/-- Group multiplication agrees with composition, applying the right map first. -/
+theorem mul_def (e f : IntegralAffineEquiv h h) : e * f = f.trans e := (rfl)
+
+/-- The group identity is the identity integral affine equivalence. -/
+theorem one_def : (1 : IntegralAffineEquiv h h) = refl h := (rfl)
+
+/-- Group inversion agrees with the inverse integral affine equivalence. -/
+theorem inv_def (e : IntegralAffineEquiv h h) : e⁻¹ = e.symm := (rfl)
+
+/-- Multiplication composes the integral lattice equivalences. -/
+@[simp]
+theorem mul_latticeEquiv (e f : IntegralAffineEquiv h h) :
+    (e * f).latticeEquiv = f.latticeEquiv.trans e.latticeEquiv := (rfl)
+
+/-- Multiplication composes the real affine equivalences. -/
+@[simp]
+theorem mul_toAffineEquiv (e f : IntegralAffineEquiv h h) :
+    (e * f).toAffineEquiv = f.toAffineEquiv.trans e.toAffineEquiv := (rfl)
+
+/-- The group identity acts identically on the lattice. -/
+@[simp]
+theorem one_latticeEquiv :
+    (1 : IntegralAffineEquiv h h).latticeEquiv = AddEquiv.refl N := (rfl)
+
+/-- The group identity has the identity real affine equivalence. -/
+@[simp]
+theorem one_toAffineEquiv :
+    (1 : IntegralAffineEquiv h h).toAffineEquiv = AffineEquiv.refl ℝ V := (rfl)
+
+/-- The inverse group element inverts the lattice equivalence. -/
+@[simp]
+theorem inv_latticeEquiv (e : IntegralAffineEquiv h h) :
+    e⁻¹.latticeEquiv = e.latticeEquiv.symm := (rfl)
+
+/-- The inverse group element inverts the real affine equivalence. -/
+@[simp]
+theorem inv_toAffineEquiv (e : IntegralAffineEquiv h h) :
+    e⁻¹.toAffineEquiv = e.toAffineEquiv.symm := (rfl)
+
 /-- Multiplication applies the right-hand map first. -/
-@[simp] theorem mul_apply (e f : IntegralAffineEquiv h h) (x : V) :
+theorem mul_apply (e f : IntegralAffineEquiv h h) (x : V) :
     (e * f) x = e (f x) := by rfl
 
 /-- The group identity is the identity on the ambient vector space. -/
-@[simp] theorem one_apply (x : V) : (1 : IntegralAffineEquiv h h) x = x := by rfl
+theorem one_apply (x : V) : (1 : IntegralAffineEquiv h h) x = x := by rfl
 
 /-- Group inversion agrees with the existing inverse equivalence. -/
-@[simp] theorem inv_apply (e : IntegralAffineEquiv h h) (x : V) :
+theorem inv_apply (e : IntegralAffineEquiv h h) (x : V) :
     e⁻¹ x = e.symm x := by rfl
 
 /-- Forgetting the integral data respects composition. -/
@@ -263,8 +302,9 @@ noncomputable def latticeLift : Multiplicative (AddAut N) →* IntegralAffineEqu
   map_one' := by
     ext x
     rw [ofLatticeEquiv_apply, one_apply]
-    change h.extend i (AddMonoidHom.id N) x = x
-    simp
+    rw [toAdd_one, AddAut.zero_def, AddEquiv.toAddMonoidHom_eq_coe,
+      AddEquiv.toAddMonoidHom_refl, h.extend_id]
+    rfl
   map_mul' σ τ := by
     ext x
     rw [ofLatticeEquiv_apply, mul_apply, ofLatticeEquiv_apply, ofLatticeEquiv_apply]
@@ -289,7 +329,7 @@ theorem latticeHom_surjective : Function.Surjective (latticeHom h) :=
 
 /-- Arbitrary real translations are integral affine symmetries.
 Compatibility is imposed on the linear part, so the translation need not be integral. -/
-def translationHom : Multiplicative V →* IntegralAffineEquiv h h where
+def constVAddHom : Multiplicative V →* IntegralAffineEquiv h h where
   toFun v :=
     { toAffineEquiv := AffineEquiv.constVAdd ℝ V v.toAdd
       latticeEquiv := AddEquiv.refl N
@@ -302,45 +342,45 @@ def translationHom : Multiplicative V →* IntegralAffineEquiv h h where
     exact AffineEquiv.constVAdd_add ℝ V v.toAdd w.toAdd
 
 /-- The translation homomorphism acts by addition of its real vector. -/
-@[simp] theorem translationHom_apply (v : Multiplicative V) (x : V) :
-    translationHom h v x = v.toAdd + x := by rfl
+@[simp] theorem constVAddHom_apply (v : Multiplicative V) (x : V) :
+    constVAddHom h v x = v.toAdd + x := by rfl
 
 /-- A real translation has the identity integral linear part. -/
-@[simp] theorem translationHom_latticeEquiv (v : Multiplicative V) :
-    (translationHom h v).latticeEquiv = 0 := by rfl
+@[simp] theorem constVAddHom_latticeEquiv (v : Multiplicative V) :
+    (constVAddHom h v).latticeEquiv = AddEquiv.refl N := by rfl
 
 /-- Translations act trivially on the integral tangent lattice. -/
-theorem latticeHom_translationHom (v : Multiplicative V) :
-    latticeHom h (translationHom h v) = 1 := by rfl
+theorem latticeHom_constVAddHom (v : Multiplicative V) :
+    latticeHom h (constVAddHom h v) = 1 := by rfl
 
 /-- Different translation vectors give different integral affine symmetries. -/
-theorem translationHom_injective : Function.Injective (translationHom h) := by
+theorem constVAddHom_injective : Function.Injective (constVAddHom h) := by
   intro v w he
   apply Multiplicative.toAdd.injective
-  simpa only [translationHom_apply, add_zero] using
+  simpa only [constVAddHom_apply, add_zero] using
     congrArg (fun e : IntegralAffineEquiv h h => e 0) he
 
 /-- Every integral affine symmetry is its canonical zero-translation lattice lift
 followed by translation by its value at the origin. -/
-theorem eq_translation_mul_latticeLift (e : IntegralAffineEquiv h h) :
-    e = translationHom h (Multiplicative.ofAdd (e 0)) * latticeLift h (latticeHom h e) := by
+theorem eq_constVAddHom_mul_latticeLift (e : IntegralAffineEquiv h h) :
+    e = constVAddHom h (Multiplicative.ofAdd (e 0)) * latticeLift h (latticeHom h e) := by
   ext x
-  rw [mul_apply, translationHom_apply, latticeLift_apply, latticeHom_apply]
+  rw [mul_apply, constVAddHom_apply, latticeLift_apply, latticeHom_apply]
   have he := congrFun e.toAffineEquiv.toAffineMap.decomp x
   simp only [Pi.add_apply, AffineEquiv.linear_toAffineMap] at he
   rw [e.linear_eq_extend] at he
   exact he.trans (add_comm _ _)
 
 /-- The kernel of the lattice homomorphism consists exactly of real translations. -/
-theorem ker_latticeHom : (latticeHom h).ker = (translationHom h).range := by
+theorem ker_latticeHom : (latticeHom h).ker = (constVAddHom h).range := by
   ext e
-  change latticeHom h e = 1 ↔ ∃ v, translationHom h v = e
+  simp only [MonoidHom.mem_ker, MonoidHom.mem_range]
   constructor
   · intro he
     refine ⟨Multiplicative.ofAdd (e 0), ?_⟩
-    simpa only [he, map_one, mul_one] using (eq_translation_mul_latticeLift h e).symm
+    simpa only [he, map_one, mul_one] using (eq_constVAddHom_mul_latticeLift h e).symm
   · rintro ⟨v, rfl⟩
-    exact latticeHom_translationHom h v
+    exact latticeHom_constVAddHom h v
 
 end IntegralAffineEquiv
 
