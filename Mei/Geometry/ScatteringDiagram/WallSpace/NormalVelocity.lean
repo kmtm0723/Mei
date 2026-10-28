@@ -51,6 +51,7 @@ theorem normalDegreeSubmodule_eq_iSup (𝒜 : Γ → Submodule R M) (m : Λ →+
 
 /-- Linear images of normal-degree submodules are the normal-degree submodules
 of the image pieces. The linear map need not be injective. -/
+@[simp]
 theorem map_normalDegreeSubmodule {N : Type*} [AddCommMonoid N] [Module R N]
     (𝒜 : Γ → Submodule R M) (m : Λ →+ ℤ) (c : ℤ) (f : M →ₗ[R] N) :
     (normalDegreeSubmodule ρ 𝒜 m c).map f =
