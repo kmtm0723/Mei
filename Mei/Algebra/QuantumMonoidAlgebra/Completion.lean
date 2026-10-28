@@ -53,33 +53,79 @@ local notation "F" => positiveFiltration q β P δ hδ
 local notation "G" => positiveFiltration q' β' P' δ' hδ'
 local notation "ψ" => positiveMap φ f h P P' hP
 
-include hP in
-/-- A degree bound controls positive coefficient ideals under simultaneous scalar
-and exponent maps, without requiring either map to be injective. -/
-theorem positiveMap_ideal_le_of_degree (i j : ℕ)
-    (hij : ∀ n ∈ P, (i : ℤ) ≤ δ n → (j : ℤ) ≤ δ' (f n)) :
-    (F).ideal i ≤ ((G).ideal j).comap ψ := by
-  classical
-  rw [positiveFiltration_ideal, GradedAlgebra.degreeIdeal_le_iff]
-  intro n hn x hx
-  by_cases hnP : n ∈ P
-  · rw [Ideal.mem_comap, positiveFiltration_ideal]
-    exact GradedAlgebra.le_degreeIdeal _ δ' _ (hij n hnP hn) _
-      (positiveMap_mem_grading φ f h P P' hP hx)
-  · have hz := supportedSubalgebra_grading_eq_bot (grade q β) P hnP
-    have : x = 0 := by simpa only [hz, Submodule.mem_bot] using hx
-    subst x
-    simp
+private local instance : Ring (positiveSubalgebra q β P) := inferInstance
+private local instance : Ring (F).completion := inferInstance
+
+-- These are the inherited structures. Direct instances avoid repeatedly searching
+-- through the positive subalgebra, quotient, product, and subring layers.
+private instance positiveCompletionSemiring : Semiring (F).completion :=
+  (inferInstance : Ring (F).completion).toSemiring
+
+private instance positiveQuotientSemiring (k : ℕ) :
+    Semiring (positiveSubalgebra q β P ⧸ (F).ideal k) :=
+  (inferInstance : Ring (positiveSubalgebra q β P ⧸ (F).ideal k)).toSemiring
 
 variable (l : ℕ → ℕ) (hl : Monotone l)
   (hcut : ∀ k n, n ∈ P → (l k : ℤ) < δ n → (k : ℤ) < δ' (f n))
 
 /-- Extend simultaneous scalar and exponent maps to general nonnegative coefficient
 completions using their specified cutoff modulus. -/
-abbrev mapPositiveCompletionOfDegree : (F).completion →+* (G).completion :=
+def mapPositiveCompletionOfDegree : (F).completion →+* (G).completion :=
   (F).mapCompletion G ψ l hl (fun k =>
     positiveMap_ideal_le_of_degree φ f h P P' hP δ δ' hδ hδ' (l k + 1) (k + 1)
       (fun n hn hd => by have := hcut k n hn (by omega); omega))
+
+/-- The order-`k` component uses the prescribed source cutoff. -/
+@[simp]
+theorem projection_mapPositiveCompletionOfDegree (k : ℕ) (x : (F).completion) :
+    (G).projection k
+        (mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut x) =
+      Ideal.quotientMap ((G).ideal (k + 1)) ψ
+        (positiveMap_ideal_le_of_degree φ f h P P' hP δ δ' hδ hδ' (l k + 1) (k + 1)
+          (fun n hn hd => by have := hcut k n hn (by omega); omega))
+        ((F).projection (l k) x) :=
+  (F).projection_mapCompletion _ _ _ _ _ k x
+
+/-- Completed transport agrees with the original map on finite coefficients. -/
+@[simp]
+theorem mapPositiveCompletionOfDegree_toCompletion (x : positiveSubalgebra q β P) :
+    mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut
+        ((F).toCompletion x) = (G).toCompletion (ψ x) :=
+  (F).mapCompletion_toCompletion _ _ _ _ _ x
+
+/-- Completed transport applies the specified coefficient homomorphism to scalars. -/
+@[simp]
+theorem mapPositiveCompletionOfDegree_algebraMap (r : R) :
+    mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut
+        (algebraMap R (F).completion r) = algebraMap S (G).completion (φ r) := by
+  have hF := ((F).toCompletionₐ (R := R)).commutes r
+  have hG := ((G).toCompletionₐ (R := S)).commutes (φ r)
+  simp only [AlgFiltration.toCompletionₐ_apply] at hF hG
+  exact (congrArg (mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut)
+    hF.symm).trans
+    ((mapPositiveCompletionOfDegree_toCompletion φ f h P P' hP δ δ' hδ hδ' l hl hcut
+      (algebraMap R _ r)).trans
+      ((congrArg (G).toCompletion (positiveMap_algebraMap φ f h P P' hP r)).trans hG))
+
+/-- Completed coefficient transport is semilinear over its coefficient homomorphism. -/
+theorem mapPositiveCompletionOfDegree_smul (r : R) (x : (F).completion) :
+    mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut (r • x) =
+      φ r • mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut x := by
+  let Φ := mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut
+  calc
+    Φ (r • x) = Φ (algebraMap R (F).completion r * x) := congrArg Φ (Algebra.smul_def r x)
+    _ = Φ (algebraMap R (F).completion r) * Φ x := Φ.map_mul _ _
+    _ = algebraMap S (G).completion (φ r) * Φ x :=
+      congrArg (fun z => z * Φ x)
+        (mapPositiveCompletionOfDegree_algebraMap φ f h P P' hP δ δ' hδ hδ' l hl hcut r)
+    _ = φ r • Φ x := (Algebra.smul_def (φ r) (Φ x)).symm
+
+/-- Any two valid cutoff moduli give the same completed quantum map. -/
+theorem mapPositiveCompletionOfDegree_eq (m : ℕ → ℕ) (hm : Monotone m)
+    (hcut' : ∀ k n, n ∈ P → (m k : ℤ) < δ n → (k : ℤ) < δ' (f n)) :
+    mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' l hl hcut =
+      mapPositiveCompletionOfDegree φ f h P P' hP δ δ' hδ hδ' m hm hcut' :=
+  (F).mapCompletion_eq _ _ _ _ m hm _
 
 end General
 
