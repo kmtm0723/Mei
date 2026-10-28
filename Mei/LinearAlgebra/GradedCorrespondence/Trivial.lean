@@ -9,16 +9,17 @@ public import Mei.LinearAlgebra.GradedCorrespondence.Basic
 public import TauCeti.Algebra.Module.GradedModule.Trivial
 
 /-!
-# Graph correspondences of trivially graded modules
+# Graph correspondences into trivially graded modules
 
-Give two modules Tau Ceti's `trivialGrading`, concentrated in degree `0 : ℤ`. For the graph
-correspondence of a linear equivalence `e`, each forward transfer is `e` in degree zero and
-zero in every other degree; each backward transfer is the same statement for `e.symm`. The
-admissible input degree is arbitrary, because a homogeneous input of nonzero degree is zero.
+Give the target of a graph correspondence Tau Ceti's `trivialGrading`, concentrated in degree
+`0 : ℤ`, and let the source carry an arbitrary decomposition. Then each forward transfer from
+a homogeneous piece is the linear equivalence `e` in degree zero and zero in every other
+degree; symmetrically, each backward transfer into a trivially graded source is `e.symm` in
+degree zero. Thus an ungraded equivalence and its inverse are recovered as degree-zero
+transfers, regardless of the degree of the input.
 
-For doubling on `ℚ`, this computes `B^{0,0}(1) = 2` and `B^{0,η}(1) = 0` for `η ≠ 0`.
-The proofs reduce to `graph_transfer_apply`, `graph_symm_transfer_apply` and Tau Ceti's
-`TauCeti.proj_trivialGrading`.
+For doubling on `ℚ`, with both sides concentrated in degree zero, this gives
+`B^{0,0}(1) = 2` and `B^{0,η}(1) = 0` for `η ≠ 0`.
 -/
 
 public section
@@ -27,22 +28,22 @@ open TauCeti
 
 namespace Mei.GradedCorrespondence
 
-variable {R U V : Type*} [Semiring R] [AddCommMonoid U] [Module R U]
+variable {R U V ι κ : Type*} [Semiring R] [AddCommMonoid U] [Module R U]
   [AddCommMonoid V] [Module R V]
 
-/-- Between trivially graded modules, a forward graph transfer is the equivalence in degree
-zero and vanishes in every other degree. -/
-theorem graph_trivialGrading_transfer_apply (e : U ≃ₗ[R] V) (i : (Set.univ : Set ℤ))
-    (j : ℤ) (a : trivialGrading R U i) :
-    ((graph (trivialGrading R U) (trivialGrading R V) e).transfer i j a : V) =
+/-- A forward graph transfer into a trivially graded module is the equivalence in degree
+zero and vanishes in every other degree. The source grading is arbitrary. -/
+theorem graph_trivialGrading_transfer_apply (𝒰 : ι → Submodule R U) (e : U ≃ₗ[R] V)
+    (i : (Set.univ : Set ι)) (j : ℤ) (a : 𝒰 i) :
+    ((graph 𝒰 (trivialGrading R V) e).transfer i j a : V) =
       if j = 0 then e a else 0 := by
   rw [graph_transfer_apply, proj_trivialGrading]
 
-/-- Between trivially graded modules, a backward graph transfer is the inverse equivalence
-in degree zero and vanishes in every other degree. -/
-theorem graph_trivialGrading_symm_transfer_apply (e : U ≃ₗ[R] V) (j : (Set.univ : Set ℤ))
-    (i : ℤ) (a : trivialGrading R V j) :
-    ((graph (trivialGrading R U) (trivialGrading R V) e).symm.transfer j i a : U) =
+/-- A backward graph transfer into a trivially graded module is the inverse equivalence in
+degree zero and vanishes in every other degree. The target grading is arbitrary. -/
+theorem graph_trivialGrading_symm_transfer_apply (𝒱 : κ → Submodule R V) (e : U ≃ₗ[R] V)
+    (j : (Set.univ : Set κ)) (i : ℤ) (a : 𝒱 j) :
+    ((graph (trivialGrading R U) 𝒱 e).symm.transfer j i a : U) =
       if i = 0 then e.symm a else 0 := by
   rw [graph_symm_transfer_apply, proj_trivialGrading]
 
@@ -62,21 +63,29 @@ noncomputable def doubleGraph :
       Set.univ Set.univ :=
   graph (trivialGrading ℚ ℚ) (trivialGrading ℚ ℚ) double
 
+/-- The doubling correspondence is the graph of `double`. -/
+theorem doubleGraph_def :
+    doubleGraph = graph (trivialGrading ℚ ℚ) (trivialGrading ℚ ℚ) double := (rfl)
+
 /-- The unit in degree zero, as an admissible homogeneous input. -/
 def unitInput : trivialGrading ℚ ℚ ((⟨0, Set.mem_univ 0⟩ : (Set.univ : Set ℤ)) : ℤ) :=
   ⟨1, by simp⟩
 
+/-- The degree-zero input `unitInput` is the rational number `1`. -/
+@[simp]
+theorem coe_unitInput : (unitInput : ℚ) = 1 := (rfl)
+
 /-- The degree-zero transfer of the doubling graph sends `1` to `2`. -/
 theorem doubleGraph_transfer_zero :
     (doubleGraph.transfer ⟨0, Set.mem_univ 0⟩ 0 unitInput : ℚ) = 2 := by
-  rw [doubleGraph, graph_trivialGrading_transfer_apply]
-  simp [unitInput]
+  rw [doubleGraph_def, graph_trivialGrading_transfer_apply, ite_eq_left rfl, coe_unitInput,
+    double_apply, mul_one]
 
 /-- Every transfer of the doubling graph to a nonzero degree vanishes on `1`. -/
 theorem doubleGraph_transfer_of_ne_zero {η : ℤ} (hη : η ≠ 0) :
     (doubleGraph.transfer ⟨0, Set.mem_univ 0⟩ η unitInput : ℚ) = 0 := by
-  rw [doubleGraph, graph_trivialGrading_transfer_apply]
-  simp [hη]
+  rw [doubleGraph_def, graph_trivialGrading_transfer_apply]
+  exact ite_eq_right_iff.mpr fun h ↦ (hη h).elim
 
 end Examples
 
