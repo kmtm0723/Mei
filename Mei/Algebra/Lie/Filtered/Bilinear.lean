@@ -65,7 +65,7 @@ theorem truncatedExpLieAction_quotientBilinear (k : ℕ) (z : d.truncatedLie ℒ
   let : Module ℚ (G.quotient k) := Module.compHom _ (algebraMap ℚ R)
   let : Module ℚ (H.quotient k) := Module.compHom _ (algebraMap ℚ R)
   simp only [truncatedExpLieAction_apply]
-  exact Module.End.exp_bilinear_of_leibniz (quotientBilinear F G H f hf k)
+  exact (quotientBilinear F G H f hf k).exp_bilinear_of_leibniz
     (F.truncatedLieAction d ℒ k z) (G.truncatedLieAction d ℒ k z)
     (H.truncatedLieAction d ℒ k z)
     (truncatedLieAction_quotientBilinear F G H d ℒ f hf hequiv k z)
@@ -74,6 +74,15 @@ theorem truncatedExpLieAction_quotientBilinear (k : ℕ) (z : d.truncatedLie ℒ
     ⟨k + 1, H.truncatedLieAction_pow_eq_zero d ℒ k z⟩ x y
 
 variable [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
+
+/-- Matching finite BCH actions preserve a filtered bilinear pairing. -/
+theorem truncatedBCHAction_quotientBilinear (k : ℕ) (g : BCHGroup (d.truncatedLie ℒ k))
+    (x : F.quotient k) (y : G.quotient k) :
+    H.truncatedBCHAction d ℒ k g (quotientBilinear F G H f hf k x y) =
+      quotientBilinear F G H f hf k (F.truncatedBCHAction d ℒ k g x)
+        (G.truncatedBCHAction d ℒ k g y) := by
+  rw [H.truncatedBCHAction_apply, F.truncatedBCHAction_apply, G.truncatedBCHAction_apply]
+  exact truncatedExpLieAction_quotientBilinear F G H d ℒ f hf hequiv k _ _ _
 
 /-- Completed BCH actions preserve every Leibniz-compatible filtered bilinear pairing. -/
 theorem completedBCHAction_completionBilinear (g : d.completedBCHGroup ℒ)
@@ -87,13 +96,7 @@ theorem completedBCHAction_completionBilinear (g : d.completedBCHGroup ℒ)
   let : Module ℚ (G.quotient k) := Module.compHom _ (algebraMap ℚ R)
   let : Module ℚ (H.quotient k) := Module.compHom _ (algebraMap ℚ R)
   simp only [projection_completedBCHAction, projection_completionBilinear]
-  let gk : BCHGroup (d.truncatedLie ℒ k) := CompletedGroup.projection k g
-  change H.truncatedBCHAction d ℒ k gk
-    (quotientBilinear F G H f hf k (F.projection k x) (G.projection k y)) =
-      quotientBilinear F G H f hf k
-        (F.truncatedBCHAction d ℒ k gk (F.projection k x))
-        (G.truncatedBCHAction d ℒ k gk (G.projection k y))
-  rw [H.truncatedBCHAction_apply, F.truncatedBCHAction_apply, G.truncatedBCHAction_apply]
-  exact truncatedExpLieAction_quotientBilinear F G H d ℒ f hf hequiv k _ _ _
+  exact truncatedBCHAction_quotientBilinear F G H d ℒ f hf hequiv k
+    (CompletedGroup.projection k g) (F.projection k x) (G.projection k y)
 
 end Mei.ModuleFiltration
