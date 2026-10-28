@@ -33,11 +33,10 @@ variable {Γ R M : Type*} [AddCommGroup Γ] [Ring R] [AddCommGroup M] [Module R 
   [DirectSum.Decomposition ℳ] (p : Γ)
 
 private def shiftedPieceToAmbient (q : Γ) :
-    shiftedGrading ℳ d.monoid p (q - p) →ₗ[R] ℳ q :=
-  LinearMap.codRestrict (ℳ q)
-    ((shiftedSubmodule ℳ d.monoid p).subtype.comp
-      (shiftedGrading ℳ d.monoid p (q - p)).subtype)
-    (fun x => by simpa using (mem_shiftedGrading ℳ d.monoid p).mp x.property)
+    shiftedGrading ℳ d.monoid p (q - p) →ₗ[R] ℳ q := by
+  have hpq : p + (q - p) = q := by abel
+  exact ((shiftedSubmodule ℳ d.monoid p).subtype.submoduleComap (ℳ q)).comp
+    (Submodule.inclusion (by rw [shiftedGrading_def, hpq]))
 
 /-- The ambient degree-`q` component of a finite shifted quotient retaining that degree. -/
 def shiftedQuotientComponent (q : Γ) (k : ℕ) (h : d.degree (q - p) ≤ k) :
