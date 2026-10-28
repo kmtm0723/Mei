@@ -47,7 +47,7 @@ theorem mapCompletion_completedAeval (x : F.completionIdeal 1) (f : PowerSeries 
         algebraMap S (B ⧸ G.ideal (k + 1)) (φ r) := by
     intro r
     rw [Ideal.quotientMap_algebraMap, hψ, Ideal.Quotient.mk_algebraMap]
-  rw [PowerSeries.map_nilpotentAeval_map φ _ hq]
+  rw [f.map_nilpotentAeval_map φ _ hq]
   simp only [projection_mapCompletion]
 
 end Mei.AlgFiltration
