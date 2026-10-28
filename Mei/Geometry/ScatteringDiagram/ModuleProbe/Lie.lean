@@ -95,6 +95,7 @@ def actionDerivationHom :
     exact LinearMap.congr_fun (LieHom.map_lie (actionEndHom d ℳ p ℒ) x y) a
 
 /-- Forgetting the abelian internal bracket recovers the restricted Lie action. -/
+@[simp]
 theorem moduleCoefficientsEquiv_actionDerivationHom (x : L) (a : ModuleCoefficients d ℳ p) :
     moduleCoefficientsEquiv d ℳ p (actionDerivationHom d ℳ p (ℒ := ℒ) x a) =
       -- The carrier of the restricted Lie submodule is the shifted submodule;
