@@ -57,7 +57,8 @@ theorem extendOfDenseRange_apply (a : A) : extendOfDenseRange f hd g hg (f a) = 
   let : TopologicalSpace Y := ⊥
   let : DiscreteTopology Y := ⟨rfl⟩
   dsimp only [extendOfDenseRange]
-  apply (show IsDenseInducing f from ⟨⟨rfl⟩, hd⟩).extend_eq'
+  let hi : IsDenseInducing f := ⟨⟨rfl⟩, hd⟩
+  apply hi.extend_eq'
   intro x
   obtain ⟨y, hy⟩ := hg x
   exact ⟨y, by simpa only [nhds_discrete] using tendsto_pure.mpr hy⟩
