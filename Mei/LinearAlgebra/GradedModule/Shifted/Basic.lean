@@ -184,6 +184,13 @@ theorem shiftedFiltration_succ (k : ℕ) :
     simp only [coe_decompose_shiftedGrading, ZeroMemClass.coe_zero] at hh
     exact (congrArg (fun t => (DirectSum.decompose ℳ (x : M) t : M)) he).symm.trans hh
 
+/-- Each successor term of the relative filtration is homogeneous. -/
+theorem shiftedFiltration_isHomogeneous (k : ℕ) :
+    DirectSum.SetLike.IsHomogeneous (shiftedGrading ℳ d.monoid p)
+      ((d.shiftedFiltration ℳ p).submodule (k + 1)) := by
+  rw [shiftedFiltration_succ]
+  exact d.degreeSubmodule_isHomogeneous _ k
+
 /-- A homogeneous coefficient has its specified relative order, unless it is zero. -/
 theorem shiftedInclusion_mem_shiftedFiltration_iff (n : d.monoid) (x : ℳ (p + n)) (k : ℕ) :
     shiftedInclusion ℳ d.monoid p n x ∈ (d.shiftedFiltration ℳ p).submodule k ↔
@@ -196,6 +203,21 @@ theorem shiftedInclusion_mem_shiftedFiltration_iff (n : d.monoid) (x : ℳ (p + 
     have hz : shiftedInclusion ℳ d.monoid p n x = 0 ↔ x = 0 := by
       simp only [Subtype.ext_iff, coe_shiftedInclusion, ZeroMemClass.coe_zero]
     exact or_congr hz (by omega)
+
+/-- A retained homogeneous coefficient belongs to the discarded filtration term
+exactly when it is zero. This is the simplifier normal form of the quotient zero test. -/
+@[simp]
+theorem shiftedInclusion_mem_shiftedFiltration_succ_iff (n : d.monoid)
+    (a : ℳ (p + n)) {k : ℕ} (hn : d.degree n ≤ k) :
+    shiftedInclusion ℳ d.monoid p n a ∈ (d.shiftedFiltration ℳ p).submodule (k + 1) ↔
+      a = 0 := by
+  rw [shiftedInclusion_mem_shiftedFiltration_iff]
+  constructor
+  · rintro (ha | hd)
+    · exact ha
+    · omega
+  · exact Or.inl
+
 
 end PositiveDegrees
 end Mei
