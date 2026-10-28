@@ -5,24 +5,19 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.Convex.Recession
-public import Mathlib.Topology.Algebra.ContinuousAffineEquiv
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
-public import Mathlib.Topology.Maps.Proper.Basic
-import Mathlib.Tactic.Module
+public import Mathlib.LinearAlgebra.AffineSpace.AffineMap
+public import Mathlib.Topology.Algebra.Ring.Real
+public import Mathlib.Order.Filter.AtTopBot.Basic
+import Mathlib.Tactic.Abel
 
 /-!
-# Affine half-lines and their incoming germs
+# Incoming germs of affine lines
 
 An affine map from the real line is determined by its germ at negative infinity.
-For a set preserved by translation in the negative velocity direction, meeting
-that set at one time is equivalent to eventually lying in it. A nonconstant
-continuous affine map restricts to a proper half-line on every interval `(-∞, a]`.
-
-These statements use existing affine maps, filter germs and recession cones;
-there is no additional tail carrier. They give the geometric representative laws
-for incoming affine tails. Coefficients, incoming source labels, and chart or deck
-identifications are separate data.
+Thus restricting an affine representative to a smaller incoming half-line does
+not change the represented germ. These are representative laws for incoming
+affine tails; coefficient, source and chart/deck identifications are separate data.
+The construction uses existing affine maps and filter germs without a new carrier.
 -/
 
 public section
@@ -50,54 +45,4 @@ theorem eventuallyEq_atBot_iff {f g : ℝ →ᵃ[ℝ] P} :
     (f : ℝ → P) =ᶠ[atBot] g ↔ f = g :=
   ⟨eq_of_eventuallyEq_atBot, fun h => h ▸ Filter.EventuallyEq.rfl⟩
 
-variable {C : Set V} (f : ℝ →ᵃ[ℝ] V)
-
-/-- A single intersection with a source admitting the backward velocity gives an
-incoming tail in that source. No convexity, closedness or nonemptiness is needed. -/
-theorem eventually_mem_atBot_iff (hv : -f.linear 1 ∈ recessionCone C) :
-    (∀ᶠ t in atBot, f t ∈ C) ↔ ∃ t, f t ∈ C := by
-  constructor
-  · exact Filter.Eventually.exists
-  · rintro ⟨a, ha⟩
-    apply eventually_atBot.mpr
-    refine ⟨a, fun t ht => ?_⟩
-    have hm := (mem_recessionCone.mp hv) (f a) ha (a - t) (sub_nonneg.mpr ht)
-    have he : f t = f a + (a - t) • (-f.linear 1) := by
-      have hlin : f.linear (t - a) = (t - a) • f.linear 1 := by
-        simpa only [smul_eq_mul, mul_one] using f.linear.map_smul (t - a) (1 : ℝ)
-      calc
-        f t = f.linear (t - a) + f a := by
-          simpa only [vadd_eq_add, sub_add_cancel] using f.map_vadd a (t - a)
-        _ = f a + (a - t) • (-f.linear 1) := by rw [hlin]; module
-    rwa [← he] at hm
-
 end AffineMap
-
-namespace ContinuousAffineMap
-
-open Set Topology
-
-variable {V P : Type*} [AddCommGroup V] [Module ℝ V]
-  [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V]
-  [TopologicalSpace P] [AddTorsor V P] [IsTopologicalAddTorsor P]
-  (f : ℝ →ᴬ[ℝ] P)
-
-/-- A nonzero velocity gives a closed embedding of the entire affine line. -/
-theorem isClosedEmbedding_of_velocity_ne_zero (hv : f.contLinear 1 ≠ 0) :
-    IsClosedEmbedding f := by
-  have he : (f : ℝ → P) = fun t => t • f.contLinear 1 +ᵥ f 0 := by
-    funext t
-    have hlin : f.contLinear t = t • f.contLinear 1 := by
-      simpa only [smul_eq_mul, mul_one] using f.contLinear.map_smul t (1 : ℝ)
-    simpa only [vadd_eq_add, add_zero, hlin] using f.map_vadd 0 t
-  rw [he]
-  exact (ContinuousAffineEquiv.vaddConst ℝ (f 0)).toHomeomorph.isClosedEmbedding.comp
-    (isClosedEmbedding_smul_left hv)
-
-/-- Every closed incoming half-line with nonzero velocity is proper. -/
-theorem isProperMap_restrict_Iic (hv : f.contLinear 1 ≠ 0) (a : ℝ) :
-    IsProperMap (fun t : Iic a => f t) :=
-  ((f.isClosedEmbedding_of_velocity_ne_zero hv).comp
-    isClosed_Iic.isClosedEmbedding_subtypeVal).isProperMap
-
-end ContinuousAffineMap
