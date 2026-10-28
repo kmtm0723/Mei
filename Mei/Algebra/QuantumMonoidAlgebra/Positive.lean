@@ -220,6 +220,26 @@ theorem positiveMap_mem_grading {n : Γ} {x : positiveSubalgebra q β P}
   rw [Subalgebra.mem_grading_iff] at hx ⊢
   simpa only [coe_positiveMap] using map_mem_grade φ f h hx
 
+/-- A degree bound controls positive coefficient ideals under simultaneous scalar
+and exponent maps, without requiring either map to be injective. -/
+theorem positiveMap_ideal_le_of_degree
+    (δ : Γ →+ ℤ) (δ' : Γ' →+ ℤ)
+    (hδ : ∀ n ∈ P, 0 ≤ δ n) (hδ' : ∀ n ∈ P', 0 ≤ δ' n) (i j : ℕ)
+    (hij : ∀ n ∈ P, (i : ℤ) ≤ δ n → (j : ℤ) ≤ δ' (f n)) :
+    (positiveFiltration q β P δ hδ).ideal i ≤
+      ((positiveFiltration q' β' P' δ' hδ').ideal j).comap (positiveMap φ f h P P' hf) := by
+  classical
+  rw [positiveFiltration_ideal, GradedAlgebra.degreeIdeal_le_iff]
+  intro n hn x hx
+  by_cases hnP : n ∈ P
+  · rw [Ideal.mem_comap, positiveFiltration_ideal]
+    exact GradedAlgebra.le_degreeIdeal _ δ' _ (hij n hnP hn) _
+      (positiveMap_mem_grading φ f h P P' hf hx)
+  · have hz := supportedSubalgebra_grading_eq_bot (grade q β) P hnP
+    have : x = 0 := by simpa only [hz, Submodule.mem_bot] using hx
+    subst x
+    simp
+
 end Support
 
 /-- Identity coefficient and exponent maps restrict to the identity on positive support. -/

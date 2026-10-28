@@ -133,6 +133,20 @@ theorem monomial_mul_neg (hβ : β.IsAlt) (p : Γ) :
     monomial q β p * monomial q β (-p) = 1 := by
   simp [hβ.self_eq_zero]
 
+/-- The diagonal factor normalizes the left inverse monomial for any bilinear form. -/
+theorem diagonal_smul_monomial_neg_mul (p : Γ) :
+    ((q ^ β p p : Rˣ) : R) • (monomial q β (-p) * monomial q β p) = 1 := by
+  simp only [monomial_mul, map_neg, LinearMap.neg_apply, neg_add_cancel, monomial_zero,
+    smul_smul, ← Units.val_mul, ← zpow_add, add_neg_cancel, zpow_zero, Units.val_one,
+    one_smul]
+
+/-- The diagonal factor normalizes the right inverse monomial for any bilinear form. -/
+theorem diagonal_smul_monomial_mul_neg (p : Γ) :
+    ((q ^ β p p : Rˣ) : R) • (monomial q β p * monomial q β (-p)) = 1 := by
+  simp only [monomial_mul, map_neg, add_neg_cancel, monomial_zero,
+    smul_smul, ← Units.val_mul, ← zpow_add, add_neg_cancel, zpow_zero, Units.val_one,
+    one_smul]
+
 /-- Moving a quantum ray generator past a monomial rescales it by `q^(2β(n,p))`. -/
 theorem monomial_semiconjBy (hβ : β.IsAlt) (n p : Γ) :
     SemiconjBy (monomial q β p)

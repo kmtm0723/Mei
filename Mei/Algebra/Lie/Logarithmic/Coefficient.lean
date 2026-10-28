@@ -20,6 +20,12 @@ With the `TropicalVertexCoefficientAction` scope open, use
 `AlgFiltration.completedBCHAction` and `AlgFiltration.projection_completedBCHAction`
 with `TropicalVertexCoefficientAction.filtration` and `tropicalVertexGrading`.
 
+For a positive degree map `T`, the monomial map `z^q ↦ z^(T q)` on coefficient
+algebras carries the filtration term above the cutoff modulus of `T` into the target
+term, so it extends to completed coefficient algebras with that modulus.
+`Mei.Algebra.Lie.Logarithmic.Pairing.Coefficient` shows that tropical pairings
+intertwine the coefficient actions with this monomial map.
+
 The construction uses `LogarithmicVectorField.action`, the monomial derivations
 and filtration bounds in `Mei.Algebra.MonoidAlgebra.Filtration`, and the existing
 filtered BCH action. The coefficient action is that of Mandel, *Scattering
@@ -142,6 +148,39 @@ theorem filtration_ideal {R : Type*} [Semiring R] (k : ℕ) :
     (filtration (R := R) d Q).ideal k =
       (d.monoid.comap Q.subtype).monoidAlgebraIdeal (d.degree.comp Q.subtype) k := by
   rw [filtration, AddSubmonoid.monoidAlgebraFiltration_ideal]
+
+section Map
+
+variable {Γ' : Type*} [AddCommMonoid Γ'] {e : PositiveDegrees Γ'} {Q' : AddSubmonoid Γ'}
+
+variable {d Q} in
+/-- The monomial map `z^q ↦ z^(T q)` along a positive degree map carries the
+coefficient filtration term above the cutoff modulus into the target term. Thus
+`Mei.AlgFiltration.mapCompletionₐ` extends it to the completed coefficient algebras
+with the original modulus of `T`. -/
+theorem filtration_ideal_le_comap_mapDomainAlgHom {R : Type*} [CommSemiring R]
+    (T : PositiveDegreeMap d e)
+    (hT : Q.map T.toAddMonoidHom ≤ Q') (k : ℕ) :
+    (filtration (R := R) d Q).ideal (T.modulus k + 1) ≤
+      ((filtration e Q').ideal (k + 1)).comap (mapDomainAlgHom R R
+        ((AddSubmonoid.inclusion hT).comp (T.toAddMonoidHom.addSubmonoidMap Q))) := by
+  intro a ha
+  rw [filtration_ideal] at ha
+  rw [Ideal.mem_comap, filtration_ideal]
+  refine (d.monoid.comap Q.subtype).monoidAlgebraIdeal_le_comap_mapDomainRingHom
+    (d.degree.comp Q.subtype) (e.monoid.comap Q'.subtype) (e.degree.comp Q'.subtype)
+    _ (fun n hn => ?_) (fun n hn hd => ?_) ha
+  · simpa only [AddSubmonoid.mem_comap, AddMonoidHom.comp_apply, AddSubmonoid.subtype_apply,
+      AddSubmonoid.coe_inclusion, AddMonoidHom.addSubmonoidMap_apply_coe]
+      using T.map_mem (AddSubmonoid.mem_comap.mp hn)
+  · have h := T.degree_gt k (AddSubmonoid.mem_comap.mp hn) (by
+      simpa only [Nat.cast_add, Nat.cast_one, Int.add_one_le_iff, AddMonoidHom.comp_apply]
+        using hd)
+    simpa only [Nat.cast_add, Nat.cast_one, Int.add_one_le_iff, AddMonoidHom.comp_apply,
+      AddSubmonoid.subtype_apply, AddSubmonoid.coe_inclusion,
+      AddMonoidHom.addSubmonoidMap_apply_coe] using h
+
+end Map
 
 variable [Fact (d.monoid ≤ Q)]
 
