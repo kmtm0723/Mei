@@ -38,35 +38,13 @@ variable {Γ : Type} {R L M : Type*} [AddCommGroup Γ] [CommRing R] [Algebra ℚ
 
 /-- The graph of the finite BCH action on a shifted coefficient module.
 Taking the inverse label gives the opposite sign of the ordinary wall action. -/
-def shiftedBCHCorrespondence (k : ℕ) (g : BCHGroup (d.truncatedLie ℒ k)) :
+abbrev shiftedBCHCorrespondence (k : ℕ) (g : BCHGroup (d.truncatedLie ℒ k)) :
     GradedCorrespondence (B := (d.shiftedLieFiltration ℒ ℳ p).quotient k)
       (d.shiftedQuotientGrading ℳ p k).piece (d.shiftedQuotientGrading ℳ p k).piece
       Set.univ Set.univ :=
   GradedCorrespondence.graph
     (d.shiftedQuotientGrading ℳ p k).piece (d.shiftedQuotientGrading ℳ p k).piece
     ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ k g)
-
-/-- The graph's left chamber map is the identity. -/
-@[simp]
-theorem shiftedBCHCorrespondence_left (k : ℕ) (g : BCHGroup (d.truncatedLie ℒ k)) :
-    (d.shiftedBCHCorrespondence ℒ ℳ p k g).left = LinearMap.id :=
-  GradedCorrespondence.graph_left _
-
-/-- The graph's right chamber map is the existing finite coefficient action. -/
-@[simp]
-theorem shiftedBCHCorrespondence_right (k : ℕ) (g : BCHGroup (d.truncatedLie ℒ k)) :
-    (d.shiftedBCHCorrespondence ℒ ℳ p k g).right =
-      ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ k g).toLinearMap :=
-  GradedCorrespondence.graph_right _
-
-/-- Finite wall transfers are precisely the selected homogeneous output components. -/
-theorem shiftedBCHCorrespondence_transfer_apply (k : ℕ)
-    (g : BCHGroup (d.truncatedLie ℒ k)) (i : (Set.univ : Set Γ)) (j : Γ)
-    (a : (d.shiftedQuotientGrading ℳ p k).piece i) :
-    (d.shiftedBCHCorrespondence ℒ ℳ p k g).transfer i j a =
-      DirectSum.decompose (d.shiftedQuotientGrading ℳ p k).piece
-        ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ k g a) j :=
-  GradedCorrespondence.graph_transfer_apply _ _ _ _
 
 /-- Coefficient truncation is a morphism of the graph correspondences of compatible
 finite wall labels. It intertwines both forward transfers and inverse lifts. -/
@@ -81,7 +59,7 @@ def shiftedBCHCorrespondenceHom {k l : ℕ} (h : k ≤ l)
   right_comm := by
     apply LinearMap.ext
     intro a
-    simpa only [LinearMap.comp_apply, shiftedBCHCorrespondence_right,
+    simpa only [LinearMap.comp_apply, GradedCorrespondence.graph_right,
       LinearEquiv.coe_coe] using
       (d.shiftedLieFiltration ℒ ℳ p).transition_truncatedBCHAction d ℒ h g a
   left_mem n a ha := d.transition_mem_shiftedQuotientGrading ℳ p h ha
