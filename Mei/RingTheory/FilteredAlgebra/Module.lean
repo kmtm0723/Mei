@@ -49,7 +49,7 @@ variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] (F : AlgFiltration A)
 
 /-- Scalar restriction of finite quotients commutes with every filtration transition. -/
 @[simp]
-theorem quotientScalarEquiv_transition {k l : ℕ} (h : k ≤ l)
+theorem factor_restrictScalarsEquiv {k l : ℕ} (h : k ≤ l)
     (a : (F.toModuleFiltration R).quotient l) :
     Ideal.Quotient.factor (F.antitone (Nat.add_le_add_right h 1))
         (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (l + 1)) a) =
@@ -64,7 +64,7 @@ private def moduleCompletionToAlgebra : (F.toModuleFiltration R).completion →�
     ((F.toModuleFiltration R).projection k.unop x),
     (F.mem_completion_iff _).mpr (by
       intro k l h
-      rw [F.quotientScalarEquiv_transition h,
+      rw [F.factor_restrictScalarsEquiv h,
         (F.toModuleFiltration R).transition_projection h x])⟩
   map_add' x y := by
     apply F.completion_ext
@@ -99,7 +99,7 @@ def moduleCompletionEquiv : (F.toModuleFiltration R).completion ≃ₗ[R] F.comp
         ext x
         apply (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))).injective
         simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toLinearMap_apply,
-          projectionₐ_apply, ← quotientScalarEquiv_transition, LinearEquiv.apply_symm_apply]
+          projectionₐ_apply, ← factor_restrictScalarsEquiv, LinearEquiv.apply_symm_apply]
         exact F.factor_projection h x)
   left_inv x := by
     apply (F.toModuleFiltration R).completion_ext
