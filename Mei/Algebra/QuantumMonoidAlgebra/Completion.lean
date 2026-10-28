@@ -14,8 +14,9 @@ public import Mei.RingTheory.FilteredAlgebra.Algebra
 # Maps of completed positive quantum algebras
 
 Simultaneous coefficient and exponent maps restrict to positive quantum algebras.
-A positive degree map controls the required source cutoff, so these restrictions
-extend to their degree completions. The extension is independent of the chosen
+An explicit degree bound on the whole coefficient monoid controls the source
+cutoff, so these restrictions extend to nonnegative degree completions. Positive
+degree maps give the standard specialization. The extension is independent of the chosen
 cutoff modulus and respects identity and composition. In particular, coefficient
 specialization and changes of exponent lattice can be applied to quantum series,
 including maps that merge exponents or kill coefficients.
@@ -40,6 +41,48 @@ variable {R S U Γ Γ' Γ'' : Type*}
   {β : LinearMap.BilinForm ℤ Γ} {β' : LinearMap.BilinForm ℤ Γ'}
   {β'' : LinearMap.BilinForm ℤ Γ''}
 
+section General
+
+variable (φ : R →+* S) (f : Γ →+ Γ')
+  (h : ∀ p r, Units.map φ.toMonoidHom (q ^ β p r) = q' ^ β' (f p) (f r))
+  (P : AddSubmonoid Γ) (P' : AddSubmonoid Γ') (hP : ∀ n ∈ P, f n ∈ P')
+  (δ : Γ →+ ℤ) (δ' : Γ' →+ ℤ)
+  (hδ : ∀ n ∈ P, 0 ≤ δ n) (hδ' : ∀ n ∈ P', 0 ≤ δ' n)
+
+local notation "F" => positiveFiltration q β P δ hδ
+local notation "G" => positiveFiltration q' β' P' δ' hδ'
+local notation "ψ" => positiveMap φ f h P P' hP
+
+include hP in
+/-- A degree bound controls positive coefficient ideals under simultaneous scalar
+and exponent maps, without requiring either map to be injective. -/
+theorem positiveMap_ideal_le_of_degree (i j : ℕ)
+    (hij : ∀ n ∈ P, (i : ℤ) ≤ δ n → (j : ℤ) ≤ δ' (f n)) :
+    (F).ideal i ≤ ((G).ideal j).comap ψ := by
+  classical
+  rw [positiveFiltration_ideal, GradedAlgebra.degreeIdeal_le_iff]
+  intro n hn x hx
+  by_cases hnP : n ∈ P
+  · rw [Ideal.mem_comap, positiveFiltration_ideal]
+    exact GradedAlgebra.le_degreeIdeal _ δ' _ (hij n hnP hn) _
+      (positiveMap_mem_grading φ f h P P' hP hx)
+  · have hz := supportedSubalgebra_grading_eq_bot (grade q β) P hnP
+    have : x = 0 := by simpa only [hz, Submodule.mem_bot] using hx
+    subst x
+    simp
+
+variable (l : ℕ → ℕ) (hl : Monotone l)
+  (hcut : ∀ k n, n ∈ P → (l k : ℤ) < δ n → (k : ℤ) < δ' (f n))
+
+/-- Extend simultaneous scalar and exponent maps to general nonnegative coefficient
+completions using their specified cutoff modulus. -/
+abbrev mapPositiveCompletionOfDegree : (F).completion →+* (G).completion :=
+  (F).mapCompletion G ψ l hl (fun k =>
+    positiveMap_ideal_le_of_degree φ f h P P' hP δ δ' hδ hδ' (l k + 1) (k + 1)
+      (fun n hn hd => by have := hcut k n hn (by omega); omega))
+
+end General
+
 variable (d : PositiveDegrees Γ) (e : PositiveDegrees Γ')
   (T : PositiveDegreeMap d e) (φ : R →+* S)
   (h : ∀ p r, Units.map φ.toMonoidHom (q ^ β p r) = q' ^ β' (T p) (T r))
@@ -52,21 +95,12 @@ Neither the coefficient homomorphism nor the exponent map need be injective. -/
 theorem positiveMap_ideal_le (k : ℕ) :
     (F).ideal (T.modulus k + 1) ≤ ((G).ideal (k + 1)).comap
       (positiveMap φ T.toAddMonoidHom h d.monoid e.monoid (fun _ hn => T.map_mem hn)) := by
-  classical
-  rw [positiveFiltration_ideal, GradedAlgebra.degreeIdeal_le_iff]
-  intro n hn x hx
-  by_cases hp : n ∈ d.monoid
-  · have hd : (k + 1 : ℕ) ≤ e.degree (T n) := by
-      have := T.degree_gt k hp (by omega)
-      omega
-    rw [Ideal.mem_comap, positiveFiltration_ideal]
-    exact GradedAlgebra.le_degreeIdeal _ e.degree _ hd _
-      (positiveMap_mem_grading φ T.toAddMonoidHom h d.monoid e.monoid
-        (fun _ hn => T.map_mem hn) hx)
-  · have hz := supportedSubalgebra_grading_eq_bot (grade q β) d.monoid hp
-    have : x = 0 := by simpa only [hz, Submodule.mem_bot] using hx
-    subst x
-    simp
+  apply positiveMap_ideal_le_of_degree φ T.toAddMonoidHom h d.monoid e.monoid
+    (fun _ hn => T.map_mem hn) d.degree e.degree
+    (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+  intro n hn hd
+  have := T.degree_gt k hn (by omega)
+  omega
 
 /-- Extend a quantum map to the degree completions of its positive coefficient algebras. -/
 def mapPositiveCompletion : (F).completion →+* (G).completion :=
