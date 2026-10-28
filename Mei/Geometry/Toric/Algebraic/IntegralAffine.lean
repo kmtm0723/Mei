@@ -7,6 +7,7 @@ module
 
 public import Mei.Geometry.Toric.Algebraic.RationalFunctional
 public import Mei.Analysis.Convex.Exposed
+public import Mei.LinearAlgebra.AffineSpace.Equiv
 public import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
@@ -189,24 +190,25 @@ variable {N N' V V' : Type*} [AddCommGroup N] [AddCommGroup N']
   [AddCommGroup V] [AddCommGroup V'] [Module ℝ V] [Module ℝ V']
   {i : N →+ V} {i' : N' →+ V'}
 
-private noncomputable def latticeLinearEquiv (h : IsIntegralLattice i)
-    (h' : IsIntegralLattice i') (σ : N ≃+ N') : V ≃ₗ[ℝ] V' :=
-  LinearEquiv.ofLinearMap (h.extend i' σ.toAddMonoidHom)
-    (h'.extend i σ.symm.toAddMonoidHom)
-    ((h'.eq_extend (f := AddMonoidHom.id N') (fun n => by simp)).trans h'.extend_id)
-    ((h.eq_extend (f := AddMonoidHom.id N) (fun n => by simp)).trans h.extend_id)
-
 /-- Extend a lattice equivalence with zero translation using scalar extension. -/
 noncomputable def ofLatticeEquiv (h : IsIntegralLattice i) (h' : IsIntegralLattice i')
     (σ : N ≃+ N') : IntegralAffineEquiv h h' where
-  toAffineEquiv := (latticeLinearEquiv h h' σ).toAffineEquiv
+  toAffineEquiv := (h.extendEquiv h' σ).toAffineEquiv
   latticeEquiv := σ
-  map_lattice n := h.extend_apply i' σ.toAddMonoidHom n
+  map_lattice n :=
+    (LinearMap.congr_fun (h.extendEquiv_toLinearMap h' σ) (i n)).trans
+      (h.extend_apply i' σ.toAddMonoidHom n)
+
+/-- The underlying affine equivalence is the zero-translation real extension. -/
+@[simp] theorem ofLatticeEquiv_toAffineEquiv (h : IsIntegralLattice i)
+    (h' : IsIntegralLattice i') (σ : N ≃+ N') :
+    (ofLatticeEquiv h h' σ).toAffineEquiv = (h.extendEquiv h' σ).toAffineEquiv := by rfl
 
 /-- The zero-translation lift evaluates by the canonical real-linear extension. -/
 @[simp↓] theorem ofLatticeEquiv_apply (h : IsIntegralLattice i) (h' : IsIntegralLattice i')
     (σ : N ≃+ N') (x : V) :
-    ofLatticeEquiv h h' σ x = h.extend i' σ.toAddMonoidHom x := by rfl
+    ofLatticeEquiv h h' σ x = h.extend i' σ.toAddMonoidHom x :=
+  congrFun (h.coe_extendEquiv h' σ) x
 
 /-- Scalar extension preserves the specified lattice equivalence. -/
 @[simp] theorem ofLatticeEquiv_latticeEquiv (h : IsIntegralLattice i)
@@ -214,23 +216,25 @@ noncomputable def ofLatticeEquiv (h : IsIntegralLattice i) (h' : IsIntegralLatti
     (ofLatticeEquiv h h' σ).latticeEquiv = σ := by rfl
 
 /-- The real linear part of the zero-translation lift is scalar extension. -/
-@[simp] theorem ofLatticeEquiv_linear (h : IsIntegralLattice i)
+theorem ofLatticeEquiv_linear (h : IsIntegralLattice i)
     (h' : IsIntegralLattice i') (σ : N ≃+ N') :
     (ofLatticeEquiv h h' σ).toAffineEquiv.linear.toLinearMap =
-      h.extend i' σ.toAddMonoidHom := by rfl
+      h.extend i' σ.toAddMonoidHom := by
+  rw [ofLatticeEquiv_toAffineEquiv, LinearEquiv.linear_toAffineEquiv,
+    IsIntegralLattice.extendEquiv_toLinearMap]
 
 /-- Extending the identity lattice equivalence gives the identity affine equivalence. -/
 @[simp] theorem ofLatticeEquiv_refl (h : IsIntegralLattice i) :
     ofLatticeEquiv h h (AddEquiv.refl N) = refl h := by
-  ext x
-  simp [ofLatticeEquiv_apply, h.extend_id, refl]
+  apply toAffineEquiv_injective
+  exact congrArg LinearEquiv.toAffineEquiv (h.extendEquiv_refl)
 
 /-- Inversion commutes with the zero-translation extension of a lattice equivalence. -/
 @[simp] theorem ofLatticeEquiv_symm (h : IsIntegralLattice i)
     (h' : IsIntegralLattice i') (σ : N ≃+ N') :
     (ofLatticeEquiv h h' σ).symm = ofLatticeEquiv h' h σ.symm := by
-  ext x
-  rfl
+  apply toAffineEquiv_injective
+  exact congrArg LinearEquiv.toAffineEquiv (h.extendEquiv_symm h' σ)
 
 /-- Zero-translation extension respects composition between arbitrary integral lattices. -/
 @[simp] theorem ofLatticeEquiv_trans {N'' V'' : Type*} [AddCommGroup N'']
@@ -239,9 +243,8 @@ noncomputable def ofLatticeEquiv (h : IsIntegralLattice i) (h' : IsIntegralLatti
     (h'' : IsIntegralLattice i'') (σ : N ≃+ N') (τ : N' ≃+ N'') :
     (ofLatticeEquiv h h' σ).trans (ofLatticeEquiv h' h'' τ) =
       ofLatticeEquiv h h'' (σ.trans τ) := by
-  ext x
-  exact congrArg (fun F : V →ₗ[ℝ] V'' => F x)
-    (h.extend_comp h' σ.toAddMonoidHom τ.toAddMonoidHom)
+  apply toAffineEquiv_injective
+  exact congrArg LinearEquiv.toAffineEquiv (h.extendEquiv_trans h' h'' σ τ)
 
 /-- Integral affine self-equivalences form a group under function composition. -/
 instance (h : IsIntegralLattice i) : Group (IntegralAffineEquiv h h) where
@@ -338,10 +341,15 @@ noncomputable def latticeLift : Multiplicative (AddAut N) →* IntegralAffineEqu
 
 /-- The lifted lattice action evaluates by scalar extension. -/
 @[simp↓] theorem latticeLift_apply (σ : Multiplicative (AddAut N)) (x : V) :
-    latticeLift h σ x = h.extend i σ.toAdd.toAddMonoidHom x := by rfl
+    latticeLift h σ x = h.extend i σ.toAdd.toAddMonoidHom x :=
+  ofLatticeEquiv_apply h h σ.toAdd x
+
+/-- The affine projection of a lifted lattice automorphism is its zero-translation extension. -/
+@[simp] theorem latticeLift_toAffineEquiv (σ : Multiplicative (AddAut N)) :
+    (latticeLift h σ).toAffineEquiv = (h.extendEquiv h σ.toAdd).toAffineEquiv := by rfl
 
 /-- The real linear part of the lifted lattice automorphism is scalar extension. -/
-@[simp] theorem latticeLift_linear (σ : Multiplicative (AddAut N)) :
+theorem latticeLift_linear (σ : Multiplicative (AddAut N)) :
     (latticeLift h σ).toAffineEquiv.linear.toLinearMap =
       h.extend i σ.toAdd.toAddMonoidHom :=
   ofLatticeEquiv_linear h h σ.toAdd
