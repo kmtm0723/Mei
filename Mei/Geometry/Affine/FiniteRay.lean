@@ -157,6 +157,7 @@ theorem direction_insert (β : FiniteAffineRay V P) (b : ℝ) (δ : V) (hb : b <
     (β.insert b δ hb).direction = β.direction := (rfl)
 
 /-- A newly inserted bend contributes its hinge function to realization. -/
+@[simp]
 theorem insert_apply (β : FiniteAffineRay V P) (b : ℝ) (δ : V) (hb : b < 0) (t : ℝ) :
     β.insert b δ hb t = max (b - t) 0 • δ +ᵥ β t := by
   classical
@@ -192,6 +193,7 @@ theorem incomingReference_insert (β : FiniteAffineRay V P) (b : ℝ) (δ : V) (
 
 omit [Module ℝ V] [AddTorsor V P] in
 /-- Direction increments at the same time combine into a single bend. -/
+@[simp]
 theorem insert_insert_same (β : FiniteAffineRay V P) (b : ℝ) (δ ε : V) (hb : b < 0) :
     (β.insert b δ hb).insert b ε hb = β.insert b (δ + ε) hb := by
   ext <;> simp [insert, Finsupp.single_add, add_assoc]
