@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.LinearAlgebra.ModuleFiltration.Completion
+public import Mei.LinearAlgebra.ModuleFiltration.Map
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 
 /-!
@@ -15,6 +15,8 @@ A bilinear map that adds filtration orders induces bilinear maps on matching
 quotients and on completions. Projections compute the completed pairing, and
 the completed pairing still adds filtration orders. This permits products
 between different shifted coefficient modules without identifying their carriers.
+Completion preserves intertwining identities for bilinear maps, allowing the
+three comparison maps to have independent monotone cutoff moduli.
 
 The quotient construction uses Mathlib's `LinearMap.liftQ₂`; compatible quotient
 families are assembled with `ModuleFiltration.lift`.
@@ -110,5 +112,42 @@ theorem completionBilinear_mem_completedFiltration {a b : ℕ}
       (k := k) hy
     rw [← he, ← he', quotientBilinear_mk, Submodule.Quotient.mk_eq_zero]
     simpa only [hab] using hf a b hm hn
+
+variable {M' N' P' : Type*}
+  [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
+  [AddCommGroup P'] [Module R P']
+  (F' : ModuleFiltration R M') (G' : ModuleFiltration R N')
+  (H' : ModuleFiltration R P') (f' : M' →ₗ[R] N' →ₗ[R] P')
+  (hf' : ∀ (a b : ℕ) {x y}, x ∈ F'.submodule a → y ∈ G'.submodule b →
+    f' x y ∈ H'.submodule (a + b))
+  (u : M →ₗ[R] M') (v : N →ₗ[R] N') (w : P →ₗ[R] P')
+  (ρ σ τ : ℕ → ℕ) (hρ : Monotone ρ) (hσ : Monotone σ) (hτ : Monotone τ)
+  (hu : ∀ k, F.submodule (ρ k + 1) ≤ (F'.submodule (k + 1)).comap u)
+  (hv : ∀ k, G.submodule (σ k + 1) ≤ (G'.submodule (k + 1)).comap v)
+  (hw : ∀ k, H.submodule (τ k + 1) ≤ (H'.submodule (k + 1)).comap w)
+
+/-- Linear maps intertwining bilinear pairings also intertwine their completions.
+The three linear maps may use independent cutoff moduli. -/
+theorem completionMap_completionBilinear (h : ∀ x y, w (f x y) = f' (u x) (v y))
+    (x : F.completion) (y : G.completion) :
+    H.completionMap H' w τ hτ hw (completionBilinear F G H f hf x y) =
+      completionBilinear F' G' H' f' hf'
+        (F.completionMap F' u ρ hρ hu x) (G.completionMap G' v σ hσ hv y) := by
+  apply H'.completion_ext
+  intro k
+  -- A common finer cutoff computes all three projections using the same representatives.
+  let n := max (ρ k) (max (σ k) (τ k))
+  have hρn : ρ k ≤ n := le_max_left _ _
+  have hσn : σ k ≤ n := (le_max_left _ _).trans (le_max_right _ _)
+  have hτn : τ k ≤ n := (le_max_right _ _).trans (le_max_right _ _)
+  rw [H.projection_completionMap_of_le H' w τ hτ hw k n hτn,
+    projection_completionBilinear, projection_completionBilinear,
+    F.projection_completionMap_of_le F' u ρ hρ hu k n hρn,
+    G.projection_completionMap_of_le G' v σ hσ hv k n hσn]
+  obtain ⟨a, ha⟩ := (F.submodule (n + 1)).mkQ_surjective (F.projection n x)
+  obtain ⟨b, hb⟩ := (G.submodule (n + 1)).mkQ_surjective (G.projection n y)
+  simp only [Submodule.mkQ_apply] at ha hb
+  rw [← ha, ← hb, quotientBilinear_mk, Submodule.mapQ_apply,
+    Submodule.mapQ_apply, Submodule.mapQ_apply, quotientBilinear_mk, h]
 
 end Mei.ModuleFiltration
