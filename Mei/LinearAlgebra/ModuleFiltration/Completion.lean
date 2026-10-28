@@ -18,6 +18,9 @@ families in its quotient tower. It has linear projections and a universal lift
 of compatible linear maps, giving a limit cone in `ModuleCat`. The induced
 filtration is separated, and the canonical map preserves and reflects each
 filtration term; its kernel is the intersection of the original terms.
+The projections are surjective, so each finite quotient of the completed filtration
+is canonically linearly equivalent to the original finite quotient
+(`completedQuotientEquiv`), compatibly with the tower transitions.
 
 The carrier uses Mathlib's `ModuleCat.sectionsSubmodule`; tower transitions use
 `Submodule.factor`. No finiteness or separatedness of the original module is
@@ -241,12 +244,6 @@ noncomputable def completedQuotientEquiv (k : ℕ) :
 theorem completedQuotientEquiv_mk (k : ℕ) (x : F.completion) :
     F.completedQuotientEquiv k (Submodule.Quotient.mk x) = F.projection k x := by
   simp [completedQuotientEquiv]
-
-/-- On original representatives, the finite comparison recovers the original quotient class. -/
-theorem completedQuotientEquiv_mk_of (k : ℕ) (x : M) :
-    F.completedQuotientEquiv k (Submodule.Quotient.mk (F.of x)) =
-      Submodule.Quotient.mk x := by
-  simp
 
 /-- The inverse finite comparison is induced by the canonical map into the completion. -/
 @[simp]
