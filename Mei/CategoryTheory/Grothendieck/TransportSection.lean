@@ -109,6 +109,27 @@ theorem toFunctor_map_factor (s : GrothendieckSection L) {d e : D} (f : d ⟶ e)
       (Grothendieck.ιNatTrans f).app (s.obj d) ≫ (Grothendieck.ι L e).map (s.map f) := by
   exact (Grothendieck.ιNatTrans_app_comp_ι_map (s.toFunctor.map f)).symm
 
+/-- The total functor determines the objects and transport arrows of its section presentation. -/
+theorem toFunctor_injective :
+    Function.Injective (toFunctor (L := L)) := by
+  intro s t h
+  rcases s with ⟨so, sm, _, _⟩
+  rcases t with ⟨tobj, tm, _, _⟩
+  have ho : so = tobj := by
+    funext d
+    exact eq_of_heq (Grothendieck.mk.inj
+      (_root_.CategoryTheory.Functor.congr_obj h d)).2
+  subst tobj
+  refine GrothendieckSection.ext ?_ ?_
+  · rfl
+  · apply heq_of_eq
+    funext d e f
+    have hf := _root_.CategoryTheory.Functor.congr_hom h f
+    have hm := (by
+      simpa only [eqToHom_refl, Category.id_comp, Category.comp_id] using hf :
+        (⟨f, sm f⟩ : (⟨d, so d⟩ : Grothendieck L) ⟶ ⟨e, so e⟩) = ⟨f, tm f⟩)
+    exact eq_of_heq (Grothendieck.Hom.mk.inj hm).2
+
 /-- The total functor of a section lies over the identity. -/
 @[simp]
 theorem toFunctor_comp_forget (s : GrothendieckSection L) :
