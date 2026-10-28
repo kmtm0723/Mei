@@ -29,10 +29,6 @@ changes. Geometric itineraries additionally carry encounter and chart data.
 The increments retain their actual degrees, including nonzero degrees in the
 kernel of a geometric projection. No finite generation, saturation, cancellation,
 or group hypothesis is needed.
-
-The proof reuses Mathlib's `List.length_nsmul_le_sum`, `List.single_le_sum`,
-`List.sum_filter_bne_zero`, and finiteness of bounded-length lists over a finite
-type, together with the existing positive degree cutoffs.
 -/
 
 public section
