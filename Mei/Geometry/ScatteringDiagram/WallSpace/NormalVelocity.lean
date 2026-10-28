@@ -24,9 +24,8 @@ The entire tangent direction need not be preserved, and degrees in the kernel of
 the geometric projection remain present. The coefficient module may have arbitrary
 homogeneous pieces. No faithfulness or separatedness hypothesis is needed.
 
-The proofs use submodule suprema, the graded bracket, Mathlib's finite nilpotent
-exponential and the existing finite and completed coefficient actions. Homogeneous
-projection in a quotient uses its inherited direct-sum decomposition.
+The action is homogeneous for the supplied coefficient grading. Extraction of
+quotient components uses an inherited direct-sum decomposition of the quotient.
 The component-propagation setting is that of Travis Mandel, *Scattering diagrams,
 theta functions, and refined tropical curve counts*, §2.1 and Definition 2.10
 (arXiv:1503.06183).
@@ -49,6 +48,14 @@ def normalDegreeSubmodule (ρ : Γ →+ Λ) (𝒜 : Γ → Submodule R M)
 /-- The normal-degree submodule is the sum of the pieces on that normal fiber. -/
 theorem normalDegreeSubmodule_eq_iSup (𝒜 : Γ → Submodule R M) (m : Λ →+ ℤ) (c : ℤ) :
     normalDegreeSubmodule ρ 𝒜 m c = ⨆ p : {p // m (ρ p) = c}, 𝒜 p := (rfl)
+
+/-- Linear images of normal-degree submodules are the normal-degree submodules
+of the image pieces. The linear map need not be injective. -/
+theorem map_normalDegreeSubmodule {N : Type*} [AddCommMonoid N] [Module R N]
+    (𝒜 : Γ → Submodule R M) (m : Λ →+ ℤ) (c : ℤ) (f : M →ₗ[R] N) :
+    (normalDegreeSubmodule ρ 𝒜 m c).map f =
+      normalDegreeSubmodule ρ (fun p => (𝒜 p).map f) m c := by
+  simp only [normalDegreeSubmodule_eq_iSup, Submodule.map_iSup]
 
 /-- Each homogeneous piece belongs to its own normal-degree submodule. -/
 theorem le_normalDegreeSubmodule (𝒜 : Γ → Submodule R M) (m : Λ →+ ℤ) (p : Γ) :
@@ -146,7 +153,8 @@ theorem truncatedExpLieAction_mem_normalDegreeSubmodule
     Submodule.mkQ_apply, ModuleFiltration.quotientLieAction_mk]
   exact Submodule.mem_map_of_mem (H.lie_mem_normalDegreeSubmodule_of_mem_ray 𝒜 hy hb)
 
-/-- Finite wall exponentials also reflect normal degree, by applying the inverse wall. -/
+/-- A finite wall exponential maps a quotient coefficient into the image of a
+normal-degree submodule exactly when the original coefficient lies there. -/
 theorem truncatedExpLieAction_mem_normalDegreeSubmodule_iff
     {w : SupportedRay d} {m : Λ →+ ℤ} {k : ℕ} {x : d.truncatedLie ℒ k}
     (hx : x ∈ H.truncatedRayLieSubalgebra w m k) (c : ℤ) (a : F.quotient k) :
@@ -164,7 +172,7 @@ theorem truncatedExpLieAction_mem_normalDegreeSubmodule_iff
 /-- In a graded finite coefficient quotient, every nonzero output component of a
 homogeneous input has the same normal evaluation. The inherited quotient grading
 is the sum of the images of the original pieces, with no finite-rank requirement. -/
-theorem normal_eq_of_truncatedExpLieAction_component_ne_zero
+theorem normal_eq_of_decompose_truncatedExpLieAction_ne_zero
     {w : SupportedRay d} {m : Λ →+ ℤ} {k : ℕ} {x : d.truncatedLie ℒ k}
     (hx : x ∈ H.truncatedRayLieSubalgebra w m k)
     [DirectSum.Decomposition (fun p => (𝒜 p).map (F.submodule (k + 1)).mkQ)]
@@ -177,10 +185,9 @@ theorem normal_eq_of_truncatedExpLieAction_component_ne_zero
   apply Subtype.ext
   have hmem := H.truncatedExpLieAction_mem_normalDegreeSubmodule 𝒜 F hx
     (Submodule.mem_map_of_mem (le_normalDegreeSubmodule 𝒜 m p ha))
-  rw [normalDegreeSubmodule_eq_iSup, Submodule.map_iSup] at hmem
-  exact (Mei.DirectSum.mem_iSup_iff_decompose_eq_zero
-    (fun n => (𝒜 n).map (F.submodule (k + 1)).mkQ)
-    {n | m (ρ n) = m (ρ p)}).mp hmem q hne
+  rw [map_normalDegreeSubmodule] at hmem
+  exact (mem_normalDegreeSubmodule_iff
+    (fun n => (𝒜 n).map (F.submodule (k + 1)).mkQ) m (m (ρ p)) _).mp hmem q hne
 
 variable [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
 
