@@ -12,7 +12,8 @@ public import Mei.RingTheory.PowerSeries.Nilpotent.Basic
 
 A compatible pair of ring maps on scalars and coefficients commutes with finite
 nilpotent evaluation. Both maps may have kernels, and the coefficient rings need
-not be commutative. The proof reuses the finite-sum formula for evaluation.
+not be commutative. This compatibility supports evaluation in finite quotients
+when constructing naturality on completions.
 -/
 
 public section
@@ -23,9 +24,9 @@ variable {R S A B : Type*} [CommRing R] [CommRing S] [Ring A] [Ring B]
   [Algebra R A] [Algebra S B]
 
 /-- Changing scalars and coefficients commutes with nilpotent evaluation. -/
-theorem map_nilpotentAeval_map (φ : R →+* S) (ψ : A →+* B)
+theorem map_nilpotentAeval_map (f : R⟦X⟧) (φ : R →+* S) (ψ : A →+* B)
     (hψ : ∀ r, ψ (algebraMap R A r) = algebraMap S B (φ r))
-    {x : A} (hx : IsNilpotent x) (f : R⟦X⟧) :
+    {x : A} (hx : IsNilpotent x) :
     ψ (nilpotentAeval hx f) = nilpotentAeval (hx.map ψ) (map φ f) := by
   let n := hx.choose
   have hn : x ^ n = 0 := hx.choose_spec
