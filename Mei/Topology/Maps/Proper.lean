@@ -10,11 +10,11 @@ public import Mathlib.Topology.Maps.Proper.Basic
 /-!
 # Proper maps under compact perturbations
 
-A continuous map into a Hausdorff space is proper if it agrees with a proper
-map outside a compact set. The ultrafilter characterization avoids local
-compactness or countability assumptions on either space.
-The proof uses Mathlib's `isProperMap_iff_ultrafilter_of_t2` and the compact-set
-criterion for convergence of ultrafilters.
+A continuous map into a Hausdorff space is proper if it agrees with a proper map outside
+a compact set. This transfers properness from a known model to a continuous map changed
+only inside a compact region. For example, finite modifications of the bounded part of
+an incoming affine path preserve properness without local compactness or countability
+assumptions on either space.
 -/
 
 public section
