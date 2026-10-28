@@ -32,9 +32,9 @@ open scoped UniversalEnvelopingAlgebra.InnerAction
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-namespace UniversalEnvelopingAlgebra.InnerAction
+namespace Mei.UniversalEnvelopingAlgebra
 
-open Mei Mei.UniversalEnvelopingAlgebra
+open Mei
 
 variable {N R L : Type*} [AddCommMonoid N] [CommRing R]
   [LieRing L] [LieAlgebra R L] [DecidableEq N]
@@ -45,15 +45,7 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "F" => degreeFiltration ℒ d.degree
   (fun n hn => d.eq_bot_of_degree_nonpos ℒ n (le_of_lt hn))
 
-local notation "j" => ((ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U)
-
-private theorem ι_filtered (k : ℕ) :
-    d.degreeSubmodule ℒ k ≤ (((F).ideal (k + 1)).restrictScalars R).comap j := by
-  intro x hx
-  apply ι_mem_degreeFiltration_of_mem_degreeIdeal d ℒ
-  have hx' : x ∈ (d.degreeIdeal ℒ k).toSubmodule := by
-    simpa only [d.degreeIdeal_toSubmodule ℒ k] using hx
-  exact hx'
+local notation "j" => ((_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U)
 
 /-- The general truncated inner coefficient map at the canonical Lie map is the
 existing finite enveloping Lie map, independently of its filtration witness. -/
@@ -81,6 +73,31 @@ theorem completedInnerMap_eq_completedLieToU
   simp only [Mei.AlgFiltration.projection_completedInnerMap,
     truncatedInnerMap_eq_truncatedLieToU, LieHom.coe_toLinearMap,
     projection_completedLieToU]
+
+end Mei.UniversalEnvelopingAlgebra
+
+namespace UniversalEnvelopingAlgebra.InnerAction
+
+open Mei Mei.UniversalEnvelopingAlgebra
+
+variable {N R L : Type*} [AddCommMonoid N] [CommRing R]
+  [LieRing L] [LieAlgebra R L] [DecidableEq N]
+  (d : PositiveDegrees N) (ℒ : N → Submodule R L)
+  [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ]
+
+local notation "U" => _root_.UniversalEnvelopingAlgebra R L
+local notation "F" => degreeFiltration ℒ d.degree
+  (fun n hn => d.eq_bot_of_degree_nonpos ℒ n (le_of_lt hn))
+
+local notation "j" => ((ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U)
+
+private theorem ι_filtered (k : ℕ) :
+    d.degreeSubmodule ℒ k ≤ (((F).ideal (k + 1)).restrictScalars R).comap j := by
+  intro x hx
+  apply ι_mem_degreeFiltration_of_mem_degreeIdeal d ℒ
+  have hx' : x ∈ (d.degreeIdeal ℒ k).toSubmodule := by
+    simpa only [d.degreeIdeal_toSubmodule ℒ k] using hx
+  exact hx'
 
 variable [Algebra ℚ R]
 
