@@ -82,12 +82,16 @@ def moduleCompletionEquiv : (F.toModuleFiltration R).completion ≃ₗ[R] F.comp
     rfl
   refine e.trans { E with map_add' := ?_, map_smul' := ?_ }
   · intro x y
+    -- The record update uses `E.toFun`; present it as `E` so `hproj` can rewrite
+    -- the projections of both sides of the additivity goal.
     change E (x + y) = E x + E y
     apply F.completion_ext
     intro k
     rw [map_add (F.projection k), hproj, hproj, hproj, map_add]
     rfl
   · intro r x
+    -- Reduce the record update's `E.toFun` and identity scalar homomorphism so
+    -- `hproj` and the R-linear projection laws match the scalar-linearity goal.
     change E (r • x) = r • E x
     apply F.completion_ext
     intro k
