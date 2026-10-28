@@ -32,6 +32,7 @@ theorem direction_affineSpan_image (f : P →ᵃ[k] P') (s : Set P) :
 
 end AffineMap
 
+namespace Mei
 
 section Prod
 
@@ -54,15 +55,14 @@ theorem affineSpan_prod_univ_eq_iff (s t : Set P) :
     simpa using this
   · exact fun h => congrArg (fun A : AffineSubspace k P => A.prod ⊤) h
 
-namespace AffineSubspace
-
 /-- The direction of the affine span of a nonempty cylinder has an unrestricted
 second factor. Nonemptiness is needed because the empty span has zero direction. -/
 theorem direction_affineSpan_prod_univ {s : Set P} (hs : s.Nonempty) :
     (affineSpan k (s ×ˢ (Set.univ : Set Q))).direction =
       (affineSpan k s).direction.prod ⊤ := by
   rw [direction_affineSpan, vectorSpan_prod_eq hs Set.univ_nonempty]
-  rw [← direction_affineSpan, ← direction_affineSpan, span_univ, direction_top]
+  rw [← direction_affineSpan, ← direction_affineSpan, AffineSubspace.span_univ,
+    AffineSubspace.direction_top]
 
 /-- Adding unrestricted coordinates preserves and reflects equality of supporting
 directions for nonempty sets. -/
@@ -79,5 +79,5 @@ theorem direction_affineSpan_prod_univ_eq_iff {s t : Set P}
     simpa using this
   · exact fun h => congrArg (fun S : Submodule k V => S.prod (⊤ : Submodule k E)) h
 
-end AffineSubspace
 end Prod
+end Mei
