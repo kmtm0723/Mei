@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Algebra.Lie.Filtered.Inner
+public import Mei.Algebra.Lie.Filtered.Inner.Basic
 public import Mei.Algebra.Lie.Filtered.BCH
 
 /-!
@@ -18,11 +18,10 @@ ideal. If the original Lie action is the commutator with this map, every complet
 BCH group element acts by conjugation with the completed exponential of its
 completed logarithmic image.
 
-The extension reuses `ModuleFiltration.completionMap` and the quotient scalar
-restriction equivalence. The conjugation formula reduces, by projection and a
-representative in each Lie quotient, to
-`AlgFiltration.quotientExpLieAction_apply_eq_exp_mul_exp_neg`. No faithfulness,
-separatedness, finite rank, or injectivity hypothesis is required.
+The coefficient extension requires only a filtration-preserving linear map.
+The conjugation formulas additionally require the original Lie action to be the
+commutator with that map. No faithfulness, separatedness, finite rank, or
+injectivity hypothesis is required.
 -/
 
 public section
@@ -32,46 +31,6 @@ noncomputable section
 namespace Mei.AlgFiltration
 
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] (F : AlgFiltration A)
-
-private theorem quotientScalarEquiv_transition {k l : ℕ} (h : k ≤ l)
-    (a : (F.toModuleFiltration R).quotient l) :
-    Ideal.Quotient.factor (F.antitone (Nat.add_le_add_right h 1))
-        (Submodule.Quotient.restrictScalarsEquiv R (F.ideal (l + 1)) a) =
-      Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))
-        ((F.toModuleFiltration R).transition h a) := by
-  obtain ⟨a, rfl⟩ := ((F.toModuleFiltration R).submodule (l + 1)).mkQ_surjective a
-  simp
-
-private def moduleCompletionToAlgebra : (F.toModuleFiltration R).completion →ₗ[R]
-    F.completion where
-  toFun x := ⟨fun k => Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k.unop + 1))
-    ((F.toModuleFiltration R).projection k.unop x),
-    (F.mem_completion_iff _).mpr (by
-      intro k l h
-      rw [F.quotientScalarEquiv_transition h,
-        (F.toModuleFiltration R).transition_projection h x])⟩
-  map_add' x y := by
-    apply F.completion_ext
-    intro k
-    simp only [map_add, projection_apply]
-  map_smul' r x := by
-    apply F.completion_ext
-    intro k
-    have hs (z : F.completion) : F.projection k (r • z) = r • F.projection k z := by
-      simpa only [projectionₐ_apply] using map_smul (F.projectionₐ (R := R) k) r z
-    rw [RingHom.id_apply, hs]
-    simp only [projection_apply]
-    exact map_smul
-      ((Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))).toLinearMap.comp
-        ((F.toModuleFiltration R).projection k)) r x
-
-private theorem projection_moduleCompletionToAlgebra (k : ℕ)
-    (x : (F.toModuleFiltration R).completion) :
-    F.projection k (F.moduleCompletionToAlgebra x) =
-      Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))
-        ((F.toModuleFiltration R).projection k x) := by
-  rw [projection_apply]
-  rfl
 
 variable {N L : Type*} [AddCommMonoid N] [LieRing L] [LieAlgebra R L]
   [DecidableEq N] (d : PositiveDegrees N) (ℒ : N → Submodule R L)
@@ -103,7 +62,7 @@ theorem truncatedInnerMap_mk (k : ℕ) (x : L) :
 
 /-- Extend the inner coefficient map to the completed Lie algebra. -/
 def completedInnerMap : d.completedLie ℒ →ₗ[R] F.completion :=
-  F.moduleCompletionToAlgebra.comp
+  (F.moduleCompletionEquiv (R := R)).toLinearMap.comp
     ((G).completionMap (F.toModuleFiltration R) j id monotone_id
       (F.innerMap_filtered d ℒ j hj))
 
@@ -113,7 +72,7 @@ theorem projection_completedInnerMap (k : ℕ) (x : d.completedLie ℒ) :
     F.projection k (F.completedInnerMap d ℒ j hj x) =
       F.truncatedInnerMap d ℒ j hj k
         (LieIdeal.completionProjection (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ) k x) := by
-  simp only [completedInnerMap, LinearMap.comp_apply, projection_moduleCompletionToAlgebra,
+  simp only [completedInnerMap, LinearMap.comp_apply, projection_moduleCompletionEquiv,
     ModuleFiltration.projection_completionMap, id_eq, truncatedInnerMap,
     LinearEquiv.coe_coe, LieIdeal.completionProjection_apply]
 
