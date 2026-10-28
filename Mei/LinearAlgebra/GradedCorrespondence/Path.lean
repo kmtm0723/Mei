@@ -97,8 +97,9 @@ variable {M' : Q → Type v} [∀ q, AddCommMonoid (M' q)] [∀ q, Module R (M' 
   {B' : ∀ {u v : Q}, (u ⟶ v) → Type*}
   [∀ (u v : Q) (e : u ⟶ v), AddCommMonoid (B' e)]
   [∀ (u v : Q) (e : u ⟶ v), Module R (B' e)]
+  {I' : ∀ q, Set (ι q)}
   (D : ∀ {u v : Q} (e : u ⟶ v),
-    GradedCorrespondence (B := B' e) (𝒜' u) (𝒜' v) (I u) (I v))
+    GradedCorrespondence (B := B' e) (𝒜' u) (𝒜' v) (I' u) (I' v))
   (r : ∀ q, M q →ₗ[R] M' q)
   (hr : ∀ q i a, a ∈ 𝒜 q i → r q a ∈ 𝒜' q i)
 
@@ -112,7 +113,8 @@ include f hl hv
 /-- Chamber maps intertwine a selected homogeneous transfer at every crossing. -/
 private theorem restrict_transfer {u v : Q} (e : u ⟶ v) :
     ((r v).restrict (hr v (p v))).comp ((C e).transfer ⟨p u, hp e⟩ (p v)) =
-      ((D e).transfer ⟨p u, hp e⟩ (p v)).comp ((r u).restrict (hr u (p u))) := by
+      ((D e).transfer ⟨p u, (f e).admissible_left (hp e)⟩ (p v)).comp
+        ((r u).restrict (hr u (p u))) := by
   apply LinearMap.ext
   intro a
   apply Subtype.ext
@@ -121,15 +123,33 @@ private theorem restrict_transfer {u v : Q} (e : u ⟶ v) :
     LinearMap.restrict_apply, transfer_apply, id_eq, hl e, hv e] using he.symm
 
 /-- Degree-preserving correspondence morphisms intertwine propagation along every
-finite admissible sequence. In particular, coefficient truncations commute with all
-selected component maps along a broken-line itinerary. -/
+finite admissible sequence. The target may have different admissible sets; source
+admissibility is transported by the correspondence morphism. In particular,
+coefficient truncations commute with all selected component maps along an itinerary. -/
 noncomputable def transferNatTrans :
-    transferFunctor 𝒜 C p hp ⟶ transferFunctor 𝒜' D p hp :=
+    transferFunctor 𝒜 C p hp ⟶
+      transferFunctor 𝒜' D p (fun {_ _} e ↦ (f e).admissible_left (hp e)) :=
   Paths.liftNatTrans
     (fun q ↦ SemimoduleCat.ofHom ((r q).restrict (hr q (p q)))) (by
       intro u v e
       apply SemimoduleCat.hom_ext
-      exact restrict_transfer 𝒜 C p hp 𝒜' D r hr f hl hv e)
+      have hleft : ((transferFunctor 𝒜 C p hp).map e.toPath ≫
+          SemimoduleCat.ofHom ((r v).restrict (hr v (p v)))).hom =
+          ((r v).restrict (hr v (p v))).comp ((C e).transfer ⟨p u, hp e⟩ (p v)) :=
+        (SemimoduleCat.hom_comp _ _).trans
+          (congrArg₂ LinearMap.comp (SemimoduleCat.hom_ofHom _)
+            (transferFunctor_map_toPath_hom 𝒜 C p hp e))
+      have hright : (SemimoduleCat.ofHom ((r u).restrict (hr u (p u))) ≫
+          (transferFunctor 𝒜' D p
+            (fun {_ _} e ↦ (f e).admissible_left (hp e))).map e.toPath).hom =
+          ((D e).transfer ⟨p u, (f e).admissible_left (hp e)⟩ (p v)).comp
+            ((r u).restrict (hr u (p u))) :=
+        (SemimoduleCat.hom_comp _ _).trans
+          (congrArg₂ LinearMap.comp
+            (transferFunctor_map_toPath_hom 𝒜' D p
+              (fun {_ _} e ↦ (f e).admissible_left (hp e)) e)
+            (SemimoduleCat.hom_ofHom _))
+      exact hleft.trans ((restrict_transfer 𝒜 C p hp 𝒜' D r hr f hl hv e).trans hright.symm))
 
 /-- A component of the propagation comparison is the restricted chamber map. -/
 @[simp]
