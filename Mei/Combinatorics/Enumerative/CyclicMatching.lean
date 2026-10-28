@@ -12,6 +12,7 @@ public import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Positivity
 
 /-!
 # Matching tokens with sinks on a cycle
@@ -434,6 +435,179 @@ theorem matched_iff_exists_nonneg {v : Fin n} (hv : v ∈ B) :
     · rw [Fin.coe_sub_iff_lt.mpr hlt, show u.val + (n + v.val - u.val) + 1 = v.val + n + 1 by
         omega, hvn] at hsum
       exact ⟨u.val, by omega, by omega, by omega⟩
+
+/-- Several periods change the walk by a multiple of the total weight. -/
+private theorem walk_add_mul (k j : ℕ) :
+    walk B τ (k + j * n) = walk B τ k + j * ∑ i : Fin n, weight B τ i := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    rw [show k + (j + 1) * n = k + j * n + n by ring, walk_add_self, ih]
+    push_cast
+    ring
+
+/-- Walk increments only depend on the starting position modulo `n`. -/
+private theorem walk_mod_sub (x t : ℕ) :
+    walk B τ (x % n + t) - walk B τ (x % n) = walk B τ (x + t) - walk B τ x := by
+  have hx : x = x % n + x / n * n := by rw [mul_comm]; exact (Nat.mod_add_div x n).symm
+  conv_rhs => rw [hx, show x % n + x / n * n + t = x % n + t + x / n * n by ring]
+  rw [walk_add_mul, walk_add_mul]
+  ring
+
+/-- With nonnegative total weight, the walk never goes below its minimum over one period. -/
+private theorem walk_ge_of_nonneg (hA : 0 ≤ ∑ i : Fin n, weight B τ i) {m : ℕ}
+    (hm : ∀ y < n, walk B τ m ≤ walk B τ y) (y : ℕ) : walk B τ m ≤ walk B τ y := by
+  have hy : y = y % n + y / n * n := by rw [mul_comm]; exact (Nat.mod_add_div y n).symm
+  rw [hy, walk_add_mul]
+  have := hm (y % n) (Nat.mod_lt _ (NeZero.pos n))
+  have : (0 : ℤ) ≤ (y / n : ℕ) * ∑ i : Fin n, weight B τ i := mul_nonneg (by positivity) hA
+  linarith
+
+omit [NeZero n] in
+private theorem weight_compl (σ : Fin n → ℕ) (k : Fin n) :
+    weight Bᶜ σ k = if k ∈ B then (σ k : ℤ) else -1 := by
+  by_cases hk : k ∈ B <;> simp [weight, hk]
+
+/-- **Double cycle lemma.** Put `τ` tokens on the non-sinks and `σ` tokens on the sinks `B`.
+If there are at least as many `τ` tokens as sinks and at least as many `σ` tokens as non-sinks,
+then some non-sink `h` and sink `v` see each other: every window from `h` stopping before `v`
+has nonzero weight for `(B, τ)`, and every window ending at `v` and starting after `h` has
+nonzero weight for `(Bᶜ, σ)`. -/
+theorem exists_mutual (σ : Fin n → ℕ) (hτ : #B ≤ ∑ k ∈ Bᶜ, τ k)
+    (hσ : #Bᶜ ≤ ∑ k ∈ B, σ k) :
+    ∃ h ∉ B, ∃ v ∈ B,
+      (∀ e, (e - h).val < (v - h).val → ∑ k ∈ cyclicIcc h e, weight B τ k ≠ 0) ∧
+      ∀ e, (v - e).val < (v - h).val → ∑ k ∈ cyclicIcc e v, weight Bᶜ σ k ≠ 0 := by
+  -- The two walks and their total increments.
+  have hA : 0 ≤ ∑ i : Fin n, weight B τ i := by
+    rw [sum_weight]
+    exact sub_nonneg.mpr (by exact_mod_cast hτ)
+  have hAσ : 0 ≤ ∑ i : Fin n, weight Bᶜ σ i := by
+    rw [sum_weight, compl_compl]
+    exact sub_nonneg.mpr (by exact_mod_cast hσ)
+  set α := walk B τ with hα
+  set β := walk Bᶜ σ with hβ
+  -- A global minimum of `α` and the first position attaining it.
+  obtain ⟨m0, hm0, hmin⟩ := (range n).exists_min_image α ⟨0, by simp [NeZero.pos n]⟩
+  have hglob : ∀ y, α m0 ≤ α y := walk_ge_of_nonneg B τ hA
+    (fun y hy ↦ hmin y (mem_range.mpr hy))
+  set Z := (range n).filter fun y ↦ α y = α m0 with hZ
+  have hZne : Z.Nonempty := ⟨m0, by simp [Z, hm0]⟩
+  set m1 := Z.min' hZne
+  have hm1 : m1 ∈ Z := Z.min'_mem hZne
+  -- Among the minima, choose one where `β` is smallest.
+  obtain ⟨s, hsZ, hsβ⟩ := Z.exists_min_image β hZne
+  have hsn : s < n := mem_range.mp (mem_filter.mp hsZ).1
+  have hsα : α s = α m0 := (mem_filter.mp hsZ).2
+  have hm1s : m1 ≤ s := Z.min'_le s hsZ
+  have hm1n : m1 < n := mem_range.mp (mem_filter.mp hm1).1
+  have hβper : β (m1 + n) = β m1 + ∑ i : Fin n, weight Bᶜ σ i := walk_add_self Bᶜ σ m1
+  -- The next return of `α` to its minimum, or one period after `m1`.
+  set F := (Ioc s (m1 + n)).filter fun y ↦ α y ≤ α m0
+  set e := if hF : F.Nonempty then F.min' hF else m1 + n with he_def
+  have hse : s < e ∧ e ≤ m1 + n := by
+    by_cases hF : F.Nonempty
+    · have := mem_Ioc.mp (mem_filter.mp (F.min'_mem hF)).1
+      rw [he_def, dite_eq_left hF]
+      exact this
+    · rw [he_def, dite_eq_right hF]
+      omega
+  have habove : ∀ y, s < y → y < e → α m0 < α y := by
+    intro y h₁ h₂
+    by_contra hle
+    have hyF : y ∈ F := mem_filter.mpr ⟨mem_Ioc.mpr ⟨h₁, by omega⟩, not_lt.mp hle⟩
+    have hF : F.Nonempty := ⟨y, hyF⟩
+    have : e ≤ y := by rw [he_def, dite_eq_left hF]; exact F.min'_le y hyF
+    omega
+  have hβe : β s ≤ β e := by
+    by_cases hF : F.Nonempty
+    · have heF := F.min'_mem hF
+      have hee : e = F.min' hF := by rw [he_def, dite_eq_left hF]
+      rw [← hee] at heF
+      obtain ⟨heI, heα⟩ := mem_filter.mp heF
+      have heα' : α e = α m0 := le_antisymm heα (hglob e)
+      rcases lt_or_ge e n with hen | hen
+      · exact hsβ e (mem_filter.mpr ⟨mem_range.mpr hen, heα'⟩)
+      · set r := e - n with hr_def
+        have her : e = r + n := by omega
+        have hper : α (r + n) = α r + ∑ i : Fin n, weight B τ i := walk_add_self B τ r
+        rw [her] at heα' heI ⊢
+        have hrα : α r = α m0 := le_antisymm (by linarith [hglob r]) (hglob r)
+        have hrZ : r ∈ Z := mem_filter.mpr ⟨mem_range.mpr (by omega), hrα⟩
+        have hr : r = m1 := le_antisymm (by have := (mem_Ioc.mp heI).2; omega) (Z.min'_le r hrZ)
+        rw [hr, hβper]
+        linarith [hsβ m1 hm1]
+    · have hee : e = m1 + n := by rw [he_def, dite_eq_right hF]
+      rw [hee, hβper]
+      linarith [hsβ m1 hm1]
+  -- The first step from `s` is a non-sink carrying tokens.
+  have hpos_s : (pos s : Fin n).val = s := by simp [pos, Nat.mod_eq_of_lt hsn]
+  have hsB : pos s ∉ B := by
+    intro hmem
+    have := hglob (s + 1)
+    rw [hα, walk_succ, weight_of_mem B τ hmem, ← hα, hsα] at this
+    omega
+  have hβs1 : β (s + 1) = β s - 1 := by
+    rw [hβ, walk_succ, weight_of_mem Bᶜ σ (mem_compl.mpr hsB)]
+    ring
+  have hse2 : s + 1 < e := by
+    by_contra h
+    have : e = s + 1 := by omega
+    rw [this, hβs1] at hβe
+    omega
+  -- The first time after `s + 1` that `β` rises above its value at `s + 1`.
+  set G := (Ioc (s + 1) e).filter fun y ↦ β (s + 1) < β y
+  have hGne : G.Nonempty := ⟨e, mem_filter.mpr ⟨mem_Ioc.mpr ⟨hse2, le_rfl⟩, by omega⟩⟩
+  set y₀ := G.min' hGne
+  obtain ⟨hy₀I, hy₀β⟩ := mem_filter.mp (G.min'_mem hGne)
+  obtain ⟨hy₀l, hy₀r⟩ := mem_Ioc.mp hy₀I
+  set k := y₀ - 1
+  have hk1 : k + 1 = y₀ := by omega
+  have hbelow : ∀ z, s + 1 ≤ z → z ≤ k → β z < β (k + 1) := by
+    intro z hz₁ hz₂
+    rw [hk1]
+    rcases eq_or_lt_of_le hz₁ with rfl | hz₁
+    · exact hy₀β
+    · by_contra hle
+      have hzG : z ∈ G := mem_filter.mpr ⟨mem_Ioc.mpr ⟨hz₁, by omega⟩, by
+        have := not_lt.mp hle; linarith [hy₀β]⟩
+      exact absurd (G.min'_le z hzG) (by omega)
+  have hkB : pos k ∈ B := by
+    have h₁ := hbelow k (by omega) le_rfl
+    rw [hβ, walk_succ, weight_compl] at h₁
+    by_contra hk
+    simp only [hk, ↓reduceIte] at h₁
+    omega
+  -- The mutual pair.
+  have hkn : k - s < n := by omega
+  have hvh : (pos k - pos s : Fin n).val = k - s := by
+    have hk' : (pos k : Fin n) = pos s + pos (k - s) := by
+      rw [← pos_add, show s + (k - s) = k by omega]
+    rw [hk', add_sub_cancel_left]
+    simp [pos, Nat.mod_eq_of_lt hkn]
+  refine ⟨pos s, hsB, pos k, hkB, fun e' he' ↦ ?_, fun e' he' ↦ ?_⟩
+  · rw [hvh] at he'
+    rw [sum_cyclicIcc, hpos_s]
+    have h2 := habove (s + (e' - pos s).val + 1) (by omega) (by omega)
+    rw [← hsα, hα] at h2
+    exact sub_ne_zero.mpr (ne_of_gt h2)
+  · rw [hvh] at he'
+    set u := (pos k - e').val with hu
+    have he'k : e' = pos (k - u) := by
+      have : (pos k : Fin n) = e' + pos u := by
+        rw [hu]
+        simp [pos]
+      have h2 : (pos k : Fin n) = pos (k - u) + pos u := by
+        rw [← pos_add, show k - u + u = k by omega]
+      exact add_right_cancel (this.symm.trans h2)
+    rw [sum_cyclicIcc]
+    have hval : e'.val = (k - u) % n := by rw [he'k]; simp [pos]
+    have hsum : e'.val + (pos k - e').val + 1 = (k - u) % n + (u + 1) := by
+      rw [hval, ← hu]; ring
+    rw [hsum, hval, walk_mod_sub, show k - u + (u + 1) = k + 1 by omega]
+    have h2 := hbelow (k - u) (by omega) (by omega)
+    rw [hβ] at h2
+    exact sub_ne_zero.mpr (ne_of_gt h2)
 
 end Walk
 
