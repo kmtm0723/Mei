@@ -39,8 +39,6 @@ structure BasisTransport where
   isBasis : Opens.IsBasis basis
   /-- Parallel transport between points of a basis open. -/
   transport : ∀ (U : Opens X), U ∈ basis → (x y : U) → E x ≃ E y
-  /-- Transport at a point is the identity. -/
-  transport_self : ∀ (U) (hU : U ∈ basis) (x : U), transport U hU x x = Equiv.refl _
   /-- Transport satisfies the local cocycle law. -/
   transport_trans : ∀ (U) (hU : U ∈ basis) (x y z : U),
     (transport U hU x y).trans (transport U hU y z) = transport U hU x z
@@ -52,10 +50,13 @@ namespace BasisTransport
 
 variable {E} (T : BasisTransport E)
 
-/-- Identity transport fixes a fiber value. -/
+/-- The cocycle law forces transport at a point to be the identity. -/
 @[simp]
-theorem transport_self_apply (U) (hU : U ∈ T.basis) (x : U) (a : E x) :
-    T.transport U hU x x a = a := congrArg (fun e => e a) (T.transport_self U hU x)
+theorem transport_self (U) (hU : U ∈ T.basis) (x : U) :
+    T.transport U hU x x = Equiv.refl _ := by
+  ext a
+  apply (T.transport U hU x x).injective
+  exact congrArg (fun e => e a) (T.transport_trans U hU x x x)
 
 /-- Successive transports compute as a single local transport. -/
 @[simp]
@@ -92,24 +93,70 @@ theorem prelocal_transport {U V : Opens X} (hU : U ∈ T.basis) (hVU : V ≤ U)
       T.transport_trans_apply U hU _ _ _ _
 
 /-- Locally parallel functions form a sheaf, using Mathlib's local-predicate constructor.
-The body is exposed because compiled evaluation and restriction maps use its
-subtype of dependent functions as their carrier. -/
-@[expose]
+The public section API characterizes its values and local parallelness. -/
 noncomputable def sheaf : X.Sheaf (Type (max u v)) :=
   subsheafToTypes T.prelocal.sheafify
 
 /-- The value of a locally parallel section in the specified fiber. -/
-def value {U : Opens X} (s : T.sheaf.presheaf.obj (op U)) (x : U) : E x := s.val x
+noncomputable def value {U : Opens X} (s : T.sheaf.presheaf.obj (op U)) (x : U) : E x := s.val x
+
+/-- Sections are determined by their values in every point fiber. -/
+@[ext]
+theorem ext {U : Opens X} {s t : T.sheaf.presheaf.obj (op U)}
+    (h : ∀ x, T.value s x = T.value t x) : s = t :=
+  Subtype.ext (funext h)
+
+/-- Construct a section from a locally parallel dependent function. This does
+not require parallelness on disconnected basis opens outside the local witnesses. -/
+noncomputable def sectionOfLocallyParallel {U : Opens X} (f : ∀ x : U, E x)
+    (hf : T.prelocal.sheafify.pred f) : T.sheaf.presheaf.obj (op U) := ⟨f, hf⟩
+
+/-- A constructed locally parallel section has the specified point values. -/
+@[simp]
+theorem value_sectionOfLocallyParallel {U : Opens X} (f : ∀ x : U, E x)
+    (hf : T.prelocal.sheafify.pred f) (x : U) :
+    T.value (T.sectionOfLocallyParallel f hf) x = f x := (rfl)
+
+/-- Every section is locally parallel in the supplied transport charts. -/
+theorem locallyParallel_value {U : Opens X} (s : T.sheaf.presheaf.obj (op U)) :
+    T.prelocal.sheafify.pred (T.value s) := s.property
+
+/-- A dependent function is the value function of a section exactly when it is
+locally parallel. -/
+theorem exists_section_value_iff {U : Opens X} (f : ∀ x : U, E x) :
+    (∃ s : T.sheaf.presheaf.obj (op U), T.value s = f) ↔ T.prelocal.sheafify.pred f := by
+  constructor
+  · rintro ⟨s, rfl⟩
+    exact T.locallyParallel_value s
+  · intro hf
+    exact ⟨T.sectionOfLocallyParallel f hf, rfl⟩
+
+/-- Reconstructing a section from its locally parallel value function recovers it. -/
+@[simp]
+theorem sectionOfLocallyParallel_value {U : Opens X} (s : T.sheaf.presheaf.obj (op U)) :
+    T.sectionOfLocallyParallel (T.value s) (T.locallyParallel_value s) = s := by
+  apply T.ext
+  intro x
+  rfl
 
 /-- A function parallel on all contained basis opens gives a locally parallel section. -/
 noncomputable def sectionOfParallel {U : Opens X} (f : ∀ x : U, E x)
     (hf : T.prelocal.pred f) : T.sheaf.presheaf.obj (op U) :=
-  ⟨f, PrelocalPredicate.sheafifyOf hf⟩
+  T.sectionOfLocallyParallel f (PrelocalPredicate.sheafifyOf hf)
 
 /-- Constructed sections retain their specified function values. -/
 @[simp]
 theorem value_sectionOfParallel {U : Opens X} (f : ∀ x : U, E x)
     (hf : T.prelocal.pred f) (x : U) : T.value (T.sectionOfParallel f hf) x = f x := (rfl)
+
+/-- A section parallel on every contained basis open is also recovered by the
+stronger parallel-function constructor. -/
+@[simp]
+theorem sectionOfParallel_value {U : Opens X} (s : T.sheaf.presheaf.obj (op U))
+    (hf : T.prelocal.pred (T.value s)) : T.sectionOfParallel (T.value s) hf = s := by
+  apply T.ext
+  intro x
+  rfl
 
 /-- Restriction evaluates by the inclusion of open domains. -/
 @[simp]
@@ -125,7 +172,7 @@ theorem isLocallyConstant_normalized {U V : Opens X} (hU : U ∈ T.basis) (hVU :
     IsLocallyConstant (fun y : V => T.transport U hU ⟨y, hVU y.property⟩ a (T.value s y)) := by
   rw [IsLocallyConstant.iff_eventually_eq]
   intro y
-  obtain ⟨W, hyW, i, hsW⟩ := s.property y
+  obtain ⟨W, hyW, i, hsW⟩ := T.locallyParallel_value s y
   obtain ⟨B, hB, hyB, hBW⟩ := Opens.isBasis_iff_nbhd.mp T.isBasis hyW
   have hBU : B ≤ U := hBW.trans (i.le.trans hVU)
   have hn : ∀ᶠ z : V in 𝓝 y, (z : X) ∈ B :=
@@ -149,7 +196,7 @@ theorem parallel_of_le {U V : Opens X} (hU : U ∈ T.basis) (hVU : V ≤ U)
       T.value s y := by
   have h := IsLocallyConstant.apply_eq_of_preconnectedSpace
     (T.isLocallyConstant_normalized hU hVU ⟨y, hVU y.property⟩ s) x y
-  simpa only [transport_self_apply] using h
+  simpa only [transport_self, Equiv.refl_apply] using h
 
 /-- A locally parallel section on a preconnected subopen of one basis chart is
 determined uniquely by its value at any chosen point. -/
@@ -159,11 +206,11 @@ noncomputable def evaluationEquiv {U V : Opens X} (hU : U ∈ T.basis) (hVU : V 
   invFun a := T.sectionOfParallel
     (fun y : V => T.transport U hU ⟨x, hVU x.property⟩ ⟨y, hVU y.property⟩ a)
     (T.prelocal_transport hU hVU ⟨x, hVU x.property⟩ a)
-  left_inv s := Subtype.ext (funext (fun y => T.parallel_of_le hU hVU s x y))
+  left_inv s := T.ext (fun y => T.parallel_of_le hU hVU s x y)
   right_inv a := by
     dsimp only
     rw [value_sectionOfParallel]
-    exact T.transport_self_apply U hU ⟨x, hVU x.property⟩ a
+    exact congrArg (fun e => e a) (T.transport_self U hU ⟨x, hVU x.property⟩)
 
 /-- Evaluation of the chartwise equivalence is actual fiber evaluation. -/
 @[simp]
@@ -198,16 +245,16 @@ theorem restriction_bijective {U V : Opens X} (hU : U ∈ T.basis)
     refine ⟨(T.evaluationEquiv hU le_rfl z).symm (T.value t y), ?_⟩
     apply (T.evaluationEquiv hU hVU y).injective
     simp only [evaluationEquiv_apply, value_restrict, evaluationEquiv_symm_apply,
-      y, z, transport_self_apply]
+      y, z, transport_self, Equiv.refl_apply]
 
-/-- Coherent transport on a basis of preconnected opens gives a locally constant
-sheaf. Global triviality and trivial monodromy are not required. -/
-theorem isLocallyConstantSheaf (hc : ∀ U ∈ T.basis, IsPreconnected (U : Set X)) :
-    IsLocallyConstantSheaf T.sheaf where
+/-- Coherent transport gives a restriction-sense locally constant sheaf whenever
+each point lies in a preconnected basis chart. Other basis opens may be disconnected. -/
+theorem isLocallyConstantSheaf
+    (hc : ∀ x : X, ∃ U ∈ T.basis, x ∈ U ∧ IsPreconnected (U : Set X)) :
+    T.sheaf.IsLocallyConstant where
   exists_bijective_restrictions x := by
-    obtain ⟨U, hU, hxU, _⟩ :=
-      Opens.isBasis_iff_nbhd.mp T.isBasis (U := ⊤) (x := x) (by trivial)
-    exact ⟨U, hxU, fun V hVU hne hcV => T.restriction_bijective hU (hc U hU) hVU hne hcV⟩
+    obtain ⟨U, hU, hxU, hcU⟩ := hc x
+    exact ⟨U, hxU, fun V hVU hne hcV => T.restriction_bijective hU hcU hVU hne hcV⟩
 
 end BasisTransport
 end TopCat
