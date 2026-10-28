@@ -86,6 +86,13 @@ theorem ofSection_toSection (s : CategoryTheory.Grothendieck.Section L) :
   apply CategoryTheory.Functor.Fiber.fiberInclusion_obj_inj
   exact (ofSection_toFunctor s).trans (normalized_eq s)
 
+/-- The underlying transformation of a composite of section morphisms is their composite. -/
+theorem sectionHom_comp {s t r : CategoryTheory.Grothendieck.Section L}
+    (α : s ⟶ t) (β : t ⟶ r) :
+    CategoryTheory.Grothendieck.Section.hom (α ≫ β) =
+      CategoryTheory.Grothendieck.Section.hom α ≫
+        CategoryTheory.Grothendieck.Section.hom β := (rfl)
+
 /-- A transformation between transport sections has identity base components. -/
 theorem sectionHom_base {s t : GrothendieckSection L} (α : s.toSection ⟶ t.toSection) (d : D) :
     ((CategoryTheory.Grothendieck.Section.hom α).app d).base = 𝟙 d := by
@@ -98,36 +105,75 @@ theorem sectionHom_base {s t : GrothendieckSection L} (α : s.toSection ⟶ t.to
 theorem toSection_toFunctor (s : GrothendieckSection L) :
     s.toSection.toFunctor = s.toFunctor := (rfl)
 
+/-- The actual section and its transport presentation have the same arrow components. -/
+theorem toSection_toFunctor_map (s : GrothendieckSection L) {d e : D} (f : d ⟶ e) :
+    s.toSection.toFunctor.map f = s.toFunctor.map f := (rfl)
+
+/-- An arrow of the total transport functor has its prescribed base and fiber components. -/
+theorem toFunctor_map (s : GrothendieckSection L) {d e : D} (f : d ⟶ e) :
+    s.toFunctor.map f = ⟨f, s.map f⟩ := (rfl)
+
+/-- The transport arrow factors through the fiber inclusion in the target category. -/
+theorem toFunctor_map_factor (s : GrothendieckSection L) {d e : D} (f : d ⟶ e) :
+    s.toFunctor.map f =
+      (Grothendieck.ιNatTrans f).app (s.obj d) ≫ (Grothendieck.ι L e).map (s.map f) := by
+  rw [toFunctor_map]
+  exact (Grothendieck.ιNatTrans_app_comp_ι_map
+    (⟨f, s.map f⟩ : s.toFunctor.obj d ⟶ s.toFunctor.obj e)).symm
+
+/-- A component of a vertical section morphism, regarded in the actual fiber. -/
+def sectionHomComponent {s t : GrothendieckSection L} (α : s.toSection ⟶ t.toSection)
+    (d : D) : s.obj d ⟶ t.obj d :=
+  Grothendieck.verticalFiber ((CategoryTheory.Grothendieck.Section.hom α).app d)
+    (sectionHom_base α d)
+
+/-- Including the extracted component recovers the component of the section morphism. -/
+@[simp↓]
+theorem ι_map_sectionHomComponent {s t : GrothendieckSection L}
+    (α : s.toSection ⟶ t.toSection) (d : D) :
+    (Grothendieck.ι L d).map (sectionHomComponent α d) =
+      (CategoryTheory.Grothendieck.Section.hom α).app d :=
+  Grothendieck.ι_map_verticalFiber _ (sectionHom_base α d)
+
+/-- Naturality of a vertical label after factoring both transport arrows through
+the target fiber inclusion. All endpoints are displayed as fiber objects. -/
+theorem sectionHom_factorized_naturality {s t : GrothendieckSection L}
+    (α : s.toSection ⟶ t.toSection) {d e : D} (f : d ⟶ e) :
+    ((Grothendieck.ιNatTrans f).app (s.obj d) ≫ (Grothendieck.ι L e).map (s.map f)) ≫
+        (Grothendieck.ι L e).map (sectionHomComponent α e) =
+      (Grothendieck.ι L d).map (sectionHomComponent α d) ≫
+        (Grothendieck.ιNatTrans f).app (t.obj d) ≫ (Grothendieck.ι L e).map (t.map f) := by
+  have h := (CategoryTheory.Grothendieck.Section.hom α).naturality f
+  rw [toSection_toFunctor_map, toSection_toFunctor_map,
+    ← ι_map_sectionHomComponent α d, ← ι_map_sectionHomComponent α e,
+    toFunctor_map_factor, toFunctor_map_factor] at h
+  -- The component equations identify the arrows. `Section.hom` still stores
+  -- their endpoints through the fiber inclusion; default transparency identifies
+  -- these with the explicit Grothendieck object constructors in the statement.
+  exact h
+
 /-- The fiber components of a vertical transformation between transport sections. -/
 def fromSectionHom {s t : GrothendieckSection L} (α : s.toSection ⟶ t.toSection) : s ⟶ t where
-  app d := Grothendieck.verticalFiber ((CategoryTheory.Grothendieck.Section.hom α).app d)
-    (sectionHom_base α d)
+  app := sectionHomComponent α
   naturality {d e} f := by
-    let a := Grothendieck.verticalFiber ((CategoryTheory.Grothendieck.Section.hom α).app d)
-      (sectionHom_base α d)
-    let b := Grothendieck.verticalFiber ((CategoryTheory.Grothendieck.Section.hom α).app e)
-      (sectionHom_base α e)
-    have h : s.toFunctor.map f ≫ (CategoryTheory.Grothendieck.Section.hom α).app e =
-        (CategoryTheory.Grothendieck.Section.hom α).app d ≫ t.toFunctor.map f :=
-      (CategoryTheory.Grothendieck.Section.hom α).naturality f
-    rw [← Grothendieck.ι_map_verticalFiber _ (sectionHom_base α d),
-      ← Grothendieck.ι_map_verticalFiber _ (sectionHom_base α e)] at h
-    rw [← Grothendieck.ιNatTrans_app_comp_ι_map (s.toFunctor.map f),
-      ← Grothendieck.ιNatTrans_app_comp_ι_map (t.toFunctor.map f)] at h
-    have hab :
-        ((Grothendieck.ιNatTrans f).app (s.obj d) ≫ (Grothendieck.ι L e).map (s.map f)) ≫
-          (Grothendieck.ι L e).map b =
-        (Grothendieck.ι L d).map a ≫
-          (Grothendieck.ιNatTrans f).app (t.obj d) ≫ (Grothendieck.ι L e).map (t.map f) := h
-    rw [Category.assoc, (Grothendieck.ιNatTrans f).naturality_assoc a, Functor.comp_map,
-      ← Functor.map_comp, ← Functor.map_comp] at hab
+    have h := sectionHom_factorized_naturality α f
+    rw [Category.assoc, (Grothendieck.ιNatTrans f).naturality_assoc (sectionHomComponent α d),
+      Functor.comp_map,
+      ← Functor.map_comp, ← Functor.map_comp] at h
     rw [Grothendieck.ιNatTrans_app_comp_ι_map
-      (⟨f, s.map f ≫ b⟩ : s.toFunctor.obj d ⟶ t.toFunctor.obj e),
+      (⟨f, s.map f ≫ sectionHomComponent α e⟩ : s.toFunctor.obj d ⟶ t.toFunctor.obj e),
       Grothendieck.ιNatTrans_app_comp_ι_map
-        (⟨f, (L.map f).toFunctor.map a ≫ t.map f⟩ : s.toFunctor.obj d ⟶ t.toFunctor.obj e)] at hab
-    have hf := Grothendieck.congr hab
+        (⟨f, (L.map f).toFunctor.map (sectionHomComponent α d) ≫ t.map f⟩ :
+          s.toFunctor.obj d ⟶ t.toFunctor.obj e)] at h
+    have hf := Grothendieck.congr h
     erw [eqToHom_refl, Category.id_comp] at hf
     exact hf.symm
+
+/-- Extraction is computed by the vertical component in the fiber. -/
+@[simp]
+theorem fromSectionHom_app {s t : GrothendieckSection L}
+    (α : s.toSection ⟶ t.toSection) (d : D) :
+    (fromSectionHom α).app d = sectionHomComponent α d := (rfl)
 
 /-- Reassembling the fiber components of a vertical transformation recovers it. -/
 @[simp]
@@ -173,6 +219,14 @@ noncomputable def sectionEquivalence :
 @[simp]
 theorem sectionEquivalence_functor : (sectionEquivalence (L := L)).functor = sectionFunctor := (rfl)
 
+/-- The fully faithful comparison extracts the vertical components of a section morphism. -/
+@[simp]
+theorem sectionFunctor_preimage {s t : GrothendieckSection L}
+    (α : s.toSection ⟶ t.toSection) :
+    (sectionFunctor (L := L)).preimage α = fromSectionHom α := by
+  apply (sectionFunctor (L := L)).map_injective
+  rw [Functor.map_preimage, sectionFunctor_map, toSectionHom_fromSectionHom]
+
 /-- Automorphisms of an actual section are compatible families of fiber
 automorphisms, with conjugation by the extracted transport maps. -/
 noncomputable def sectionAutEquiv [∀ d, IsGroupoid (L.obj d)]
@@ -182,5 +236,60 @@ noncomputable def sectionAutEquiv [∀ d, IsGroupoid (L.obj d)]
     ((_root_.CategoryTheory.Functor.FullyFaithful.autMulEquivOfFullyFaithful
       (.ofFullyFaithful sectionFunctor) (ofSection s)).symm.trans
         (autEquivSections (ofSection s)))
+
+/-- The compatible-family component is the vertical part of the original section
+morphism, transported along object reconstruction. -/
+@[simp]
+theorem sectionAutEquiv_apply_hom [∀ d, IsGroupoid (L.obj d)]
+    (s : CategoryTheory.Grothendieck.Section L) (a : Aut s) (d : D) :
+    ((sectionAutEquiv s a).val d).asIso.hom =
+      (fromSectionHom (eqToHom (ofSection_toSection s) ≫ a.asIso.hom ≫
+        eqToHom (ofSection_toSection s).symm)).app d := by
+  have heval (b : Aut (ofSection s)) :
+      ((evaluation d).mapAut _ b).asIso.hom = b.asIso.hom.app d := (rfl)
+  simp only [sectionAutEquiv, MulEquiv.trans_apply, autEquivSections_apply, heval]
+  -- The comparison functors store their object endpoints through fiber inclusions.
+  -- Default transparency aligns those endpoints for Mathlib's component formula.
+  erw [_root_.CategoryTheory.Functor.FullyFaithful.autMulEquivOfFullyFaithful_symm_apply_asIso_hom]
+  simp [_root_.CategoryTheory.Functor.FullyFaithful.ofFullyFaithful]
+
+/-- Including a compatible-family component recovers the original total component
+under the canonical reconstruction of its section. -/
+@[simp↓]
+theorem ι_map_sectionAutEquiv_apply_hom [∀ d, IsGroupoid (L.obj d)]
+    (s : CategoryTheory.Grothendieck.Section L) (a : Aut s) (d : D) :
+    (Grothendieck.ι L d).map (((sectionAutEquiv s a).val d).asIso.hom) =
+      (CategoryTheory.Grothendieck.Section.hom
+        (eqToHom (ofSection_toSection s) ≫ a.asIso.hom ≫
+          eqToHom (ofSection_toSection s).symm)).app d := by
+  rw [sectionAutEquiv_apply_hom, fromSectionHom_app, ι_map_sectionHomComponent]
+
+/-- The inverse comparison includes the chosen family component, transported
+back from the extracted section along object reconstruction. -/
+@[simp]
+theorem sectionAutEquiv_symm_apply_hom [∀ d, IsGroupoid (L.obj d)]
+    (s : CategoryTheory.Grothendieck.Section L)
+    (a : GrpCat.sectionsSubgroup (ofSection s).automorphismDiagram) (d : D) :
+    (CategoryTheory.Grothendieck.Section.hom
+      (((sectionAutEquiv s).symm a).asIso.hom)).app d =
+      (CategoryTheory.Grothendieck.Section.hom
+        (eqToHom (ofSection_toSection s).symm)).app d ≫
+      (Grothendieck.ι L d).map ((a.val d).asIso.hom) ≫
+      (CategoryTheory.Grothendieck.Section.hom
+        (eqToHom (ofSection_toSection s))).app d := by
+  have hconj (b : Aut (ofSection s).toSection) :
+      ((Aut.autMulEquivOfIso (eqToIso (ofSection_toSection s).symm)).symm b).asIso.hom =
+        (eqToHom (ofSection_toSection s).symm ≫ b.asIso.hom) ≫
+          eqToHom (ofSection_toSection s) := by
+    simp [Aut.autMulEquivOfIso, Category.assoc]
+  simp only [sectionAutEquiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm]
+  rw [hconj]
+  -- Object reconstruction identifies endpoints through the section fiber inclusion;
+  -- default transparency aligns these endpoints before applying the public formula.
+  erw [_root_.CategoryTheory.Functor.FullyFaithful.autMulEquivOfFullyFaithful_apply_asIso_hom]
+  simp only [sectionHom_comp, NatTrans.comp_app]
+  erw [hom_toSectionHom, toNatTrans_app,
+    autEquivSections_symm_apply_hom, Category.assoc]
+  rfl
 
 end Mei.GrothendieckSection
