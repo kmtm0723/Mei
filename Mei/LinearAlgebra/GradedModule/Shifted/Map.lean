@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.LinearAlgebra.GradedModule.Shifted
+public import Mei.LinearAlgebra.GradedModule.Shifted.Basic
 public import Mei.LinearAlgebra.ModuleFiltration.Map
 
 /-!
@@ -113,6 +113,14 @@ def shiftedQuotientMap (k : ℕ) :
   ((d.shiftedFiltration ℳ p).submodule (T.modulus k + 1)).mapQ
     ((e.shiftedFiltration 𝓝 (T p)).submodule (k + 1))
     (T.shiftedMap ℳ 𝓝 p f hf) (fun _ hx => T.shiftedMap_mem_shiftedFiltration ℳ 𝓝 p f hf k hx)
+
+/-- The finite shifted map is the induced map between the selected filtration quotients. -/
+theorem shiftedQuotientMap_def (k : ℕ) :
+    T.shiftedQuotientMap ℳ 𝓝 p f hf k =
+      ((d.shiftedFiltration ℳ p).submodule (T.modulus k + 1)).mapQ
+        ((e.shiftedFiltration 𝓝 (T p)).submodule (k + 1))
+        (T.shiftedMap ℳ 𝓝 p f hf)
+        (fun _ hx => T.shiftedMap_mem_shiftedFiltration ℳ 𝓝 p f hf k hx) := (rfl)
 
 /-- The finite shifted map sends a coefficient class to the class of its image. -/
 @[simp]
