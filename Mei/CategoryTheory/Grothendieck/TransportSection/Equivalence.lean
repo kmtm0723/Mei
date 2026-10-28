@@ -37,8 +37,14 @@ namespace Mei.GrothendieckSection
 variable {D : Type u} [Category.{v} D] {L : D ⥤ Cat.{w, z}}
 
 /-- Normalize the base components of an actual section using the existing base lift. -/
-abbrev normalized (s : CategoryTheory.Grothendieck.Section L) : D ⥤ Grothendieck L :=
+private abbrev normalized (s : CategoryTheory.Grothendieck.Section L) : D ⥤ Grothendieck L :=
   Grothendieck.liftFunctor (𝟭 D) s.toFunctor s.toFunctor_comp_forget
+
+/-- Normalizing an actual section preserves its underlying total functor. -/
+private theorem normalized_eq (s : CategoryTheory.Grothendieck.Section L) :
+    normalized s = s.toFunctor := by
+  have h := Grothendieck.liftFunctor_comp_pre (𝟭 D) s.toFunctor s.toFunctor_comp_forget
+  simpa only [Grothendieck.pre_id, Functor.comp_id] using h
 
 /-- Transport data extracted from an actual section. -/
 def ofSection (s : CategoryTheory.Grothendieck.Section L) : GrothendieckSection L where
@@ -62,29 +68,50 @@ def ofSection (s : CategoryTheory.Grothendieck.Section L) : GrothendieckSection 
     erw [Grothendieck.comp_fiber, eqToHom_trans_assoc] at hf
     exact hf
 
-/-- The extracted transport functor is the normalized original functor. -/
+/-- The extracted transport data have the original section's underlying total functor. -/
 @[simp]
 theorem ofSection_toFunctor (s : CategoryTheory.Grothendieck.Section L) :
-    (ofSection s).toFunctor = normalized s := by
-  refine _root_.CategoryTheory.Functor.ext (fun _ => rfl) ?_
-  intro d e f
-  erw [eqToHom_refl, Category.id_comp, Category.comp_id]
-  exact Grothendieck.mk_fiberHom ((normalized s).map f) f
-    (Grothendieck.liftHom_base _ _ _ _ _ _)
-
-/-- Normalizing an actual section preserves its underlying total functor. -/
-@[simp]
-theorem normalized_eq (s : CategoryTheory.Grothendieck.Section L) :
-    normalized s = s.toFunctor := by
-  have h := Grothendieck.liftFunctor_comp_pre (𝟭 D) s.toFunctor s.toFunctor_comp_forget
-  simpa only [Grothendieck.pre_id, Functor.comp_id] using h
+    (ofSection s).toFunctor = s.toFunctor := by
+  trans normalized s
+  · refine _root_.CategoryTheory.Functor.ext (fun _ => rfl) ?_
+    intro d e f
+    erw [eqToHom_refl, Category.id_comp, Category.comp_id]
+    exact Grothendieck.mk_fiberHom ((normalized s).map f) f
+      (Grothendieck.liftHom_base _ _ _ _ _ _)
+  · exact normalized_eq s
 
 /-- Reassembling the extracted transport data recovers the actual section. -/
 @[simp]
-theorem ofSection_toSection (s : CategoryTheory.Grothendieck.Section L) :
+theorem toSection_ofSection (s : CategoryTheory.Grothendieck.Section L) :
     (ofSection s).toSection = s := by
   apply CategoryTheory.Functor.Fiber.fiberInclusion_obj_inj
-  exact (ofSection_toFunctor s).trans (normalized_eq s)
+  exact ofSection_toFunctor s
+
+private theorem toFunctor_injective :
+    Function.Injective (toFunctor (L := L)) := by
+  intro s t h
+  rcases s with ⟨so, sm, _, _⟩
+  rcases t with ⟨tobj, tm, _, _⟩
+  have ho : so = tobj := by
+    funext d
+    exact eq_of_heq (Grothendieck.mk.inj
+      (_root_.CategoryTheory.Functor.congr_obj h d)).2
+  subst tobj
+  refine GrothendieckSection.ext ?_ ?_
+  · rfl
+  · apply heq_of_eq
+    funext d e f
+    have hf := _root_.CategoryTheory.Functor.congr_hom h f
+    have hm := (by
+      simpa only [eqToHom_refl, Category.id_comp, Category.comp_id] using hf :
+        (⟨f, sm f⟩ : (⟨d, so d⟩ : Grothendieck L) ⟶ ⟨e, so e⟩) = ⟨f, tm f⟩)
+    exact eq_of_heq (Grothendieck.Hom.mk.inj hm).2
+
+/-- Extracting transport data from its assembled section recovers the original data. -/
+@[simp]
+theorem ofSection_toSection (s : GrothendieckSection L) : ofSection s.toSection = s := by
+  apply toFunctor_injective
+  exact ofSection_toFunctor s.toSection
 
 /-- The underlying transformation of a composite of section morphisms is their composite. -/
 theorem sectionHom_comp {s t r : CategoryTheory.Grothendieck.Section L}
@@ -137,7 +164,7 @@ theorem ι_map_sectionHomComponent {s t : GrothendieckSection L}
 
 /-- Naturality of a vertical label after factoring both transport arrows through
 the target fiber inclusion. All endpoints are displayed as fiber objects. -/
-theorem sectionHom_factorized_naturality {s t : GrothendieckSection L}
+private theorem sectionHom_factorized_naturality {s t : GrothendieckSection L}
     (α : s.toSection ⟶ t.toSection) {d e : D} (f : d ⟶ e) :
     ((Grothendieck.ιNatTrans f).app (s.obj d) ≫ (Grothendieck.ι L e).map (s.map f)) ≫
         (Grothendieck.ι L e).map (sectionHomComponent α e) =
@@ -205,7 +232,7 @@ theorem fromSectionHom_toSectionHom {s t : GrothendieckSection L} (α : s ⟶ t)
   exact toSectionHom_fromSectionHom (toSectionHom α)
 
 instance : (sectionFunctor (L := L)).EssSurj :=
-  _root_.CategoryTheory.Functor.essSurj_of_surj (fun s => ⟨ofSection s, ofSection_toSection s⟩)
+  _root_.CategoryTheory.Functor.essSurj_of_surj (fun s => ⟨ofSection s, toSection_ofSection s⟩)
 
 instance : (sectionFunctor (L := L)).IsEquivalence where
 
@@ -232,7 +259,7 @@ automorphisms, with conjugation by the extracted transport maps. -/
 noncomputable def sectionAutEquiv [∀ d, IsGroupoid (L.obj d)]
     (s : CategoryTheory.Grothendieck.Section L) :
     Aut s ≃* GrpCat.sectionsSubgroup (ofSection s).automorphismDiagram :=
-  (Aut.autMulEquivOfIso (eqToIso (ofSection_toSection s).symm)).trans
+  (Aut.autMulEquivOfIso (eqToIso (toSection_ofSection s).symm)).trans
     ((_root_.CategoryTheory.Functor.FullyFaithful.autMulEquivOfFullyFaithful
       (.ofFullyFaithful sectionFunctor) (ofSection s)).symm.trans
         (autEquivSections (ofSection s)))
@@ -243,8 +270,8 @@ morphism, transported along object reconstruction. -/
 theorem sectionAutEquiv_apply_hom [∀ d, IsGroupoid (L.obj d)]
     (s : CategoryTheory.Grothendieck.Section L) (a : Aut s) (d : D) :
     ((sectionAutEquiv s a).val d).asIso.hom =
-      (fromSectionHom (eqToHom (ofSection_toSection s) ≫ a.asIso.hom ≫
-        eqToHom (ofSection_toSection s).symm)).app d := by
+      (fromSectionHom (eqToHom (toSection_ofSection s) ≫ a.asIso.hom ≫
+        eqToHom (toSection_ofSection s).symm)).app d := by
   have heval (b : Aut (ofSection s)) :
       ((evaluation d).mapAut _ b).asIso.hom = b.asIso.hom.app d := (rfl)
   simp only [sectionAutEquiv, MulEquiv.trans_apply, autEquivSections_apply, heval]
@@ -260,8 +287,8 @@ theorem ι_map_sectionAutEquiv_apply_hom [∀ d, IsGroupoid (L.obj d)]
     (s : CategoryTheory.Grothendieck.Section L) (a : Aut s) (d : D) :
     (Grothendieck.ι L d).map (((sectionAutEquiv s a).val d).asIso.hom) =
       (CategoryTheory.Grothendieck.Section.hom
-        (eqToHom (ofSection_toSection s) ≫ a.asIso.hom ≫
-          eqToHom (ofSection_toSection s).symm)).app d := by
+        (eqToHom (toSection_ofSection s) ≫ a.asIso.hom ≫
+          eqToHom (toSection_ofSection s).symm)).app d := by
   rw [sectionAutEquiv_apply_hom, fromSectionHom_app, ι_map_sectionHomComponent]
 
 /-- The inverse comparison includes the chosen family component, transported
@@ -273,14 +300,14 @@ theorem sectionAutEquiv_symm_apply_hom [∀ d, IsGroupoid (L.obj d)]
     (CategoryTheory.Grothendieck.Section.hom
       (((sectionAutEquiv s).symm a).asIso.hom)).app d =
       (CategoryTheory.Grothendieck.Section.hom
-        (eqToHom (ofSection_toSection s).symm)).app d ≫
+        (eqToHom (toSection_ofSection s).symm)).app d ≫
       (Grothendieck.ι L d).map ((a.val d).asIso.hom) ≫
       (CategoryTheory.Grothendieck.Section.hom
-        (eqToHom (ofSection_toSection s))).app d := by
+        (eqToHom (toSection_ofSection s))).app d := by
   have hconj (b : Aut (ofSection s).toSection) :
-      ((Aut.autMulEquivOfIso (eqToIso (ofSection_toSection s).symm)).symm b).asIso.hom =
-        (eqToHom (ofSection_toSection s).symm ≫ b.asIso.hom) ≫
-          eqToHom (ofSection_toSection s) := by
+      ((Aut.autMulEquivOfIso (eqToIso (toSection_ofSection s).symm)).symm b).asIso.hom =
+        (eqToHom (toSection_ofSection s).symm ≫ b.asIso.hom) ≫
+          eqToHom (toSection_ofSection s) := by
     simp [Aut.autMulEquivOfIso, Category.assoc]
   simp only [sectionAutEquiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm]
   rw [hconj]
