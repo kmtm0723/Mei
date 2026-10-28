@@ -19,7 +19,7 @@ exponential of a sum of commuting nilpotent endomorphisms.
 
 public section
 
-namespace Module.End
+namespace LinearMap
 
 open IsNilpotent TensorProduct
 
@@ -53,4 +53,4 @@ theorem exp_bilinear_of_leibniz
   have he := LinearMap.congr_fun hc (x ⊗ₜ[R] y)
   simpa [exp_add_of_commute h_comm h_nilL h_nilR, hl, hr, m] using he
 
-end Module.End
+end LinearMap
