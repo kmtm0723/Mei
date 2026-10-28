@@ -49,43 +49,7 @@ variable {N N' R L L' M M' : Type*} [AddCommMonoid N] [AddCommMonoid N']
   (φ : GradedLieHom T ℒ ℒ') (ψ : M →ₗ[R] M')
   (hequiv : ∀ (x : L) (a : M), ψ ⁅x, a⁆ = ⁅φ x, ψ a⁆)
 
-/-- Rational scalars on source coefficient quotients come from the coefficient ring. -/
-local instance quotientRatModuleSource (k : ℕ) : Module ℚ (F.quotient k) :=
-  Module.compHom _ (algebraMap ℚ R)
-
-/-- Rational scalars on target coefficient quotients come from the coefficient ring. -/
-local instance quotientRatModuleTarget (k : ℕ) : Module ℚ (G.quotient k) :=
-  Module.compHom _ (algebraMap ℚ R)
-
 include hequiv
-
-/-- Equivariant coefficient maps intertwine finite exponential actions at any
-source cutoff sufficient for the target order. -/
-theorem mapQ_truncatedExpLieAction_of_gradedLieHom {a : ℕ} (k : ℕ)
-    (h : T.modulus k ≤ a)
-    (hψ : F.submodule (a + 1) ≤ (G.submodule (k + 1)).comap ψ)
-    (x : d.truncatedLie ℒ a) (z : F.quotient a) :
-    (F.submodule (a + 1)).mapQ (G.submodule (k + 1)) ψ
-        hψ
-        (F.truncatedExpLieAction d ℒ a x z) =
-      G.truncatedExpLieAction e ℒ' k (φ.truncatedMap k h x)
-        ((F.submodule (a + 1)).mapQ (G.submodule (k + 1)) ψ
-          hψ z) := by
-  let qψ := (F.submodule (a + 1)).mapQ (G.submodule (k + 1)) ψ
-    hψ
-  have hc : (G.truncatedLieAction e ℒ' k (φ.truncatedMap k h x)).comp qψ =
-      qψ.comp (F.truncatedLieAction d ℒ a x) := by
-    apply LinearMap.ext
-    intro z
-    obtain ⟨x, rfl⟩ := (d.degreeIdeal ℒ a).surjective_mkQ x
-    obtain ⟨m, rfl⟩ := (F.submodule (a + 1)).mkQ_surjective z
-    simp only [LinearMap.comp_apply, qψ, Submodule.mkQ_apply, Submodule.mapQ_apply,
-      LieIdeal.mkQ_apply, GradedLieHom.truncatedMap_mk, truncatedLieAction_mk,
-      quotientLieAction_mk, hequiv]
-  simpa only [truncatedExpLieAction_apply, LinearMap.comp_apply] using
-    (LinearMap.congr_fun (Module.End.commute_exp_left_of_commute
-      ⟨a + 1, F.truncatedLieAction_pow_eq_zero d ℒ a x⟩
-      ⟨k + 1, G.truncatedLieAction_pow_eq_zero e ℒ' k (φ.truncatedMap k h x)⟩ hc) z).symm
 
 variable [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
   [LieAlgebra ℚ L'] [IsScalarTower ℚ R L']
