@@ -57,7 +57,9 @@ abbrev shape : MultispanShape where
     | .inl ⟨b, c⟩ => ⟨J.snd b, D.target b c⟩
     | .inr ⟨j, e⟩ => ⟨j, D.edgeTarget j e⟩
 
-/-- Forget the copied indices and send each identity face to its old chamber. -/
+/-- Forget the copied indices and send each identity face to its old chamber.
+The body is exposed so pulled-back coefficient objects have their original carriers. -/
+@[expose]
 def projection : WalkingMultispan D.shape ⥤ WalkingMultispan J where
   obj
     | .left (.inl ⟨b, _⟩) => .left b
@@ -115,8 +117,13 @@ def projection : WalkingMultispan D.shape ⥤ WalkingMultispan J where
         (D.projection_obj_right j (D.edgeTarget j e)).symm) := (rfl)
 
 /-- Two copies joined by an identity face, with the displayed orientation. -/
-abbrev edgeRel (j : J.R) (a b : D.chambers j) : Prop :=
+def edgeRel (j : J.R) (a b : D.chambers j) : Prop :=
   ∃ e, D.edgeSource j e = a ∧ D.edgeTarget j e = b
+
+/-- An oriented identity edge witnesses the relation between its endpoint copies. -/
+@[simp]
+theorem edgeRel_iff (j : J.R) (a b : D.chambers j) :
+    D.edgeRel j a b ↔ ∃ e, D.edgeSource j e = a ∧ D.edgeTarget j e = b := Iff.rfl
 
 variable {C : Type*} [Category* C] (I : MultispanIndex J C)
 
