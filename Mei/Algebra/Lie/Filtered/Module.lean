@@ -196,10 +196,6 @@ variable {d ℒ} {N' L' M' : Type*} [AddCommMonoid N'] [DecidableEq N']
   (φ : GradedLieHom T ℒ ℒ') (ψ : M →ₗ[R] M')
   (hequiv : ∀ (x : L) (a : M), ψ ⁅x, a⁆ = ⁅φ x, ψ a⁆)
 
-/-- Rational scalars on target coefficient quotients come from the coefficient ring. -/
-local instance quotientRatModuleTarget (k : ℕ) : Module ℚ (G.quotient k) :=
-  Module.compHom _ (algebraMap ℚ R)
-
 include hequiv
 
 /-- Equivariant coefficient maps intertwine finite exponential actions at any
