@@ -32,12 +32,6 @@ variable {Γ : Type} {R M : Type*} [AddCommGroup Γ] [Ring R]
   (d : PositiveDegrees Γ) (ℳ : Γ → Submodule R M)
   [DirectSum.Decomposition ℳ] (p : Γ)
 
-private theorem shiftedFiltration_isHomogeneous (k : ℕ) :
-    DirectSum.SetLike.IsHomogeneous (shiftedGrading ℳ d.monoid p)
-      ((d.shiftedFiltration ℳ p).submodule (k + 1)) := by
-  rw [shiftedFiltration_succ]
-  exact d.degreeSubmodule_isHomogeneous _ k
-
 /-- The internal relative grading of the existing order-`k` shifted module. -/
 def shiftedQuotientGrading (k : ℕ) :
     TauCeti.InternalGrading R ((d.shiftedFiltration ℳ p).quotient k) Γ :=
@@ -81,20 +75,6 @@ theorem map_shiftedGrading_eq_bot {k : ℕ} {n : Γ} (hn : (k : ℤ) < d.degree 
 theorem shiftedQuotientGrading_eq_bot {k : ℕ} {n : Γ} (hn : (k : ℤ) < d.degree n) :
     (d.shiftedQuotientGrading ℳ p k).piece n = ⊥ := by
   rw [shiftedQuotientGrading_piece, d.map_shiftedGrading_eq_bot ℳ p hn]
-
-/-- A retained homogeneous coefficient belongs to the discarded filtration term
-exactly when it is zero. This is the simplifier normal form of the quotient zero test. -/
-@[simp]
-theorem shiftedInclusion_mem_shiftedFiltration_succ_iff (n : d.monoid)
-    (a : ℳ (p + n)) {k : ℕ} (hn : d.degree n ≤ k) :
-    shiftedInclusion ℳ d.monoid p n a ∈ (d.shiftedFiltration ℳ p).submodule (k + 1) ↔
-      a = 0 := by
-  rw [shiftedInclusion_mem_shiftedFiltration_iff]
-  constructor
-  · rintro (ha | hd)
-    · exact ha
-    · omega
-  · exact Or.inl
 
 /-- An allowed homogeneous coefficient survives exactly when it is nonzero,
 provided its relative degree is retained. -/
