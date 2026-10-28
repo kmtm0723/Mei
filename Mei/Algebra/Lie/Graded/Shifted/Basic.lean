@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.LinearAlgebra.GradedModule.Shifted
+public import Mei.LinearAlgebra.GradedModule.Shifted.Basic
 public import Mei.Algebra.Lie.Filtered.Action
 
 /-!
