@@ -178,9 +178,10 @@ theorem positiveMap_ideal_le (k : ℕ) :
 
 /-- Extend a quantum map to the degree completions of its positive coefficient algebras. -/
 def mapPositiveCompletion : (F).completion →+* (G).completion :=
-  (F).mapCompletion G
-    (positiveMap φ T.toAddMonoidHom h d.monoid e.monoid (fun _ hn => T.map_mem hn))
-    T.modulus T.monotone_modulus (positiveMap_ideal_le d e T φ h)
+  mapPositiveCompletionOfDegree φ T.toAddMonoidHom h d.monoid e.monoid
+    (fun _ hn => T.map_mem hn) d.degree e.degree
+    (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+    T.modulus T.monotone_modulus (fun k _ hn hd => T.degree_gt k hn hd)
 
 /-- The order-`k` component is the induced quotient map at the prescribed source cutoff. -/
 @[simp]
@@ -189,7 +190,10 @@ theorem projection_mapPositiveCompletion (k : ℕ) (x : (F).completion) :
       Ideal.quotientMap ((G).ideal (k + 1))
         (positiveMap φ T.toAddMonoidHom h d.monoid e.monoid (fun _ hn => T.map_mem hn))
         (positiveMap_ideal_le d e T φ h k) ((F).projection (T.modulus k) x) :=
-  (F).projection_mapCompletion _ _ _ _ _ k x
+  projection_mapPositiveCompletionOfDegree φ T.toAddMonoidHom h d.monoid e.monoid
+    (fun _ hn => T.map_mem hn) d.degree e.degree
+    (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+    T.modulus T.monotone_modulus (fun k _ hn hd => T.degree_gt k hn hd) k x
 
 /-- Completed quantum maps agree with the original map on finite positive coefficients. -/
 @[simp]
@@ -197,21 +201,20 @@ theorem mapPositiveCompletion_toCompletion (x : positiveSubalgebra q β d.monoid
     mapPositiveCompletion d e T φ h ((F).toCompletion x) =
       (G).toCompletion (positiveMap φ T.toAddMonoidHom h d.monoid e.monoid
         (fun _ hn => T.map_mem hn) x) :=
-  (F).mapCompletion_toCompletion _ _ _ _ _ x
+  mapPositiveCompletionOfDegree_toCompletion φ T.toAddMonoidHom h d.monoid e.monoid
+    (fun _ hn => T.map_mem hn) d.degree e.degree
+    (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+    T.modulus T.monotone_modulus (fun k _ hn hd => T.degree_gt k hn hd) x
 
 /-- The completed map applies the specified coefficient homomorphism to scalars. -/
 @[simp]
 theorem mapPositiveCompletion_algebraMap (r : R) :
     mapPositiveCompletion d e T φ h (algebraMap R (F).completion r) =
-      algebraMap S (G).completion (φ r) := by
-  have hF := ((F).toCompletionₐ (R := R)).commutes r
-  have hG := ((G).toCompletionₐ (R := S)).commutes (φ r)
-  simp only [AlgFiltration.toCompletionₐ_apply] at hF hG
-  exact (congrArg (mapPositiveCompletion d e T φ h) hF.symm).trans
-    ((mapPositiveCompletion_toCompletion d e T φ h (algebraMap R _ r)).trans
-      ((congrArg (G).toCompletion
-        (positiveMap_algebraMap φ T.toAddMonoidHom h d.monoid e.monoid
-          (fun _ hn => T.map_mem hn) r)).trans hG))
+      algebraMap S (G).completion (φ r) :=
+  mapPositiveCompletionOfDegree_algebraMap φ T.toAddMonoidHom h d.monoid e.monoid
+    (fun _ hn => T.map_mem hn) d.degree e.degree
+    (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+    T.modulus T.monotone_modulus (fun k _ hn hd => T.degree_gt k hn hd) r
 
 /-- With fixed coefficients, a compatible exponent map extends as an algebra homomorphism. -/
 def mapDomainPositiveCompletion
@@ -240,8 +243,10 @@ theorem mapPositiveCompletion_enlarge (μ : ℕ → ℕ) (hμ : Monotone μ)
     exact PositiveDegreeMap.enlarge_apply T μ hμ hle n
   unfold mapPositiveCompletion
   simp only [hf, PositiveDegreeMap.enlarge_modulus]
-  exact ((F).mapCompletion_eq (G) _ T.monotone_modulus
-    (positiveMap_ideal_le d e T φ h) μ hμ _).symm
+  exact mapPositiveCompletionOfDegree_eq φ T.toAddMonoidHom h d.monoid e.monoid
+    (fun _ hn => T.map_mem hn) d.degree e.degree
+    (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+    μ hμ _ T.modulus T.monotone_modulus _
 
 /-- Identity quantum maps induce the identity on the positive degree completion. -/
 @[simp]
@@ -253,7 +258,9 @@ theorem mapPositiveCompletion_id :
     exact PositiveDegreeMap.id_apply n
   have hm : (PositiveDegreeMap.id d).modulus = id :=
     funext PositiveDegreeMap.id_modulus
-  simpa only [mapPositiveCompletion, hf, hm, positiveMap_id] using (F).mapCompletion_id
+  simpa only [mapPositiveCompletion, hf, hm] using
+    mapPositiveCompletionOfDegree_id (q := q) (β := β) d.monoid d.degree
+      (fun _ hn => d.degree_nonneg hn)
 
 variable (a : PositiveDegrees Γ'') (T' : PositiveDegreeMap e a) (ψ : S →+* U)
   (h' : ∀ p r, Units.map ψ.toMonoidHom (q' ^ β' p r) = q'' ^ β'' (T' p) (T' r))
@@ -263,15 +270,18 @@ theorem mapPositiveCompletion_comp :
     mapPositiveCompletion d a (T'.comp T) (ψ.comp φ) (fun p r => by
       rw [PositiveDegreeMap.comp_apply, PositiveDegreeMap.comp_apply, ← h', ← h]; rfl) =
       (mapPositiveCompletion e a T' ψ h').comp (mapPositiveCompletion d e T φ h) := by
-  unfold mapPositiveCompletion
-  rw [← (F).mapCompletion_comp]
-  congr 1
-  · have hf : (T'.comp T).toAddMonoidHom = T'.toAddMonoidHom.comp T.toAddMonoidHom := by
-      ext n
-      exact PositiveDegreeMap.comp_apply T' T n
-    simpa only [hf] using (positiveMap_comp φ ψ T.toAddMonoidHom T'.toAddMonoidHom h h'
-      d.monoid e.monoid a.monoid (fun _ hn => T.map_mem hn)
-      (fun _ hn => T'.map_mem hn)).symm
-  · exact funext (PositiveDegreeMap.comp_modulus T' T)
+  have hf : (T'.comp T).toAddMonoidHom = T'.toAddMonoidHom.comp T.toAddMonoidHom := by
+    ext n
+    exact PositiveDegreeMap.comp_apply T' T n
+  have hm : (T'.comp T).modulus = T.modulus ∘ T'.modulus :=
+    funext (PositiveDegreeMap.comp_modulus T' T)
+  simpa only [mapPositiveCompletion, hf, hm] using
+    mapPositiveCompletionOfDegree_comp φ T.toAddMonoidHom h d.monoid e.monoid
+      (fun _ hn => T.map_mem hn) d.degree e.degree
+      (fun _ hn => d.degree_nonneg hn) (fun _ hn => e.degree_nonneg hn)
+      T.modulus T.monotone_modulus (fun k _ hn hd => T.degree_gt k hn hd)
+      a.monoid T'.toAddMonoidHom ψ h' (fun _ hn => T'.map_mem hn) a.degree
+      (fun _ hn => a.degree_nonneg hn) T'.modulus T'.monotone_modulus
+      (fun k _ hn hd => T'.degree_gt k hn hd)
 
 end Mei.QuantumMonoidAlgebra
