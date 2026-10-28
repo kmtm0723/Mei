@@ -13,6 +13,8 @@ public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
 The direction of the affine span of an image is the linear image of the original
 direction. This formula supports transport of transversality and codimension
 without requiring an invertible map or a nonempty set.
+Adding unrestricted coordinates preserves and reflects equality of affine spans.
+For nonempty sets it also preserves and reflects equality of their directions.
 -/
 
 public section
@@ -29,3 +31,50 @@ theorem direction_affineSpan_image (f : P →ᵃ[k] P') (s : Set P) :
   rw [← AffineSubspace.map_span, AffineSubspace.map_direction]
 
 end AffineMap
+
+
+section Prod
+
+variable {k V E : Type*} [Ring k]
+  [AddCommGroup V] [Module k V] [AddCommGroup E] [Module k E]
+
+/-- Adding an unrestricted factor preserves and reflects equality of affine spans,
+including for empty sets. -/
+theorem affineSpan_prod_univ_eq_iff (s t : Set V) :
+    affineSpan k (s ×ˢ (Set.univ : Set E)) = affineSpan k (t ×ˢ (Set.univ : Set E)) ↔
+      affineSpan k s = affineSpan k t := by
+  rw [affineSpan_prod_eq, affineSpan_prod_eq, AffineSubspace.span_univ]
+  constructor
+  · intro h
+    ext v
+    have := congrArg (fun A : AffineSubspace k (V × E) => (v, 0) ∈ A) h
+    simpa using this
+  · exact fun h => congrArg (fun A : AffineSubspace k V => A.prod ⊤) h
+
+namespace AffineSubspace
+
+/-- The direction of the affine span of a nonempty cylinder has an unrestricted
+second factor. Nonemptiness is needed because the empty span has zero direction. -/
+theorem direction_affineSpan_prod_univ {s : Set V} (hs : s.Nonempty) :
+    (affineSpan k (s ×ˢ (Set.univ : Set E))).direction =
+      (affineSpan k s).direction.prod ⊤ := by
+  rw [direction_affineSpan, vectorSpan_prod_eq hs Set.univ_nonempty]
+  rw [← direction_affineSpan, ← direction_affineSpan, span_univ, direction_top]
+
+/-- Adding unrestricted coordinates preserves and reflects equality of supporting
+directions for nonempty sets. -/
+theorem direction_affineSpan_prod_univ_eq_iff {s t : Set V}
+    (hs : s.Nonempty) (ht : t.Nonempty) :
+    (affineSpan k (s ×ˢ (Set.univ : Set E))).direction =
+      (affineSpan k (t ×ˢ (Set.univ : Set E))).direction ↔
+      (affineSpan k s).direction = (affineSpan k t).direction := by
+  rw [direction_affineSpan_prod_univ hs, direction_affineSpan_prod_univ ht]
+  constructor
+  · intro h
+    ext v
+    have := congrArg (fun S : Submodule k (V × E) => (v, 0) ∈ S) h
+    simpa using this
+  · exact fun h => congrArg (fun S : Submodule k V => S.prod (⊤ : Submodule k E)) h
+
+end AffineSubspace
+end Prod
