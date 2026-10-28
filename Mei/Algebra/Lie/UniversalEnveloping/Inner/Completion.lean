@@ -7,7 +7,7 @@ module
 
 public import Mei.Algebra.Lie.UniversalEnveloping.Inner.Basic
 public import Mei.Algebra.Lie.UniversalEnveloping.BCH.Completion
-public import Mei.Algebra.Lie.Filtered.BCH
+public import Mei.Algebra.Lie.Filtered.Inner.Completed
 
 /-!
 # Completed inner BCH actions are conjugation
@@ -19,8 +19,9 @@ including Lie series with infinitely many nonzero homogeneous components.
 
 The finite comparison uses the commutator action from
 `UniversalEnvelopingAlgebra.InnerAction` and
-`Mei.AlgFiltration.quotientExpLieAction_apply_eq_exp_mul_exp_neg`, which follows
-Tau Ceti's adjoint exponential formula. The completed comparison uses the existing
+the general filtered inner-action conjugation theorems. Linear-map comparisons
+identify their canonical inner images with the existing enveloping Lie maps.
+The completed comparison uses the existing
 finite projection laws for `completedBCHAction` and `completedBCHToGroupLike`.
 No freeness, PBW, or injectivity assumption on the canonical Lie map is required.
 -/
@@ -35,7 +36,7 @@ namespace UniversalEnvelopingAlgebra.InnerAction
 
 open Mei Mei.UniversalEnvelopingAlgebra
 
-variable {N R L : Type*} [AddCommMonoid N] [CommRing R] [Algebra ℚ R]
+variable {N R L : Type*} [AddCommMonoid N] [CommRing R]
   [LieRing L] [LieAlgebra R L] [DecidableEq N]
   (d : PositiveDegrees N) (ℒ : N → Submodule R L)
   [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ]
@@ -43,6 +44,45 @@ variable {N R L : Type*} [AddCommMonoid N] [CommRing R] [Algebra ℚ R]
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "F" => degreeFiltration ℒ d.degree
   (fun n hn => d.eq_bot_of_degree_nonpos ℒ n (le_of_lt hn))
+
+local notation "j" => ((ι R : L →ₗ⁅R⁆ U) : L →ₗ[R] U)
+
+private theorem ι_filtered (k : ℕ) :
+    d.degreeSubmodule ℒ k ≤ (((F).ideal (k + 1)).restrictScalars R).comap j := by
+  intro x hx
+  apply ι_mem_degreeFiltration_of_mem_degreeIdeal d ℒ
+  have hx' : x ∈ (d.degreeIdeal ℒ k).toSubmodule := by
+    simpa only [d.degreeIdeal_toSubmodule ℒ k] using hx
+  exact hx'
+
+/-- The general truncated inner coefficient map at the canonical Lie map is the
+existing finite enveloping Lie map, independently of its filtration witness. -/
+@[simp]
+theorem truncatedInnerMap_eq_truncatedLieToU
+    (hj : ∀ k, d.degreeSubmodule ℒ k ≤
+      (((F).ideal (k + 1)).restrictScalars R).comap j) (k : ℕ) :
+    (F).truncatedInnerMap d ℒ j hj k = (truncatedLieToU d ℒ k).toLinearMap := by
+  ext x
+  obtain ⟨x, rfl⟩ := (d.degreeIdeal ℒ k).surjective_mkQ x
+  simp only [LieIdeal.mkQ_apply, Mei.AlgFiltration.truncatedInnerMap_mk,
+    LieHom.coe_toLinearMap, truncatedLieToU_mk]
+
+/-- The general completed inner coefficient map at the canonical Lie map is the
+existing completed enveloping Lie map, as a linear map. -/
+@[simp]
+theorem completedInnerMap_eq_completedLieToU
+    (hj : ∀ k, d.degreeSubmodule ℒ k ≤
+      (((F).ideal (k + 1)).restrictScalars R).comap j) :
+    (F).completedInnerMap d ℒ j hj = (completedLieToU d ℒ).toLinearMap := by
+  apply LinearMap.ext
+  intro x
+  apply (F).completion_ext
+  intro k
+  simp only [Mei.AlgFiltration.projection_completedInnerMap,
+    truncatedInnerMap_eq_truncatedLieToU, LieHom.coe_toLinearMap,
+    projection_completedLieToU]
+
+variable [Algebra ℚ R]
 
 /-- Rational scalars on the enveloping algebra are induced from the coefficient ring. -/
 local instance rationalCompletedInnerAlgebra : Algebra ℚ U :=
@@ -56,12 +96,8 @@ theorem truncatedExpLieAction_apply (k : ℕ) (x : d.truncatedLie ℒ k)
     (F).truncatedExpLieAction d ℒ k x a =
       IsNilpotent.exp (truncatedLieToU d ℒ k x) * a *
         IsNilpotent.exp (-truncatedLieToU d ℒ k x) := by
-  obtain ⟨x, rfl⟩ := (d.degreeIdeal ℒ k).surjective_mkQ x
-  simp only [LieIdeal.mkQ_apply, Mei.AlgFiltration.truncatedExpLieAction_mk,
-    truncatedLieToU_mk]
-  exact (F).quotientExpLieAction_apply_eq_exp_mul_exp_neg d ℒ k (lie_eq x)
-    (ι_mem_degreeFiltration_one ℒ d.degree
-      (fun n hn => d.eq_bot_of_degree_nonpos ℒ n hn) x) a
+  simpa only [truncatedInnerMap_eq_truncatedLieToU, LieHom.coe_toLinearMap] using
+    (F).truncatedExpLieAction_eq_inner d ℒ j (ι_filtered d ℒ) lie_eq k x a
 
 variable [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
 
@@ -101,9 +137,12 @@ theorem completedBCHAction_exp_apply (x : d.completedLie ℒ) (a : (F).completio
         completedLieToU_mem_completionIdeal_one d ℒ x⟩ * a *
       (F).completedExp (-⟨completedLieToU d ℒ x,
         completedLieToU_mem_completionIdeal_one d ℒ x⟩) := by
-  rw [completedBCHAction_apply]
-  simp only [coe_completedBCHToGroupLike, Equiv.symm_apply_apply,
-    PositiveDegrees.completedBCHExp_symm_inv, map_neg]
-  congr 2
+  have he : (F).completedInnerElement d ℒ j (ι_filtered d ℒ) x =
+      ⟨completedLieToU d ℒ x, completedLieToU_mem_completionIdeal_one d ℒ x⟩ := by
+    apply Subtype.ext
+    simp only [Mei.AlgFiltration.coe_completedInnerElement,
+      completedInnerMap_eq_completedLieToU, LieHom.coe_toLinearMap]
+  simpa only [he] using
+    (F).completedBCHAction_exp_eq_inner d ℒ j (ι_filtered d ℒ) lie_eq x a
 
 end UniversalEnvelopingAlgebra.InnerAction
