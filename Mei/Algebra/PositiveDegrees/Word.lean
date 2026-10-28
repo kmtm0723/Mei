@@ -48,7 +48,7 @@ theorem length_le_degree_sum (l : List N) (hP : ∀ n ∈ l, n ∈ d.monoid)
   simpa only [List.length_map, nsmul_eq_mul, mul_one, ← map_list_sum] using h
 
 /-- Every increment in an allowed word has degree at most the total degree. -/
-theorem degree_le_list_sum (l : List N) (hP : ∀ n ∈ l, n ∈ d.monoid)
+theorem degree_le_degree_sum (l : List N) (hP : ∀ n ∈ l, n ∈ d.monoid)
     {n : N} (hn : n ∈ l) : d.degree n ≤ d.degree l.sum := by
   have h := List.single_le_sum (l := l.map d.degree) (by
     intro a ha
@@ -65,7 +65,7 @@ theorem finite_degree_words (k : ℕ) :
   intro l hl
   let lifted : List (d.cutoff k) := l.attach.map fun (n : {n // n ∈ l}) =>
     ⟨n.val, d.mem_cutoff.mpr ⟨(hl.1 n.val n.property).1,
-      (d.degree_le_list_sum l (fun n hn => (hl.1 n hn).1) n.property).trans hl.2⟩⟩
+      (d.degree_le_degree_sum l (fun n hn => (hl.1 n hn).1) n.property).trans hl.2⟩⟩
   refine ⟨lifted, ?_, ?_⟩
   · simp only [Set.mem_ofPred_eq, lifted, List.length_map, List.length_attach]
     exact_mod_cast (d.length_le_degree_sum l (fun n hn => (hl.1 n hn).1)
@@ -96,7 +96,7 @@ variable [DecidableEq N]
 
 /-- A word with allowed increments and total degree at most `k` has at most `k`
 nonzero changes, irrespective of the number of inserted zero increments. -/
-theorem length_filter_ne_zero_le (l : List N) (hP : ∀ n ∈ l, n ∈ d.monoid)
+theorem length_filter_bne_zero_le (l : List N) (hP : ∀ n ∈ l, n ∈ d.monoid)
     (k : ℕ) (hk : d.degree l.sum ≤ k) : (l.filter (· != 0)).length ≤ k := by
   have h := d.length_le_degree_sum (l.filter (· != 0))
     (fun n hn => hP n (List.mem_filter.mp hn).1)
