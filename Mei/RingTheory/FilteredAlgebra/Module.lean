@@ -7,6 +7,7 @@ module
 
 public import Mei.LinearAlgebra.ModuleFiltration.RestrictScalars
 public import Mei.RingTheory.FilteredAlgebra.Algebra
+public import Mathlib.RingTheory.Ideal.Quotient.PowTransition
 
 /-!
 # The underlying module filtration of a filtered algebra
@@ -61,10 +62,10 @@ def moduleCompletionEquiv : (F.toModuleFiltration R).completion ≃ₗ[R] F.comp
       have ht {k l : ℕ} (h : k ≤ l) (y : A ⧸ F.ideal (l + 1)) :
           (F.toModuleFiltration A).transition h y = Ideal.Quotient.factor
             (F.antitone (Nat.add_le_add_right h 1)) y := by
-        induction y using Submodule.Quotient.induction_on with
-        | _ y =>
-          exact ((F.toModuleFiltration A).transition_mk h y).trans
-            (Ideal.Quotient.factor_mk (F.antitone (Nat.add_le_add_right h 1)) y).symm
+        rw [ModuleFiltration.transition_eq_factor]
+        simpa only [ModuleFiltration.quotient, toModuleFiltration_submodule,
+          Submodule.restrictScalars_self] using!
+          Submodule.factor_eq_factor (F.antitone (Nat.add_le_add_right h 1)) y
       constructor
       · intro hx
         apply (F.mem_completion_iff x).mpr
