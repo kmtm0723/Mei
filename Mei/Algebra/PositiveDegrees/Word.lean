@@ -9,6 +9,7 @@ public import Mei.Algebra.PositiveDegrees.Map
 public import Mathlib.Algebra.Group.Submonoid.BigOperators
 public import Mathlib.Algebra.Order.BigOperators.Group.List
 public import Mathlib.Data.Set.Finite.List
+public import Mathlib.Data.Fintype.List
 
 /-!
 # Bounded words of positive degree changes
@@ -19,7 +20,11 @@ lies in the finite cutoff, and the word length is bounded. For words permitting
 zero increments, filtering out zero preserves the sum and leaves at most the
 cutoff number of entries. A positive degree map transports the bound through
 its cutoff modulus. Thus arbitrary insertions of zero increments do not
-enlarge the finite set of reduced degree itineraries.
+enlarge the finite set of reduced degree itineraries. Finite encounter labels
+also give finitely many records when each constant-degree block meets each label
+at most once: a record has one such block before the first change and after each
+change. Encounters acting by the identity on the decoration are retained in these
+blocks without being counted as degree changes.
 
 These are the degree-only bounds used for successive homogeneous component
 changes. Geometric itineraries additionally carry encounter and chart data.
@@ -74,6 +79,25 @@ theorem finite_degree_words (k : ℕ) :
       (fun n hn => (hl.1 n hn).2)).trans hl.2
   · simp only [lifted, List.map_map, Function.comp_def]
     exact List.attach_map_subtype_val l
+
+/-- Finite encounter labels and a positive-degree cutoff give finitely many records
+of nonzero degree changes and duplicate-free encounter lists between successive changes.
+There is one encounter block before the first change and after each change. -/
+theorem finite_degree_encounter_words {ι : Type*} [Finite ι] (k : ℕ) :
+    Set.Finite {p : List N × List (List ι) |
+      ((∀ n ∈ p.1, n ∈ d.monoid ∧ n ≠ 0) ∧ d.degree p.1.sum ≤ k) ∧
+        p.2.length = p.1.length + 1 ∧ ∀ b ∈ p.2, b.Nodup} := by
+  classical
+  let := Fintype.ofFinite ι
+  let Block := {b : List ι // b.Nodup}
+  apply ((d.finite_degree_words k).biUnion (fun l _ =>
+    Set.finite_range (fun f : Fin (l.length + 1) → Block =>
+      (l, List.ofFn fun j => (f j).val)))).subset
+  rintro ⟨l, blocks⟩ ⟨hl, hlen, hb⟩
+  refine Set.mem_iUnion.mpr ⟨l, Set.mem_iUnion.mpr ⟨hl, ?_⟩⟩
+  rw [← hlen]
+  refine ⟨fun j => ⟨blocks.get j, hb _ (List.get_mem blocks j)⟩, ?_⟩
+  exact Prod.ext rfl (List.ofFn_get blocks)
 
 variable [DecidableEq N]
 
