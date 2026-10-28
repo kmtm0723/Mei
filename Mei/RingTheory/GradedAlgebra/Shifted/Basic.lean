@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.LinearAlgebra.GradedModule.Shifted
+public import Mei.LinearAlgebra.GradedModule.Shifted.Basic
 public import Mei.LinearAlgebra.ModuleFiltration.Bilinear
 public import TauCeti.RingTheory.GradedAlgebra.Basic
 
@@ -122,6 +122,13 @@ def shiftedCompletionMul : d.ShiftedCoefficients 𝒜 p →ₗ[R]
     (d.shiftedFiltration 𝒜 p) (d.shiftedFiltration 𝒜 q) (d.shiftedFiltration 𝒜 (p + q))
     (shiftedMul 𝒜 d.monoid p q)
     (fun _ _ _ _ => d.shiftedMul_mem_shiftedFiltration 𝒜 p q)
+
+/-- The shifted product is the general completed bilinear pairing for multiplication. -/
+theorem shiftedCompletionMul_def :
+    d.shiftedCompletionMul 𝒜 p q = ModuleFiltration.completionBilinear
+      (d.shiftedFiltration 𝒜 p) (d.shiftedFiltration 𝒜 q) (d.shiftedFiltration 𝒜 (p + q))
+      (shiftedMul 𝒜 d.monoid p q)
+      (fun _ _ _ _ => d.shiftedMul_mem_shiftedFiltration 𝒜 p q) := (rfl)
 
 /-- Products of representatives compute each projection of a completed product. -/
 theorem projection_shiftedCompletionMul (k : ℕ)
