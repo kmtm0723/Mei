@@ -54,13 +54,9 @@ theorem positiveLieAlgebra_le_positiveSubalgebra_of_le (hQ : d.monoid ≤ Q) :
 /-- Include the positive quantum Lie algebra in the chosen coefficient algebra,
 viewed as a Lie algebra under its commutator. -/
 def coefficientLieHom (hQ : d.monoid ≤ Q) :
-    positiveLieAlgebra q β d →ₗ⁅R⁆ positiveSubalgebra q β Q where
-  toLinearMap := (positiveLieAlgebra q β d).toSubmodule.subtype.codRestrict
-    (positiveSubalgebra q β Q).toSubmodule
-    (fun x => positiveLieAlgebra_le_positiveSubalgebra_of_le q β d Q hQ x.property)
-  map_lie' {x y} := by
-    apply Subtype.ext
-    rfl
+    positiveLieAlgebra q β d →ₗ⁅R⁆ positiveSubalgebra q β Q :=
+  LieSubalgebra.inclusion (K' := lieSubalgebraOfSubalgebra R _ (positiveSubalgebra q β Q))
+    (positiveLieAlgebra_le_positiveSubalgebra_of_le q β d Q hQ)
 
 /-- Inclusion into the full quantum algebra forgets the coefficient restriction. -/
 @[simp]
@@ -131,7 +127,8 @@ scoped instance instGradedBracket :
 /-- Inner quantum coefficient actions satisfy the associative Leibniz rule. -/
 scoped instance instIsDerivationAction :
     IsDerivationAction (positiveLieAlgebra q β d) (positiveSubalgebra q β Q) where
-  lie_mul x a b := by simp only [lie_eq, mul_sub, sub_mul, mul_assoc]; abel
+  lie_mul x a b :=
+    IsDerivationAction.lie_mul (coefficientLieHom q β d Q Fact.out x) a b
 
 /-- Positive quantum Lie degrees raise the coefficient degree filtration. -/
 scoped instance instIsFiltrationRaising :
