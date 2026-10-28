@@ -67,20 +67,6 @@ theorem map_shiftedGrading_eq_bot {k : ℕ} {n : Γ} (hn : (k : ℤ) < d.degree 
   rw [← LinearMap.le_ker_iff_map, Submodule.ker_mkQ, shiftedFiltration_succ]
   exact d.le_degreeSubmodule _ hn
 
-/-- Relative homogeneous pieces strictly above the retained order vanish. -/
-theorem shiftedQuotientGrading_eq_bot {k : ℕ} {n : Γ} (hn : (k : ℤ) < d.degree n) :
-    (d.shiftedQuotientGrading ℳ p k).piece n = ⊥ := by
-  rw [shiftedQuotientGrading_piece, d.map_shiftedGrading_eq_bot ℳ p hn]
-
-/-- An allowed homogeneous coefficient survives exactly when it is nonzero,
-provided its relative degree is retained. -/
-theorem mk_shiftedInclusion_eq_zero_iff (n : d.monoid) (a : ℳ (p + n))
-    {k : ℕ} (hn : d.degree n ≤ k) :
-    (Submodule.Quotient.mk (shiftedInclusion ℳ d.monoid p n a) :
-      (d.shiftedFiltration ℳ p).quotient k) = 0 ↔ a = 0 := by
-  rw [Submodule.Quotient.mk_eq_zero,
-    d.shiftedInclusion_mem_shiftedFiltration_succ_iff ℳ p n a hn]
-
 /-- Changing the cutoff preserves the ambient relative degree of every coefficient. -/
 theorem transition_mem_shiftedQuotientGrading {k l : ℕ} (h : k ≤ l) {n : Γ}
     {x : (d.shiftedFiltration ℳ p).quotient l}
