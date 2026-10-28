@@ -50,6 +50,16 @@ theorem exp_apply_eq_self (D : Module.End R M) (hD : IsNilpotent D) {m : M}
   have h : (D ^ 1) • m = 0 := by simpa using hm
   simpa using IsNilpotent.exp_smul_eq_sum h hD
 
+/-- The finite exponential preserves every submodule stable under its endomorphism. -/
+theorem exp_apply_mem_of_forall_mem [Algebra ℚ R] [IsScalarTower ℚ R M]
+    (D : Module.End R M) (hD : IsNilpotent D) (S : Submodule R M)
+    (hS : ∀ x ∈ S, D x ∈ S) {x : M} (hx : x ∈ S) :
+    IsNilpotent.exp D x ∈ S := by
+  obtain ⟨k, hk⟩ := hD
+  rw [IsNilpotent.exp_eq_sum hk, LinearMap.sum_apply]
+  exact S.sum_mem fun n _ => S.smul_of_tower_mem _
+    (Module.End.pow_apply_mem_of_forall_mem (f' := D) n hS x hx)
+
 variable {A : Type*} [Ring A] [Algebra R A] [Module ℚ A]
 
 /-- The exponential of a nilpotent associative derivation is an algebra automorphism. -/
