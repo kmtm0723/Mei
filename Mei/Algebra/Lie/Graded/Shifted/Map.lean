@@ -51,12 +51,12 @@ include hequiv
 
 /-- Shifted coefficient maps intertwine completed BCH actions along the existing
 completed map of the graded Lie homomorphism, on arbitrary completed inputs. -/
-theorem shiftedCompletedMap_completedBCHAction
+theorem shiftedCompletionMap_completedBCHAction
     (g : d.completedBCHGroup ℒ) (a : d.ShiftedCoefficients ℳ p) :
-    T.shiftedCompletedMap ℳ 𝓝 p f hf
+    T.shiftedCompletionMap ℳ 𝓝 p f hf
         ((d.shiftedLieFiltration ℒ ℳ p).completedBCHAction d ℒ g a) =
       (e.shiftedLieFiltration ℒ' 𝓝 (T p)).completedBCHAction e ℒ' (φ.completedMap g)
-        (T.shiftedCompletedMap ℳ 𝓝 p f hf a) := by
+        (T.shiftedCompletionMap ℳ 𝓝 p f hf a) := by
   let ψ : d.shiftedLieSubmodule ℒ ℳ p →ₗ[R] e.shiftedLieSubmodule ℒ' 𝓝 (T p) :=
     T.shiftedMap ℳ 𝓝 p f hf
   have hψ_coe (z : d.shiftedLieSubmodule ℒ ℳ p) : (ψ z : M') = f z :=
@@ -65,7 +65,7 @@ theorem shiftedCompletedMap_completedBCHAction
       ψ ⁅x, z⁆ = ⁅φ x, ψ z⁆ := by
     apply Subtype.ext
     simp only [hψ_coe, LieSubmodule.coe_bracket, hequiv]
-  rw [shiftedCompletedMap_def]
+  rw [shiftedCompletionMap_def]
   exact (d.shiftedLieFiltration ℒ ℳ p).completionMap_completedBCHAction_of_gradedLieHom
     (e.shiftedLieFiltration ℒ' 𝓝 (T p)) φ ψ
     T.modulus T.monotone_modulus
