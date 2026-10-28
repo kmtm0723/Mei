@@ -13,8 +13,9 @@ public import Mei.Algebra.Lie.Filtered.BCH
 An equivariant coefficient map along a graded Lie homomorphism intertwines the
 finite and completed BCH actions. Finite comparison requires only the filtration
 bound at the selected source and target orders; completed comparison requires
-the compatible bounds at every target order. The positive degree map's modulus permits
-different source and target cutoffs. Coefficient and Lie maps may have kernels,
+the compatible bounds at every target order. Coefficient continuity has its own
+monotone modulus, independent of the positive degree map's modulus. Comparison at
+the maximum of the two cutoffs suffices. Coefficient and Lie maps may have kernels,
 and degrees may merge.
 
 The finite statement uses the existing quotient Lie representations and Mathlib's
@@ -122,39 +123,45 @@ variable {N N' R M M' : Type*} {L L' : Type u} [AddCommMonoid N] [AddCommMonoid 
   (F : ModuleFiltration R M) (G : ModuleFiltration R M')
   [IsFiltrationRaising d ℒ F] [IsFiltrationRaising e ℒ' G]
   (φ : GradedLieHom T ℒ ℒ') (ψ : M →ₗ[R] M')
-  (hψ : ∀ k, F.submodule (T.modulus k + 1) ≤ (G.submodule (k + 1)).comap ψ)
+  (μ : ℕ → ℕ) (hμ : Monotone μ)
+  (hψ : ∀ k, F.submodule (μ k + 1) ≤ (G.submodule (k + 1)).comap ψ)
   (hequiv : ∀ (x : L) (a : M), ψ ⁅x, a⁆ = ⁅φ x, ψ a⁆)
 
 include hequiv
 
 /-- The induced maps on completed coefficients and completed BCH groups intertwine
-the actions on arbitrary completed coefficient inputs. -/
+the actions on arbitrary completed coefficient inputs. The coefficient map may
+have a continuity modulus independent of the Lie map's degree modulus. -/
 theorem completionMap_completedBCHAction_of_gradedLieHom
     (g : d.completedBCHGroup ℒ) (z : F.completion) :
-    F.completionMap G ψ T.modulus T.monotone_modulus hψ (F.completedBCHAction d ℒ g z) =
+    F.completionMap G ψ μ hμ hψ (F.completedBCHAction d ℒ g z) =
       G.completedBCHAction e ℒ' (φ.completedMap g)
-        (F.completionMap G ψ T.modulus T.monotone_modulus hψ z) := by
+        (F.completionMap G ψ μ hμ hψ z) := by
   apply G.completion_ext
   intro k
-  let gk : BCHGroup (d.truncatedLie ℒ (T.modulus k)) :=
-    CompletedGroup.projection (T.modulus k) g
-  let qψ := (F.submodule (T.modulus k + 1)).mapQ (G.submodule (k + 1)) ψ (hψ k)
+  let a := max (T.modulus k) (μ k)
+  have hLie : T.modulus k ≤ a := le_max_left _ _
+  have hCoeff : μ k ≤ a := le_max_right _ _
+  have hψa : F.submodule (a + 1) ≤ (G.submodule (k + 1)).comap ψ :=
+    (F.antitone (Nat.add_le_add_right hCoeff 1)).trans (hψ k)
+  let gk : BCHGroup (d.truncatedLie ℒ a) := CompletedGroup.projection a g
+  let qψ := (F.submodule (a + 1)).mapQ (G.submodule (k + 1)) ψ hψa
   have hl : G.projection k
-      (F.completionMap G ψ T.modulus T.monotone_modulus hψ (F.completedBCHAction d ℒ g z)) =
-      qψ (F.truncatedBCHAction d ℒ (T.modulus k) gk (F.projection (T.modulus k) z)) :=
-    (F.projection_completionMap G ψ T.modulus T.monotone_modulus hψ k _).trans
-      (congrArg qψ (F.projection_completedBCHAction d ℒ g z (T.modulus k)))
+      (F.completionMap G ψ μ hμ hψ (F.completedBCHAction d ℒ g z)) =
+      qψ (F.truncatedBCHAction d ℒ a gk (F.projection a z)) :=
+    (F.projection_completionMap_of_le G ψ μ hμ hψ k a hCoeff _).trans
+      (congrArg qψ (F.projection_completedBCHAction d ℒ g z a))
   have hr : G.projection k
       (G.completedBCHAction e ℒ' (φ.completedMap g)
-        (F.completionMap G ψ T.modulus T.monotone_modulus hψ z)) =
-      G.truncatedBCHAction e ℒ' k ((φ.truncatedMap k le_rfl).bchGroupMap gk)
-        (qψ (F.projection (T.modulus k) z)) :=
+        (F.completionMap G ψ μ hμ hψ z)) =
+      G.truncatedBCHAction e ℒ' k ((φ.truncatedMap k hLie).bchGroupMap gk)
+        (qψ (F.projection a z)) :=
     (G.projection_completedBCHAction e ℒ' (φ.completedMap g) _ k).trans
       (congrArg₂ (fun g z => G.truncatedBCHAction e ℒ' k g z)
-        (φ.projection_completedMap k g)
-        (F.projection_completionMap G ψ T.modulus T.monotone_modulus hψ k z))
-  exact hl.trans ((F.mapQ_truncatedBCHAction_of_gradedLieHom G φ ψ hequiv k le_rfl (hψ k)
-    gk (F.projection (T.modulus k) z)).trans hr.symm)
+        (φ.projection_completedMap_of_le k hLie g)
+        (F.projection_completionMap_of_le G ψ μ hμ hψ k a hCoeff z))
+  exact hl.trans ((F.mapQ_truncatedBCHAction_of_gradedLieHom G φ ψ hequiv k hLie hψa
+    gk (F.projection a z)).trans hr.symm)
 
 end Completed
 
