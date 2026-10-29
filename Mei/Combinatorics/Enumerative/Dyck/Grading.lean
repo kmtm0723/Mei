@@ -371,8 +371,10 @@ theorem exists_tight_one_two :
     rw [tight_iff]
     refine ⟨hshadow, ?_, ?_, ?_⟩
     · rw [hp]
-    · rw [hq] ; decide
-    · rw [hp, hq] ; decide
+    · rw [hq] 
+      decide
+    · rw [hp, hq] 
+      decide
   exact ⟨γ, hp, hq, hshadow, ht, hn⟩
 
 /-- On the path `UUD`, grading the first and last edges by one gives a nondegenerate
@@ -427,9 +429,11 @@ theorem exists_tight_two_one :
   have ht : Tight γ := by
     rw [tight_iff]
     refine ⟨hshadow, ?_, ?_, ?_⟩
-    · rw [hp] ; decide
+    · rw [hp] 
+      decide
     · rw [hq]
-    · rw [hp, hq] ; decide
+    · rw [hp, hq] 
+      decide
   exact ⟨γ, hp, hq, hshadow, ht, hn⟩
 
 section Weights
