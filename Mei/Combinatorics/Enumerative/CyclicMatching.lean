@@ -32,6 +32,10 @@ every sink is matched; record lows in the initial period need not be unmatched.
 
 This is a cycle lemma in the style of Dvoretzky–Motzkin; it counts the total shadows of gradings
 of maximal Dyck paths.
+The double-cycle lemmas `exists_mutual` and its matched variants produce a non-sink and a
+sink that see each other under the corresponding token-count hypotheses. The slope comparison
+`mul_sum_lt_of_forall_matched` and its reverse bound the two token totals when no such pair
+exists. These results support vanishing (V) as well as the total-shadow count.
 -/
 
 public section
@@ -98,7 +102,7 @@ theorem sum_cyclicIcc_neg {M : Type*} [AddCommMonoid M] (f : Fin n → M) (a b :
 
 /-- Membership in a cyclic interval in terms of positions: for `e ≤ e'` it is the ordinary
 interval, and otherwise it wraps around the end. -/
-theorem mem_cyclicIcc_iff {e e' k : Fin n} :
+theorem mem_cyclicIcc_iff_le_or_lt {e e' k : Fin n} :
     k ∈ cyclicIcc e e' ↔ e ≤ e' ∧ e ≤ k ∧ k ≤ e' ∨ e' < e ∧ (e ≤ k ∨ k ≤ e') := by
   rw [mem_cyclicIcc]
   rcases le_or_gt e k with hk | hk <;> rcases le_or_gt e e' with he | he
@@ -178,41 +182,48 @@ instance : DecidablePred (Matched B τ) := fun v ↦
     (matched_iff_forall B τ v).symm
 
 /-- The reflection of the non-sinks, `{k | -k ∉ B}`: the sinks of the reversed cycle. -/
-private def reflect : Finset (Fin n) := Bᶜ.map (Equiv.neg (Fin n)).toEmbedding
+def reflect : Finset (Fin n) := Bᶜ.map (Equiv.neg (Fin n)).toEmbedding
 
-private theorem mem_reflect {k : Fin n} : k ∈ reflect B ↔ -k ∉ B := by
+/-- Membership in the reflected non-sinks is non-membership at the negated position. -/
+theorem mem_reflect {k : Fin n} : k ∈ reflect B ↔ -k ∉ B := by
   rw [reflect, mem_map_equiv, Equiv.neg_symm, Equiv.neg_apply, mem_compl]
 
-private theorem mem_compl_reflect {k : Fin n} : k ∈ (reflect B)ᶜ ↔ -k ∈ B := by
+/-- The complement of the reflected non-sinks consists of reflected sinks. -/
+theorem mem_compl_reflect {k : Fin n} : k ∈ (reflect B)ᶜ ↔ -k ∈ B := by
   rw [mem_compl, mem_reflect, not_not]
 
-private theorem compl_reflect : (reflect B)ᶜ = B.map (Equiv.neg (Fin n)).toEmbedding := by
+/-- Taking the complement after reflection gives the reflected sinks. -/
+theorem compl_reflect : (reflect B)ᶜ = B.map (Equiv.neg (Fin n)).toEmbedding := by
   ext k
   rw [mem_compl_reflect, mem_map_equiv, Equiv.neg_symm, Equiv.neg_apply]
 
-private theorem sum_reflect (ρ : Fin n → ℕ) : ∑ k ∈ reflect B, (ρ ∘ Neg.neg) k = ∑ k ∈ Bᶜ, ρ k := by
+/-- Summing a reflected function over reflected non-sinks preserves its sum. -/
+theorem sum_reflect (ρ : Fin n → ℕ) : ∑ k ∈ reflect B, (ρ ∘ Neg.neg) k = ∑ k ∈ Bᶜ, ρ k := by
   rw [reflect, sum_map]
   simp
 
-private theorem sum_compl_reflect (ρ : Fin n → ℕ) :
+/-- Summing a reflected function over reflected sinks preserves its sum. -/
+theorem sum_compl_reflect (ρ : Fin n → ℕ) :
     ∑ k ∈ (reflect B)ᶜ, (ρ ∘ Neg.neg) k = ∑ k ∈ B, ρ k := by
   rw [compl_reflect, sum_map]
   simp
 
-private theorem card_reflect : #(reflect B) = #Bᶜ := card_map _
+/-- Reflection preserves the number of non-sinks. -/
+theorem card_reflect : #(reflect B) = #Bᶜ := card_map _
 
-private theorem card_compl_reflect : #(reflect B)ᶜ = #B := by rw [compl_reflect, card_map]
+/-- The complement of the reflected non-sinks has as many elements as the sinks. -/
+theorem card_compl_reflect : #(reflect B)ᶜ = #B := by rw [compl_reflect, card_map]
 
 /-- Windows of the reversed cycle with reflected sinks are reversed windows with non-sinks as
 sinks. -/
-private theorem sum_weight_reflect (ρ : Fin n → ℕ) (x y : Fin n) :
+theorem sum_weight_reflect (ρ : Fin n → ℕ) (x y : Fin n) :
     ∑ k ∈ cyclicIcc x y, weight (reflect B) (ρ ∘ Neg.neg) k =
       ∑ k ∈ cyclicIcc (-y) (-x), weight Bᶜ ρ k := by
   rw [sum_cyclicIcc_neg]
   refine sum_congr rfl fun k _ ↦ ?_
   simp only [weight_def, mem_reflect, mem_compl, Function.comp_apply]
 
-private theorem sum_weight_compl_reflect (ρ : Fin n → ℕ) (x y : Fin n) :
+theorem sum_weight_compl_reflect (ρ : Fin n → ℕ) (x y : Fin n) :
     ∑ k ∈ cyclicIcc x y, weight (reflect B)ᶜ (ρ ∘ Neg.neg) k =
       ∑ k ∈ cyclicIcc (-y) (-x), weight B ρ k := by
   rw [sum_cyclicIcc_neg]
@@ -610,10 +621,27 @@ private theorem weight_compl (σ : Fin n → ℕ) (k : Fin n) :
     weight Bᶜ σ k = if k ∈ B then (σ k : ℤ) else -1 := by
   by_cases hk : k ∈ B <;> simp [weight, hk]
 
-omit [NeZero n] in
-private theorem weight_compl_of_mem (σ : Fin n → ℕ) {k : Fin n} (hk : k ∈ B) :
-    weight Bᶜ σ k = σ k := by
-  simp [hk]
+/-- The offset from `pos y` to `pos (y + t)` is `t`, for `t < n`. -/
+private theorem val_pos_add_sub (y t : ℕ) (ht : t < n) : (pos (y + t) - pos y : Fin n).val = t := by
+  rw [pos_add, add_sub_cancel_left]
+  simp [pos, Nat.mod_eq_of_lt ht]
+
+/-- Every position is reached from `pos y` after its offset. -/
+private theorem pos_add_val_sub (y : ℕ) (e : Fin n) : pos (y + (e - pos y).val) = e := by
+  rw [pos_add, pos_val, add_sub_cancel]
+
+/-- A cyclic window read from time `y` is an increment of the walk. -/
+private theorem sum_cyclicIcc_pos (y t : ℕ) (ht : t < n) :
+    ∑ k ∈ cyclicIcc (pos y) (pos (y + t)), weight B τ k = walk B τ (y + t + 1) - walk B τ y := by
+  rw [sum_cyclicIcc, val_pos_add_sub y t ht, add_assoc, walk_increment_pos, ← add_assoc]
+
+/-- Recover a position by subtracting its backward offset from a lifted time. -/
+private theorem pos_sub_val_sub (y : ℕ) (e : Fin n) (hy : (pos y - e).val ≤ y) :
+    pos (y - (pos y - e).val) = e := by
+  have hsum : (pos (y - (pos y - e).val) + pos (pos y - e).val : Fin n) = pos y := by
+    rw [← pos_add, Nat.sub_add_cancel hy]
+  rw [pos_val] at hsum
+  exact (eq_sub_of_add_eq hsum).trans (sub_sub_cancel _ _)
 
 /-- From a segment `[s, e]` on which the first walk stays strictly above its start and the
 second walk does not decrease, starting at a non-sink, produce a mutually visible pair: the
@@ -653,28 +681,18 @@ private theorem mutual_of_segment (σ : Fin n → ℕ) {s e : ℕ} (hse2 : s + 1
     omega
   have hkn : k - s < n := by omega
   have hvh : (pos k - pos s : Fin n).val = k - s := by
-    have hk' : (pos k : Fin n) = pos s + pos (k - s) := by
-      rw [← pos_add, show s + (k - s) = k by omega]
-    rw [hk', add_sub_cancel_left]
-    simp [pos, Nat.mod_eq_of_lt hkn]
+    simpa only [Nat.add_sub_of_le (show s ≤ k by omega)] using val_pos_add_sub s (k - s) hkn
   refine ⟨pos s, hsB, pos k, hkB, fun e' he' ↦ ?_, fun e' he' ↦ ?_⟩
   · rw [hvh] at he'
-    rw [sum_cyclicIcc, add_assoc, walk_increment_pos, ← add_assoc]
+    rw [← pos_add_val_sub s e', sum_cyclicIcc_pos B τ s _ (e' - pos s).isLt]
     have h2 := habove (s + (e' - pos s).val + 1) (by omega) (by omega)
     exact sub_ne_zero.mpr (ne_of_gt h2)
   · rw [hvh] at he'
     set u := (pos k - e').val with hu
-    have he'k : e' = pos (k - u) := by
-      have : (pos k : Fin n) = e' + pos u := by
-        rw [hu]
-        simp [pos]
-      have h2 : (pos k : Fin n) = pos (k - u) + pos u := by
-        rw [← pos_add, show k - u + u = k by omega]
-      exact add_right_cancel (this.symm.trans h2)
-    rw [sum_cyclicIcc]
-    have hsum : e'.val + (pos k - e').val + 1 = (pos (k - u) : Fin n).val + (u + 1) := by
-      rw [← hu, he'k]; ring
-    rw [hsum, he'k, walk_increment_pos, show k - u + (u + 1) = k + 1 by omega]
+    have he'k : pos (k - u) = e' := pos_sub_val_sub k e' (by omega)
+    have hwin := sum_cyclicIcc_pos Bᶜ σ (k - u) u (by omega)
+    rw [show k - u + u = k by omega, he'k] at hwin
+    rw [hwin]
     have h2 := hbelow (k - u) (by omega) (by omega)
     exact sub_ne_zero.mpr (ne_of_gt h2)
 
@@ -751,7 +769,6 @@ theorem exists_mutual (σ : Fin n → ℕ) (hτ : #B ≤ ∑ k ∈ Bᶜ, τ k)
       rw [hee, hβper]
       linarith [hsβ m1 hm1]
   -- The first step from `s` is a non-sink carrying tokens.
-  have hpos_s : (pos s : Fin n).val = s := by simp [pos, Nat.mod_eq_of_lt hsn]
   have hsB : pos s ∉ B := by
     intro hmem
     have := hglob (s + 1)
@@ -805,6 +822,18 @@ private theorem isBase_succ {y : ℕ} (hb : IsBase B τ y) (hyB : pos y ∈ B) :
     linarith
   · rw [show x = y + 1 by omega, walk_succ, weight_of_mem B τ hyB]
 
+/-- A run of sink steps preserves the running-minimum property. -/
+private theorem isBase_add_of_sinks {c : ℕ} (hb : IsBase B τ c) :
+    ∀ d, (∀ j, c ≤ j → j < c + d → pos j ∈ B) → IsBase B τ (c + d) := by
+  intro d
+  induction d with
+  | zero => intro; simpa using hb
+  | succ d ih =>
+    intro hsink
+    rw [← add_assoc]
+    exact isBase_succ B τ (ih fun j h₁ h₂ ↦ hsink j h₁ (by omega))
+      (hsink _ (by omega) (by omega))
+
 /-- From a running minimum, a stretch of unmatched sinks does not move the second walk. -/
 private theorem walk_compl_eq_of_sinks (σ : Fin n → ℕ)
     (hm : ∀ v ∈ B, σ v ≠ 0 → Matched B τ v) {c : ℕ} (hc : n ≤ c) (hb : IsBase B τ c) :
@@ -814,16 +843,10 @@ private theorem walk_compl_eq_of_sinks (σ : Fin n → ℕ)
   | zero => intro; rfl
   | succ d ih =>
     intro hsink
-    have hbase : IsBase B τ (c + d) := by
-      clear ih
-      induction d with
-      | zero => simpa using hb
-      | succ d ih' =>
-        rw [← add_assoc]
-        exact isBase_succ B τ (ih' fun j h₁ h₂ ↦ hsink j h₁ (by omega)) (hsink _ (by omega)
-          (by omega))
+    have hbase := isBase_add_of_sinks B τ hb d (fun j h₁ h₂ ↦ hsink j h₁ (by omega))
     have hB := hsink (c + d) (by omega) (by omega)
-    rw [← add_assoc, walk_succ, ih fun j h₁ h₂ ↦ hsink j h₁ (by omega), weight_compl_of_mem B σ hB,
+    rw [← add_assoc, walk_succ, ih fun j h₁ h₂ ↦ hsink j h₁ (by omega),
+      weight_of_notMem Bᶜ σ (notMem_compl.mpr hB),
       sigma_eq_zero_of_isBase B τ σ hm (by omega) hbase hB]
     simp
 
@@ -915,7 +938,7 @@ private theorem exists_segment (σ : Fin n → ℕ) (hm : ∀ v ∈ B, σ v ≠ 
       rw [walk_succ, weight_of_mem B τ haB] at this
       omega
     have hβc : walk Bᶜ σ c = walk Bᶜ σ a := by
-      rw [hc1, walk_succ, weight_compl_of_mem B σ haB,
+      rw [hc1, walk_succ, weight_of_notMem Bᶜ σ (notMem_compl.mpr haB),
         sigma_eq_zero_of_isBase B τ σ hm ha hba haB]
       simp
     have hjc : c ≤ j := by
@@ -970,7 +993,7 @@ theorem exists_mutual_of_forall_matched (σ : Fin n → ℕ) (hBc : Bᶜ.Nonempt
   obtain ⟨k, hk⟩ := hBc
   have hj : ∃ j, a ≤ j ∧ j < a + n ∧ pos j ∉ B := by
     refine ⟨a + (k - pos a).val, by omega, by have := (k - pos a).isLt; omega, ?_⟩
-    rw [pos_add, pos_val, add_sub_cancel]
+    rw [pos_add_val_sub]
     exact mem_compl.mp hk
   obtain ⟨s, e, h₁, h₂, h₃, h₄, h₅, h₆⟩ := exists_segment B τ σ hm n a (a + n) (by omega) ha₁
     (by omega) hba hbb hβ hj
@@ -1000,20 +1023,6 @@ theorem exists_mutual_of_forall_matched_rev (σ : Fin n → ℕ) (hB : B.Nonempt
   · have := hfwd (-e) (by rwa [show -e - h' = -h' - e by abel, show v' - h' = -h' - -v' by abel])
     rwa [sum_weight_reflect, neg_neg] at this
 
-/-- The offset from `pos y` to `pos (y + t)` is `t`, for `t < n`. -/
-private theorem val_pos_add_sub (y t : ℕ) (ht : t < n) : (pos (y + t) - pos y : Fin n).val = t := by
-  rw [pos_add, add_sub_cancel_left]
-  simp [pos, Nat.mod_eq_of_lt ht]
-
-/-- Every position is reached from `pos y` after its offset. -/
-private theorem pos_add_val_sub (y : ℕ) (e : Fin n) : pos (y + (e - pos y).val) = e := by
-  rw [pos_add, pos_val, add_sub_cancel]
-
-/-- A cyclic window read from time `y` is an increment of the walk. -/
-private theorem sum_cyclicIcc_pos (y t : ℕ) (ht : t < n) :
-    ∑ k ∈ cyclicIcc (pos y) (pos (y + t)), weight B τ k = walk B τ (y + t + 1) - walk B τ y := by
-  rw [sum_cyclicIcc, val_pos_add_sub y t ht, add_assoc, walk_increment_pos, ← add_assoc]
-
 /-- The `τ` tokens on the non-sinks between times `x` and `y` of the periodic extension. -/
 private def tokens (x y : ℕ) : ℤ := (walk B τ y - walk B τ x) - (walk B 0 y - walk B 0 x)
 
@@ -1039,6 +1048,51 @@ private theorem tokens_add_self (x : ℕ) : tokens B τ x (x + n) = ∑ k ∈ B�
   simp only [Pi.zero_apply, sum_const_zero, Nat.cast_zero]
   ring
 
+/-- The second walk cannot rise above the end of an excursion before its first step. -/
+private theorem walk_compl_le_first_of_excursion (σ : Fin n → ℕ)
+    (hcomp : ∀ h ∉ B, ∀ v ∈ B,
+      (∀ e, (e - h).val < (v - h).val → ∑ k ∈ cyclicIcc h e, weight B τ k ≠ 0) →
+      ∃ e, (v - e).val < (v - h).val ∧ ∑ k ∈ cyclicIcc e v, weight Bᶜ σ k = 0)
+    {a c : ℕ} (hcn : c ≤ a + n) (haB : pos a ∉ B)
+    (habove : ∀ y, a < y → y < c → walk B τ a < walk B τ y) :
+    ∀ x, a < x → x ≤ c → walk Bᶜ σ c ≤ walk Bᶜ σ x →
+      walk Bᶜ σ c ≤ walk Bᶜ σ (a + 1) := by
+  intro x
+  induction x using Nat.strong_induction_on with
+  | _ x ih =>
+  intro hax hxc hXx
+  rcases eq_or_lt_of_le (show a + 1 ≤ x by omega) with rfl | hx
+  · exact hXx
+  by_cases hle : walk Bᶜ σ c ≤ walk Bᶜ σ (x - 1)
+  · exact ih (x - 1) (by omega) (by omega) (by omega) hle
+  have hstepX : walk Bᶜ σ x = walk Bᶜ σ (x - 1) + weight Bᶜ σ (pos (x - 1)) := by
+    rw [← walk_succ, show x - 1 + 1 = x by omega]
+  have hvB : pos (x - 1) ∈ B := by
+    by_contra hnot
+    rw [weight_of_mem Bᶜ σ (mem_compl.mpr hnot)] at hstepX
+    linarith [not_le.mp hle]
+  rw [weight_of_notMem Bᶜ σ (notMem_compl.mpr hvB)] at hstepX
+  have hvh : (pos (x - 1) - pos a : Fin n).val = x - 1 - a := by
+    have := val_pos_add_sub (n := n) a (x - 1 - a) (by omega)
+    rwa [show a + (x - 1 - a) = x - 1 by omega] at this
+  obtain ⟨e, he, hsum⟩ := hcomp (pos a) haB (pos (x - 1)) hvB fun e he ↦ by
+    rw [hvh] at he
+    rw [← pos_add_val_sub a e, sum_cyclicIcc_pos B τ a _ (e - pos a).isLt]
+    have := habove (a + (e - pos a).val + 1) (by omega) (by omega)
+    exact sub_ne_zero.mpr (ne_of_gt this)
+  rw [hvh] at he
+  set u := (pos (x - 1) - e).val with hu
+  have hpu : pos u = pos (x - 1) - e := pos_val _
+  have hey : pos (x - 1 - u) = e := pos_sub_val_sub (x - 1) e (by omega)
+  have hwin := sum_cyclicIcc_pos Bᶜ σ (x - 1 - u) u (by omega)
+  rw [show x - 1 - u + u = x - 1 by omega, hey, hsum, show x - 1 + 1 = x by omega] at hwin
+  have hu0 : u ≠ 0 := by
+    intro h0
+    rw [h0, Nat.sub_zero] at hwin
+    have : (0 : ℤ) < σ (pos (x - 1)) := by linarith [not_le.mp hle]
+    linarith
+  exact ih (x - 1 - u) (by omega) (by omega) (by omega) (by linarith)
+
 /-- On an excursion of the first walk from a non-sink `a` back to its level at `c`, if no
 non-sink and sink see each other, then the `σ` tokens are fewer than the non-sinks, and a slope
 bound on windows gives `α σ < β τ` there. -/
@@ -1062,47 +1116,8 @@ private theorem excursion_lt (σ : Fin n → ℕ) (α β : ℕ)
     have := neg_one_le_weight B τ (pos (c - 1))
     omega
   -- Going back from `c`, the second walk never ends above its value at `c` before `a + 1`.
-  have key : ∀ x, a < x → x ≤ c → walk Bᶜ σ c ≤ walk Bᶜ σ x →
-      walk Bᶜ σ c ≤ walk Bᶜ σ (a + 1) := by
-    intro x
-    induction x using Nat.strong_induction_on with
-    | _ x ih =>
-    intro hax hxc hXx
-    rcases eq_or_lt_of_le (show a + 1 ≤ x by omega) with rfl | hx
-    · exact hXx
-    by_cases hle : walk Bᶜ σ c ≤ walk Bᶜ σ (x - 1)
-    · exact ih (x - 1) (by omega) (by omega) (by omega) hle
-    have hstepX : walk Bᶜ σ x = walk Bᶜ σ (x - 1) + weight Bᶜ σ (pos (x - 1)) := by
-      rw [← walk_succ, show x - 1 + 1 = x by omega]
-    have hvB : pos (x - 1) ∈ B := by
-      by_contra hnot
-      rw [weight_of_mem Bᶜ σ (mem_compl.mpr hnot)] at hstepX
-      linarith [not_le.mp hle]
-    rw [weight_compl_of_mem B σ hvB] at hstepX
-    have hvh : (pos (x - 1) - pos a : Fin n).val = x - 1 - a := by
-      have := val_pos_add_sub (n := n) a (x - 1 - a) (by omega)
-      rwa [show a + (x - 1 - a) = x - 1 by omega] at this
-    obtain ⟨e, he, hsum⟩ := hcomp (pos a) haB (pos (x - 1)) hvB fun e he ↦ by
-      rw [hvh] at he
-      rw [← pos_add_val_sub a e, sum_cyclicIcc_pos B τ a _ (e - pos a).isLt]
-      have := habove (a + (e - pos a).val + 1) (by omega) (by omega)
-      exact sub_ne_zero.mpr (ne_of_gt this)
-    rw [hvh] at he
-    set u := (pos (x - 1) - e).val with hu
-    have hpu : pos u = pos (x - 1) - e := pos_val _
-    have h1 : (pos (x - 1 - u) + pos u : Fin n) = pos (x - 1) := by
-      rw [← pos_add, show x - 1 - u + u = x - 1 by omega]
-    rw [hpu] at h1
-    have hey : pos (x - 1 - u) = e := (eq_sub_of_add_eq h1).trans (sub_sub_cancel _ _)
-    have hwin := sum_cyclicIcc_pos Bᶜ σ (x - 1 - u) u (by omega)
-    rw [show x - 1 - u + u = x - 1 by omega, hey, hsum, show x - 1 + 1 = x by omega] at hwin
-    have hu0 : u ≠ 0 := by
-      intro h0
-      rw [h0, Nat.sub_zero] at hwin
-      have : (0 : ℤ) < σ (pos (x - 1)) := by linarith [not_le.mp hle]
-      linarith
-    exact ih (x - 1 - u) (by omega) (by omega) (by omega) (by linarith)
-  have hXc := key c (by omega) le_rfl le_rfl
+  have hXc := walk_compl_le_first_of_excursion B τ σ hcomp hcn haB habove c
+    (by omega) le_rfl le_rfl
   have hXa : walk Bᶜ σ (a + 1) = walk Bᶜ σ a - 1 := by
     rw [walk_succ, weight_of_mem Bᶜ σ (mem_compl.mpr haB)]
     ring
