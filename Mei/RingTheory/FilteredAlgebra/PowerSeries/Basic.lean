@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.RingTheory.FilteredAlgebra.Algebra
-public import Mei.RingTheory.PowerSeries.Nilpotent
+public import Mei.RingTheory.PowerSeries.Nilpotent.Basic
 import TauCeti.RingTheory.PowerSeries.Evaluation
 public import Mathlib.RingTheory.PowerSeries.Inverse
 
@@ -80,6 +80,14 @@ theorem completedAeval_mem_first (x : F.completionIdeal 1) {f : PowerSeries R}
   rw [F.completionIdeal_succ 0, RingHom.mem_ker,
     F.projection_completedAeval_eq_sum]
   simp [PowerSeries.coeff_zero_eq_constantCoeff_apply, hf]
+
+/-- A constant-one ray series evaluates to a completed coefficient congruent
+to one. -/
+theorem completedAeval_sub_one_mem_first (x : F.completionIdeal 1)
+    (f : PowerSeries R) (hf : PowerSeries.constantCoeff f = 1) :
+    F.completedAeval x f - 1 ∈ F.completionIdeal 1 := by
+  rw [← map_one (F.completedAeval (R := R) x), ← map_sub]
+  exact F.completedAeval_mem_first x (by simp [hf])
 
 /-- A series with invertible constant coefficient evaluates to a unit. -/
 theorem isUnit_completedAeval (x : F.completionIdeal 1) {f : PowerSeries R}
