@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import Mei.Combinatorics.Enumerative.DyckRecursion
+public import Mei.Combinatorics.Enumerative.Dyck.Recursion
 public import Mei.Combinatorics.Enumerative.DyckVanishing
 public import Mei.Combinatorics.Enumerative.RankTwoRecursion
 
