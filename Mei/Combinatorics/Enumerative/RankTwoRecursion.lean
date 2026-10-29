@@ -26,16 +26,18 @@ and (V) kills one of the two new values. Hence two families satisfying (R), (V) 
 values coincide, by induction on `p + q`. The definitions and recursion work over any
 semiring; uniqueness additionally requires additive cancellation.
 
-The recursion, vanishing conditions and uniqueness are from Burcroff–Lee–Mou,
-*Positivity of generalized cluster scattering diagrams*, Corollary 5.29
-(https://arxiv.org/abs/2503.03719).
+The vanishing conditions (V) and recursion (R) for shadowed grading sums are from
+Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*, Lemmas 5.23 and
+5.27, respectively (https://arxiv.org/html/2503.03719v1). Corollary 5.29 records the same
+identities for their polynomials `d₊` and `d₋`; it does not state uniqueness. The uniqueness
+theorem here is the elementary induction on `p + q` described above and in roadmap §7.3.
 -/
 
 public section
 
 open Finset Polynomial
 
-namespace Polynomial
+namespace Mei.RankTwo
 
 variable {S : Type*} [Semiring S]
 
@@ -62,11 +64,6 @@ theorem powCoeff_zero {P : S[X]} (hP : P.coeff 0 = 1) (r : ℤ) : powCoeff P r 0
       hP, one_pow]
   · simp [powCoeff_of_neg P hr]
 
-end Polynomial
-
-namespace Mei.RankTwo
-
-variable {S : Type*} [Semiring S]
 variable (d₁ d₂ : ℕ) (P₁ P₂ : S[X])
 
 /-- The initial values, the recursion (R) and the vanishing conditions (V) for a pair of
