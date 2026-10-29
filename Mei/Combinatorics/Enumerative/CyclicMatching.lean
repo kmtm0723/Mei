@@ -596,14 +596,6 @@ private theorem walk_add_mul (k j : ℕ) :
     push_cast
     ring
 
-/-- Walk increments only depend on the starting position modulo `n`. -/
-private theorem walk_mod_sub (x t : ℕ) :
-    walk B τ (x % n + t) - walk B τ (x % n) = walk B τ (x + t) - walk B τ x := by
-  have hx : x = x % n + x / n * n := by rw [mul_comm]; exact (Nat.mod_add_div x n).symm
-  conv_rhs => rw [hx, show x % n + x / n * n + t = x % n + t + x / n * n by ring]
-  rw [walk_add_mul, walk_add_mul]
-  ring
-
 /-- With nonnegative total weight, the walk never goes below its minimum over one period. -/
 private theorem walk_ge_of_nonneg (hA : 0 ≤ ∑ i : Fin n, weight B τ i) {m : ℕ}
     (hm : ∀ y < n, walk B τ m ≤ walk B τ y) (y : ℕ) : walk B τ m ≤ walk B τ y := by
@@ -665,10 +657,9 @@ private theorem mutual_of_segment (σ : Fin n → ℕ) {s e : ℕ} (hse2 : s + 1
       rw [← pos_add, show s + (k - s) = k by omega]
     rw [hk', add_sub_cancel_left]
     simp [pos, Nat.mod_eq_of_lt hkn]
-  have hps : (pos s : Fin n).val = s % n := by simp [pos]
   refine ⟨pos s, hsB, pos k, hkB, fun e' he' ↦ ?_, fun e' he' ↦ ?_⟩
   · rw [hvh] at he'
-    rw [sum_cyclicIcc, hps, add_assoc, walk_mod_sub, ← add_assoc]
+    rw [sum_cyclicIcc, add_assoc, walk_increment_pos, ← add_assoc]
     have h2 := habove (s + (e' - pos s).val + 1) (by omega) (by omega)
     exact sub_ne_zero.mpr (ne_of_gt h2)
   · rw [hvh] at he'
@@ -681,10 +672,9 @@ private theorem mutual_of_segment (σ : Fin n → ℕ) {s e : ℕ} (hse2 : s + 1
         rw [← pos_add, show k - u + u = k by omega]
       exact add_right_cancel (this.symm.trans h2)
     rw [sum_cyclicIcc]
-    have hval : e'.val = (k - u) % n := by rw [he'k]; simp [pos]
-    have hsum : e'.val + (pos k - e').val + 1 = (k - u) % n + (u + 1) := by
-      rw [hval, ← hu]; ring
-    rw [hsum, hval, walk_mod_sub, show k - u + (u + 1) = k + 1 by omega]
+    have hsum : e'.val + (pos k - e').val + 1 = (pos (k - u) : Fin n).val + (u + 1) := by
+      rw [← hu, he'k]; ring
+    rw [hsum, he'k, walk_increment_pos, show k - u + (u + 1) = k + 1 by omega]
     have h2 := hbelow (k - u) (by omega) (by omega)
     exact sub_ne_zero.mpr (ne_of_gt h2)
 
@@ -1022,8 +1012,7 @@ private theorem pos_add_val_sub (y : ℕ) (e : Fin n) : pos (y + (e - pos y).val
 /-- A cyclic window read from time `y` is an increment of the walk. -/
 private theorem sum_cyclicIcc_pos (y t : ℕ) (ht : t < n) :
     ∑ k ∈ cyclicIcc (pos y) (pos (y + t)), weight B τ k = walk B τ (y + t + 1) - walk B τ y := by
-  have hps : (pos y : Fin n).val = y % n := by simp [pos]
-  rw [sum_cyclicIcc, val_pos_add_sub y t ht, hps, add_assoc, walk_mod_sub, ← add_assoc]
+  rw [sum_cyclicIcc, val_pos_add_sub y t ht, add_assoc, walk_increment_pos, ← add_assoc]
 
 /-- The `τ` tokens on the non-sinks between times `x` and `y` of the periodic extension. -/
 private def tokens (x y : ℕ) : ℤ := (walk B τ y - walk B τ x) - (walk B 0 y - walk B 0 x)
