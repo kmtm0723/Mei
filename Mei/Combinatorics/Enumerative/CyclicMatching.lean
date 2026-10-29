@@ -1042,7 +1042,7 @@ private theorem tokens_succ (x : ℕ) :
   unfold tokens
   rw [walk_succ, walk_succ]
   by_cases h : pos x ∈ B
-  · simp [weight_of_mem B τ h, weight_of_mem B 0 h, h]
+  · simp [h]
   · simp [weight_of_notMem B τ h, weight_of_notMem B 0 h, h]
 
 private theorem tokens_add_self (x : ℕ) : tokens B τ x (x + n) = ∑ k ∈ Bᶜ, τ k := by
