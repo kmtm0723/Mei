@@ -63,18 +63,14 @@ theorem existsUnique_shiftedCoefficients_overlap (p q r : Γ)
       exact d.shiftedHomogeneousComponent_eq_zero ℳ q
         (fun hq => hu ((hinter u).mpr ⟨hp, hq⟩)) y
     · exact d.shiftedHomogeneousComponent_eq_zero ℳ p hp x
-  let z := d.shiftedCoefficientsOfComponents ℳ r
-    (fun u => d.shiftedHomogeneousComponent ℳ p u x) hx
-  have hz : d.shiftedCompletedInclusion ℳ r p hrp z = x := by
-    apply d.shiftedCoefficients_ext ℳ p
-    intro u
-    rw [shiftedHomogeneousComponent_inclusion]
-    exact d.shiftedHomogeneousComponent_ofComponents ℳ r _ _ u
+  obtain ⟨z, hz⟩ := (d.mem_range_shiftedCompletedInclusion_iff ℳ r p hrp x).mpr hx
   refine ⟨z, ⟨hz, ?_⟩, ?_⟩
   · apply d.shiftedCoefficients_ext ℳ q
     intro u
     rw [shiftedHomogeneousComponent_inclusion]
-    exact (d.shiftedHomogeneousComponent_ofComponents ℳ r _ _ u).trans (hxy u)
+    have hz' := congrArg (d.shiftedHomogeneousComponent ℳ p u) hz
+    rw [shiftedHomogeneousComponent_inclusion] at hz'
+    exact hz'.trans (hxy u)
   · intro w hw
     exact d.shiftedCompletedInclusion_injective ℳ r p hrp (hw.1.trans hz.symm)
 
