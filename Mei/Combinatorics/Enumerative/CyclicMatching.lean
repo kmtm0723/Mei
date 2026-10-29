@@ -967,6 +967,7 @@ private theorem exists_segment (σ : Fin n → ℕ) (hm : ∀ v ∈ B, σ v ≠ 
       · exact ⟨a, c, le_rfl, hcb, hca, hbetween, hle, haB⟩
       · exact hrec hlt
 
+omit [NeZero n] in
 /-- **Double cycle lemma, matched form.** If every sink carrying `σ` tokens is matched for
 `(B, τ)`, there is a non-sink, and there are at least as many `σ` tokens as non-sinks, then some
 non-sink `h` and sink `v` see each other as in `exists_mutual`. -/
@@ -975,6 +976,7 @@ theorem exists_mutual_of_forall_matched (σ : Fin n → ℕ) (hBc : Bᶜ.Nonempt
     ∃ h ∉ B, ∃ v ∈ B,
       (∀ e, (e - h).val < (v - h).val → ∑ k ∈ cyclicIcc h e, weight B τ k ≠ 0) ∧
       ∀ e, (v - e).val < (v - h).val → ∑ k ∈ cyclicIcc e v, weight Bᶜ σ k ≠ 0 := by
+  have : NeZero n := ⟨hBc.choose.pos.ne'⟩
   by_cases hτ : #B ≤ ∑ k ∈ Bᶜ, τ k
   · exact exists_mutual B τ σ hτ hσ
   have hA : ∑ i : Fin n, weight B τ i < 0 := by
@@ -994,6 +996,7 @@ theorem exists_mutual_of_forall_matched (σ : Fin n → ℕ) (hBc : Bᶜ.Nonempt
     (by omega) hba hbb hβ hj
   exact mutual_of_segment B τ σ h₃ (by omega) h₄ h₅ h₆
 
+omit [NeZero n] in
 /-- **Double cycle lemma, reversed matched form.** If every non-sink carrying `τ` tokens is
 matched backwards for `(Bᶜ, σ)`, there is a sink, and there are at least as many `τ` tokens as
 sinks, then some non-sink `h` and sink `v` see each other as in `exists_mutual`. -/
@@ -1004,6 +1007,7 @@ theorem exists_mutual_of_forall_matched_rev (σ : Fin n → ℕ) (hB : B.Nonempt
     ∃ h ∉ B, ∃ v ∈ B,
       (∀ e, (e - h).val < (v - h).val → ∑ k ∈ cyclicIcc h e, weight B τ k ≠ 0) ∧
       ∀ e, (v - e).val < (v - h).val → ∑ k ∈ cyclicIcc e v, weight Bᶜ σ k ≠ 0 := by
+  have : NeZero n := ⟨hB.choose.pos.ne'⟩
   -- Reflect the cycle: the reflected non-sinks are the sinks, with the roles of `τ` and `σ`
   -- exchanged.
   obtain ⟨h', hh', v', hv', hfwd, hbwd⟩ := exists_mutual_of_forall_matched (reflect B)
@@ -1184,6 +1188,7 @@ private theorem segment_le (σ : Fin n → ℕ) (α β : ℕ)
     rw [h0.1, h0.2, zero_add, zero_add]
     exact ⟨ih₁, ih₂⟩
 
+omit [NeZero n] in
 /-- **Slope comparison.** Suppose every window from a non-sink to a sink satisfies
 `α · #non-sinks < α + β · #sinks`, no non-sink `h` and sink `v` see each other as in
 `exists_mutual`, every sink carrying `σ` tokens is matched for `(B, τ)`, and there are fewer
@@ -1196,6 +1201,7 @@ theorem mul_sum_lt_of_forall_matched (σ : Fin n → ℕ) (α β : ℕ)
     (hm : ∀ v ∈ B, σ v ≠ 0 → Matched B τ v) (hτ : ∑ k ∈ Bᶜ, τ k < #B)
     (hτ0 : ∑ k ∈ Bᶜ, τ k ≠ 0) :
     α * ∑ k ∈ B, σ k < β * ∑ k ∈ Bᶜ, τ k := by
+  have : NeZero n := ⟨(card_pos.mp (by omega : 0 < #B)).choose.pos.ne'⟩
   have hA : ∑ i : Fin n, weight B τ i < 0 := by
     rw [sum_weight]; exact sub_neg.mpr (by exact_mod_cast hτ)
   obtain ⟨a, ha, hba, hbb⟩ := exists_base_period B τ hA
@@ -1204,6 +1210,7 @@ theorem mul_sum_lt_of_forall_matched (σ : Fin n → ℕ) (α β : ℕ)
   rw [tokens_add_self, tokens_add_self, compl_compl] at h
   exact_mod_cast h (by exact_mod_cast Nat.pos_of_ne_zero hτ0)
 
+omit [NeZero n] in
 /-- **Slope comparison, reversed.** The reflection of `mul_sum_lt_of_forall_matched`: the
 windows are read backwards from sinks, and every non-sink carrying `τ` tokens is matched
 backwards for `(Bᶜ, σ)`. -/
@@ -1216,6 +1223,7 @@ theorem mul_sum_lt_of_forall_matched_rev (σ : Fin n → ℕ) (α β : ℕ)
       ∀ e, (v - e).val < (v - h).val → ∑ k ∈ cyclicIcc e v, weight Bᶜ σ k ≠ 0)
     (hσ : ∑ k ∈ B, σ k < #Bᶜ) (hσ0 : ∑ k ∈ B, σ k ≠ 0) :
     α * ∑ k ∈ Bᶜ, τ k < β * ∑ k ∈ B, σ k := by
+  have : NeZero n := ⟨(card_pos.mp (by omega : 0 < #Bᶜ)).choose.pos.ne'⟩
   have h := mul_sum_lt_of_forall_matched (reflect B) (σ ∘ Neg.neg) (τ ∘ Neg.neg) α β
     (fun h' hh' e' he' ↦ by
       rw [card_inter_compl_reflect, card_inter_reflect]
