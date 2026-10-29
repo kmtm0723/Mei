@@ -24,6 +24,12 @@ class IsDerivationAction (L A : Type*) [LieRing L] [Ring A] [LieRingModule L A] 
   /-- The associative Leibniz rule. -/
   lie_mul : ∀ (x : L) (a b : A), ⁅x, a * b⁆ = a * ⁅x, b⁆ + ⁅x, a⁆ * b
 
+/-- Restricting a derivation action to a Lie subalgebra preserves the Leibniz rule. -/
+instance _root_.LieSubalgebra.instIsDerivationAction {R L A : Type*} [CommRing R]
+    [LieRing L] [LieAlgebra R L] [Ring A] [LieRingModule L A]
+    [IsDerivationAction L A] (K : LieSubalgebra R L) : IsDerivationAction K A where
+  lie_mul x a b := IsDerivationAction.lie_mul (x : L) a b
+
 attribute [local instance] LieRing.ofAssociativeRing
 
 /-- The commutator action of an associative ring on itself is by derivations. -/

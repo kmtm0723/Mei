@@ -32,6 +32,10 @@ families. For jointly injective spans, `sectionsLift` glues them to a linear map
 sections whose face values map to the incident chamber values, and
 `existsUnique_sections_lift_iff` shows that such a gluing exists, and is then
 unique, precisely when every incident pair lies in the span image.
+
+Natural transformations of the incidence diagrams transport compatible chamber
+families and matching sections. Joint injectivity makes reconstruction of face
+values commute with these coefficient changes, including maps with kernels.
 -/
 
 public section
@@ -282,5 +286,66 @@ theorem eq_matchingFamilyEquiv_symm_apply_left_iff
   refine ⟨by rintro rfl; simp, fun h => hinj b (Prod.ext ?_ ?_)⟩
   · exact h.1.trans (I.fst_matchingFamilyEquiv_symm_apply_left hinj s b).symm
   · exact h.2.trans (I.snd_matchingFamilyEquiv_symm_apply_left hinj s b).symm
+
+section Maps
+
+variable {I} {I' I'' : MultispanIndex J (SemimoduleCat R)}
+
+/-- A natural transformation carries compatible chamber values to compatible values. -/
+def compatibleFamiliesMap (α : I.multispan ⟶ I'.multispan) :
+    I.compatibleFamilies →ₗ[R] I'.compatibleFamilies where
+  toFun x := by
+    refine ⟨fun j => (α.app (.right j)).hom (x.val j), ?_⟩
+    obtain ⟨s, rfl⟩ := I.restrictSections_surjective x
+    have he : (fun j => (α.app (.right j)).hom ((I.restrictSections s).val j)) =
+        (I'.restrictSections (SemimoduleCat.sectionsMap α s)).val := by
+      funext j
+      simp
+    exact he.symm ▸ (I'.restrictSections (SemimoduleCat.sectionsMap α s)).property
+  map_add' x y := by ext j; exact map_add (α.app (.right j)).hom _ _
+  map_smul' r x := by ext j; exact map_smul (α.app (.right j)).hom r _
+
+/-- Compatible-family transport acts by each chamber's coefficient map. -/
+@[simp]
+theorem compatibleFamiliesMap_apply (α : I.multispan ⟶ I'.multispan)
+    (x : I.compatibleFamilies) (j : J.R) :
+    (compatibleFamiliesMap α x).val j = (α.app (.right j)).hom (x.val j) := (rfl)
+
+/-- Identity transformations fix compatible chamber families. -/
+@[simp]
+theorem compatibleFamiliesMap_id :
+    compatibleFamiliesMap (𝟙 I.multispan) = LinearMap.id := by
+  ext x j
+  rfl
+
+/-- Transport of compatible families respects composition. -/
+@[simp]
+theorem compatibleFamiliesMap_comp (α : I.multispan ⟶ I'.multispan)
+    (β : I'.multispan ⟶ I''.multispan) :
+    compatibleFamiliesMap (α ≫ β) =
+      (compatibleFamiliesMap β).comp (compatibleFamiliesMap α) := by
+  ext x j
+  rfl
+
+/-- Restriction to chamber values commutes with coefficient changes. -/
+theorem restrictSections_naturality (α : I.multispan ⟶ I'.multispan) :
+    I'.restrictSections.comp (SemimoduleCat.sectionsMap α) =
+      (compatibleFamiliesMap α).comp I.restrictSections := by
+  ext x j
+  simp
+
+/-- Reconstructing the face values commutes with coefficient changes whenever
+both sets of face spans are jointly injective. Individual legs may have kernels. -/
+theorem matchingFamilyEquiv_symm_naturality
+    (hinj : ∀ b, Function.Injective ((I.fst b).hom.prod (I.snd b).hom))
+    (hinj' : ∀ b, Function.Injective ((I'.fst b).hom.prod (I'.snd b).hom))
+    (α : I.multispan ⟶ I'.multispan) (x : I.compatibleFamilies) :
+    SemimoduleCat.sectionsMap α ((I.matchingFamilyEquiv hinj).symm x) =
+      (I'.matchingFamilyEquiv hinj').symm (compatibleFamiliesMap α x) := by
+  apply I'.restrictSections_injective hinj'
+  ext j
+  simp
+
+end Maps
 
 end CategoryTheory.Limits.MultispanIndex

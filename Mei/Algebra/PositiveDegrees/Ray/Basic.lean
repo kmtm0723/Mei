@@ -7,6 +7,7 @@ module
 
 public import Mei.Algebra.PositiveDegrees.Basic
 public import Mei.Algebra.Module.Primitive
+public import Mathlib.GroupTheory.Subgroup.Saturated
 
 /-!
 # Supported primitive rays of a positive monoid
@@ -56,6 +57,15 @@ theorem ext {v w : SupportedRay d} (h : v.generator = w.generator) : v = w := by
 theorem generator_ne_zero (w : SupportedRay d) : w.generator ≠ 0 :=
   w.isPrimitive.ne_zero
 
+/-- A supported generator belongs to the allowed monoid if that monoid is saturated
+under division by positive natural multiples. -/
+theorem generator_mem_of_nsmulSaturated (w : SupportedRay d)
+    (h : d.monoid.NSMulSaturated) : w.generator ∈ d.monoid := by
+  obtain ⟨a, ha, haw⟩ := w.supported
+  have haw' : a.toNat • w.generator ∈ d.monoid := by
+    simpa only [← Nat.cast_smul_eq_nsmul ℤ, Int.toNat_of_nonneg ha.le] using haw
+  exact (h haw').resolve_left (by omega)
+
 /-- The allowed positive multiples of a supported primitive generator. -/
 def rayDegrees (w : SupportedRay d) : Set N :=
   {n | n ∈ d.monoid ∧ ∃ a : ℤ, 0 < a ∧ n = a • w.generator}
@@ -71,6 +81,14 @@ theorem add_mem_rayDegrees {w : SupportedRay d} {n m : N}
   obtain ⟨hn, a, ha, rfl⟩ := hn
   obtain ⟨hm, b, hb, rfl⟩ := hm
   exact ⟨d.monoid.add_mem hn hm, a + b, add_pos ha hb, (add_zsmul _ _ _).symm⟩
+
+/-- Positive natural multiples of an actual ray degree remain on that ray. -/
+theorem succ_nsmul_mem_rayDegrees {w : SupportedRay d} {n : N} (hn : n ∈ w.rayDegrees)
+    (j : ℕ) : (j + 1) • n ∈ w.rayDegrees := by
+  obtain ⟨hn, a, ha, rfl⟩ := mem_rayDegrees.mp hn
+  refine mem_rayDegrees.mpr ⟨d.monoid.nsmul_mem hn _, (j + 1) * a, ?_, ?_⟩
+  · positivity
+  · rw [mul_smul, ← Nat.cast_succ, natCast_zsmul]
 
 /-- The additive semigroup of actual allowed positive degrees on a supported ray. -/
 def degreeSemigroup (w : SupportedRay d) : AddSubsemigroup N where
