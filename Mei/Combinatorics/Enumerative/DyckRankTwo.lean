@@ -27,7 +27,7 @@ public section
 
 open Finset Polynomial Mei.RankTwo
 
-namespace Polynomial
+namespace Mei.RankTwo
 
 variable {S : Type*} [Semiring S]
 
@@ -39,7 +39,7 @@ theorem powCoeff_sub_eq_coeff_pow (P : S[X]) (d q s : ℕ) :
   · rw [powCoeff_of_nonneg P (by omega), min_eq_right h, show ((d : ℤ) - q).toNat = d - q by omega]
   · rw [powCoeff_of_neg P (by omega), min_eq_left h.le, Nat.sub_self, pow_zero, coeff_one]
 
-end Polynomial
+end Mei.RankTwo
 
 namespace Mei.MaximalDyckPath
 
