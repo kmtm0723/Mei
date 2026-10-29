@@ -5,11 +5,10 @@ Authors: Claude
 -/
 module
 
-public import Mei.Combinatorics.Enumerative.MaximalDyckPath
+public import Mei.Combinatorics.Enumerative.Dyck.Basic
 public import Mei.Combinatorics.Enumerative.CyclicMatching
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Data.Fintype.Pi
-public import Mathlib.Data.Fintype.Fin
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -50,74 +49,7 @@ open Mei.CyclicMatching (cyclicIcc mem_cyclicIcc cyclicIcc_self val_sub_eq_zero_
 
 namespace Mei.MaximalDyckPath
 
-/-- The edges of the maximal Dyck path of `(d₁, d₂)`, indexed in traversal order. -/
-abbrev Edge (d₁ d₂ : ℕ) := Fin (d₁ + d₂)
-
 variable {d₁ d₂ : ℕ}
-
-/-- The step taken along an edge of the maximal Dyck path. -/
-def step (e : Edge d₁ d₂) : DyckStep :=
-  (maximalDyckPath d₁ d₂)[e.val]'(by rw [length_maximalDyckPath]; exact e.isLt)
-
-theorem step_eq_getElem (e : Edge d₁ d₂) :
-    step e = (maximalDyckPath d₁ d₂)[e.val]'(by rw [length_maximalDyckPath]; exact e.isLt) :=
-  (rfl)
-
-variable (d₁ d₂) in
-/-- The vertical edges of the maximal Dyck path. -/
-def verticalEdges : Finset (Edge d₁ d₂) := {e | step e = D}
-
-variable (d₁ d₂) in
-/-- The horizontal edges of the maximal Dyck path. -/
-def horizontalEdges : Finset (Edge d₁ d₂) := {e | step e = U}
-
-@[simp]
-theorem mem_verticalEdges {e : Edge d₁ d₂} : e ∈ verticalEdges d₁ d₂ ↔ step e = D := by
-  simp [verticalEdges]
-
-@[simp]
-theorem mem_horizontalEdges {e : Edge d₁ d₂} : e ∈ horizontalEdges d₁ d₂ ↔ step e = U := by
-  simp [horizontalEdges]
-
-/-- Counting edges of a given step type counts that step in the path. -/
-private theorem card_step_eq (s : DyckStep) :
-    #{e : Edge d₁ d₂ | step e = s} = (maximalDyckPath d₁ d₂).count s :=
-  Fin.card_filter_univ_eq_vector_get_eq_count s
-    ⟨maximalDyckPath d₁ d₂, length_maximalDyckPath d₁ d₂⟩
-
-/-- The path has `d₂` vertical edges. -/
-@[simp]
-theorem card_verticalEdges : #(verticalEdges d₁ d₂) = d₂ := by
-  rw [verticalEdges, card_step_eq, count_D_maximalDyckPath]
-
-/-- The path has `d₁` horizontal edges. -/
-@[simp]
-theorem card_horizontalEdges : #(horizontalEdges d₁ d₂) = d₁ := by
-  rw [horizontalEdges, card_step_eq, count_U_maximalDyckPath]
-
-/-- Every edge is horizontal or vertical. -/
-theorem mem_horizontalEdges_or_mem_verticalEdges (e : Edge d₁ d₂) :
-    e ∈ horizontalEdges d₁ d₂ ∨ e ∈ verticalEdges d₁ d₂ := by
-  simpa using (step e).dichotomy
-
-/-- No edge is both horizontal and vertical. -/
-theorem disjoint_horizontalEdges_verticalEdges :
-    Disjoint (horizontalEdges d₁ d₂) (verticalEdges d₁ d₂) := by
-  rw [Finset.disjoint_left]
-  intro e hh hv
-  rw [mem_horizontalEdges] at hh
-  rw [mem_verticalEdges, hh] at hv
-  exact DyckStep.noConfusion hv
-
-/-- A horizontal edge is not vertical. -/
-theorem notMem_verticalEdges_of_mem {e : Edge d₁ d₂} (he : e ∈ horizontalEdges d₁ d₂) :
-    e ∉ verticalEdges d₁ d₂ :=
-  Finset.disjoint_left.mp disjoint_horizontalEdges_verticalEdges he
-
-/-- A vertical edge is not horizontal. -/
-theorem notMem_horizontalEdges_of_mem {e : Edge d₁ d₂} (he : e ∈ verticalEdges d₁ d₂) :
-    e ∉ horizontalEdges d₁ d₂ :=
-  Finset.disjoint_right.mp disjoint_horizontalEdges_verticalEdges he
 
 section Grading
 
@@ -150,32 +82,48 @@ theorem mem_horizontalSupport {e : Edge d₁ d₂} :
   simp [horizontalSupport]
 
 /-- On the subpath `ee'`, the number of vertical edges equals the horizontal grade sum. -/
-@[expose]
 def VerticalBalanced (e e' : Edge d₁ d₂) : Prop :=
   #(cyclicIcc e e' ∩ verticalEdges d₁ d₂) = ∑ h ∈ cyclicIcc e e' ∩ horizontalEdges d₁ d₂, γ h
 
+/-- The defining condition for `VerticalBalanced`. -/
+theorem verticalBalanced_iff_card_eq_sum (e e' : Edge d₁ d₂) :
+    VerticalBalanced γ e e' ↔
+      #(cyclicIcc e e' ∩ verticalEdges d₁ d₂) =
+        ∑ h ∈ cyclicIcc e e' ∩ horizontalEdges d₁ d₂, γ h := Iff.rfl
+
 /-- On the subpath `ee'`, the number of horizontal edges equals the vertical grade sum. -/
-@[expose]
 def HorizontalBalanced (e e' : Edge d₁ d₂) : Prop :=
   #(cyclicIcc e e' ∩ horizontalEdges d₁ d₂) = ∑ v ∈ cyclicIcc e e' ∩ verticalEdges d₁ d₂, γ v
 
+/-- The defining condition for `HorizontalBalanced`. -/
+theorem horizontalBalanced_iff_card_eq_sum (e e' : Edge d₁ d₂) :
+    HorizontalBalanced γ e e' ↔
+      #(cyclicIcc e e' ∩ horizontalEdges d₁ d₂) =
+        ∑ v ∈ cyclicIcc e e' ∩ verticalEdges d₁ d₂, γ v := Iff.rfl
+
 instance (e e' : Edge d₁ d₂) : Decidable (VerticalBalanced γ e e') :=
-  inferInstanceAs (Decidable (_ = _))
+  decidable_of_iff _ (verticalBalanced_iff_card_eq_sum γ e e').symm
 
 instance (e e' : Edge d₁ d₂) : Decidable (HorizontalBalanced γ e e') :=
-  inferInstanceAs (Decidable (_ = _))
+  decidable_of_iff _ (horizontalBalanced_iff_card_eq_sum γ e e').symm
 
 /-- A grading is compatible if for every horizontal edge `h` and vertical edge `v`, some proper
 initial subpath `he` of `hv` is vertically balanced, or some proper final subpath `ev` of `hv`
 is horizontally balanced. -/
-@[expose]
 def Compatible : Prop :=
   ∀ h ∈ horizontalEdges d₁ d₂, ∀ v ∈ verticalEdges d₁ d₂,
     (∃ e, (e - h).val < (v - h).val ∧ VerticalBalanced γ h e) ∨
       ∃ e, (v - e).val < (v - h).val ∧ HorizontalBalanced γ e v
 
-instance : Decidable (Compatible γ) := by
-  unfold Compatible; infer_instance
+/-- The defining condition for `Compatible`. -/
+theorem compatible_iff :
+    Compatible γ ↔
+      ∀ h ∈ horizontalEdges d₁ d₂, ∀ v ∈ verticalEdges d₁ d₂,
+        (∃ e, (e - h).val < (v - h).val ∧ VerticalBalanced γ h e) ∨
+          ∃ e, (v - e).val < (v - h).val ∧ HorizontalBalanced γ e v := Iff.rfl
+
+instance : Decidable (Compatible γ) :=
+  decidable_of_iff _ (compatible_iff γ).symm
 
 /-- Offsets `(e - h)` of the vertically balanced subpaths `he` starting at `h`. -/
 def verticalBalancedOffsets (h : Edge d₁ d₂) : Finset ℕ :=
@@ -215,14 +163,14 @@ theorem mem_horizontalShadow {h k : Edge d₁ d₂} :
   unfold horizontalShadow
   split_ifs with hS
   · rw [mem_filter]
-    refine and_congr_right fun _ ↦ ⟨fun hk e he hbal ↦ ?_, fun hall ↦ ?_⟩
-    · have hmem : (e - h).val ∈ verticalBalancedOffsets γ h :=
-        mem_image.mpr ⟨e, mem_filter.mpr ⟨mem_univ _, hbal⟩, rfl⟩
-      exact absurd (lt_of_le_of_lt (min'_le _ _ hmem) (lt_of_lt_of_le he hk)) (lt_irrefl _)
-    · obtain ⟨e, he, heq⟩ := mem_image.mp (min'_mem _ hS)
-      rw [← heq]
-      by_contra hlt
-      exact hall e (not_le.mp hlt) (mem_filter.mp he).2
+    refine and_congr_right fun _ ↦ ?_
+    rw [Finset.le_min'_iff, verticalBalancedOffsets, Finset.forall_mem_image]
+    simp only [mem_filter, mem_univ, true_and]
+    constructor
+    · intro hbound e hlt hbal
+      exact (not_le_of_gt hlt) (hbound hbal)
+    · intro hnone e hbal
+      exact le_of_not_gt fun hlt ↦ hnone e hlt hbal
   · refine ⟨fun hk ↦ ⟨hk, fun e _ hbal ↦ hS ?_⟩, And.left⟩
     exact ⟨_, mem_image.mpr ⟨e, mem_filter.mpr ⟨mem_univ _, hbal⟩, rfl⟩⟩
 
@@ -234,14 +182,14 @@ theorem mem_verticalShadow {v k : Edge d₁ d₂} :
   unfold verticalShadow
   split_ifs with hS
   · rw [mem_filter]
-    refine and_congr_right fun _ ↦ ⟨fun hk e he hbal ↦ ?_, fun hall ↦ ?_⟩
-    · have hmem : (v - e).val ∈ horizontalBalancedOffsets γ v :=
-        mem_image.mpr ⟨e, mem_filter.mpr ⟨mem_univ _, hbal⟩, rfl⟩
-      exact absurd (lt_of_le_of_lt (min'_le _ _ hmem) (lt_of_lt_of_le he hk)) (lt_irrefl _)
-    · obtain ⟨e, he, heq⟩ := mem_image.mp (min'_mem _ hS)
-      rw [← heq]
-      by_contra hlt
-      exact hall e (not_le.mp hlt) (mem_filter.mp he).2
+    refine and_congr_right fun _ ↦ ?_
+    rw [Finset.le_min'_iff, horizontalBalancedOffsets, Finset.forall_mem_image]
+    simp only [mem_filter, mem_univ, true_and]
+    constructor
+    · intro hbound e hlt hbal
+      exact (not_le_of_gt hlt) (hbound hbal)
+    · intro hnone e hbal
+      exact le_of_not_gt fun hlt ↦ hnone e hlt hbal
   · refine ⟨fun hk ↦ ⟨hk, fun e _ hbal ↦ hS ?_⟩, And.left⟩
     exact ⟨_, mem_image.mpr ⟨e, mem_filter.mpr ⟨mem_univ _, hbal⟩, rfl⟩⟩
 
@@ -315,23 +263,33 @@ theorem verticalShadow_eq_empty {v : Edge d₁ d₂} (hv : v ∈ verticalEdges d
 
 /-- A compatible grading is shadowed if its nonzero horizontal support lies in the total
 vertical shadow, or its nonzero vertical support lies in the total horizontal shadow. -/
-@[expose]
 def Shadowed : Prop :=
   Compatible γ ∧ (horizontalSupport γ ⊆ totalVerticalShadow γ ∨
     verticalSupport γ ⊆ totalHorizontalShadow γ)
 
-instance : Decidable (Shadowed γ) := by
-  unfold Shadowed; infer_instance
+/-- The defining condition for `Shadowed`. -/
+theorem shadowed_iff :
+    Shadowed γ ↔ Compatible γ ∧
+      (horizontalSupport γ ⊆ totalVerticalShadow γ ∨
+        verticalSupport γ ⊆ totalHorizontalShadow γ) := Iff.rfl
+
+instance : Decidable (Shadowed γ) :=
+  decidable_of_iff _ (shadowed_iff γ).symm
 
 /-- A shadowed grading is tight if `p ≤ d₁`, `q ≤ d₂` and `p d₂ - q d₁ = ± gcd(p, q)`. -/
-@[expose]
 def Tight : Prop :=
   Shadowed γ ∧ verticalTotal γ ≤ d₁ ∧ horizontalTotal γ ≤ d₂ ∧
     ((verticalTotal γ * d₂ : ℤ) - horizontalTotal γ * d₁).natAbs =
       (verticalTotal γ).gcd (horizontalTotal γ)
 
-instance : Decidable (Tight γ) := by
-  unfold Tight; infer_instance
+/-- The defining condition for `Tight`. -/
+theorem tight_iff :
+    Tight γ ↔ Shadowed γ ∧ verticalTotal γ ≤ d₁ ∧ horizontalTotal γ ≤ d₂ ∧
+      ((verticalTotal γ * d₂ : ℤ) - horizontalTotal γ * d₁).natAbs =
+        (verticalTotal γ).gcd (horizontalTotal γ) := Iff.rfl
+
+instance : Decidable (Tight γ) :=
+  decidable_of_iff _ (tight_iff γ).symm
 
 /-- The zero grading is compatible: the one-edge subpath at each horizontal edge is
 vertically balanced. -/
@@ -369,24 +327,53 @@ theorem exists_tight_one_two :
       Shadowed γ ∧ Tight γ ∧ ¬verticalSupport γ ⊆ totalHorizontalShadow γ := by
   have hH : horizontalEdges 1 2 = {0} := by
     ext e
-    fin_cases e <;> simp [horizontalEdges, step, maximalDyckPath_of_ne_zero (d₁ := 1) 2 (by decide),
-      List.range_succ]
+    fin_cases e <;> simp [mem_horizontalEdges, step_def,
+      maximalDyckPath_of_ne_zero (d₁ := 1) 2 (by decide), List.range_succ]
   have hV : verticalEdges 1 2 = {1, 2} := by
     ext e
-    fin_cases e <;> simp [verticalEdges, step, maximalDyckPath_of_ne_zero (d₁ := 1) 2 (by decide),
-      List.range_succ]
+    fin_cases e <;> simp [mem_verticalEdges, step_def,
+      maximalDyckPath_of_ne_zero (d₁ := 1) 2 (by decide), List.range_succ]
   have hI (e e' : Edge 1 2) :
       cyclicIcc e e' = ({k | (k - e).val ≤ (e' - e).val} : Finset (Edge 1 2)) := by
     ext k
-    simp [mem_cyclicIcc]
-  refine ⟨fun e ↦ if e.val = 1 then 0 else 1, ?_⟩
-  simp only [Tight, Shadowed, verticalTotal, horizontalTotal, Compatible, Finset.subset_iff,
-    mem_horizontalSupport, mem_verticalSupport, mem_totalHorizontalShadow,
-    mem_totalVerticalShadow, mem_horizontalShadow, mem_verticalShadow,
-    VerticalBalanced, HorizontalBalanced, hH, hV]
-  simp only [hI]
-  have hcard : #(({x : Fin 3 | x - 1 ≤ 1} : Finset (Fin 3)) ∩ {0}) ≠ 1 := by decide
-  simpa [Fin.forall_fin_succ, Fin.exists_fin_succ] using hcard
+    simp only [mem_cyclicIcc, mem_filter, mem_univ, true_and]
+  let γ : Edge 1 2 → ℕ := fun e ↦ if e.val = 1 then 0 else 1
+  have hp : verticalTotal γ = 1 := by
+    rw [verticalTotal_eq, hV]
+    decide
+  have hq : horizontalTotal γ = 1 := by
+    rw [horizontalTotal_eq, hH]
+    decide
+  have hc : Compatible γ := by
+    simp only [compatible_iff, verticalBalanced_iff_card_eq_sum,
+      horizontalBalanced_iff_card_eq_sum, hH, hV, hI]
+    decide
+  have hs : horizontalSupport γ ⊆ totalVerticalShadow γ := by
+    intro k hk
+    have hk0 : k = 0 := by
+      simpa only [hH, mem_singleton] using (mem_horizontalSupport γ).mp hk |>.1
+    subst k
+    simp only [mem_totalVerticalShadow, mem_verticalShadow,
+      horizontalBalanced_iff_card_eq_sum, hH, hV, hI]
+    decide
+  have hn : ¬verticalSupport γ ⊆ totalHorizontalShadow γ := by
+    intro hsub
+    have hm : (2 : Edge 1 2) ∈ verticalSupport γ := by
+      rw [mem_verticalSupport, hV]
+      decide
+    have hnot : (2 : Edge 1 2) ∉ totalHorizontalShadow γ := by
+      simp only [mem_totalHorizontalShadow, mem_horizontalShadow,
+        verticalBalanced_iff_card_eq_sum, hH, hV, hI]
+      decide
+    exact hnot (hsub hm)
+  have hshadow : Shadowed γ := (shadowed_iff γ).mpr ⟨hc, Or.inl hs⟩
+  have ht : Tight γ := by
+    rw [tight_iff]
+    refine ⟨hshadow, ?_, ?_, ?_⟩
+    · rw [hp]
+    · rw [hq] ; decide
+    · rw [hp, hq] ; decide
+  exact ⟨γ, hp, hq, hshadow, ht, hn⟩
 
 /-- On the path `UUD`, grading the first and last edges by one gives a nondegenerate
 shadowed, tight grading. Both totals are one, and `p d₂ - q d₁ = -1`. Here the vertical
@@ -397,24 +384,53 @@ theorem exists_tight_two_one :
       Shadowed γ ∧ Tight γ ∧ ¬horizontalSupport γ ⊆ totalVerticalShadow γ := by
   have hH : horizontalEdges 2 1 = {0, 1} := by
     ext e
-    fin_cases e <;> simp [horizontalEdges, step, maximalDyckPath_of_ne_zero (d₁ := 2) 1 (by decide),
-      List.range_succ]
+    fin_cases e <;> simp [mem_horizontalEdges, step_def,
+      maximalDyckPath_of_ne_zero (d₁ := 2) 1 (by decide), List.range_succ]
   have hV : verticalEdges 2 1 = {2} := by
     ext e
-    fin_cases e <;> simp [verticalEdges, step, maximalDyckPath_of_ne_zero (d₁ := 2) 1 (by decide),
-      List.range_succ]
+    fin_cases e <;> simp [mem_verticalEdges, step_def,
+      maximalDyckPath_of_ne_zero (d₁ := 2) 1 (by decide), List.range_succ]
   have hI (e e' : Edge 2 1) :
       cyclicIcc e e' = ({k | (k - e).val ≤ (e' - e).val} : Finset (Edge 2 1)) := by
     ext k
-    simp [mem_cyclicIcc]
-  refine ⟨fun e ↦ if e.val = 1 then 0 else 1, ?_⟩
-  simp only [Tight, Shadowed, verticalTotal, horizontalTotal, Compatible, Finset.subset_iff,
-    mem_horizontalSupport, mem_verticalSupport, mem_totalHorizontalShadow,
-    mem_totalVerticalShadow, mem_horizontalShadow, mem_verticalShadow,
-    VerticalBalanced, HorizontalBalanced, hH, hV]
-  simp only [hI]
-  have hcard : #(({x : Fin 3 | x - 1 ≤ 1} : Finset (Fin 3)) ∩ {0, 1}) = 1 := by decide
-  simpa [Fin.forall_fin_succ, Fin.exists_fin_succ] using hcard
+    simp only [mem_cyclicIcc, mem_filter, mem_univ, true_and]
+  let γ : Edge 2 1 → ℕ := fun e ↦ if e.val = 1 then 0 else 1
+  have hp : verticalTotal γ = 1 := by
+    rw [verticalTotal_eq, hV]
+    decide
+  have hq : horizontalTotal γ = 1 := by
+    rw [horizontalTotal_eq, hH]
+    decide
+  have hc : Compatible γ := by
+    simp only [compatible_iff, verticalBalanced_iff_card_eq_sum,
+      horizontalBalanced_iff_card_eq_sum, hH, hV, hI]
+    decide
+  have hs : verticalSupport γ ⊆ totalHorizontalShadow γ := by
+    intro k hk
+    have hk2 : k = 2 := by
+      simpa only [hV, mem_singleton] using (mem_verticalSupport γ).mp hk |>.1
+    subst k
+    simp only [mem_totalHorizontalShadow, mem_horizontalShadow,
+      verticalBalanced_iff_card_eq_sum, hH, hV, hI]
+    decide
+  have hn : ¬horizontalSupport γ ⊆ totalVerticalShadow γ := by
+    intro hsub
+    have hm : (0 : Edge 2 1) ∈ horizontalSupport γ := by
+      rw [mem_horizontalSupport, hH]
+      decide
+    have hnot : (0 : Edge 2 1) ∉ totalVerticalShadow γ := by
+      simp only [mem_totalVerticalShadow, mem_verticalShadow,
+        horizontalBalanced_iff_card_eq_sum, hH, hV, hI]
+      decide
+    exact hnot (hsub hm)
+  have hshadow : Shadowed γ := (shadowed_iff γ).mpr ⟨hc, Or.inr hs⟩
+  have ht : Tight γ := by
+    rw [tight_iff]
+    refine ⟨hshadow, ?_, ?_, ?_⟩
+    · rw [hp] ; decide
+    · rw [hq]
+    · rw [hp, hq] ; decide
+  exact ⟨γ, hp, hq, hshadow, ht, hn⟩
 
 section Weights
 
@@ -433,6 +449,12 @@ variable {S : Type*} [CommSemiring S] (P₁ P₂ : S[X])
 /-- The weight `∏_v [x^{γ_V(v)}] P₁ ∏_h [y^{γ_H(h)}] P₂` of a grading. -/
 def weight (γ : Edge d₁ d₂ → ℕ) : S :=
   (∏ v ∈ verticalEdges d₁ d₂, P₁.coeff (γ v)) * ∏ h ∈ horizontalEdges d₁ d₂, P₂.coeff (γ h)
+
+/-- The grading weight is the product of the edge coefficients. -/
+theorem weight_def (γ : Edge d₁ d₂ → ℕ) :
+    weight P₁ P₂ γ =
+      (∏ v ∈ verticalEdges d₁ d₂, P₁.coeff (γ v)) *
+        ∏ h ∈ horizontalEdges d₁ d₂, P₂.coeff (γ h) := (rfl)
 
 variable (d₁ d₂) in
 /-- `C₊(p, q)`: the weight sum of the compatible gradings with totals `(p, q)` whose nonzero

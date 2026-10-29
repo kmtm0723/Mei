@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import Mei.Combinatorics.Enumerative.DyckShadow
+public import Mei.Combinatorics.Enumerative.Dyck.Shadow
 
 /-!
 # The vanishing conditions (V) for shadowed compatible grading sums
@@ -45,7 +45,8 @@ variable {d₁ d₂ : ℕ} (γ : Edge d₁ d₂ → ℕ)
 theorem horizontalBalanced_iff_weight (e v : Edge d₁ d₂) :
     HorizontalBalanced γ e v ↔
       ∑ k ∈ cyclicIcc e v, CyclicMatching.weight (horizontalEdges d₁ d₂) γ k = 0 := by
-  rw [HorizontalBalanced, sum_weight_eq, compl_horizontalEdges, sub_eq_zero, eq_comm,
+  rw [horizontalBalanced_iff_card_eq_sum, sum_weight_eq, compl_horizontalEdges, sub_eq_zero,
+    eq_comm,
     Nat.cast_inj]
 
 /-- A grading is compatible exactly when no horizontal edge and vertical edge lie in each
@@ -53,6 +54,7 @@ other's local shadows. -/
 theorem compatible_iff_forall_not_mem_shadow :
     Compatible γ ↔ ∀ h ∈ horizontalEdges d₁ d₂, ∀ v ∈ verticalEdges d₁ d₂,
       ¬(v ∈ horizontalShadow γ h ∧ h ∈ verticalShadow γ v) := by
+  rw [compatible_iff]
   refine forall₂_congr fun h hh ↦ forall₂_congr fun v hv ↦ ?_
   rw [mem_horizontalShadow, mem_verticalShadow]
   simp only [hh, hv, true_and, not_and_or, not_forall, not_not, exists_prop]
@@ -152,7 +154,7 @@ private theorem countBefore_eq (s : DyckStep) (a : ℕ) :
       simp only at this
       rw [this, ih, List.take_add_one,
         List.getElem?_eq_getElem (by rw [length_maximalDyckPath]; exact ha), Option.toList_some,
-        List.count_append, List.count_singleton, step_eq_getElem]
+        List.count_append, List.count_singleton, step_def]
       simp only [beq_iff_eq]
     · have hfull : ∀ b, d₁ + d₂ ≤ b → countBefore d₁ d₂ s b = #(stepEdges d₁ d₂ s) := by
         intro b hb

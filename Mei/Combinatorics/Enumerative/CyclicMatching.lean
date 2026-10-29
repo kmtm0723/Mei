@@ -24,8 +24,10 @@ from `h` that stops strictly before `v` has nonzero total weight.
 
 The number of matched sinks is `min #B (∑ k ∉ B, τ k)`. Equivalently a sink is matched
 exactly when some cyclic window ending just before it has positive weight, and the unmatched
-sinks are the record lows of the periodic walk of partial weight sums. Each period lowers that
-walk by `#B - ∑ τ`, one record at a time.
+sinks are counted by the record lows of the periodic walk when the total weight is negative.
+In periods after the first, unmatched sinks are exactly the drops of the running minimum,
+and each period contributes `#B - ∑ τ` such drops. When the total weight is nonnegative,
+every sink is matched; record lows in the initial period need not be unmatched.
 
 This is a cycle lemma in the style of Dvoretzky–Motzkin; it counts the total shadows of gradings
 of maximal Dyck paths.
@@ -159,12 +161,18 @@ theorem sum_weight : ∑ i : Fin n, weight B τ i = (∑ k ∈ Bᶜ, τ k : ℕ)
 
 /-- A sink `v` is matched if from some non-sink `h`, every cyclic window `[h, e]` stopping
 strictly before `v` has nonzero total weight. -/
-@[expose]
 def Matched (v : Fin n) : Prop :=
   ∃ h ∉ B, ∀ e : Fin n, (e - h).val < (v - h).val → ∑ k ∈ cyclicIcc h e, weight B τ k ≠ 0
 
-instance : DecidablePred (Matched B τ) := fun _ ↦
-  inferInstanceAs (Decidable (∃ _, _))
+/-- A matched position has a non-sink whose proper initial cyclic windows have nonzero weight. -/
+theorem matched_iff_forall (v : Fin n) :
+    Matched B τ v ↔ ∃ h ∉ B, ∀ e : Fin n,
+      (e - h).val < (v - h).val → ∑ k ∈ cyclicIcc h e, weight B τ k ≠ 0 := (Iff.rfl)
+
+instance : DecidablePred (Matched B τ) := fun v ↦
+  decidable_of_iff (∃ h ∉ B, ∀ e : Fin n,
+    (e - h).val < (v - h).val → ∑ k ∈ cyclicIcc h e, weight B τ k ≠ 0)
+    (matched_iff_forall B τ v).symm
 
 /-- The reflection of the non-sinks, `{k | -k ∉ B}`: the sinks of the reversed cycle. -/
 private def reflect : Finset (Fin n) := Bᶜ.map (Equiv.neg (Fin n)).toEmbedding
@@ -311,6 +319,29 @@ private theorem walk_add_self_sub (a b : ℕ) :
   rw [walk_add_self, walk_add_self]
   abel
 
+/-- The cyclic offset to `v` from a time in its preceding period. -/
+private theorem val_sub_pos_of_mem_period {v : Fin n} {a : ℕ}
+    (hva : v.val < a) (hav : a < v.val + n) :
+    (v - pos a).val = v.val + n - a := by
+  have hv' : v = pos a + pos (v.val + n - a) := by
+    rw [← pos_add, show a + (v.val + n - a) = v.val + n by omega,
+      pos_add_self, pos_val]
+  rw [sub_eq_iff_eq_add'.mpr hv']
+  simp [pos, Nat.mod_eq_of_lt (show v.val + n - a < n by omega)]
+
+/-- A walk increment depends only on the residue of its starting time. -/
+private theorem walk_increment_pos (a t : ℕ) :
+    walk B τ ((pos a : Fin n).val + t) - walk B τ (pos a : Fin n).val =
+      walk B τ (a + t) - walk B τ a := by
+  induction t with
+  | zero => simp
+  | succ t ih =>
+    rw [Nat.add_succ, walk_succ, Nat.add_succ, walk_succ]
+    have hp : pos ((pos a : Fin n).val + t) = (pos (a + t) : Fin n) := by
+      simp [pos, Fin.ext_iff, Nat.add_mod]
+    rw [hp]
+    linarith
+
 /-- Starting at a non-sink, a walk whose increments never vanish stays above its start. -/
 private theorem lt_walk_of_ne {a s : ℕ} (ha : pos a ∉ B)
     (hne : ∀ t < s, walk B τ (a + t + 1) ≠ walk B τ a) :
@@ -386,26 +417,11 @@ private theorem matched_iff {v : Fin n} (hv : v ∈ B) :
     · have h₁ := habove (a' + 1) (by omega) (by omega)
       rw [walk_succ, weight_of_mem B τ hmem] at h₁
       omega
-    · have hdiff : (v - pos a').val = i - a' := by
-        have hv' : v = pos a' + pos (i - a') := by
-          rw [← pos_add, show a' + (i - a') = v.val + n by omega, pos_add_self, pos_val]
-        rw [hv', add_sub_cancel_left]
-        simp [pos, Nat.mod_eq_of_lt (show i - a' < n by omega)]
+    · have hdiff : (v - pos a').val = i - a' :=
+        val_sub_pos_of_mem_period hva' ha'i
       rw [hdiff] at he
-      have hshift : walk B τ ((pos a' : Fin n).val + (e - pos a').val + 1) -
-          walk B τ (pos a' : Fin n).val =
-          walk B τ (a' + (e - pos a').val + 1) - walk B τ a' := by
-        have hmod : (pos a' : Fin n).val = a' % n := by simp [pos]
-        generalize (e - pos a').val = t
-        rcases lt_or_ge a' n with han | han
-        · rw [hmod, Nat.mod_eq_of_lt han]
-        · have ha'' : a' = a' % n + n := by
-            rw [Nat.mod_eq_sub_mod han, Nat.mod_eq_of_lt (by omega)]
-            omega
-          rw [hmod]
-          have := walk_add_self_sub B τ (a' % n) (a' % n + t + 1)
-          rw [show a' % n + t + 1 + n = a' + t + 1 by omega, ← ha''] at this
-          exact this.symm
+      have hshift := walk_increment_pos B τ a' ((e - pos a').val + 1)
+      simp only [← Nat.add_assoc] at hshift
       rw [sum_cyclicIcc, hshift]
       have := habove (a' + (e - pos a').val + 1) (by omega) (by omega)
       linarith
@@ -422,14 +438,9 @@ private theorem exists_runMin (k : ℕ) : ∃ a ≤ k, walk B τ a = runMin B τ
 
 private theorem runMin_succ (k : ℕ) :
     runMin B τ (k + 1) = min (runMin B τ k) (walk B τ (k + 1)) := by
-  apply le_antisymm
-  · obtain ⟨a, ha, he⟩ := exists_runMin B τ k
-    exact le_min (he ▸ runMin_le B τ (by omega)) (runMin_le B τ le_rfl)
-  · obtain ⟨a, ha, he⟩ := exists_runMin B τ (k + 1)
-    rw [← he]
-    rcases Nat.lt_or_ge a (k + 1) with h | h
-    · exact min_le_of_left_le (runMin_le B τ (by omega))
-    · exact min_le_of_right_le (le_of_eq (by rw [show a = k + 1 by omega]))
+  simp only [runMin, range_add_one (n := k + 1), image_insert]
+  rw [min'_insert _ _ (by simp)]
+  exact min_comm _ _
 
 /-- The running minimum drops by at most one per step. -/
 private theorem runMin_succ_ge (k : ℕ) : runMin B τ k - 1 ≤ runMin B τ (k + 1) := by
@@ -517,23 +528,12 @@ theorem matched_iff_exists_nonneg {v : Fin n} (hv : v ∈ B) :
         omega
       · rw [Nat.mod_eq_sub_mod han, Nat.mod_eq_of_lt (by omega)] at hmod
         omega
-    · have hdiff : (v - pos a).val = v.val + n - a := by
-        have key : v = pos a + pos (v.val + n - a) := by
-          rw [← pos_add, show a + (v.val + n - a) = v.val + n by omega, pos_add_self, pos_val]
-        rw [sub_eq_iff_eq_add'.mpr key]
-        simp [pos, Nat.mod_eq_of_lt (show v.val + n - a < n by omega)]
-      rw [sum_cyclicIcc, hdiff]
-      have hmod : (pos a : Fin n).val = a % n := by simp [pos]
-      rw [hmod]
-      rcases lt_or_ge a n with han | han
-      · rw [Nat.mod_eq_of_lt han, show a + (v.val + n - a) + 1 = v.val + n + 1 by omega, hvn]
-        omega
-      · have ha : a % n = a - n := by
-          rw [Nat.mod_eq_sub_mod han, Nat.mod_eq_of_lt (by omega)]
-        rw [ha, show a - n + (v.val + n - a) + 1 = v.val + 1 by omega, hv1]
-        have := walk_add_self B τ (a - n)
-        rw [show a - n + n = a by omega] at this
-        omega
+    · have hdiff := val_sub_pos_of_mem_period hva hav
+      have hshift := walk_increment_pos B τ a ((v - pos a).val + 1)
+      simp only [← Nat.add_assoc] at hshift
+      rw [sum_cyclicIcc, hshift, hdiff,
+        show a + (v.val + n - a) + 1 = v.val + n + 1 by omega, hvn]
+      omega
   · rintro ⟨u, huv, hsum⟩
     rw [sum_cyclicIcc] at hsum
     rcases le_or_gt u v with hle | hlt
