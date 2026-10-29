@@ -479,13 +479,6 @@ theorem exists_tight_two_one :
 
 section Truncation
 
-/-- Vertical balance only depends on the horizontal grades. -/
-theorem verticalBalanced_congr {γ γ' : Edge d₁ d₂ → ℕ}
-    (hH : ∀ k ∈ horizontalEdges d₁ d₂, γ k = γ' k) (h e : Edge d₁ d₂) :
-    VerticalBalanced γ h e ↔ VerticalBalanced γ' h e := by
-  rw [verticalBalanced_iff_card_eq_sum, verticalBalanced_iff_card_eq_sum,
-    sum_congr rfl fun k hk ↦ hH k (mem_inter.mp hk).2]
-
 /-- Horizontal balance on `ev` only depends on the vertical grades on `ev`. -/
 theorem horizontalBalanced_congr {γ γ' : Edge d₁ d₂ → ℕ} {e v : Edge d₁ d₂}
     (hV : ∀ k ∈ cyclicIcc e v ∩ verticalEdges d₁ d₂, γ k = γ' k) :
@@ -503,6 +496,12 @@ theorem verticalBalanced_congr' {γ γ' : Edge d₁ d₂ → ℕ} {h e : Edge d�
     (hH : ∀ k ∈ cyclicIcc h e ∩ horizontalEdges d₁ d₂, γ k = γ' k) :
     VerticalBalanced γ h e ↔ VerticalBalanced γ' h e := by
   rw [verticalBalanced_iff_card_eq_sum, verticalBalanced_iff_card_eq_sum, sum_congr rfl hH]
+
+/-- Vertical balance only depends on the horizontal grades. -/
+theorem verticalBalanced_congr {γ γ' : Edge d₁ d₂ → ℕ}
+    (hH : ∀ k ∈ horizontalEdges d₁ d₂, γ k = γ' k) (h e : Edge d₁ d₂) :
+    VerticalBalanced γ h e ↔ VerticalBalanced γ' h e :=
+  verticalBalanced_congr' fun k hk ↦ hH k (mem_inter.mp hk).2
 
 /-- The local horizontal shadows only depend on the horizontal grades. -/
 theorem horizontalShadow_congr {γ γ' : Edge d₁ d₂ → ℕ}

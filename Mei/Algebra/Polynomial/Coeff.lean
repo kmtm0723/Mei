@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mathlib.Algebra.Polynomial.Coeff
-public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 
 /-!
 # Coefficients of finite generating functions
