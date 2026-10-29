@@ -237,7 +237,7 @@ private theorem sum_compatible_genV (hP₁ : P₁.coeff 0 = 1) (q : ℕ) :
       (∑ γ ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree with Compatible γ ∧
           horizontalTotal γ = q ∧ verticalSupport γ ⊆ totalHorizontalShadow γ,
           C (weight P₁ P₂ γ) * X ^ verticalTotal γ) * P₁ ^ (d₂ - min d₂ q) := by
-  apply sum_gen_of_truncation _ truncV Compatible
+  apply Finset.sum_gen_of_truncation (R := S[X]) _ truncV Compatible
     (fun γ ↦ verticalSupport γ ⊆ totalHorizontalShadow γ) horizontalTotal
     (fun γ ↦ C (weight P₁ P₂ γ) * X ^ verticalTotal γ) P₁ (fun t ↦ d₂ - min d₂ t)
     compatible_truncV horizontalTotal_truncV verticalSupport_truncV (fun _ ↦ truncV_eq_self) ?_
@@ -297,7 +297,7 @@ private theorem sum_compatible_genH (hP₂ : P₂.coeff 0 = 1) (p : ℕ) :
       (∑ γ ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree with Compatible γ ∧
           verticalTotal γ = p ∧ horizontalSupport γ ⊆ totalVerticalShadow γ,
           C (weight P₁ P₂ γ) * X ^ horizontalTotal γ) * P₂ ^ (d₁ - min d₁ p) := by
-  apply sum_gen_of_truncation _ truncH Compatible
+  apply Finset.sum_gen_of_truncation (R := S[X]) _ truncH Compatible
     (fun γ ↦ horizontalSupport γ ⊆ totalVerticalShadow γ) verticalTotal
     (fun γ ↦ C (weight P₁ P₂ γ) * X ^ horizontalTotal γ) P₂ (fun t ↦ d₁ - min d₁ t)
     compatible_truncH verticalTotal_truncH horizontalSupport_truncH (fun _ ↦ truncH_eq_self) ?_
