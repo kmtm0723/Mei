@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Polynomial.Eval.Coeff
 # The rank-two recursion for Dyck-grading sums
 
 For polynomials `P₁, P₂` and `r : ℤ`, `s : ℕ`, put `π_{r,s}(P) = [z^s] P(z)^r` for `r ≥ 0`,
-`π_{r,0}(P) = 1` for `r < 0` and `π_{r,s}(P) = 0` for `r < 0 < s` (`powCoeff`).
+`π_{r,0}(P) = 1` for `r < 0` and `π_{r,s}(P) = 0` for `r < 0 < s` (`rankTwoPowCoeff`).
 A pair of coefficient families `C₊, C₋ : ℕ → ℕ → S` is an `IsRankTwoSolution` for `(d₁, d₂)`
 if `C₊(0, 0) = C₋(0, 0) = 1`, it satisfies the recursion
 
@@ -37,33 +37,39 @@ public section
 
 open Finset Polynomial
 
-namespace Mei.RankTwo
+namespace Polynomial
 
 variable {S : Type*} [Semiring S]
 
 /-- `π_{r,s}(P)`: the coefficient of `z^s` in `P^r` for `r ≥ 0`; for `r < 0` it is `1` at
 `s = 0` and `0` otherwise. -/
-noncomputable def powCoeff (P : S[X]) (r : ℤ) (s : ℕ) : S :=
+noncomputable def rankTwoPowCoeff (P : S[X]) (r : ℤ) (s : ℕ) : S :=
   if 0 ≤ r then (P ^ r.toNat).coeff s else if s = 0 then 1 else 0
 
 @[simp]
-theorem powCoeff_of_nonneg (P : S[X]) {r : ℤ} (hr : 0 ≤ r) (s : ℕ) :
-    powCoeff P r s = (P ^ r.toNat).coeff s := by
-  simp [powCoeff, hr]
+theorem rankTwoPowCoeff_of_nonneg (P : S[X]) {r : ℤ} (hr : 0 ≤ r) (s : ℕ) :
+    rankTwoPowCoeff P r s = (P ^ r.toNat).coeff s := by
+  simp [rankTwoPowCoeff, hr]
 
 @[simp]
-theorem powCoeff_of_neg (P : S[X]) {r : ℤ} (hr : r < 0) (s : ℕ) :
-    powCoeff P r s = if s = 0 then 1 else 0 := by
-  simp [powCoeff, not_le.mpr hr]
+theorem rankTwoPowCoeff_of_neg (P : S[X]) {r : ℤ} (hr : r < 0) (s : ℕ) :
+    rankTwoPowCoeff P r s = if s = 0 then 1 else 0 := by
+  simp [rankTwoPowCoeff, not_le.mpr hr]
 
 /-- `π_{r,0}(P) = 1` when `P` has constant coefficient `1`. -/
 @[simp]
-theorem powCoeff_zero {P : S[X]} (hP : P.coeff 0 = 1) (r : ℤ) : powCoeff P r 0 = 1 := by
+theorem rankTwoPowCoeff_zero {P : S[X]} (hP : P.coeff 0 = 1) (r : ℤ) :
+    rankTwoPowCoeff P r 0 = 1 := by
   rcases le_or_gt 0 r with hr | hr
-  · rw [powCoeff_of_nonneg P hr, ← constantCoeff_apply, map_pow, constantCoeff_apply,
+  · rw [rankTwoPowCoeff_of_nonneg P hr, ← constantCoeff_apply, map_pow, constantCoeff_apply,
       hP, one_pow]
-  · simp [powCoeff_of_neg P hr]
+  · simp [rankTwoPowCoeff_of_neg P hr]
 
+end Polynomial
+
+namespace Mei.RankTwo
+
+variable {S : Type*} [Semiring S]
 variable (d₁ d₂ : ℕ) (P₁ P₂ : S[X])
 
 /-- The initial values, the recursion (R) and the vanishing conditions (V) for a pair of
@@ -75,8 +81,8 @@ structure IsRankTwoSolution (Cp Cm : ℕ → ℕ → S) : Prop where
   minus_zero_zero : Cm 0 0 = 1
   /-- The recursion (R). -/
   recursion : ∀ p q : ℕ,
-    ∑ s ∈ range (p + 1), powCoeff P₁ ((d₂ : ℤ) - q) s * Cp (p - s) q =
-      ∑ s ∈ range (q + 1), powCoeff P₂ ((d₁ : ℤ) - p) s * Cm p (q - s)
+    ∑ s ∈ range (p + 1), rankTwoPowCoeff P₁ ((d₂ : ℤ) - q) s * Cp (p - s) q =
+      ∑ s ∈ range (q + 1), rankTwoPowCoeff P₂ ((d₁ : ℤ) - p) s * Cm p (q - s)
   /-- `C₊(p, q) = 0` off `(0, 0)` when `d₁ q ≤ d₂ p`. -/
   plus_eq_zero : ∀ p q : ℕ, (p, q) ≠ (0, 0) → d₁ * q ≤ d₂ * p → Cp p q = 0
   /-- `C₋(p, q) = 0` off `(0, 0)` when `d₂ p ≤ d₁ q`. -/
@@ -88,11 +94,11 @@ variable {d₁ d₂ P₁ P₂}
 private theorem IsRankTwoSolution.recursion_succ {Cp Cm : ℕ → ℕ → S}
     (h : IsRankTwoSolution d₁ d₂ P₁ P₂ Cp Cm) (hP₁ : P₁.coeff 0 = 1) (hP₂ : P₂.coeff 0 = 1)
     (p q : ℕ) :
-    Cp p q + ∑ s ∈ range p, powCoeff P₁ ((d₂ : ℤ) - q) (s + 1) * Cp (p - (s + 1)) q =
-      Cm p q + ∑ s ∈ range q, powCoeff P₂ ((d₁ : ℤ) - p) (s + 1) * Cm p (q - (s + 1)) := by
+    Cp p q + ∑ s ∈ range p, rankTwoPowCoeff P₁ ((d₂ : ℤ) - q) (s + 1) * Cp (p - (s + 1)) q =
+      Cm p q + ∑ s ∈ range q, rankTwoPowCoeff P₂ ((d₁ : ℤ) - p) (s + 1) * Cm p (q - (s + 1)) := by
   have := h.recursion p q
-  rw [sum_range_succ', sum_range_succ', powCoeff_zero hP₁, powCoeff_zero hP₂, one_mul, one_mul,
-    Nat.sub_zero, Nat.sub_zero] at this
+  rw [sum_range_succ', sum_range_succ', rankTwoPowCoeff_zero hP₁, rankTwoPowCoeff_zero hP₂,
+    one_mul, one_mul, Nat.sub_zero, Nat.sub_zero] at this
   rw [add_comm (Cp p q), add_comm (Cm p q)]
   exact this
 
@@ -116,11 +122,11 @@ theorem IsRankTwoSolution.unique [IsCancelAdd S] {Cp Cm Cp' Cm' : ℕ → ℕ �
         (ih (p + (q - (s + 1))) (by have := mem_range.mp hs; omega) _ _ rfl).2
       have e := h.recursion_succ hP₁ hP₂ p q
       have e' := h'.recursion_succ hP₁ hP₂ p q
-      have hsp : ∑ s ∈ range p, powCoeff P₁ ((d₂ : ℤ) - q) (s + 1) * Cp (p - (s + 1)) q =
-          ∑ s ∈ range p, powCoeff P₁ ((d₂ : ℤ) - q) (s + 1) * Cp' (p - (s + 1)) q :=
+      have hsp : ∑ s ∈ range p, rankTwoPowCoeff P₁ ((d₂ : ℤ) - q) (s + 1) * Cp (p - (s + 1)) q =
+          ∑ s ∈ range p, rankTwoPowCoeff P₁ ((d₂ : ℤ) - q) (s + 1) * Cp' (p - (s + 1)) q :=
         sum_congr rfl fun s hs ↦ by rw [hp s hs]
-      have hsq : ∑ s ∈ range q, powCoeff P₂ ((d₁ : ℤ) - p) (s + 1) * Cm p (q - (s + 1)) =
-          ∑ s ∈ range q, powCoeff P₂ ((d₁ : ℤ) - p) (s + 1) * Cm' p (q - (s + 1)) :=
+      have hsq : ∑ s ∈ range q, rankTwoPowCoeff P₂ ((d₁ : ℤ) - p) (s + 1) * Cm p (q - (s + 1)) =
+          ∑ s ∈ range q, rankTwoPowCoeff P₂ ((d₁ : ℤ) - p) (s + 1) * Cm' p (q - (s + 1)) :=
         sum_congr rfl fun s hs ↦ by rw [hq s hs]
       rw [hsp, hsq] at e
       rcases le_or_gt (d₁ * q) (d₂ * p) with hle | hlt
