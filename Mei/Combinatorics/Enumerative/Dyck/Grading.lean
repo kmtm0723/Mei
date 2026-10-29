@@ -44,7 +44,8 @@ coefficients of rank-two wall functions.
 public section
 
 open DyckStep Finset Polynomial
-open Mei.CyclicMatching (cyclicIcc mem_cyclicIcc cyclicIcc_self val_sub_eq_zero_iff val_sub_self)
+open Mei.CyclicMatching (cyclicIcc mem_cyclicIcc cyclicIcc_self)
+open Fin (val_sub_eq_zero_iff val_sub_self)
 
 namespace Mei.MaximalDyckPath
 

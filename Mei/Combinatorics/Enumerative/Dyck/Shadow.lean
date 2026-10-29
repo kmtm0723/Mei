@@ -6,7 +6,6 @@ Authors: Claude
 module
 
 public import Mei.Combinatorics.Enumerative.Dyck.Grading
-import Mathlib.Tactic.Abel
 
 /-!
 # Sizes of total shadows
