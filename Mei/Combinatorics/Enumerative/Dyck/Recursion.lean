@@ -6,8 +6,9 @@ Authors: Claude
 module
 
 public import Mei.Combinatorics.Enumerative.Dyck.Shadow
-public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Algebra.Polynomial.Degree.Support
+public import Mei.Algebra.BigOperators.Ring.Finset
+public import Mei.Algebra.Polynomial.Coeff
 
 /-!
 # The recursion (R) for the shadowed grading sums
@@ -28,6 +29,11 @@ horizontal shadow, which has `min(d₂, q)` edges. With `P₁(0) = 1` this gives
 dually for `C₋` (`sum_coeff_mul_cminus`). Together they give the recursion (R) of the rank-two
 polynomial formula (`sum_coeff_mul_cplus_eq_sum_coeff_mul_cminus`). For `q ≥ d₂` the power is
 `P₁ ^ 0 = 1`, matching `π_{d₂ - q, s}(P₁) = [s = 0]` for negative exponents.
+
+## References
+
+The two coefficient identities and the resulting recursion formalize Lemma 5.27 of
+Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*.
 -/
 
 public section
@@ -38,121 +44,11 @@ namespace Mei.MaximalDyckPath
 
 variable {d₁ d₂ : ℕ}
 
-section Truncation
 
-/-- Vertical balance only depends on the horizontal grades. -/
-theorem verticalBalanced_congr {γ γ' : Edge d₁ d₂ → ℕ}
-    (hH : ∀ k ∈ horizontalEdges d₁ d₂, γ k = γ' k) (h e : Edge d₁ d₂) :
-    VerticalBalanced γ h e ↔ VerticalBalanced γ' h e := by
-  rw [verticalBalanced_iff_card_eq_sum, verticalBalanced_iff_card_eq_sum,
-    sum_congr rfl fun k hk ↦ hH k (mem_inter.mp hk).2]
-
-/-- Horizontal balance on `ev` only depends on the vertical grades on `ev`. -/
-theorem horizontalBalanced_congr {γ γ' : Edge d₁ d₂ → ℕ} {e v : Edge d₁ d₂}
-    (hV : ∀ k ∈ cyclicIcc e v ∩ verticalEdges d₁ d₂, γ k = γ' k) :
-    HorizontalBalanced γ e v ↔ HorizontalBalanced γ' e v := by
-  rw [horizontalBalanced_iff_card_eq_sum, horizontalBalanced_iff_card_eq_sum, sum_congr rfl hV]
-
-/-- Horizontal balance only depends on the vertical grades. -/
-theorem horizontalBalanced_congr' {γ γ' : Edge d₁ d₂ → ℕ}
-    (hV : ∀ k ∈ verticalEdges d₁ d₂, γ k = γ' k) (e v : Edge d₁ d₂) :
-    HorizontalBalanced γ e v ↔ HorizontalBalanced γ' e v :=
-  horizontalBalanced_congr fun k hk ↦ hV k (mem_inter.mp hk).2
-
-/-- Vertical balance on `he` only depends on the horizontal grades on `he`. -/
-theorem verticalBalanced_congr' {γ γ' : Edge d₁ d₂ → ℕ} {h e : Edge d₁ d₂}
-    (hH : ∀ k ∈ cyclicIcc h e ∩ horizontalEdges d₁ d₂, γ k = γ' k) :
-    VerticalBalanced γ h e ↔ VerticalBalanced γ' h e := by
-  rw [verticalBalanced_iff_card_eq_sum, verticalBalanced_iff_card_eq_sum, sum_congr rfl hH]
-
-/-- The local horizontal shadows only depend on the horizontal grades. -/
-theorem horizontalShadow_congr {γ γ' : Edge d₁ d₂ → ℕ}
-    (hH : ∀ k ∈ horizontalEdges d₁ d₂, γ k = γ' k) (h : Edge d₁ d₂) :
-    horizontalShadow γ h = horizontalShadow γ' h := by
-  ext k
-  simp only [mem_horizontalShadow, verticalBalanced_congr hH]
-
-/-- The local vertical shadows only depend on the vertical grades. -/
-theorem verticalShadow_congr {γ γ' : Edge d₁ d₂ → ℕ}
-    (hV : ∀ k ∈ verticalEdges d₁ d₂, γ k = γ' k) (v : Edge d₁ d₂) :
-    verticalShadow γ v = verticalShadow γ' v := by
-  ext k
-  simp only [mem_verticalShadow, horizontalBalanced_congr' hV]
-
-theorem totalHorizontalShadow_congr {γ γ' : Edge d₁ d₂ → ℕ}
-    (hH : ∀ k ∈ horizontalEdges d₁ d₂, γ k = γ' k) :
-    totalHorizontalShadow γ = totalHorizontalShadow γ' := by
-  ext k
-  simp only [mem_totalHorizontalShadow, horizontalShadow_congr hH]
-
-theorem totalVerticalShadow_congr {γ γ' : Edge d₁ d₂ → ℕ}
-    (hV : ∀ k ∈ verticalEdges d₁ d₂, γ k = γ' k) :
-    totalVerticalShadow γ = totalVerticalShadow γ' := by
-  ext k
-  simp only [mem_totalVerticalShadow, verticalShadow_congr hV]
-
-/-- **Compatibility only sees the shadowed vertical grades.** Two gradings with the same
-horizontal grades that agree on the total horizontal shadow are compatible together. -/
-theorem compatible_congr_of_horizontal {γ γ' : Edge d₁ d₂ → ℕ}
-    (hH : ∀ k ∈ horizontalEdges d₁ d₂, γ k = γ' k)
-    (hV : ∀ k ∈ totalHorizontalShadow γ, γ k = γ' k) : Compatible γ ↔ Compatible γ' := by
-  rw [compatible_iff, compatible_iff]
-  refine forall₂_congr fun h hh ↦ forall₂_congr fun v hv ↦ ?_
-  simp only [verticalBalanced_congr hH]
-  by_cases hA : ∃ e, (e - h).val < (v - h).val ∧ VerticalBalanced γ' h e
-  · exact iff_of_true (Or.inl hA) (Or.inl hA)
-  have hsh : v ∈ horizontalShadow γ h := (mem_horizontalShadow γ).mpr
-    ⟨hv, fun e he hb ↦ hA ⟨e, he, (verticalBalanced_congr hH h e).mp hb⟩⟩
-  refine or_congr_right (exists_congr fun e ↦ and_congr_right fun he ↦
-    horizontalBalanced_congr fun k hk ↦ hV k ?_)
-  have hev : e ∈ cyclicIcc h v := by
-    rw [mem_cyclicIcc, ← Fin.val_sub_le_val_sub_iff]
-    exact he.le
-  have hkv := mem_cyclicIcc.mp (cyclicIcc_subset_of_mem hev (mem_inter.mp hk).1)
-  rw [mem_horizontalShadow] at hsh
-  rw [mem_totalHorizontalShadow]
-  exact ⟨h, hh, (mem_horizontalShadow γ).mpr
-    ⟨(mem_inter.mp hk).2, fun e' he' ↦ hsh.2 e' (lt_of_lt_of_le he' hkv)⟩⟩
-
-/-- **Compatibility only sees the shadowed horizontal grades.** Two gradings with the same
-vertical grades that agree on the total vertical shadow are compatible together. -/
-theorem compatible_congr_of_vertical {γ γ' : Edge d₁ d₂ → ℕ}
-    (hV : ∀ k ∈ verticalEdges d₁ d₂, γ k = γ' k)
-    (hH : ∀ k ∈ totalVerticalShadow γ, γ k = γ' k) : Compatible γ ↔ Compatible γ' := by
-  rw [compatible_iff, compatible_iff]
-  refine forall₂_congr fun h hh ↦ forall₂_congr fun v hv ↦ ?_
-  simp only [horizontalBalanced_congr' hV]
-  by_cases hB : ∃ e, (v - e).val < (v - h).val ∧ HorizontalBalanced γ' e v
-  · exact iff_of_true (Or.inr hB) (Or.inr hB)
-  have hsh : h ∈ verticalShadow γ v := (mem_verticalShadow γ).mpr
-    ⟨hh, fun e he hb ↦ hB ⟨e, he, (horizontalBalanced_congr' hV e v).mp hb⟩⟩
-  refine or_congr_left (exists_congr fun e ↦ and_congr_right fun he ↦
-    verticalBalanced_congr' fun k hk ↦ hH k ?_)
-  have hkv : (v - k).val ≤ (v - h).val := by
-    rw [Fin.val_sub_le_val_sub_iff]
-    exact (mem_cyclicIcc.mp (mem_inter.mp hk).1).trans he.le
-  rw [mem_verticalShadow] at hsh
-  rw [mem_totalVerticalShadow]
-  exact ⟨v, hv, (mem_verticalShadow γ).mpr
-    ⟨(mem_inter.mp hk).2, fun e' he' ↦ hsh.2 e' (lt_of_lt_of_le he' hkv)⟩⟩
-
-end Truncation
 
 section Recursion
 
 variable {S : Type*} [CommSemiring S] (P₁ P₂ : S[X])
-
-variable (d₁ d₂) in
-/-- The weight sum of all compatible gradings with totals `(p, q)`. -/
-def compatibleSum (p q : ℕ) : S :=
-  ∑ γ ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree with Compatible γ ∧ verticalTotal γ = p ∧
-    horizontalTotal γ = q, weight P₁ P₂ γ
-
-theorem compatibleSum_def (p q : ℕ) :
-    compatibleSum d₁ d₂ P₁ P₂ p q =
-      ∑ γ ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree with Compatible γ ∧ verticalTotal γ = p ∧
-        horizontalTotal γ = q, weight P₁ P₂ γ :=
-  (rfl)
 
 /-- The local factor of an edge in the generating function of gradings by `p`. -/
 private noncomputable def factorV (k : Edge d₁ d₂) (j : ℕ) : S[X] :=
@@ -185,26 +81,6 @@ private theorem prod_factorH (γ : Edge d₁ d₂ → ℕ) :
   simp only [factorH]
   rw [prod_ite, filter_step_eq_D, filter_step_ne_D, prod_mul_distrib, prod_pow_eq_pow_sum,
     weight_def, map_mul, map_prod, map_prod, horizontalTotal_eq]
-  ring
-
-/-- Grading the edges of `O` freely and the others as `γ'` multiplies the generating function
-of `γ'` by one copy of the full local sum per edge of `O`. -/
-private theorem sum_piFinset_factor (f : Edge d₁ d₂ → ℕ → S[X]) (O : Finset (Edge d₁ d₂))
-    (t : ℕ) (Q : S[X]) (hQ : ∀ k ∈ O, ∑ j ∈ range (t + 1), f k j = Q)
-    (γ' : Edge d₁ d₂ → ℕ) (h₀ : ∀ k ∈ O, f k (γ' k) = 1) :
-    ∑ γ ∈ Fintype.piFinset (fun k ↦ if k ∈ O then range (t + 1) else {γ' k}), ∏ k, f k (γ k) =
-      (∏ k, f k (γ' k)) * Q ^ #O := by
-  rw [← prod_univ_sum]
-  have h₁ : ∀ k, ∑ j ∈ (if k ∈ O then range (t + 1) else {γ' k}), f k j =
-      if k ∈ O then Q * f k (γ' k) else f k (γ' k) := by
-    intro k
-    split_ifs with hk
-    · rw [hQ k hk, h₀ k hk, mul_one]
-    · rw [sum_singleton]
-  rw [prod_congr rfl fun k _ ↦ h₁ k, prod_ite, prod_mul_distrib, ← prod_mul_prod_compl
-    (univ.filter (· ∈ O)), compl_filter]
-  rw [prod_congr rfl fun k hk ↦ h₀ k (mem_filter.mp hk).2, prod_const_one, one_mul,
-    prod_const, filter_mem_eq_inter, univ_inter]
   ring
 
 /-- Zero the vertical grades outside the total horizontal shadow. -/
@@ -385,7 +261,7 @@ private theorem sum_fiber_truncV (hP₁ : P₁.coeff 0 = 1) {γ' : Edge d₁ d�
       C (weight P₁ P₂ γ') * X ^ verticalTotal γ' * P₁ ^ (d₂ - min d₂ (horizontalTotal γ')) := by
   rw [filter_truncV_eq P₁ P₂ hγ' hfix]
   simp_rw [← prod_factorV P₁ P₂]
-  rw [sum_piFinset_factor (factorV P₁ P₂) _ P₁.natDegree P₁ ?_ γ' ?_,
+  rw [sum_piFinset_factor (factorV P₁ P₂) _ (range (P₁.natDegree + 1)) P₁ ?_ γ' ?_,
     card_sdiff_of_subset (totalHorizontalShadow_subset γ'), card_verticalEdges,
     card_totalHorizontalShadow]
   · intro k hk
@@ -423,20 +299,6 @@ private theorem sum_compatible_genV (hP₁ : P₁.coeff 0 = 1) (q : ℕ) :
     rw [mem_gradings] at hγg ⊢
     exact fun k ↦ (truncV_le γ k).trans (hγg k)
 
-/-- Extracting the coefficient of `X ^ p` from `X ^ a * Q`, summed over the splittings
-`p = a + s`. -/
-private theorem sum_range_ite_eq (p a : ℕ) (f : ℕ → S) (w : S) :
-    ∑ s ∈ range (p + 1), (if a = p - s then f s * w else 0) =
-      w * if a ≤ p then f (p - a) else 0 := by
-  by_cases ha : a ≤ p
-  · rw [sum_eq_single (p - a)]
-    · split_ifs <;> first | exact mul_comm _ _ | (exfalso; omega)
-    · intro s hs hne
-      exact ite_eq_right_iff.mpr fun h ↦ absurd (by have := mem_range.mp hs; omega) hne
-    · exact fun h ↦ absurd (mem_range.mpr (by omega)) h
-  · rw [sum_eq_zero fun s hs ↦ ite_eq_right_iff.mpr fun h ↦ absurd h (by omega)]
-    simp [ha]
-
 /-- **The `C₊` side of (R).** When `P₁` has constant coefficient `1`,
 `∑_{s ≤ p} [x^s] P₁^{d₂ - min(d₂, q)} C₊(p - s, q)` is the weight sum of all compatible
 gradings with totals `(p, q)`. -/
@@ -444,37 +306,9 @@ theorem sum_coeff_mul_cplus (hP₁ : P₁.coeff 0 = 1) (p q : ℕ) :
     ∑ s ∈ range (p + 1), (P₁ ^ (d₂ - min d₂ q)).coeff s * cplus d₁ d₂ P₁ P₂ (p - s) q =
       compatibleSum d₁ d₂ P₁ P₂ p q := by
   have key := congrArg (coeff · p) (sum_compatible_genV (d₁ := d₁) (d₂ := d₂) P₁ P₂ hP₁ q)
-  simp only [finsetSum_coeff, sum_mul, mul_assoc, coeff_C_mul, coeff_X_pow_mul'] at key
-  rw [sum_filter, sum_filter] at key
-  have h₁ (a : Edge d₁ d₂ → ℕ) :
-      (if Compatible a ∧ verticalTotal a = p ∧ horizontalTotal a = q then weight P₁ P₂ a else 0) =
-        if Compatible a ∧ horizontalTotal a = q then weight P₁ P₂ a * (X ^ verticalTotal a).coeff p
-        else 0 := by
-    rw [coeff_X_pow]
-    by_cases hv : verticalTotal a = p
-    · simp [hv]
-    · have hv' : ¬p = verticalTotal a := fun h ↦ hv h.symm
-      simp [hv, hv']
-  have h₂ (y : Edge d₁ d₂ → ℕ) :
-      ∑ x ∈ range (p + 1), (P₁ ^ (d₂ - min d₂ q)).coeff x *
-          (if Compatible y ∧ verticalTotal y = p - x ∧ horizontalTotal y = q ∧
-            verticalSupport y ⊆ totalHorizontalShadow y then weight P₁ P₂ y else 0) =
-        if Compatible y ∧ horizontalTotal y = q ∧ verticalSupport y ⊆ totalHorizontalShadow y then
-          weight P₁ P₂ y * if verticalTotal y ≤ p then
-            (P₁ ^ (d₂ - min d₂ q)).coeff (p - verticalTotal y) else 0
-        else 0 := by
-    by_cases hA : Compatible y ∧ horizontalTotal y = q ∧
-        verticalSupport y ⊆ totalHorizontalShadow y
-    · rw [ite_eq_left_iff.mpr fun h ↦ absurd hA h, ← sum_range_ite_eq]
-      refine sum_congr rfl fun x _ ↦ ?_
-      by_cases hx : verticalTotal y = p - x <;> simp [hA, hx]
-    · rw [ite_eq_right_iff.mpr fun h ↦ absurd h hA]
-      exact sum_eq_zero fun x _ ↦ by
-        rw [ite_eq_right_iff.mpr fun h ↦ absurd ⟨h.1, h.2.2⟩ hA, mul_zero]
-  rw [compatibleSum_def, sum_filter]
-  simp only [cplus_def, mul_sum, sum_filter]
-  rw [sum_comm, sum_congr rfl fun y _ ↦ h₂ y, ← key]
-  exact sum_congr rfl fun a _ ↦ (h₁ a).symm
+  conv_rhs at key => rw [mul_comm]
+  simp only [coeff_sum_C_mul_X_pow, coeff_mul_sum_C_mul_X_pow] at key
+  simpa only [cplus_def, compatibleSum_def, and_assoc, and_left_comm, and_comm] using key.symm
 
 /-- The generating function of a fibre of the horizontal truncation. -/
 private theorem sum_fiber_truncH (hP₂ : P₂.coeff 0 = 1) {γ' : Edge d₁ d₂ → ℕ}
@@ -484,7 +318,7 @@ private theorem sum_fiber_truncH (hP₂ : P₂.coeff 0 = 1) {γ' : Edge d₁ d�
       C (weight P₁ P₂ γ') * X ^ horizontalTotal γ' * P₂ ^ (d₁ - min d₁ (verticalTotal γ')) := by
   rw [filter_truncH_eq P₁ P₂ hγ' hfix]
   simp_rw [← prod_factorH P₁ P₂]
-  rw [sum_piFinset_factor (factorH P₁ P₂) _ P₂.natDegree P₂ ?_ γ' ?_,
+  rw [sum_piFinset_factor (factorH P₁ P₂) _ (range (P₂.natDegree + 1)) P₂ ?_ γ' ?_,
     card_sdiff_of_subset (totalVerticalShadow_subset γ'), card_horizontalEdges,
     card_totalVerticalShadow]
   · intro k hk
@@ -529,38 +363,9 @@ theorem sum_coeff_mul_cminus (hP₂ : P₂.coeff 0 = 1) (p q : ℕ) :
     ∑ s ∈ range (q + 1), (P₂ ^ (d₁ - min d₁ p)).coeff s * cminus d₁ d₂ P₁ P₂ p (q - s) =
       compatibleSum d₁ d₂ P₁ P₂ p q := by
   have key := congrArg (coeff · q) (sum_compatible_genH (d₁ := d₁) (d₂ := d₂) P₁ P₂ hP₂ p)
-  simp only [finsetSum_coeff, sum_mul, mul_assoc, coeff_C_mul, coeff_X_pow_mul'] at key
-  rw [sum_filter, sum_filter] at key
-  have h₁ (a : Edge d₁ d₂ → ℕ) :
-      (if Compatible a ∧ verticalTotal a = p ∧ horizontalTotal a = q then weight P₁ P₂ a else 0) =
-        if Compatible a ∧ verticalTotal a = p then
-          weight P₁ P₂ a * (X ^ horizontalTotal a).coeff q
-        else 0 := by
-    rw [coeff_X_pow]
-    by_cases hv : horizontalTotal a = q
-    · simp [hv]
-    · have hv' : ¬q = horizontalTotal a := fun h ↦ hv h.symm
-      simp [hv, hv']
-  have h₂ (y : Edge d₁ d₂ → ℕ) :
-      ∑ x ∈ range (q + 1), (P₂ ^ (d₁ - min d₁ p)).coeff x *
-          (if Compatible y ∧ verticalTotal y = p ∧ horizontalTotal y = q - x ∧
-            horizontalSupport y ⊆ totalVerticalShadow y then weight P₁ P₂ y else 0) =
-        if Compatible y ∧ verticalTotal y = p ∧ horizontalSupport y ⊆ totalVerticalShadow y then
-          weight P₁ P₂ y * if horizontalTotal y ≤ q then
-            (P₂ ^ (d₁ - min d₁ p)).coeff (q - horizontalTotal y) else 0
-        else 0 := by
-    by_cases hA : Compatible y ∧ verticalTotal y = p ∧
-        horizontalSupport y ⊆ totalVerticalShadow y
-    · rw [ite_eq_left_iff.mpr fun h ↦ absurd hA h, ← sum_range_ite_eq]
-      refine sum_congr rfl fun x _ ↦ ?_
-      by_cases hx : horizontalTotal y = q - x <;> simp [hA, hx]
-    · rw [ite_eq_right_iff.mpr fun h ↦ absurd h hA]
-      exact sum_eq_zero fun x _ ↦ by
-        rw [ite_eq_right_iff.mpr fun h ↦ absurd ⟨h.1, h.2.1, h.2.2.2⟩ hA, mul_zero]
-  rw [compatibleSum_def, sum_filter]
-  simp only [cminus_def, mul_sum, sum_filter]
-  rw [sum_comm, sum_congr rfl fun y _ ↦ h₂ y, ← key]
-  exact sum_congr rfl fun a _ ↦ (h₁ a).symm
+  conv_rhs at key => rw [mul_comm]
+  simp only [coeff_sum_C_mul_X_pow, coeff_mul_sum_C_mul_X_pow] at key
+  simpa only [cminus_def, compatibleSum_def, and_assoc, and_left_comm, and_comm] using key.symm
 
 /-- **The recursion (R).** When `P₁` and `P₂` have constant coefficient `1`,
 `∑_{s ≤ p} [x^s] P₁^{d₂ - min(d₂, q)} C₊(p - s, q)` equals
