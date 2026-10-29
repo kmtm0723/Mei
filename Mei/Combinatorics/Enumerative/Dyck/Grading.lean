@@ -8,7 +8,6 @@ module
 public import Mei.Combinatorics.Enumerative.Dyck.Basic
 public import Mei.Combinatorics.Enumerative.CyclicMatching
 public import Mathlib.Algebra.Polynomial.Degree.Defs
-public import Mathlib.Data.Fintype.Pi
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -126,11 +125,11 @@ instance : Decidable (Compatible γ) :=
   decidable_of_iff _ (compatible_iff γ).symm
 
 /-- Offsets `(e - h)` of the vertically balanced subpaths `he` starting at `h`. -/
-def verticalBalancedOffsets (h : Edge d₁ d₂) : Finset ℕ :=
+private def verticalBalancedOffsets (h : Edge d₁ d₂) : Finset ℕ :=
   (univ.filter fun e ↦ VerticalBalanced γ h e).image fun e ↦ (e - h).val
 
 /-- Offsets `(v - e)` of the horizontally balanced subpaths `ev` ending at `v`. -/
-def horizontalBalancedOffsets (v : Edge d₁ d₂) : Finset ℕ :=
+private def horizontalBalancedOffsets (v : Edge d₁ d₂) : Finset ℕ :=
   (univ.filter fun e ↦ HorizontalBalanced γ e v).image fun e ↦ (v - e).val
 
 /-- The local shadow of a horizontal edge `h`: the vertical edges of the shortest vertically
@@ -226,6 +225,7 @@ theorem totalVerticalShadow_subset : totalVerticalShadow γ ⊆ horizontalEdges 
   Finset.biUnion_subset.mpr fun v _ ↦ verticalShadow_subset γ v
 
 /-- A horizontal edge of grade zero has empty local shadow. -/
+@[simp]
 theorem horizontalShadow_eq_empty {h : Edge d₁ d₂} (hh : h ∈ horizontalEdges d₁ d₂)
     (h0 : γ h = 0) : horizontalShadow γ h = ∅ := by
   have hmem : 0 ∈ verticalBalancedOffsets γ h := by
@@ -244,6 +244,7 @@ theorem horizontalShadow_eq_empty {h : Edge d₁ d₂} (hh : h ∈ horizontalEdg
   exact notMem_verticalEdges_of_mem hh hkv
 
 /-- A vertical edge of grade zero has empty local shadow. -/
+@[simp]
 theorem verticalShadow_eq_empty {v : Edge d₁ d₂} (hv : v ∈ verticalEdges d₁ d₂)
     (h0 : γ v = 0) : verticalShadow γ v = ∅ := by
   have hmem : 0 ∈ horizontalBalancedOffsets γ v := by
@@ -293,6 +294,7 @@ instance : Decidable (Tight γ) :=
 
 /-- The zero grading is compatible: the one-edge subpath at each horizontal edge is
 vertically balanced. -/
+@[simp]
 theorem compatible_zero : Compatible (0 : Edge d₁ d₂ → ℕ) := by
   intro h hh v hv
   left
@@ -487,6 +489,7 @@ theorem cminus_def (p q : ℕ) :
   (rfl)
 
 /-- The zero grading has weight one when both constant coefficients are one. -/
+@[simp]
 theorem weight_zero (h₁ : P₁.coeff 0 = 1) (h₂ : P₂.coeff 0 = 1) :
     weight P₁ P₂ (0 : Edge d₁ d₂ → ℕ) = 1 := by
   simp [weight, h₁, h₂]
@@ -507,12 +510,14 @@ private theorem filter_totals_zero {ℓ₁ ℓ₂ : ℕ} (C : (Edge d₁ d₂ �
     · simp [horizontalTotal]
 
 /-- `C₊(0, 0) = 1` when both constant coefficients are one. -/
+@[simp]
 theorem cplus_zero_zero (h₁ : P₁.coeff 0 = 1) (h₂ : P₂.coeff 0 = 1) :
     cplus d₁ d₂ P₁ P₂ 0 0 = 1 := by
   rw [cplus, filter_totals_zero _ (by simp [verticalSupport]), Finset.sum_singleton,
     weight_zero _ _ h₁ h₂]
 
 /-- `C₋(0, 0) = 1` when both constant coefficients are one. -/
+@[simp]
 theorem cminus_zero_zero (h₁ : P₁.coeff 0 = 1) (h₂ : P₂.coeff 0 = 1) :
     cminus d₁ d₂ P₁ P₂ 0 0 = 1 := by
   rw [cminus, filter_totals_zero _ (by simp [horizontalSupport]), Finset.sum_singleton,
