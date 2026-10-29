@@ -17,7 +17,8 @@ public import Mathlib.Tactic.Module
 
 The sweep of a set `P` in the direction `n` is `P - ℝ≥0 • n`. When `n` is
 outside the affine direction of `P`, a normalized linear height recovers both
-prism coordinates.
+prism coordinates. Sweeps commute with adding unrestricted coordinates, as needed
+when comparing projected wall supports with their cylinders.
 -/
 
 public section
@@ -50,6 +51,20 @@ theorem subset_sweep (P : Set V) (n : V) : P ⊆ sweep P n := by
 theorem sweep_mono {P Q : Set V} (h : P ⊆ Q) (n : V) : sweep P n ⊆ sweep Q n := by
   rintro y ⟨x, hx, t, ht, he⟩
   exact ⟨x, h hx, t, ht, he⟩
+
+/-- Sweeping a cylinder only changes its base. The unrestricted coordinate absorbs
+every second component of the sweeping vector, including when the first is zero. -/
+@[simp]
+theorem sweep_prod_univ {E : Type*} [AddCommGroup E] [Module ℝ E]
+    (P : Set V) (n : V × E) :
+    sweep (P ×ˢ (Set.univ : Set E)) n = sweep P n.1 ×ˢ Set.univ := by
+  ext y
+  constructor
+  · rintro ⟨x, hx, t, ht, he⟩
+    exact ⟨⟨x.1, hx.1, t, ht, congrArg Prod.fst he⟩, Set.mem_univ _⟩
+  · rintro ⟨⟨x, hx, t, ht, he⟩, _⟩
+    refine ⟨(x, y.2 + t • n.2), ⟨hx, Set.mem_univ _⟩, t, ht, ?_⟩
+    exact Prod.ext he (by simp)
 
 /-- The empty base has empty sweep. -/
 @[simp]
@@ -254,6 +269,61 @@ theorem finrank_sweep [FiniteDimensional ℝ V] {P : Set V} {n : V} (hP : P.None
       Module.finrank ℝ (vectorSpan ℝ P) + 1 := by
   rw [vectorSpan_sweep hP n]
   exact Submodule.finrank_sup_span_singleton hn
+
+/-- A swept affine span contains precisely the lines parallel to the sweeping
+vector through the original affine span. Empty bases are allowed. -/
+@[simp]
+theorem mem_affineSpan_sweep_iff (P : Set V) (n y : V) :
+    y ∈ affineSpan ℝ (sweep P n) ↔ ∃ t : ℝ, y + t • n ∈ affineSpan ℝ P := by
+  obtain hP | ⟨x, hx⟩ := P.eq_empty_or_nonempty
+  · simp [hP, AffineSubspace.notMem_bot]
+  have hxP := subset_affineSpan ℝ P hx
+  have hxS := subset_affineSpan ℝ (sweep P n) (subset_sweep P n hx)
+  have hdir := vectorSpan_sweep ⟨x, hx⟩ n
+  constructor
+  · intro hy
+    have hdiff := (affineSpan ℝ (sweep P n)).vsub_mem_direction hy hxS
+    rw [direction_affineSpan, hdir] at hdiff
+    obtain ⟨u, hu, v, hv, huv⟩ := Submodule.mem_sup.mp hdiff
+    obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.mp hv
+    refine ⟨-t, ?_⟩
+    have hmem := (affineSpan ℝ P).vadd_mem_of_mem_direction
+      (by simpa only [direction_affineSpan] using hu) hxP
+    simp only [vsub_eq_sub] at huv
+    rw [← sub_add_cancel y x, ← huv]
+    convert hmem using 1
+    simp only [vadd_eq_add]
+    module
+  · rintro ⟨t, ht⟩
+    have htS := affineSpan_mono ℝ (subset_sweep P n) ht
+    have hn : n ∈ (affineSpan ℝ (sweep P n)).direction := by
+      rw [direction_affineSpan, hdir]
+      exact Submodule.mem_sup_right (Submodule.mem_span_singleton_self n)
+    have hmem := (affineSpan ℝ (sweep P n)).vadd_mem_of_mem_direction
+      ((affineSpan ℝ (sweep P n)).direction.smul_mem (-t) hn) htS
+    convert hmem using 1
+    simp only [vadd_eq_add]
+    module
+
+/-- Sweeping a set of codimension at least two has proper affine span.
+Only nonempty bases need a dimension bound. -/
+theorem affineSpan_sweep_ne_top [FiniteDimensional ℝ V] (P : Set V) (n : V)
+    (hdim : P.Nonempty →
+      Module.finrank ℝ (vectorSpan ℝ P) + 1 < Module.finrank ℝ V) :
+    affineSpan ℝ (sweep P n) ≠ ⊤ := by
+  obtain rfl | hP := P.eq_empty_or_nonempty
+  · simp
+  have hle : Module.finrank ℝ (vectorSpan ℝ (sweep P n)) ≤
+      Module.finrank ℝ (vectorSpan ℝ P) + 1 := by
+    by_cases hn : n ∈ vectorSpan ℝ P
+    · rw [vectorSpan_sweep hP n,
+        sup_eq_left.mpr (Submodule.span_le.mpr (by simpa using hn))]
+      omega
+    · exact (finrank_sweep hP hn).le
+  intro htop
+  rw [← direction_affineSpan, htop, AffineSubspace.direction_top,
+    finrank_top] at hle
+  exact (not_le_of_gt (hdim hP)) hle
 
 end Algebra
 

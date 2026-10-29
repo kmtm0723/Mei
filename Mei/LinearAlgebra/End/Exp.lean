@@ -47,6 +47,23 @@ theorem exp_restrictScalars (D : Module.End S M) (hD : IsNilpotent D) :
 
 end RestrictScalars
 
+/-! ### Invariant submodules
+
+The finite exponential of a nilpotent endomorphism preserves every submodule
+stable under that endomorphism.
+-/
+
+/-- The finite exponential preserves every submodule stable under its endomorphism. -/
+theorem exp_apply_mem_of_forall_mem {R M : Type*} [Semiring R] [AddCommGroup M]
+    [Module R M] [Module ℚ M] [Algebra ℚ R] [IsScalarTower ℚ R M]
+    (D : Module.End R M) (hD : IsNilpotent D) (S : Submodule R M)
+    (hS : ∀ x ∈ S, D x ∈ S) {x : M} (hx : x ∈ S) :
+    IsNilpotent.exp D x ∈ S := by
+  obtain ⟨k, hk⟩ := hD
+  rw [IsNilpotent.exp_eq_sum hk, LinearMap.sum_apply]
+  exact S.sum_mem fun n _ => S.smul_of_tower_mem _
+    (Module.End.pow_apply_mem_of_forall_mem (f' := D) n hS x hx)
+
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module ℚ M]
 
 /-- Exponentiating a nilpotent endomorphism fixes every vector in its kernel. -/

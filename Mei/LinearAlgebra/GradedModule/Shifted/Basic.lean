@@ -185,7 +185,7 @@ theorem shiftedFiltration_succ (k : ℕ) :
     exact (congrArg (fun t => (DirectSum.decompose ℳ (x : M) t : M)) he).symm.trans hh
 
 /-- Each successor term of the relative filtration is homogeneous. -/
-theorem shiftedFiltration_isHomogeneous (k : ℕ) :
+theorem shiftedFiltration_succ_isHomogeneous (k : ℕ) :
     DirectSum.SetLike.IsHomogeneous (shiftedGrading ℳ d.monoid p)
       ((d.shiftedFiltration ℳ p).submodule (k + 1)) := by
   rw [shiftedFiltration_succ]

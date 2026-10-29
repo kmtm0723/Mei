@@ -1,0 +1,37 @@
+name: Initialize empty Mei R2 budget
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Initialize an empty bucket, or conservatively account for existing objects after stopping external writers'
+        type: choice
+        options: [initialize-empty, adopt-existing]
+        default: initialize-empty
+        required: true
+      confirmation:
+        description: 'Type mei-cache to initialize its empty dedicated bucket once'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  initialize:
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'mei-cache'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    concurrency:
+      group: mei-r2-publisher
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+          sparse-checkout: scripts/mei_r2_publish.py
+          sparse-checkout-cone-mode: false
+      - name: Run explicit budget administration
+        env:
+          OPERATION: ${{ inputs.operation }}
+          MEI_R2_BUCKET_ENDPOINT: ${{ vars.MEI_R2_BUCKET_ENDPOINT }}
+          LAKE_CACHE_KEY_RAW: ${{ secrets.LAKE_CACHE_KEY }}
+        run: python3 scripts/mei_r2_publish.py "$OPERATION"

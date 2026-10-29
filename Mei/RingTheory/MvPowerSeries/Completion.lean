@@ -7,6 +7,7 @@ module
 
 public import Mei.RingTheory.AdicCompletion.Filtered
 public import Mei.RingTheory.FilteredAlgebra.Map
+public import Mei.RingTheory.FilteredAlgebra.Module
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 
 /-!
@@ -21,6 +22,9 @@ that are lattice monoid algebras.
 This uses Mathlib's `MvPowerSeries.toAdicCompletionAlgEquiv`, rather than
 reconstructing its power series or truncation arguments, and the comparison
 between adic and filtered completions.
+
+The same identification holds for the module completion of the polynomial ring
+over itself, through `AlgFiltration.moduleCompletionEquiv`.
 -/
 
 public section
@@ -76,6 +80,52 @@ theorem mk_truncTotal_principalCompletionEquiv (k : ℕ)
       ((principalCompletionEquiv σ R x).truncTotal (k + 1)) =
         (ofIdeal (MvPolynomial.idealOfVars σ R)).projection k x := by
   rw [← projection_principalCompletionEquiv_symm, AlgEquiv.symm_apply_apply]
+
+/-- A polynomial representing the order-`k` projection has the same coefficients
+as the associated power series in every total degree at most `k`. -/
+theorem coeff_principalCompletionEquiv_eq_of_projection_eq
+    (x : (ofIdeal (MvPolynomial.idealOfVars σ R)).completion) (k : ℕ)
+    (p : MvPolynomial σ R)
+    (hp : Ideal.Quotient.mk ((ofIdeal (MvPolynomial.idealOfVars σ R)).ideal (k + 1)) p =
+      (ofIdeal (MvPolynomial.idealOfVars σ R)).projection k x)
+    (n : σ →₀ ℕ) (hn : n.degree ≤ k) :
+    MvPowerSeries.coeff n (principalCompletionEquiv σ R x) = p.coeff n := by
+  rw [← mk_truncTotal_principalCompletionEquiv] at hp
+  have hmem := Ideal.Quotient.eq.mp hp
+  rw [ofIdeal_ideal, MvPolynomial.mem_pow_idealOfVars_iff'] at hmem
+  have he := hmem n (Nat.lt_succ_of_le hn)
+  symm
+  simpa only [MvPolynomial.coeff_sub, MvPowerSeries.coeff_truncTotal _
+    (Nat.lt_succ_of_le hn), sub_eq_zero] using he
+
+/-- The module completion of a polynomial ring over itself along the ideal of
+variables is its power series ring. -/
+def principalModuleCompletionEquiv :
+    ((ofIdeal (MvPolynomial.idealOfVars σ R)).toModuleFiltration (MvPolynomial σ R)).completion
+      ≃ₗ[MvPolynomial σ R] MvPowerSeries σ R :=
+  (ofIdeal (MvPolynomial.idealOfVars σ R)).moduleCompletionEquiv.trans
+    (principalCompletionEquiv σ R).toLinearEquiv
+
+/-- A completed polynomial is sent to the same polynomial, viewed as a power series. -/
+@[simp]
+theorem principalModuleCompletionEquiv_of (p : MvPolynomial σ R) :
+    principalModuleCompletionEquiv σ R
+      (((ofIdeal (MvPolynomial.idealOfVars σ R)).toModuleFiltration (MvPolynomial σ R)).of p) =
+      p := by
+  rw [principalModuleCompletionEquiv, LinearEquiv.trans_apply, moduleCompletionEquiv_of,
+    AlgEquiv.toLinearEquiv_apply, principalCompletionEquiv_toCompletion]
+
+/-- At order `k`, the inverse equivalence is the class of the total-degree
+truncation at `k+1`. -/
+@[simp]
+theorem projection_principalModuleCompletionEquiv_symm (k : ℕ) (p : MvPowerSeries σ R) :
+    ((ofIdeal (MvPolynomial.idealOfVars σ R)).toModuleFiltration (MvPolynomial σ R)).projection k
+      ((principalModuleCompletionEquiv σ R).symm p) =
+      Submodule.Quotient.mk (p.truncTotal (k + 1)) := by
+  rw [principalModuleCompletionEquiv, LinearEquiv.symm_trans_apply,
+    projection_moduleCompletionEquiv_symm, ← AlgEquiv.toLinearEquiv_symm,
+    AlgEquiv.toLinearEquiv_apply, projection_principalCompletionEquiv_symm,
+    ← Ideal.Quotient.mk_eq_mk, Submodule.Quotient.restrictScalarsEquiv_symm_mk]
 
 end Mei
 
