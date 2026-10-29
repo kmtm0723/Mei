@@ -70,6 +70,26 @@ theorem verticalTotal_eq : verticalTotal γ = ∑ v ∈ verticalEdges d₁ d₂,
 
 theorem horizontalTotal_eq : horizontalTotal γ = ∑ h ∈ horizontalEdges d₁ d₂, γ h := (rfl)
 
+/-- The zero grading has zero vertical total. -/
+@[simp]
+theorem verticalTotal_zero : verticalTotal (0 : Edge d₁ d₂ → ℕ) = 0 := by
+  simp [verticalTotal]
+
+/-- The zero grading has zero horizontal total. -/
+@[simp]
+theorem horizontalTotal_zero : horizontalTotal (0 : Edge d₁ d₂ → ℕ) = 0 := by
+  simp [horizontalTotal]
+
+/-- The zero grading has empty vertical support. -/
+@[simp]
+theorem verticalSupport_zero : verticalSupport (0 : Edge d₁ d₂ → ℕ) = ∅ := by
+  simp [verticalSupport]
+
+/-- The zero grading has empty horizontal support. -/
+@[simp]
+theorem horizontalSupport_zero : horizontalSupport (0 : Edge d₁ d₂ → ℕ) = ∅ := by
+  simp [horizontalSupport]
+
 @[simp]
 theorem mem_verticalSupport {e : Edge d₁ d₂} :
     e ∈ verticalSupport γ ↔ e ∈ verticalEdges d₁ d₂ ∧ γ e ≠ 0 := by
@@ -261,6 +281,24 @@ theorem verticalShadow_eq_empty {v : Edge d₁ d₂} (hv : v ∈ verticalEdges d
   rw [Finset.mem_filter, Nat.le_zero, val_sub_eq_zero_iff] at hk
   obtain ⟨hkh, rfl⟩ := hk
   exact notMem_horizontalEdges_of_mem hv hkh
+
+/-- The zero grading has empty total horizontal shadow. -/
+@[simp]
+theorem totalHorizontalShadow_zero : totalHorizontalShadow (0 : Edge d₁ d₂ → ℕ) = ∅ := by
+  apply Finset.eq_empty_iff_forall_notMem.mpr
+  intro k hk
+  obtain ⟨h, hh, hk⟩ := (mem_totalHorizontalShadow _).mp hk
+  rw [horizontalShadow_eq_empty (0 : Edge d₁ d₂ → ℕ) hh rfl] at hk
+  exact Finset.notMem_empty k hk
+
+/-- The zero grading has empty total vertical shadow. -/
+@[simp]
+theorem totalVerticalShadow_zero : totalVerticalShadow (0 : Edge d₁ d₂ → ℕ) = ∅ := by
+  apply Finset.eq_empty_iff_forall_notMem.mpr
+  intro k hk
+  obtain ⟨v, hv, hk⟩ := (mem_totalVerticalShadow _).mp hk
+  rw [verticalShadow_eq_empty (0 : Edge d₁ d₂ → ℕ) hv rfl] at hk
+  exact Finset.notMem_empty k hk
 
 /-- A compatible grading is shadowed if its nonzero horizontal support lies in the total
 vertical shadow, or its nonzero vertical support lies in the total horizontal shadow. -/
