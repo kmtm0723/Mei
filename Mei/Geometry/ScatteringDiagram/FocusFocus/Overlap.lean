@@ -6,6 +6,8 @@ Authors: Codex
 module
 
 public import Mei.RingTheory.Node.Overlap
+public import Mei.RingTheory.Node.SlabMap
+public import Mei.Algebra.Polynomial.Laurent
 
 /-!
 # The two focus-focus overlap descriptions
@@ -16,7 +18,9 @@ function is `f' = 1+w⁻¹`. Both become units in the same localization at `f`,
 since `f = wf'`. We construct the two wall maps and prove that composing the
 upper wall map with the upper chart transition gives the lower wall map.
 Thus the two descriptions give the same coefficient identifications, including
-over rings with nilpotents or zero divisors.
+over rings with nilpotents or zero divisors. The upper chart transition also
+commutes with coefficient change and reduction of the cutoff, and the lower
+wall map factors the left chamber incidence through its overlap quotient.
 
 We use `NodeAlgebra.twistOverlap` and its scalar composition law. The coordinates
 and overlap identity follow Gross–Siebert, *An Invitation to Toric Degenerations*,
@@ -28,7 +32,7 @@ public noncomputable section
 
 namespace Mei.FocusFocus
 
-open TauCeti TauCeti.NodeAlgebra Mei.NodeAlgebra LaurentPolynomial
+open TauCeti TauCeti.NodeAlgebra Mei.NodeAlgebra _root_.LaurentPolynomial
 
 variable {S : Type*} [CommRing S] (t : S) (k : ℕ)
 
@@ -94,6 +98,17 @@ theorem coe_upperSlabFunctionUnit :
     mul_add, mul_one, ← T_add]
   simp only [Int.reduceAdd, T_zero, add_comm]
 
+/-- The inverse upper wall unit is `w(1+w)⁻¹` in the common localization. -/
+@[simp]
+theorem coe_inv_upperSlabFunctionUnit :
+    (↑(upperSlabFunctionUnit t k)⁻¹ : D) =
+      algebraMap R D (T 1) *
+        IsLocalization.Away.invSelf (algebraMap R O (1 + T 1)) := by
+  simp only [upperSlabFunctionUnit, mul_inv_rev, Units.val_mul, ← map_inv,
+    inv_inv, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+    wUnit, unitOfInvertible, coe_inv_slabFunctionUnit]
+  exact mul_comm _ _
+
 /-- The lower wall map `x ↦ fx`, `y ↦ f⁻¹y` after the identity overlap identification. -/
 def lowerWallMap : O →ₐ[R] D :=
   twistOverlap (C t) k (IsScalarTower.toAlgHom R O D) (slabFunctionUnit t k)
@@ -152,5 +167,44 @@ theorem lowerWallMap_eq_upperWallMap_comp_upperOverlap :
   unfold lowerWallMap
   congr 1
   rw [upperSlabFunctionUnit, mul_right_comm, ← map_mul, inv_mul_cancel, map_one, one_mul]
+
+/-- The lower description recovers the existing left chamber incidence map. -/
+theorem lowerWallMap_comp_leftToOverlap :
+    (lowerWallMap t k).comp (leftToOverlap (C t) k) =
+      leftGluing (C t) (1 + T 1) k := by
+  apply Ideal.Quotient.algHom_ext
+  apply AlgHom.ext
+  intro z
+  simpa only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, leftToOverlap_mk] using
+    lowerWallMap_mk t k z
+
+section Compatibility
+
+open scoped AlgebraMonoidAlgebra
+
+variable {S' : Type*} [CommRing S'] [Algebra S S'] {t' : S'}
+  (ht : algebraMap S S' t = t') {k' : ℕ} (hk : k' ≤ k)
+
+/-- Coefficient change and reduction to a smaller cutoff commute with the upper
+chart transition. This includes the reduction squares of the overlap tower. -/
+theorem overlapMap_upperOverlap (z : O) :
+    overlapMap (C t)
+        ((Mei.LaurentPolynomial.algebraMap_C t).trans (congrArg C ht)) hk
+        (upperOverlap t k z) =
+      upperOverlap t' k'
+        (overlapMap (C t)
+          ((Mei.LaurentPolynomial.algebraMap_C t).trans (congrArg C ht)) hk z) := by
+  have h : (overlapMap (C t)
+        ((Mei.LaurentPolynomial.algebraMap_C t).trans (congrArg C ht)) hk).comp
+        (upperOverlap t k).toAlgHom =
+      ((upperOverlap t' k').toAlgHom.restrictScalars R).comp
+        (overlapMap (C t)
+          ((Mei.LaurentPolynomial.algebraMap_C t).trans (congrArg C ht)) hk) := by
+    apply overlap_hom_ext <;>
+      simp [IsScalarTower.algebraMap_apply R S'[T;T⁻¹],
+        T, -single_eq_C_mul_T]
+  exact AlgHom.congr_fun h z
+
+end Compatibility
 
 end Mei.FocusFocus

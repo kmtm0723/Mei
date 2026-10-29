@@ -14,7 +14,9 @@ The overlap `R[x,y]/(xy-t, x^(k+1), y^(k+1))` admits the coordinate change
 `x ↦ ux`, `y ↦ u⁻¹y` for every scalar unit `u`. More generally, an overlap map
 into a commutative algebra can be twisted by a unit in that algebra. This permits
 comparison of slab gluing maps in a common localized overlap, even when their wall
-functions are not units before localization.
+functions are not units before localization. Evaluation at nilpotent coordinates
+and coordinate extensionality describe maps out of the overlap; the chamber
+quotient relates these maps to the existing slab incidence maps.
 
 We use `TauCeti.NodeAlgebra.lift` and `Ideal.Quotient.liftₐ`. The overlap model
 and its unit changes of coordinates follow Gross–Siebert, *An Invitation to Toric
@@ -29,6 +31,31 @@ open TauCeti TauCeti.NodeAlgebra
 
 variable {R A : Type*} [CommRing R] [CommSemiring A] [Algebra R A]
   (t : R) (k : ℕ)
+
+/-- Evaluate a truncated nodal overlap at nilpotent coordinates with product `t`. -/
+def overlapLift (x y : A) (hxy : x * y = algebraMap R A t)
+    (hx : x ^ (k + 1) = 0) (hy : y ^ (k + 1) = 0) : Overlap t k →ₐ[R] A :=
+  Ideal.Quotient.liftₐ _ (lift t x y hxy) fun z hz => by
+    have hle : Ideal.span {coord t 0 ^ (k + 1), coord t 1 ^ (k + 1)} ≤
+        RingHom.ker (lift t x y hxy) := by
+      rw [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
+      constructor <;> simp [RingHom.mem_ker, hx, hy]
+    exact RingHom.mem_ker.mp (hle hz)
+
+/-- Evaluation on a nodal representative uses the nodal evaluation map. -/
+@[simp]
+theorem overlapLift_mk (x y : A) (hxy : x * y = algebraMap R A t)
+    (hx : x ^ (k + 1) = 0) (hy : y ^ (k + 1) = 0) (z : NodeAlgebra R t) :
+    overlapLift t k x y hxy hx hy (Ideal.Quotient.mk _ z) = lift t x y hxy z := (rfl)
+
+/-- Maps from an overlap are determined by its two coordinates. -/
+@[ext]
+theorem overlap_hom_ext {φ ψ : Overlap t k →ₐ[R] A}
+    (hx : φ (Ideal.Quotient.mk _ (coord t 0)) = ψ (Ideal.Quotient.mk _ (coord t 0)))
+    (hy : φ (Ideal.Quotient.mk _ (coord t 1)) = ψ (Ideal.Quotient.mk _ (coord t 1))) :
+    φ = ψ := by
+  apply Ideal.Quotient.algHom_ext
+  exact TauCeti.NodeAlgebra.hom_ext t hx hy
 
 /-- Both overlap coordinates vanish to order `k + 1`. -/
 @[simp]
@@ -154,5 +181,14 @@ theorem scaleOverlap_mul (u v : Rˣ) :
 theorem scaleOverlap_inv (u : Rˣ) :
     scaleOverlap t k u⁻¹ = (scaleOverlap t k u).symm := by
   simp [scaleOverlap, AlgEquiv.ofAlgHom_symm]
+
+/-- The quotient from the left chamber to the overlap. -/
+def leftToOverlap : LeftChamber t k →ₐ[R] Overlap t k :=
+  Ideal.Quotient.factorₐ R (Ideal.span_mono (by simp))
+
+/-- The chamber-to-overlap quotient keeps nodal representatives. -/
+@[simp]
+theorem leftToOverlap_mk (z : NodeAlgebra R t) :
+    leftToOverlap t k (Ideal.Quotient.mk _ z) = Ideal.Quotient.mk _ z := (rfl)
 
 end Mei.NodeAlgebra
