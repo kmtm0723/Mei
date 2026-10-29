@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import Mei.Combinatorics.Enumerative.Dyck.Recursion
-public import Mei.Combinatorics.Enumerative.DyckVanishing
+public import Mei.Combinatorics.Enumerative.Dyck.Vanishing
 public import Mei.Combinatorics.Enumerative.RankTwoRecursion
 
 /-!
@@ -15,8 +15,9 @@ public import Mei.Combinatorics.Enumerative.RankTwoRecursion
 When `P₁` and `P₂` have constant coefficient `1`, the weight sums `C₊ = cplus` and
 `C₋ = cminus` of shadowed compatible gradings of the maximal Dyck path of `(d₁, d₂)` satisfy the
 initial values, the recursion (R) and the vanishing conditions (V) of
-`Mei.RankTwo.IsRankTwoSolution` (`isRankTwoSolution_cplus_cminus`). By
-`Mei.RankTwo.IsRankTwoSolution.unique`, every solution equals `(C₊, C₋)`
+`Mei.RankTwo.IsRankTwoSolution` (`isRankTwoSolution_cplus_cminus`). With additive cancellation
+(`IsCancelAdd S`),
+`Mei.RankTwo.IsRankTwoSolution.unique` shows that every solution equals `(C₊, C₋)`
 (`IsRankTwoSolution.eq_cplus_cminus`).
 
 The coefficients `π_{d₂ - q, s}(P₁)` of (R) are the coefficients of `P₁ ^ (d₂ - min d₂ q)` used in
@@ -27,20 +28,7 @@ public section
 
 open Finset Polynomial Mei.RankTwo
 
-namespace Polynomial
 
-variable {S : Type*} [Semiring S]
-
-/-- `π_{d - q, s}(P)` is the coefficient of `z^s` in `P ^ (d - min d q)`: for `q > d` both are
-`1` at `s = 0` and `0` otherwise. -/
-theorem rankTwoPowCoeff_sub_eq_coeff_pow (P : S[X]) (d q s : ℕ) :
-    rankTwoPowCoeff P ((d : ℤ) - q) s = (P ^ (d - min d q)).coeff s := by
-  rcases le_or_gt q d with h | h
-  · rw [rankTwoPowCoeff_of_nonneg P (by omega), min_eq_right h,
-      show ((d : ℤ) - q).toNat = d - q by omega]
-  · rw [rankTwoPowCoeff_of_neg P (by omega), min_eq_left h.le, Nat.sub_self, pow_zero, coeff_one]
-
-end Polynomial
 
 namespace Mei.MaximalDyckPath
 
@@ -58,7 +46,7 @@ theorem isRankTwoSolution_cplus_cminus (hP₁ : P₁.coeff 0 = 1) (hP₂ : P₂.
   plus_eq_zero _ _ h0 hpq := cplus_eq_zero P₁ P₂ h0 hpq
   minus_eq_zero _ _ h0 hpq := cminus_eq_zero P₁ P₂ h0 hpq
 
-/-- **Every solution of the rank-two recursion is `(C₊, C₋)`.** -/
+/-- **With additive cancellation, every solution of the rank-two recursion is `(C₊, C₋)`.** -/
 theorem _root_.Mei.RankTwo.IsRankTwoSolution.eq_cplus_cminus [IsCancelAdd S] {P₁ P₂ : S[X]}
     {Cp Cm : ℕ → ℕ → S} (h : IsRankTwoSolution d₁ d₂ P₁ P₂ Cp Cm) (hP₁ : P₁.coeff 0 = 1)
     (hP₂ : P₂.coeff 0 = 1) : Cp = cplus d₁ d₂ P₁ P₂ ∧ Cm = cminus d₁ d₂ P₁ P₂ :=
