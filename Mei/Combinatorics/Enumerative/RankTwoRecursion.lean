@@ -30,7 +30,7 @@ The vanishing conditions (V) and recursion (R) for shadowed grading sums are fro
 Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*, Lemmas 5.23 and
 5.27, respectively (https://arxiv.org/html/2503.03719v1). Corollary 5.29 records the same
 identities for their polynomials `d₊` and `d₋`; it does not state uniqueness. The uniqueness
-theorem here is the elementary induction on `p + q` described above and in roadmap §7.3.
+theorem here is the elementary induction on `p + q` described above.
 -/
 
 public section
