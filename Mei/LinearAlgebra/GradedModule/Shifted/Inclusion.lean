@@ -24,8 +24,8 @@ noncomputable section
 namespace Mei.PositiveDegrees
 
 variable {Γ R M : Type*} [AddCommGroup Γ] [Ring R] [AddCommGroup M] [Module R M]
-  [DecidableEq Γ] (d : PositiveDegrees Γ) (ℳ : Γ → Submodule R M)
-  [DirectSum.Decomposition ℳ] (p q : Γ) (hpq : p - q ∈ d.monoid)
+  (d : PositiveDegrees Γ) (ℳ : Γ → Submodule R M)
+  (p q : Γ) (hpq : p - q ∈ d.monoid)
 
 /-- The finite quotient map induced by containment of shifted supports. -/
 def shiftedQuotientMap (k : ℕ) :
@@ -61,6 +61,49 @@ theorem shiftedCompletedInclusion_of (x : shiftedSubmodule ℳ d.monoid p) :
     d.shiftedCompletedInclusion ℳ p q hpq ((d.shiftedFiltration ℳ p).of x) =
       (d.shiftedFiltration ℳ q).of (shiftedSupportInclusion ℳ d.monoid p q hpq x) :=
   ModuleFiltration.completionMap_of _ _ _ _ _ _ x
+
+/-- The identity-cutoff inclusion preserves every completed filtration order. -/
+theorem shiftedCompletedInclusion_mem_completedFiltration (k : ℕ)
+    {x : d.ShiftedCoefficients ℳ p}
+    (hx : x ∈ (d.shiftedFiltration ℳ p).completedFiltration.submodule k) :
+    d.shiftedCompletedInclusion ℳ p q hpq x ∈
+      (d.shiftedFiltration ℳ q).completedFiltration.submodule k := by
+  cases k with
+  | zero => simp
+  | succ k =>
+    exact ModuleFiltration.completionMap_mem_completedFiltration _ _ _ _ _ _ k hx
+
+omit hpq q in
+/-- Inclusion from a shifted support into itself is the identity. -/
+@[simp]
+theorem shiftedCompletedInclusion_refl (x : d.ShiftedCoefficients ℳ p) :
+    d.shiftedCompletedInclusion ℳ p p (by simp) x = x := by
+  have hi : shiftedSupportInclusion ℳ d.monoid p p (by simp) = LinearMap.id := by
+    ext a
+    simp only [coe_shiftedSupportInclusion, LinearMap.id_apply]
+  simp only [shiftedCompletedInclusion, hi, ModuleFiltration.completionMap_id,
+    LinearMap.id_apply]
+
+/-- Nested support inclusions compose. -/
+theorem shiftedCompletedInclusion_trans (r : Γ) (hqr : q - r ∈ d.monoid)
+    (hpr : p - r ∈ d.monoid) (x : d.ShiftedCoefficients ℳ p) :
+    d.shiftedCompletedInclusion ℳ q r hqr (d.shiftedCompletedInclusion ℳ p q hpq x) =
+      d.shiftedCompletedInclusion ℳ p r hpr x := by
+  have hi : (shiftedSupportInclusion ℳ d.monoid q r hqr).comp
+      (shiftedSupportInclusion ℳ d.monoid p q hpq) =
+        shiftedSupportInclusion ℳ d.monoid p r hpr := by
+    ext a
+    simp only [LinearMap.comp_apply, coe_shiftedSupportInclusion]
+  have h := ModuleFiltration.completionMap_comp
+    (d.shiftedFiltration ℳ p) (d.shiftedFiltration ℳ q)
+    (shiftedSupportInclusion ℳ d.monoid p q hpq) id monotone_id
+    (fun k => d.shiftedSupportInclusion_filtered ℳ p q hpq (k + 1))
+    (d.shiftedFiltration ℳ r) (shiftedSupportInclusion ℳ d.monoid q r hqr)
+    id monotone_id (fun k => d.shiftedSupportInclusion_filtered ℳ q r hqr (k + 1))
+  simpa only [hi, Function.id_comp, LinearMap.comp_apply, shiftedCompletedInclusion] using
+    (congrArg (fun f => f x) h).symm
+
+variable [DecidableEq Γ] [DirectSum.Decomposition ℳ]
 
 /-- Origin inclusion preserves every ambient homogeneous component. -/
 @[simp]
@@ -103,33 +146,5 @@ theorem shiftedCompletedInclusion_injective :
   simpa only [d.shiftedHomogeneousComponent_inclusion ℳ p q hpq] using
     congrArg (d.shiftedHomogeneousComponent ℳ q u) h
 
-/-- The identity-cutoff inclusion preserves every completed filtration order. -/
-theorem shiftedCompletedInclusion_mem_completedFiltration (k : ℕ)
-    {x : d.ShiftedCoefficients ℳ p}
-    (hx : x ∈ (d.shiftedFiltration ℳ p).completedFiltration.submodule k) :
-    d.shiftedCompletedInclusion ℳ p q hpq x ∈
-      (d.shiftedFiltration ℳ q).completedFiltration.submodule k := by
-  cases k with
-  | zero => simp
-  | succ k =>
-    exact ModuleFiltration.completionMap_mem_completedFiltration _ _ _ _ _ _ k hx
-
-omit hpq q in
-/-- Inclusion from a shifted support into itself is the identity. -/
-@[simp]
-theorem shiftedCompletedInclusion_refl (x : d.ShiftedCoefficients ℳ p) :
-    d.shiftedCompletedInclusion ℳ p p (by simp) x = x := by
-  apply d.shiftedCoefficients_ext ℳ p
-  intro u
-  simp
-
-/-- Nested support inclusions compose without changing any ambient component. -/
-theorem shiftedCompletedInclusion_trans (r : Γ) (hqr : q - r ∈ d.monoid)
-    (hpr : p - r ∈ d.monoid) (x : d.ShiftedCoefficients ℳ p) :
-    d.shiftedCompletedInclusion ℳ q r hqr (d.shiftedCompletedInclusion ℳ p q hpq x) =
-      d.shiftedCompletedInclusion ℳ p r hpr x := by
-  apply d.shiftedCoefficients_ext ℳ r
-  intro u
-  simp
 
 end Mei.PositiveDegrees

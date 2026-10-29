@@ -92,7 +92,7 @@ theorem existsUnique_shiftedCoefficients_overlap_of_inclusion_eq (p q r s : Γ)
 
 /-- Inside a common containing translate, the intersection of the two inclusion
 ranges is the inclusion range of their translated intersection. -/
-theorem range_shiftedCompletedInclusion_inter (p q r s : Γ)
+theorem range_shiftedCompletedInclusion_eq_inf (p q r s : Γ)
     (hps : p - s ∈ d.monoid) (hqs : q - s ∈ d.monoid)
     (hrs : r - s ∈ d.monoid)
     (hinter : ∀ u, u - r ∈ d.monoid ↔ u - p ∈ d.monoid ∧ u - q ∈ d.monoid) :

@@ -183,22 +183,25 @@ theorem mem_shiftedFiltration_iff {k : ℕ} {x : shiftedSubmodule ℳ d.monoid p
       ∀ q, d.degree (q - p) < k → (DirectSum.decompose ℳ (x : M) q : M) = 0 :=
   Mei.DirectSum.mem_degreeTail_iff ℳ _
 
+omit [DecidableEq Γ] [DirectSum.Decomposition ℳ] in
 /-- Origin inclusion can only increase relative filtration order. -/
 theorem shiftedSupportInclusion_filtered (q : Γ) (hpq : p - q ∈ d.monoid) (k : ℕ) :
     (d.shiftedFiltration ℳ p).submodule k ≤
       ((d.shiftedFiltration ℳ q).submodule k).comap
         (shiftedSupportInclusion ℳ d.monoid p q hpq) := by
+  have htail : Mei.DirectSum.degreeTail ℳ (fun u => d.degree (u - p)) k ≤
+      Mei.DirectSum.degreeTail ℳ (fun u => d.degree (u - q)) k := by
+    rw [Mei.DirectSum.degreeTail_def]
+    refine iSup_le fun u => iSup_le fun hu => ?_
+    apply Mei.DirectSum.le_degreeTail
+    have he : d.degree (u - q) = d.degree (u - p) + d.degree (p - q) := by
+      rw [← map_add]
+      congr 1
+      abel
+    have hnonneg := d.degree_nonneg hpq
+    omega
   intro x hx
-  rw [Submodule.mem_comap, d.mem_shiftedFiltration_iff ℳ q]
-  rw [d.mem_shiftedFiltration_iff ℳ p] at hx
-  intro u hu
-  rw [coe_shiftedSupportInclusion]
-  have he : d.degree (u - q) = d.degree (u - p) + d.degree (p - q) := by
-    rw [← map_add]
-    congr 1
-    abel
-  have hnonneg := d.degree_nonneg hpq
-  exact hx u (by omega)
+  exact htail hx
 
 /-- The relative-degree filtration is separated. -/
 theorem iInf_shiftedFiltration_eq_bot :
