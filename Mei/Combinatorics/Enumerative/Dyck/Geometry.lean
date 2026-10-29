@@ -54,15 +54,17 @@ private theorem countBefore_eq (s : DyckStep) (a : ℕ) :
     · have := countBefore_succ s (⟨a, ha⟩ : Edge d₁ d₂)
       simp only at this
       rw [this, ih, List.take_add_one,
-        List.getElem?_eq_getElem (by rw [length_maximalDyckPath]; exact ha), Option.toList_some,
-        List.count_append, List.count_singleton, step_def]
-      simp only [beq_iff_eq]
+        List.getElem?_eq_getElem (by rw [length_maximalDyckPath]; exact ha)]
+      simp only [Option.toList_some, List.count_append, List.count_singleton, step_def,
+        beq_iff_eq]
     · have hfull : ∀ b, d₁ + d₂ ≤ b → countBefore d₁ d₂ s b = #(stepEdges d₁ d₂ s) := by
         intro b hb
         rw [countBefore, filter_true_of_mem fun k _ ↦ by omega]
-      rw [hfull (a + 1) (by omega), ← hfull a (by omega), ih,
-        List.take_of_length_le (by rw [length_maximalDyckPath]; omega),
-        List.take_of_length_le (by rw [length_maximalDyckPath]; omega)]
+      rw [hfull (a + 1) (by omega), ← hfull a (by omega), ih]
+      have hlen : (maximalDyckPath d₁ d₂).length ≤ a := by
+        rw [length_maximalDyckPath]; omega
+      simp only [List.take_of_length_le hlen,
+        List.take_of_length_le (hlen.trans (Nat.le_succ a))]
 
 /-- The lattice distance `d₂ x - d₁ y` of a vertex below the diagonal is in `[0, d₁ + d₂)`. -/
 private theorem countBefore_bounds (hd : 0 < d₁ + d₂) (a : ℕ) :

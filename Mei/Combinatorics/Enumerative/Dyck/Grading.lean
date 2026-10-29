@@ -564,4 +564,14 @@ theorem cminus_zero_zero (h₁ : P₁.coeff 0 = 1) (h₂ : P₂.coeff 0 = 1) :
 
 end Weights
 
+/-- A grading is compatible exactly when no horizontal edge and vertical edge lie in each
+other's local shadows. -/
+theorem compatible_iff_forall_not_mem_shadow (γ : Edge d₁ d₂ → ℕ) :
+    Compatible γ ↔ ∀ h ∈ horizontalEdges d₁ d₂, ∀ v ∈ verticalEdges d₁ d₂,
+      ¬(v ∈ horizontalShadow γ h ∧ h ∈ verticalShadow γ v) := by
+  rw [compatible_iff]
+  refine forall₂_congr fun h hh ↦ forall₂_congr fun v hv ↦ ?_
+  rw [mem_horizontalShadow, mem_verticalShadow]
+  simp only [hh, hv, true_and, not_and_or, not_forall, not_not, exists_prop]
+
 end Mei.MaximalDyckPath

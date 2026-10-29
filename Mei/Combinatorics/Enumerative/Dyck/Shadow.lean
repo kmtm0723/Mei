@@ -44,16 +44,6 @@ theorem horizontalBalanced_iff (e v : Edge d₁ d₂) :
     eq_comm,
     Nat.cast_inj]
 
-/-- A grading is compatible exactly when no horizontal edge and vertical edge lie in each
-other's local shadows. -/
-theorem compatible_iff_forall_not_mem_shadow :
-    Compatible γ ↔ ∀ h ∈ horizontalEdges d₁ d₂, ∀ v ∈ verticalEdges d₁ d₂,
-      ¬(v ∈ horizontalShadow γ h ∧ h ∈ verticalShadow γ v) := by
-  rw [compatible_iff]
-  refine forall₂_congr fun h hh ↦ forall₂_congr fun v hv ↦ ?_
-  rw [mem_horizontalShadow, mem_verticalShadow]
-  simp only [hh, hv, true_and, not_and_or, not_forall, not_not, exists_prop]
-
 /-- The total horizontal shadow is the set of matched vertical sinks. -/
 theorem totalHorizontalShadow_eq :
     totalHorizontalShadow γ = {v ∈ verticalEdges d₁ d₂ | Matched (verticalEdges d₁ d₂) γ v} := by
