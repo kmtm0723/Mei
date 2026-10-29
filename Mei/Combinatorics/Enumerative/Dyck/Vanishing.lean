@@ -161,8 +161,7 @@ theorem cplus_eq_zero_of_le {p q : ℕ} (hp : d₁ ≤ p) (h0 : (p, q) ≠ (0, 0
   rcases Nat.eq_zero_or_pos d₁ with hd₁ | hd₁
   · subst hd₁
     -- Without horizontal edges both totals vanish.
-    have hH : horizontalEdges 0 d₂ = ∅ := by rw [← card_eq_zero, card_horizontalEdges]
-    have hq0 : horizontalTotal γ = 0 := by rw [horizontalTotal_eq, hH, sum_empty]
+    have hq0 := horizontalTotal_zero_left γ
     have hp0 := verticalTotal_eq_zero_of_subset_empty γ hs (by
       rw [← card_eq_zero, card_totalHorizontalShadow, hq0, _root_.min_zero])
     exact h0 (by rw [hp0, hq0])
@@ -179,8 +178,7 @@ theorem cminus_eq_zero_of_le {p q : ℕ} (hq : d₂ ≤ q) (h0 : (p, q) ≠ (0, 
   rcases Nat.eq_zero_or_pos d₂ with hd₂ | hd₂
   · subst hd₂
     -- Without vertical edges both totals vanish.
-    have hV : verticalEdges d₁ 0 = ∅ := by rw [← card_eq_zero, card_verticalEdges]
-    have hp0 : verticalTotal γ = 0 := by rw [verticalTotal_eq, hV, sum_empty]
+    have hp0 := verticalTotal_zero_right γ
     have hq0 := horizontalTotal_eq_zero_of_subset_empty γ hs (by
       rw [← card_eq_zero, card_totalVerticalShadow, hp0, _root_.min_zero])
     exact h0 (by rw [hp0, hq0])
@@ -241,8 +239,7 @@ theorem cplus_eq_zero {p q : ℕ} (h0 : (p, q) ≠ (0, 0)) (hpq : d₁ * q ≤ d
     have h₁ : d₁ * d₂ ≤ d₂ * verticalTotal γ := (Nat.mul_le_mul_left d₁ hq).trans hpq
     have hd₂ : d₂ = 0 := Nat.eq_zero_of_le_zero (by nlinarith)
     subst hd₂
-    have hV : verticalEdges d₁ 0 = ∅ := by rw [← card_eq_zero, card_verticalEdges]
-    have hp0 : verticalTotal γ = 0 := by rw [verticalTotal_eq, hV, sum_empty]
+    have hp0 := verticalTotal_zero_right γ
     rw [hp0, mul_zero, Nat.le_zero, Nat.mul_eq_zero] at hpq
     exact h0 (by rw [hp0, hpq.resolve_left (by omega)])
   -- With no horizontal grade, the total horizontal shadow and hence `p` vanish.
@@ -281,8 +278,7 @@ theorem cminus_eq_zero {p q : ℕ} (h0 : (p, q) ≠ (0, 0)) (hpq : d₂ * p ≤ 
     have h₁ : d₂ * d₁ ≤ d₁ * horizontalTotal γ := (Nat.mul_le_mul_left d₂ hp).trans hpq
     have hd₁ : d₁ = 0 := Nat.eq_zero_of_le_zero (by nlinarith)
     subst hd₁
-    have hH : horizontalEdges 0 d₂ = ∅ := by rw [← card_eq_zero, card_horizontalEdges]
-    have hq0 : horizontalTotal γ = 0 := by rw [horizontalTotal_eq, hH, sum_empty]
+    have hq0 := horizontalTotal_zero_left γ
     rw [hq0, mul_zero, Nat.le_zero, Nat.mul_eq_zero] at hpq
     exact h0 (by rw [hq0, hpq.resolve_left (by omega)])
   -- With no vertical grade, the total vertical shadow and hence `q` vanish.

@@ -20,7 +20,7 @@ vertical.
 
 The path has `d₁` horizontal and `d₂` vertical steps. It is the Dyck word `(UD)^a` for
 `(a, a)`, the vertical path `D^b` for `(0, b)` and the horizontal path `U^a` for `(a, 0)`.
-Every prefix with `x` horizontal and `y` vertical steps satisfies
+When `0 < d₁ + d₂`, every prefix with `x` horizontal and `y` vertical steps satisfies
 `d₁ y ≤ d₂ x < d₁ y + d₁ + d₂`, so its lattice distance below the diagonal is less than
 `d₁ + d₂`.
 -/

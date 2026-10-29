@@ -113,6 +113,7 @@ private theorem totalVerticalShadow_eq :
 /-- **Total vertical shadow.** It has `min d₁ p` edges. -/
 theorem card_totalVerticalShadow : #(totalVerticalShadow γ) = min d₁ (verticalTotal γ) := by
   rw [totalVerticalShadow_eq, card_map, card_matched, card_reflect, compl_verticalEdges,
-    card_horizontalEdges, sum_compl_reflect, ← verticalTotal_eq]
+    card_horizontalEdges]
+  simp only [Function.comp_apply, sum_compl_reflect, ← verticalTotal_eq]
 
 end Mei.MaximalDyckPath

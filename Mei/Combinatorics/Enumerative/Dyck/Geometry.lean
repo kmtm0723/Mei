@@ -81,39 +81,31 @@ private theorem mem_step_window (s : DyckStep) (h e k : Edge d₁ d₂) :
     Fin.le_def, Fin.lt_def]
   split_ifs <;> grind
 
+/-- Union and intersection of a cyclic step window with the prefix before its start. -/
+private theorem window_union_inter (s : DyckStep) (h e : Edge d₁ d₂) :
+    (cyclicIcc h e ∩ stepEdges d₁ d₂ s) ∪
+        (stepEdges d₁ d₂ s).filter (fun k ↦ k.val < h.val) =
+      (if e < h then stepEdges d₁ d₂ s else
+        (stepEdges d₁ d₂ s).filter fun k ↦ k.val < e.val + 1) ∧
+    (cyclicIcc h e ∩ stepEdges d₁ d₂ s) ∩
+        (stepEdges d₁ d₂ s).filter (fun k ↦ k.val < h.val) =
+      (if e < h then (stepEdges d₁ d₂ s).filter (fun k ↦ k.val < e.val + 1) else ∅) := by
+  constructor <;> ext k <;> have hw := mem_step_window s h e k
+  all_goals
+    split_ifs at hw ⊢ <;>
+      simp only [mem_union, mem_inter, mem_filter, mem_univ, true_and, notMem_empty] at hw ⊢ <;>
+      grind [Fin.le_def, Fin.lt_def]
+
 /-- A cyclic window, counted by step type, from the counts before its endpoints. -/
 private theorem card_cyclicIcc_inter (s : DyckStep) (h e : Edge d₁ d₂) :
     #(cyclicIcc h e ∩ stepEdges d₁ d₂ s) + countBefore d₁ d₂ s h.val =
       countBefore d₁ d₂ s (e.val + 1) + if e < h then #(stepEdges d₁ d₂ s) else 0 := by
   rw [← card_union_add_card_inter]
-  split_ifs with heh
-  · rw [Fin.lt_def] at heh
-    rw [add_comm (countBefore d₁ d₂ s (e.val + 1))]
-    congr 1
-    · congr 1
-      ext k
-      have hw := mem_step_window s h e k
-      simp only [mem_union, mem_inter, mem_filter, mem_univ, true_and] at hw ⊢
-      grind [Fin.le_def, Fin.lt_def]
-    · congr 1
-      ext k
-      have hw := mem_step_window s h e k
-      simp only [mem_inter, mem_filter, mem_univ, true_and] at hw ⊢
-      grind [Fin.le_def, Fin.lt_def]
-  · rw [Fin.lt_def, not_lt] at heh
-    have hinter : (cyclicIcc h e ∩ stepEdges d₁ d₂ s) ∩
-        (stepEdges d₁ d₂ s).filter (fun k ↦ k.val < h.val) = ∅ := by
-      ext k
-      have hw := mem_step_window s h e k
-      simp only [mem_inter, mem_filter, mem_univ, true_and,
-        notMem_empty, iff_false] at hw ⊢
-      grind [Fin.le_def, Fin.lt_def]
-    rw [hinter, card_empty, add_zero, add_zero]
-    congr 1
-    ext k
-    have hw := mem_step_window s h e k
-    simp only [mem_union, mem_inter, mem_filter, mem_univ, true_and] at hw ⊢
-    grind [Fin.le_def, Fin.lt_def]
+  obtain ⟨hu, hi⟩ := window_union_inter s h e
+  rw [hu, hi]
+  split_ifs
+  · exact Nat.add_comm _ _
+  · simp only [card_empty, add_zero]
 
 private theorem stepEdges_U : stepEdges d₁ d₂ U = horizontalEdges d₁ d₂ := by
   ext; simp

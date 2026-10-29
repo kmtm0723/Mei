@@ -194,10 +194,12 @@ instance : DecidablePred (Matched B τ) := fun v ↦
 def reflect : Finset (Fin n) := Bᶜ.map (Equiv.neg (Fin n)).toEmbedding
 
 /-- Membership in the reflected non-sinks is non-membership at the negated position. -/
+@[simp]
 theorem mem_reflect {k : Fin n} : k ∈ reflect B ↔ -k ∉ B := by
   rw [reflect, mem_map_equiv, Equiv.neg_symm, Equiv.neg_apply, mem_compl]
 
 /-- The complement of the reflected non-sinks consists of reflected sinks. -/
+@[simp high]
 theorem mem_compl_reflect {k : Fin n} : k ∈ (reflect B)ᶜ ↔ -k ∈ B := by
   rw [mem_compl, mem_reflect, not_not]
 
@@ -207,24 +209,30 @@ theorem compl_reflect : (reflect B)ᶜ = B.map (Equiv.neg (Fin n)).toEmbedding :
   rw [mem_compl_reflect, mem_map_equiv, Equiv.neg_symm, Equiv.neg_apply]
 
 /-- Summing a reflected function over reflected non-sinks preserves its sum. -/
-theorem sum_reflect (ρ : Fin n → ℕ) : ∑ k ∈ reflect B, (ρ ∘ Neg.neg) k = ∑ k ∈ Bᶜ, ρ k := by
+@[simp]
+theorem sum_reflect {M : Type*} [AddCommMonoid M] (ρ : Fin n → M) :
+    ∑ k ∈ reflect B, ρ (-k) = ∑ k ∈ Bᶜ, ρ k := by
   rw [reflect, sum_map]
   simp
 
 /-- Summing a reflected function over reflected sinks preserves its sum. -/
-theorem sum_compl_reflect (ρ : Fin n → ℕ) :
-    ∑ k ∈ (reflect B)ᶜ, (ρ ∘ Neg.neg) k = ∑ k ∈ B, ρ k := by
+@[simp]
+theorem sum_compl_reflect {M : Type*} [AddCommMonoid M] (ρ : Fin n → M) :
+    ∑ k ∈ (reflect B)ᶜ, ρ (-k) = ∑ k ∈ B, ρ k := by
   rw [compl_reflect, sum_map]
   simp
 
 /-- Reflection preserves the number of non-sinks. -/
+@[simp]
 theorem card_reflect : #(reflect B) = #Bᶜ := card_map _
 
 /-- The complement of the reflected non-sinks has as many elements as the sinks. -/
+@[simp]
 theorem card_compl_reflect : #(reflect B)ᶜ = #B := by rw [compl_reflect, card_map]
 
 /-- Windows of the reversed cycle with reflected sinks are reversed windows with non-sinks as
 sinks. -/
+@[simp]
 theorem sum_weight_reflect (ρ : Fin n → ℕ) (x y : Fin n) :
     ∑ k ∈ cyclicIcc x y, weight (reflect B) (ρ ∘ Neg.neg) k =
       ∑ k ∈ cyclicIcc (-y) (-x), weight Bᶜ ρ k := by
@@ -232,6 +240,7 @@ theorem sum_weight_reflect (ρ : Fin n → ℕ) (x y : Fin n) :
   refine sum_congr rfl fun k _ ↦ ?_
   simp only [weight_def, mem_reflect, mem_compl, Function.comp_apply]
 
+@[simp]
 theorem sum_weight_compl_reflect (ρ : Fin n → ℕ) (x y : Fin n) :
     ∑ k ∈ cyclicIcc x y, weight (reflect B)ᶜ (ρ ∘ Neg.neg) k =
       ∑ k ∈ cyclicIcc (-y) (-x), weight B ρ k := by
@@ -247,9 +256,14 @@ private theorem card_inter_reflect (x y : Fin n) :
 
 private theorem card_inter_compl_reflect (x y : Fin n) :
     #(cyclicIcc x y ∩ (reflect B)ᶜ) = #(cyclicIcc (-y) (-x) ∩ B) := by
-  simp_rw [← filter_mem_eq_inter, card_filter]
-  rw [sum_cyclicIcc_neg]
-  simp only [mem_compl_reflect]
+  rw [compl_reflect]
+  simpa only [reflect, compl_compl] using card_inter_reflect Bᶜ x y
+
+/-- Reflection turns a forward-window offset comparison into a backward-window comparison. -/
+private theorem reflect_forward_lt (h v e : Fin n) :
+    (e - h).val < (v - h).val ↔ (-h - -e).val < (-h - -v).val := by
+  have : NeZero n := ⟨h.pos.ne'⟩
+  rw [neg_sub_neg, neg_sub_neg]
 
 /-- A non-sink carrying `τ` tokens that is matched backwards for `(Bᶜ, σ)` becomes a matched
 sink of the reversed cycle. -/
@@ -261,7 +275,7 @@ private theorem forall_matched_reflect (σ : Fin n → ℕ)
   have : NeZero n := ⟨v'.pos.ne'⟩
   obtain ⟨v, hv, hall⟩ := hm (-v') ((mem_reflect B).mp hv') hτv
   refine ⟨-v, by rw [mem_reflect, neg_neg, not_not]; exact hv, fun e' he' ↦ ?_⟩
-  have := hall (-e') (by rwa [show v - -e' = e' - -v by abel, show v - -v' = v' - -v by abel])
+  have := hall (-e') (by simpa only [neg_neg] using (reflect_forward_lt (-v) v' e').mp he')
   rwa [sum_weight_reflect, neg_neg]
 
 section Walk
@@ -1014,12 +1028,15 @@ theorem exists_mutual_of_forall_matched_rev (σ : Fin n → ℕ) (hB : B.Nonempt
     (σ ∘ Neg.neg) (τ ∘ Neg.neg) (by
       obtain ⟨k, hk⟩ := hB
       exact ⟨-k, by rw [mem_compl_reflect, neg_neg]; exact hk⟩)
-    (forall_matched_reflect B τ σ hm) (by rw [card_compl_reflect, sum_reflect]; exact hτ)
+    (forall_matched_reflect B τ σ hm) (by
+      simpa only [card_compl_reflect, Function.comp_apply, sum_reflect] using hτ)
   rw [mem_reflect, not_not] at hh'
   refine ⟨-v', (mem_reflect B).mp hv', -h', hh', fun e he ↦ ?_, fun e he ↦ ?_⟩
-  · have := hbwd (-e) (by rwa [show v' - -e = e - -v' by abel, show v' - h' = -h' - -v' by abel])
+  · have := hbwd (-e) (by simpa only [neg_neg] using (reflect_forward_lt (-v') (-h') e).mp he)
     rwa [sum_weight_compl_reflect, neg_neg] at this
-  · have := hfwd (-e) (by rwa [show -e - h' = -h' - e by abel, show v' - h' = -h' - -v' by abel])
+  · have := hfwd (-e) (by
+      apply (reflect_forward_lt h' v' (-e)).mpr
+      simpa only [neg_neg] using he)
     rwa [sum_weight_reflect, neg_neg] at this
 
 /-- The `τ` tokens on the non-sinks between times `x` and `y` of the periodic extension. -/
@@ -1092,6 +1109,15 @@ private theorem walk_compl_le_first_of_excursion (σ : Fin n → ℕ)
     linarith
   exact ih (x - 1 - u) (by omega) (by omega) (by omega) (by linarith)
 
+/-- Counts in a lifted window are differences of the zero-token walk. -/
+private theorem card_window_eq_neg_walk_zero_sub (a t : ℕ) (ht : t < n) :
+    (#(cyclicIcc (pos a) (pos (a + t)) ∩ B) : ℤ) =
+      -(walk B 0 (a + t + 1) - walk B 0 a) := by
+  have h := sum_cyclicIcc_pos B 0 a t ht
+  rw [sum_weight_eq] at h
+  simp only [Pi.zero_apply, sum_const_zero, Nat.cast_zero, zero_sub] at h
+  linarith
+
 /-- On an excursion of the first walk from a non-sink `a` back to its level at `c`, if no
 non-sink and sink see each other, then the `σ` tokens are fewer than the non-sinks, and a slope
 bound on windows gives `α σ < β τ` there. -/
@@ -1124,16 +1150,9 @@ private theorem excursion_lt (σ : Fin n → ℕ) (α β : ℕ)
   have ht : c - 1 - a < n := by omega
   have hpc : (pos (a + (c - 1 - a)) : Fin n) = pos (c - 1) := by
     rw [show a + (c - 1 - a) = c - 1 by omega]
-  have hV : (#(cyclicIcc (pos a) (pos (c - 1)) ∩ B) : ℤ) = -(walk B 0 c - walk B 0 a) := by
-    have h1 := sum_cyclicIcc_pos B 0 a (c - 1 - a) ht
-    rw [hpc, show a + (c - 1 - a) + 1 = c by omega, sum_weight_eq] at h1
-    simp only [Pi.zero_apply, sum_const_zero, Nat.cast_zero, zero_sub] at h1
-    linarith
-  have hH : (#(cyclicIcc (pos a) (pos (c - 1)) ∩ Bᶜ) : ℤ) = -(walk Bᶜ 0 c - walk Bᶜ 0 a) := by
-    have h1 := sum_cyclicIcc_pos Bᶜ 0 a (c - 1 - a) ht
-    rw [hpc, show a + (c - 1 - a) + 1 = c by omega, sum_weight_eq] at h1
-    simp only [Pi.zero_apply, sum_const_zero, Nat.cast_zero, zero_sub] at h1
-    linarith
+  have hV := card_window_eq_neg_walk_zero_sub B a (c - 1 - a) ht
+  have hH := card_window_eq_neg_walk_zero_sub Bᶜ a (c - 1 - a) ht
+  rw [hpc, show a + (c - 1 - a) + 1 = c by omega] at hV hH
   have hchrZ : (α : ℤ) * #(cyclicIcc (pos a) (pos (c - 1)) ∩ Bᶜ) <
       α + β * #(cyclicIcc (pos a) (pos (c - 1)) ∩ B) := by
     exact_mod_cast hchr (pos a) haB (pos (c - 1)) hcB
@@ -1233,14 +1252,16 @@ theorem mul_sum_lt_of_forall_matched_rev (σ : Fin n → ℕ) (α β : ℕ)
       rw [mem_reflect, not_not] at hh'
       obtain ⟨e, he, hsum⟩ := hcomp (-v') ((mem_reflect B).mp hv') (-h') hh' fun e he ↦ by
         have := hfwd (-e) (by
-          rwa [show -e - h' = -h' - e by abel, show v' - h' = -h' - -v' by abel])
+          apply (reflect_forward_lt h' v' (-e)).mpr
+          simpa only [neg_neg] using he)
         rwa [sum_weight_reflect, neg_neg] at this
-      refine ⟨-e, by rwa [show v' - -e = e - -v' by abel, show v' - h' = -h' - -v' by abel], ?_⟩
+      refine ⟨-e, by simpa only [neg_neg] using (reflect_forward_lt (-v') (-h') e).mp he, ?_⟩
       rw [sum_weight_compl_reflect, neg_neg]
       exact hsum)
-    (forall_matched_reflect B τ σ hm) (by rw [card_reflect, sum_compl_reflect]; exact hσ)
-    (by rw [sum_compl_reflect]; exact hσ0)
-  rwa [sum_reflect, sum_compl_reflect] at h
+    (forall_matched_reflect B τ σ hm) (by
+      simpa only [card_reflect, Function.comp_apply, sum_compl_reflect] using hσ)
+    (by simpa only [Function.comp_apply, sum_compl_reflect] using hσ0)
+  simpa only [Function.comp_apply, sum_reflect, sum_compl_reflect] using h
 
 end Walk
 
