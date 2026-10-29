@@ -190,6 +190,37 @@ theorem completedBaseProjection_base (g : d.completedBCHGroup ℒ) :
   rw [LieHom.bchGroupMap_comp, LieHom.bchGroupMap_id] at he
   exact DFunLike.congr_fun he (CompletedGroup.projection k g)
 
+/-- At completion the degree-preserving projection is the existing base
+projection followed by the charge-zero inclusion. -/
+@[simp]
+theorem completedMap_chargeZeroGradedLieHom
+    (g : (positiveDegrees d p).completedBCHGroup (grading d ℳ p ℒ)) :
+    (chargeZeroGradedLieHom d ℳ p ℒ).completedMap g =
+      (baseGradedLieHom d ℳ p ℒ).completedMap (completedBaseProjection d ℳ p ℒ g) := by
+  apply CompletedGroup.ext
+  intro k
+  rw [GradedLieHom.projection_completedMap_of_le _ k (a := k) (by simp),
+    GradedLieHom.projection_completedMap_of_le _ k (a := k) (by simp),
+    projection_completedBaseProjection]
+  have he : (chargeZeroGradedLieHom d ℳ p ℒ).truncatedMap (a := k) k (by simp) =
+      ((baseGradedLieHom d ℳ p ℒ).truncatedMap (a := k) k (by simp)).comp
+        (baseQuotientProjection d ℳ p ℒ k) := by
+    have hcomp : (chargeZeroGradedLieHom d ℳ p ℒ).toLieHom =
+        ((baseGradedLieHom d ℳ p ℒ).toLieHom).comp (LieAlgebra.SemiDirectSum.projr _) := by
+      apply LieHom.ext
+      intro x
+      exact (chargeZeroGradedLieHom_apply d ℳ p ℒ x).trans
+        (baseGradedLieHom_apply d ℳ p ℒ x.right).symm
+    rw [GradedLieHom.truncatedMap_def, GradedLieHom.truncatedMap_def,
+      baseQuotientProjection]
+    simp only [hcomp]
+    exact LieIdeal.mapQ_comp
+      ((positiveDegrees d p).degreeIdeal (grading d ℳ p ℒ) k) (d.degreeIdeal ℒ k)
+      ((positiveDegrees d p).degreeIdeal (grading d ℳ p ℒ) k) (LieAlgebra.SemiDirectSum.projr _)
+      (baseGradedLieHom d ℳ p ℒ).toLieHom _ _ _
+  rw [he, LieHom.bchGroupMap_comp]
+  exact MonoidHom.comp_apply _ _ _
+
 /-- The completed charge-zero inclusion loses no base labels. -/
 theorem completedMap_base_injective :
     Function.Injective (baseGradedLieHom d ℳ p ℒ).completedMap :=
