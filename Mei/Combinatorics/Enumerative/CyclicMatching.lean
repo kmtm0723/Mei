@@ -132,6 +132,7 @@ theorem weight_nonneg {k : Fin n} (hk : k ∉ B) : 0 ≤ weight B τ k := by
   simp [weight, hk]
 
 /-- A non-sink carries its tokens as weight. -/
+@[simp]
 theorem weight_of_notMem {k : Fin n} (hk : k ∉ B) : weight B τ k = τ k := by
   simp [weight, hk]
 
