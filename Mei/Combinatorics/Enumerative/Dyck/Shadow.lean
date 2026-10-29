@@ -110,8 +110,7 @@ private theorem totalVerticalShadow_eq :
     · rw [mem_reflectedHorizontalEdges, neg_neg]
       exact notMem_horizontalEdges_of_mem hv
     · have h₁ : (v - -e').val < (v - k).val := by
-        rw [show v - -e' = e' - -v by abel, show v - k = -k - -v by abel]
-        exact he'
+        simpa only [sub_eq_add_neg, neg_neg, add_comm] using he'
       have := hall (-e') h₁
       rwa [horizontalBalanced_iff, neg_neg] at this
   · rintro ⟨hkH, h', hh', hall⟩
@@ -121,8 +120,7 @@ private theorem totalVerticalShadow_eq :
     refine ⟨-h', hv, (mem_verticalShadow γ).mpr ⟨hkH, fun e he ↦ ?_⟩⟩
     rw [horizontalBalanced_iff, neg_neg]
     apply hall (-e)
-    rw [show -e - h' = -h' - e by abel, show -k - h' = -h' - k by abel]
-    exact he
+    simpa only [sub_eq_add_neg, neg_neg, add_comm] using he
 
 /-- **Total vertical shadow.** It has `min d₁ p` edges. -/
 theorem card_totalVerticalShadow : #(totalVerticalShadow γ) = min d₁ (verticalTotal γ) := by
