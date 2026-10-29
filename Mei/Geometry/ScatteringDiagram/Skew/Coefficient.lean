@@ -7,6 +7,7 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.Skew.Embedding
 public import Mei.Algebra.Lie.Logarithmic.Coefficient
+public import Mei.Algebra.Lie.Filtered.Map
 
 /-!
 # Principal coefficient actions
@@ -23,6 +24,9 @@ and `AlgFiltration.completedBCHAction_injective`.
 The resulting representation is faithful when the ambient integer module is
 projective, in particular for every lattice. No spanning assumption on `P`
 or nondegeneracy assumption on the skew form is needed.
+It is the completed tropical vertex action of the principal image of the group,
+so an element of the completed skew group is determined by the action of its
+principal image on the monomials `z^p`.
 
 The construction composes `principalGradedLieHom` with
 `tropicalVertexCoefficientAction`; it retains radical degrees even when the skew
@@ -114,6 +118,31 @@ theorem mem_principalCoefficientFiltration_ideal_iff [Semiring R] (k : ℕ) (a :
         PositiveDegrees.graph_degree] using ha p hp
     · apply Subtype.ext
       simp [n, q]
+
+omit [CommRing R] [Algebra ℚ R] in
+/-- A principal coefficient monomial of nonzero unfrozen degree is congruent to `0`, so
+`1 + z^q` is a unit of the principal coefficient completion. -/
+theorem exists_units_eq_one_add_single {R : Type*} [Ring R] (q : Qpr) (hq : q.val.2 ≠ 0) :
+    ∃ U : (TropicalVertexCoefficientAction.filtration
+        (R := R) (D.principalPositiveDegrees d) Qpr).completionˣ,
+      (U : (TropicalVertexCoefficientAction.filtration
+        (R := R) (D.principalPositiveDegrees d) Qpr).completion) =
+      1 + (TropicalVertexCoefficientAction.filtration
+        (R := R) (D.principalPositiveDegrees d) Qpr).toCompletion (single q 1) := by
+  let F := TropicalVertexCoefficientAction.filtration
+    (R := R) (D.principalPositiveDegrees d) Qpr
+  have hmem : F.toCompletion (single q 1) ∈ F.completionIdeal 1 := by
+    rw [AlgFiltration.toCompletion_mem_completionIdeal_iff,
+      mem_principalCoefficientFiltration_ideal_iff]
+    intro p hp
+    have hpq : p = q := by
+      by_contra h
+      exact (Finsupp.mem_support_iff.mp hp) (by simp [Ne.symm h])
+    rw [hpq]
+    have := d.degree_pos ((D.mem_principalCoefficientMonoid d _).mp q.property) hq
+    omega
+  exact ⟨(F.isUnit_of_sub_one_mem (by simpa only [add_sub_cancel_left] using hmem)).unit,
+    IsUnit.unit_spec _⟩
 
 omit [CommRing R] [Algebra ℚ R] in
 /-- The monomial at the principal embedding of a positive degree lies in the first
@@ -266,5 +295,48 @@ scoped instance instIsFiltrationDetected :
     omega
 
 end PrincipalCoefficientAction
+
+section TropicalComparison
+
+open scoped Mei.TropicalVertexCoefficientAction PrincipalCoefficientAction
+
+variable [DecidableEq D.unfrozen] [DecidableEq (Module.Dual ℤ D.sublattice)]
+  [Fact ((D.principalPositiveDegrees d).monoid ≤ D.principalCoefficientMonoid d)]
+
+local notation "𝒜" => AlgFiltration.completedBCHAction (Fpr) (D.principalPositiveDegrees d)
+    (tropicalVertexGrading (R := R) (D.principalPositiveDegrees d) (AddMonoidHom.id Lpr))
+
+/-- The integrated principal action of a completed skew group element is the completed
+tropical vertex action of its principal image. -/
+theorem completedBCHAction_eq_completedMap (g : d.completedBCHGroup 𝓛) :
+    (Fpr).completedBCHAction d 𝓛 g = 𝒜 ((D.principalGradedLieHom d).completedMap g) := by
+  apply AlgEquiv.ext
+  intro z
+  have h := (Fpr).mapCompletionₐ_completedBCHAction_of_gradedLieHom (Fpr)
+    (D.principalGradedLieHom d) (AlgHom.id R R[Qpr]) (fun _ _ => rfl) id monotone_id
+    (fun _ => by simp) g z
+  simpa only [AlgFiltration.mapCompletionₐ_id, AlgHom.id_apply] using h
+
+variable [Module.Projective ℤ N] in
+/-- Monomials detect the completed skew group: elements whose principal images act
+equally on every principal coefficient monomial are equal. -/
+theorem eq_of_completedBCHAction_completedMap_single_eq {g h : d.completedBCHGroup 𝓛}
+    (hgh : ∀ p : Qpr,
+      𝒜 ((D.principalGradedLieHom d).completedMap g) ((Fpr).toCompletion (single p 1)) =
+        𝒜 ((D.principalGradedLieHom d).completedMap h) ((Fpr).toCompletion (single p 1))) :
+    g = h := by
+  have key : ((𝒜 ((D.principalGradedLieHom d).completedMap g)).toAlgHom.comp
+        ((Fpr).toCompletionₐ (R := R))) =
+      ((𝒜 ((D.principalGradedLieHom d).completedMap h)).toAlgHom.comp
+        ((Fpr).toCompletionₐ (R := R))) :=
+    AddMonoidAlgebra.algHom_ext (fun p => by simpa using hgh p)
+      (Subsingleton.elim _ _)
+  refine AlgFiltration.completedBCHAction_injective (Fpr) d 𝓛
+    ((D.completedBCHAction_eq_completedMap d g).trans
+      (((Fpr).completedBCHAction_eq_of_forall_toCompletion _ _ fun a => ?_).trans
+        (D.completedBCHAction_eq_completedMap d h).symm))
+  simpa using AlgHom.congr_fun key a
+
+end TropicalComparison
 
 end Mei.SkewLatticeDatum

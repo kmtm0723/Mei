@@ -7,6 +7,7 @@ module
 
 public import Mei.RingTheory.PowerSeries.DifferenceEquation
 public import Mei.Algebra.Ring.Units
+public import Mei.RingTheory.PowerSeries.Inverse
 
 /-!
 # The formal quantum dilogarithm
@@ -57,6 +58,24 @@ private theorem quantumDilogarithm_spec :
 @[simp]
 theorem constantCoeff_quantumDilogarithm : constantCoeff (quantumDilogarithm q hq) = 1 :=
   (quantumDilogarithm_spec q hq).1
+
+/-- The quantum dilogarithm as a unit, with inverse given by `PowerSeries.invOfUnit`. -/
+def quantumDilogarithmUnit : R⟦X⟧ˣ :=
+  ⟨quantumDilogarithm q hq, invOfUnit (quantumDilogarithm q hq) 1,
+    mul_invOfUnit _ 1 (by simp), invOfUnit_mul _ 1 (by simp)⟩
+
+/-- The underlying series of the quantum dilogarithm unit. -/
+@[simp]
+theorem coe_quantumDilogarithmUnit :
+    (quantumDilogarithmUnit q hq : R⟦X⟧) = quantumDilogarithm q hq := by
+  rfl
+
+/-- The inverse quantum dilogarithm unit has the formal inverse series as its value. -/
+@[simp]
+theorem coe_quantumDilogarithmUnit_inv :
+    (↑(quantumDilogarithmUnit q hq)⁻¹ : R⟦X⟧) =
+      invOfUnit (quantumDilogarithm q hq) 1 := by
+  rfl
 
 /-- The defining q-difference equation. -/
 theorem rescale_quantumDilogarithm :
@@ -148,6 +167,17 @@ theorem rescale_inv_pow_quantumDilogarithm_mul_inv (r : ℕ) :
     _ = quantumDilogarithm q hq * Q * invOfUnit (quantumDilogarithm q hq) 1 := by rw [h]
     _ = Q * (quantumDilogarithm q hq * invOfUnit (quantumDilogarithm q hq) 1) := by ring
     _ = _ := by rw [PowerSeries.mul_invOfUnit _ 1 (by simp), mul_one]
+
+/-- Every coefficient of a negative rescaling ratio is a finite sum over
+multiplicities of the inverse linear factors. The index functions have support
+in `range r` and total multiplicity `j`. No truncation of the series is used. -/
+theorem coeff_rescale_inv_pow_quantumDilogarithm_mul_inv (r j : ℕ) :
+    coeff j (rescale ((↑q⁻¹ : R) ^ (2 * r)) (quantumDilogarithm q hq) *
+        invOfUnit (quantumDilogarithm q hq) 1) =
+      ∑ l ∈ Finset.finsuppAntidiag (Finset.range r) j,
+        ∏ i ∈ Finset.range r, (-((↑q⁻¹ : R) ^ (2 * i + 1))) ^ l i := by
+  rw [rescale_inv_pow_quantumDilogarithm_mul_inv, PowerSeries.coeff_prod]
+  simp only [Mei.coeff_invOfUnit_one_add_C_mul_X]
 
 /-- Coefficient maps preserving the parameter preserve the quantum dilogarithm. -/
 @[simp]
