@@ -20,6 +20,9 @@ vertical.
 
 The path has `d₁` horizontal and `d₂` vertical steps. It is the Dyck word `(UD)^a` for
 `(a, a)`, the vertical path `D^b` for `(0, b)` and the horizontal path `U^a` for `(a, 0)`.
+Every prefix with `x` horizontal and `y` vertical steps satisfies
+`d₁ y ≤ d₂ x < d₁ y + d₁ + d₂`, so its lattice distance below the diagonal is less than
+`d₁ + d₂`.
 -/
 
 public section
@@ -75,7 +78,7 @@ private theorem count_take_blocks {d₁ : ℕ} (d₂ : ℕ) (hd₁ : 0 < d₁) (
       d₂ * ((blocks d₁ d₂ m).take k).count U <
         d₁ * ((blocks d₁ d₂ m).take k).count D + (d₁ + d₂) := by
   induction m generalizing k with
-  | zero => simp [blocks]; omega
+  | zero => simpa [blocks] using Nat.add_pos_left hd₁ d₂
   | succ m ih =>
     rw [blocks_succ, List.take_append]
     by_cases hk : k ≤ (blocks d₁ d₂ m).length
@@ -147,15 +150,13 @@ theorem maximalDyckPath_self (a : ℕ) :
 /-- **The path stays near the diagonal.** With `x` horizontal and `y` vertical steps in a prefix,
 `d₁ y ≤ d₂ x < d₁ y + d₁ + d₂`: the prefix lies weakly below the diagonal, at lattice distance
 less than `d₁ + d₂`. -/
-theorem count_take_maximalDyckPath {d₁ d₂ : ℕ} (hd : 0 < d₁ + d₂) (k : ℕ) :
+theorem mul_count_take_maximalDyckPath_le_and_lt {d₁ d₂ : ℕ} (hd : 0 < d₁ + d₂) (k : ℕ) :
     d₁ * ((maximalDyckPath d₁ d₂).take k).count D ≤
         d₂ * ((maximalDyckPath d₁ d₂).take k).count U ∧
       d₂ * ((maximalDyckPath d₁ d₂).take k).count U <
         d₁ * ((maximalDyckPath d₁ d₂).take k).count D + (d₁ + d₂) := by
   rcases Nat.eq_zero_or_pos d₁ with rfl | hd₁
-  · simp only [maximalDyckPath_zero_left, List.take_replicate, List.count_replicate]
-    simp
-    omega
+  · simpa [List.take_replicate, List.count_replicate] using hd
   · rw [maximalDyckPath_of_ne_zero _ hd₁.ne', ← blocks]
     exact count_take_blocks d₂ hd₁ d₁ k
 
@@ -239,6 +240,11 @@ theorem compl_verticalEdges : (verticalEdges d₁ d₂)ᶜ = horizontalEdges d�
   rcases mem_horizontalEdges_or_mem_verticalEdges e with he | he
   · exact iff_of_true (notMem_verticalEdges_of_mem he) he
   · exact iff_of_false (not_not.mpr he) (notMem_horizontalEdges_of_mem he)
+
+/-- Every non-vertical edge is horizontal. -/
+theorem mem_horizontalEdges_of_notMem_verticalEdges {e : Edge d₁ d₂}
+    (he : e ∉ verticalEdges d₁ d₂) : e ∈ horizontalEdges d₁ d₂ := by
+  rwa [← compl_verticalEdges, mem_compl]
 
 /-- The vertical edges are the edges that are not horizontal. -/
 @[simp]
