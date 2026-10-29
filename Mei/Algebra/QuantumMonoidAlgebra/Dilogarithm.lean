@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Algebra.QuantumMonoidAlgebra.Conjugation
+public import Mei.Algebra.QuantumMonoidAlgebra.Ray
 public import Mei.RingTheory.PowerSeries.QuantumDilogarithm
 
 /-!
@@ -18,8 +19,15 @@ rescaling equation. Its scalar includes the quantum ordering factor, so the
 pairings one and two give respectively coefficients `1, 1` and `1, q + q⁻¹, 1`.
 The identities hold in the coefficient completion, hence at every finite order.
 
+For nonpositive pairings we compute every formal Laurent coefficient, with a
+finite sum over multiplicities of the inverse linear factors. These expansions
+can be infinite along the ray; at pairing minus one their coefficients are
+exactly `(-1)^j`.
+
 We use `QuantumMonoidAlgebra.completedAeval_conj_monomial`,
-`Units.rescale_pow_quantumDilogarithm_mul_inv` and Mathlib's `Finset.prod_one_add`.
+`Units.rescale_pow_quantumDilogarithm_mul_inv`,
+`Units.coeff_rescale_inv_pow_quantumDilogarithm_mul_inv`,
+`QuantumMonoidAlgebra.coeff_evalMonomial_conj` and Mathlib's `Finset.prod_one_add`.
 The conventions follow Nakanishi, *Pentagon relation in quantum cluster scattering
 diagrams*, §2.3, equations (2.14) and (2.21), arXiv:2202.01588v7.
 -/
@@ -82,11 +90,9 @@ theorem quantumDilogarithm_conj_eq_prod (p : P) (r : ℕ) (hr : β n p = r) :
         (∏ j ∈ Finset.range r, (1 + PowerSeries.C ((q : R) ^ (2 * j + 1)) *
           PowerSeries.X)) := by
   classical
-  let G : R⟦X⟧ˣ :=
-    ⟨Units.quantumDilogarithm q hq, PowerSeries.invOfUnit (Units.quantumDilogarithm q hq) 1,
-      PowerSeries.mul_invOfUnit _ 1 (by simp), PowerSeries.invOfUnit_mul _ 1 (by simp)⟩
-  have hc := completedAeval_conj_monomial q β P δ hδ n hn hβ p G
-  simp only [G, Units.val_mk, Units.inv_mk, hr,
+  have hc := completedAeval_conj_monomial q β P δ hδ n hn hβ p
+    (Units.quantumDilogarithmUnit q hq)
+  simp only [Units.coe_quantumDilogarithmUnit, Units.coe_quantumDilogarithmUnit_inv, hr,
     AlgFiltration.completedAeval_invOfUnit _ _ _ 1
       (Units.constantCoeff_quantumDilogarithm q hq)] at hc
   have he : ((q ^ (2 * (r : ℤ)) : Rˣ) : R) = (q : R) ^ (2 * r) := by
@@ -171,5 +177,67 @@ theorem quantumDilogarithm_conj_of_pairing_two (p : P) (hp : β n p = 2) :
   have h := quantumDilogarithm_conj_eq_sum q β hβ P δ hδ n hn hq p 2 (by simpa using hp)
   simpa only [zero_smul, add_zero, one_smul] using
     h.trans (pairing_two_sum q (fun j => z (p + j • n)))
+
+end Mei.QuantumMonoidAlgebra
+
+namespace Mei.QuantumMonoidAlgebra
+
+section LaurentCoefficients
+
+variable {R Γ : Type*} [CommRing R] [AddCommGroup Γ]
+  (q : Rˣ) (β : LinearMap.BilinForm ℤ Γ) (hβ : β.IsAlt)
+  (n p : Γ)
+  (hq : ∀ j : ℕ, IsUnit ((q : R) ^ (j + 1) - (↑q⁻¹ : R) ^ (j + 1)))
+
+open PowerSeries
+
+include hβ
+
+/-- For a nonpositive pairing, every quantum dilogarithm action coefficient
+is a finite sum over multiplicities of inverse linear factors. The input
+exponent can be any Laurent exponent. The formal parameter records the ray
+multiple; its coefficient is a scalar multiple of the monomial at
+exponent `p + j • n`. -/
+theorem coeff_quantumDilogarithm_conj_of_pairing_nonpos (r j : ℕ) (hr : β n p = -(r : ℤ)) :
+    coeff j
+      (evalMonomial (monomial q β n) (Units.quantumDilogarithm q hq) *
+        C (monomial q β p) *
+        evalMonomial (monomial q β n)
+          (invOfUnit (Units.quantumDilogarithm q hq) 1)) =
+      (((q ^ ((j : ℤ) * r) : Rˣ) : R) *
+        ∑ l ∈ Finset.finsuppAntidiag (Finset.range r) j,
+          ∏ i ∈ Finset.range r, (-((↑q⁻¹ : R) ^ (2 * i + 1))) ^ l i) •
+        monomial q β (p + j • n) := by
+  have hc := coeff_evalMonomial_conj q β hβ n p (Units.quantumDilogarithmUnit q hq) j
+  have he : ((q ^ (-(2 * (r : ℤ))) : Rˣ) : R) = (↑q⁻¹ : R) ^ (2 * r) := by
+    simp [zpow_mul, pow_mul]
+  simpa only [Units.coe_quantumDilogarithmUnit, Units.coe_quantumDilogarithmUnit_inv,
+    hr, mul_neg, neg_neg,
+    he, Units.coeff_rescale_inv_pow_quantumDilogarithm_mul_inv] using hc
+
+/-- At pairing minus one, all quantum ordering factors cancel. Thus the
+coefficient in ray degree `j` is exactly `(-1)^j`, for every `j`, rather than
+only in a finite truncation. -/
+theorem coeff_quantumDilogarithm_conj_of_pairing_neg_one (j : ℕ) (hp : β n p = -1) :
+    coeff j
+      (evalMonomial (monomial q β n) (Units.quantumDilogarithm q hq) *
+        C (monomial q β p) *
+        evalMonomial (monomial q β n)
+          (invOfUnit (Units.quantumDilogarithm q hq) 1)) =
+      (-1 : R) ^ j • monomial q β (p + j • n) := by
+  have hc := coeff_quantumDilogarithm_conj_of_pairing_nonpos q β hβ n p hq 1 j (by simpa using hp)
+  have hs : Finset.finsuppAntidiag (Finset.range 1) j = {Finsupp.single 0 j} := by
+    ext l
+    simp only [Finset.mem_finsuppAntidiag, Finset.range_one, Finset.sum_singleton,
+      Finset.mem_singleton, Finsupp.eq_single_iff, and_comm]
+  simp only [Nat.cast_one, mul_one, hs, Finset.sum_singleton, Finset.prod_range_one,
+    Nat.mul_zero, Nat.zero_add, pow_one, Finsupp.single_eq_same, zpow_natCast,
+    Units.val_pow_eq_pow_val] at hc
+  have hscalar : (q : R) ^ j * (-(↑q⁻¹ : R)) ^ j = (-1 : R) ^ j := by
+    rw [← mul_pow]
+    simp
+  exact hc.trans (congrArg (fun a : R => a • monomial q β (p + j • n)) hscalar)
+
+end LaurentCoefficients
 
 end Mei.QuantumMonoidAlgebra
