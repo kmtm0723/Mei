@@ -20,26 +20,27 @@ initial values, the recursion (R) and the vanishing conditions (V) of
 (`IsRankTwoSolution.eq_cplus_cminus`).
 
 The coefficients `π_{d₂ - q, s}(P₁)` of (R) are the coefficients of `P₁ ^ (d₂ - min d₂ q)` used in
-`sum_coeff_mul_cplus_eq_sum_coeff_mul_cminus` (`powCoeff_sub_eq_coeff_pow`).
+`sum_coeff_mul_cplus_eq_sum_coeff_mul_cminus` (`rankTwoPowCoeff_sub_eq_coeff_pow`).
 -/
 
 public section
 
 open Finset Polynomial Mei.RankTwo
 
-namespace Mei.RankTwo
+namespace Polynomial
 
 variable {S : Type*} [Semiring S]
 
 /-- `π_{d - q, s}(P)` is the coefficient of `z^s` in `P ^ (d - min d q)`: for `q > d` both are
 `1` at `s = 0` and `0` otherwise. -/
-theorem powCoeff_sub_eq_coeff_pow (P : S[X]) (d q s : ℕ) :
-    powCoeff P ((d : ℤ) - q) s = (P ^ (d - min d q)).coeff s := by
+theorem rankTwoPowCoeff_sub_eq_coeff_pow (P : S[X]) (d q s : ℕ) :
+    rankTwoPowCoeff P ((d : ℤ) - q) s = (P ^ (d - min d q)).coeff s := by
   rcases le_or_gt q d with h | h
-  · rw [powCoeff_of_nonneg P (by omega), min_eq_right h, show ((d : ℤ) - q).toNat = d - q by omega]
-  · rw [powCoeff_of_neg P (by omega), min_eq_left h.le, Nat.sub_self, pow_zero, coeff_one]
+  · rw [rankTwoPowCoeff_of_nonneg P (by omega), min_eq_right h,
+      show ((d : ℤ) - q).toNat = d - q by omega]
+  · rw [rankTwoPowCoeff_of_neg P (by omega), min_eq_left h.le, Nat.sub_self, pow_zero, coeff_one]
 
-end Mei.RankTwo
+end Polynomial
 
 namespace Mei.MaximalDyckPath
 
@@ -52,7 +53,7 @@ theorem isRankTwoSolution_cplus_cminus (hP₁ : P₁.coeff 0 = 1) (hP₂ : P₂.
   plus_zero_zero := cplus_zero_zero P₁ P₂ hP₁ hP₂
   minus_zero_zero := cminus_zero_zero P₁ P₂ hP₁ hP₂
   recursion p q := by
-    simp only [powCoeff_sub_eq_coeff_pow]
+    simp only [rankTwoPowCoeff_sub_eq_coeff_pow]
     exact sum_coeff_mul_cplus_eq_sum_coeff_mul_cminus P₁ P₂ hP₁ hP₂ p q
   plus_eq_zero _ _ h0 hpq := cplus_eq_zero P₁ P₂ h0 hpq
   minus_eq_zero _ _ h0 hpq := cminus_eq_zero P₁ P₂ h0 hpq
