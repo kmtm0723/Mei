@@ -75,6 +75,31 @@ theorem mem_shiftedGrading {n : Γ} {x : shiftedSubmodule ℳ P p} :
 
 end Monoid
 
+section SupportInclusion
+
+variable {Γ : Type*} [AddCommGroup Γ]
+  (ℳ : Γ → Submodule R M) (P : AddSubmonoid Γ) (p q : Γ)
+
+/-- Containment of translates gives containment of their supported modules. -/
+theorem shiftedSubmodule_le_of_sub_mem (hpq : p - q ∈ P) :
+    shiftedSubmodule ℳ P p ≤ shiftedSubmodule ℳ P q := by
+  rw [shiftedSubmodule_def]
+  refine iSup_le fun n => ?_
+  have he : q + (p - q + n) = p + n := by abel
+  simpa only [he] using le_shiftedSubmodule ℳ P q (P.add_mem hpq n.property)
+
+/-- Include a smaller translated support without changing its ambient coefficients. -/
+def shiftedSupportInclusion (hpq : p - q ∈ P) :
+    shiftedSubmodule ℳ P p →ₗ[R] shiftedSubmodule ℳ P q :=
+  Submodule.inclusion (shiftedSubmodule_le_of_sub_mem ℳ P p q hpq)
+
+/-- The support inclusion is the identity on ambient coefficients. -/
+@[simp]
+theorem coe_shiftedSupportInclusion (hpq : p - q ∈ P) (x : shiftedSubmodule ℳ P p) :
+    (shiftedSupportInclusion ℳ P p q hpq x : M) = x := (rfl)
+
+end SupportInclusion
+
 variable {Γ : Type*} [AddCommGroup Γ]
   (ℳ : Γ → Submodule R M) (P : AddSubmonoid Γ) (p : Γ)
   [DecidableEq Γ] [DirectSum.Decomposition ℳ]
@@ -157,6 +182,23 @@ theorem mem_shiftedFiltration_iff {k : ℕ} {x : shiftedSubmodule ℳ d.monoid p
     x ∈ (d.shiftedFiltration ℳ p).submodule k ↔
       ∀ q, d.degree (q - p) < k → (DirectSum.decompose ℳ (x : M) q : M) = 0 :=
   Mei.DirectSum.mem_degreeTail_iff ℳ _
+
+/-- Origin inclusion can only increase relative filtration order. -/
+theorem shiftedSupportInclusion_filtered (q : Γ) (hpq : p - q ∈ d.monoid) (k : ℕ) :
+    (d.shiftedFiltration ℳ p).submodule k ≤
+      ((d.shiftedFiltration ℳ q).submodule k).comap
+        (shiftedSupportInclusion ℳ d.monoid p q hpq) := by
+  intro x hx
+  rw [Submodule.mem_comap, d.mem_shiftedFiltration_iff ℳ q]
+  rw [d.mem_shiftedFiltration_iff ℳ p] at hx
+  intro u hu
+  rw [coe_shiftedSupportInclusion]
+  have he : d.degree (u - q) = d.degree (u - p) + d.degree (p - q) := by
+    rw [← map_add]
+    congr 1
+    abel
+  have hnonneg := d.degree_nonneg hpq
+  exact hx u (by omega)
 
 /-- The relative-degree filtration is separated. -/
 theorem iInf_shiftedFiltration_eq_bot :

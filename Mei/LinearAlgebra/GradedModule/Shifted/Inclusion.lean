@@ -21,67 +21,24 @@ injective even though its finite quotient maps need not be injective.
 public section
 noncomputable section
 
-namespace Mei
-
-variable {Γ R M : Type*} [AddCommGroup Γ] [Semiring R] [AddCommMonoid M] [Module R M]
-  (ℳ : Γ → Submodule R M) (P : AddSubmonoid Γ) (p q : Γ)
-
-/-- Containment of translates gives containment of their supported modules. -/
-theorem shiftedSubmodule_le_of_sub_mem (hpq : p - q ∈ P) :
-    shiftedSubmodule ℳ P p ≤ shiftedSubmodule ℳ P q := by
-  rw [shiftedSubmodule_def]
-  refine iSup_le fun n => ?_
-  have he : q + (p - q + n) = p + n := by abel
-  simpa only [he] using le_shiftedSubmodule ℳ P q (P.add_mem hpq n.property)
-
-/-- Include a smaller translated support without changing its ambient coefficients. -/
-def shiftedSupportInclusion (hpq : p - q ∈ P) :
-    shiftedSubmodule ℳ P p →ₗ[R] shiftedSubmodule ℳ P q :=
-  Submodule.inclusion (shiftedSubmodule_le_of_sub_mem ℳ P p q hpq)
-
-/-- The support inclusion is the identity on ambient coefficients. -/
-@[simp]
-theorem coe_shiftedSupportInclusion (hpq : p - q ∈ P) (x : shiftedSubmodule ℳ P p) :
-    (shiftedSupportInclusion ℳ P p q hpq x : M) = x := (rfl)
-
-
-end Mei
-
 namespace Mei.PositiveDegrees
 
 variable {Γ R M : Type*} [AddCommGroup Γ] [Ring R] [AddCommGroup M] [Module R M]
   [DecidableEq Γ] (d : PositiveDegrees Γ) (ℳ : Γ → Submodule R M)
   [DirectSum.Decomposition ℳ] (p q : Γ) (hpq : p - q ∈ d.monoid)
 
-/-- Origin inclusion can only increase relative filtration order. -/
-theorem shiftedSupportInclusion_filtered (k : ℕ) :
-    (d.shiftedFiltration ℳ p).submodule k ≤
-      ((d.shiftedFiltration ℳ q).submodule k).comap
-        (shiftedSupportInclusion ℳ d.monoid p q hpq) := by
-  intro x hx
-  rw [Submodule.mem_comap, d.mem_shiftedFiltration_iff ℳ q]
-  rw [d.mem_shiftedFiltration_iff ℳ p] at hx
-  intro u hu
-  rw [coe_shiftedSupportInclusion]
-  have he : d.degree (u - q) = d.degree (u - p) + d.degree (p - q) := by
-    rw [← map_add]
-    congr 1
-    abel
-  have hnonneg := d.degree_nonneg hpq
-  exact hx u (by omega)
-
 /-- The finite quotient map induced by containment of shifted supports. -/
-def shiftedQuotientInclusion (k : ℕ) :
+def shiftedQuotientMap (k : ℕ) :
     (d.shiftedFiltration ℳ p).quotient k →ₗ[R] (d.shiftedFiltration ℳ q).quotient k :=
   ((d.shiftedFiltration ℳ p).submodule (k + 1)).mapQ
     ((d.shiftedFiltration ℳ q).submodule (k + 1))
     (shiftedSupportInclusion ℳ d.monoid p q hpq)
     (d.shiftedSupportInclusion_filtered ℳ p q hpq (k + 1))
 
-/-- A finite inclusion keeps the representative's ambient coefficients. -/
+/-- The finite quotient map keeps the representative's ambient coefficients. -/
 @[simp]
-theorem shiftedQuotientInclusion_mk (k : ℕ) (x : shiftedSubmodule ℳ d.monoid p) :
-    d.shiftedQuotientInclusion ℳ p q hpq k (Submodule.Quotient.mk x) =
+theorem shiftedQuotientMap_mk (k : ℕ) (x : shiftedSubmodule ℳ d.monoid p) :
+    d.shiftedQuotientMap ℳ p q hpq k (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (shiftedSupportInclusion ℳ d.monoid p q hpq x) :=
   Submodule.mapQ_apply _ _ _ x
 
@@ -95,7 +52,7 @@ def shiftedCompletedInclusion : d.ShiftedCoefficients ℳ p →ₗ[R] d.ShiftedC
 @[simp]
 theorem projection_shiftedCompletedInclusion (k : ℕ) (x : d.ShiftedCoefficients ℳ p) :
     (d.shiftedFiltration ℳ q).projection k (d.shiftedCompletedInclusion ℳ p q hpq x) =
-      d.shiftedQuotientInclusion ℳ p q hpq k ((d.shiftedFiltration ℳ p).projection k x) :=
+      d.shiftedQuotientMap ℳ p q hpq k ((d.shiftedFiltration ℳ p).projection k x) :=
   ModuleFiltration.projection_completionMap _ _ _ _ _ _ k x
 
 /-- The completed inclusion extends inclusion of ordinary shifted coefficients. -/
@@ -116,7 +73,7 @@ theorem shiftedHomogeneousComponent_inclusion (u : Γ) (x : d.ShiftedCoefficient
         shiftedGrading ℳ d.monoid q (p + n - q) := by
     apply (mem_shiftedGrading ℳ d.monoid q).mpr
     rw [coe_shiftedSupportInclusion]
-    simpa only [show q + (p + n - q) = p + n by abel] using
+    simpa [sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
       (mem_shiftedGrading ℳ d.monoid p).mp ha
   have h := d.completionComponent_completionMap_of_injective d
     (shiftedGrading ℳ d.monoid p) (shiftedGrading ℳ d.monoid q)
@@ -129,7 +86,12 @@ theorem shiftedHomogeneousComponent_inclusion (u : Γ) (x : d.ShiftedCoefficient
   have h' := congrArg (fun a : shiftedSubmodule ℳ d.monoid q => (a : M)) h
   rw [coe_shiftedSupportInclusion, coe_completionComponent_shiftedGrading,
     coe_completionComponent_shiftedGrading] at h'
-  rw [show p + (u - p) = u by abel, show q + (u - q) = u by abel] at h'
+  -- The ambient component maps have degree-dependent codomains, so `simp` does
+  -- not normalize their indices under the coercions. Rewrite the source index
+  -- first; this also turns the target index into `q + (u - q)`.
+  have hp : p + (u - p) = u := by abel
+  have hq : q + (u - q) = u := by abel
+  rw [hp, hq] at h'
   exact h'
 
 /-- The completed support inclusion is injective, as it preserves all components. -/
