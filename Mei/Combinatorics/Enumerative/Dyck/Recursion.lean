@@ -7,7 +7,8 @@ module
 
 public import Mei.Combinatorics.Enumerative.Dyck.Shadow
 public import Mathlib.Algebra.Polynomial.Degree.Support
-public import Mei.Algebra.BigOperators.Ring.Finset
+public import Mei.Data.Fintype.Pi
+public import Mei.Algebra.Polynomial.GeneratingFunction
 public import Mei.Algebra.Polynomial.Coeff
 
 /-!
@@ -177,46 +178,6 @@ private theorem truncH_eq_self {γ : Edge d₁ d₂ → ℕ}
     exact hk.2 (hs ((mem_horizontalSupport γ).mpr ⟨hk.1, Ne.symm hγ⟩))
   · rfl
 
-/-- A coordinatewise zeroing projection has independent free coordinates in each fibre. -/
-private theorem filter_trunc_eq {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (G : Finset (ι → ℕ)) (bound : ι → ℕ) (free : (ι → ℕ) → Finset ι)
-    (trunc : (ι → ℕ) → ι → ℕ) (ℓ : ℕ)
-    (hG : ∀ γ, γ ∈ G ↔ ∀ k, γ k ≤ bound k)
-    (htrunc : ∀ γ k, trunc γ k = if k ∈ free γ then 0 else γ k)
-    (hbound : ∀ γ k, k ∈ free γ → bound k = ℓ)
-    (hfree : ∀ γ γ', (∀ k ∉ free γ', γ k = γ' k) → free γ = free γ')
-    {γ' : ι → ℕ} (hγ' : γ' ∈ G) (hfix : trunc γ' = γ') :
-    G.filter (trunc · = γ') =
-      Fintype.piFinset fun k ↦ if k ∈ free γ' then range (ℓ + 1) else {γ' k} := by
-  have hfree_trunc (γ) : free (trunc γ) = free γ :=
-    hfree _ _ fun k hk ↦ by simp only [htrunc, hk, ↓reduceIte]
-  ext γ
-  rw [hG] at hγ'
-  simp only [mem_filter, hG, Fintype.mem_piFinset]
-  constructor
-  · rintro ⟨hb, rfl⟩ k
-    rw [hfree_trunc]
-    split_ifs with hk
-    · exact mem_range.mpr (Nat.lt_succ_iff.mpr ((hbound γ k hk) ▸ hb k))
-    · exact mem_singleton.mpr (by simp only [htrunc, hk, ↓reduceIte])
-  · intro hT
-    have heq : ∀ k ∉ free γ', γ k = γ' k := fun k hk ↦ by
-      have := hT k
-      simpa only [hk, ↓reduceIte, mem_singleton] using this
-    have hfree' := hfree γ γ' heq
-    refine ⟨fun k ↦ ?_, funext fun k ↦ ?_⟩
-    · have := hT k
-      split_ifs at this with hk
-      · rw [hbound γ' k hk]
-        exact Nat.lt_succ_iff.mp (mem_range.mp this)
-      · rw [mem_singleton.mp this]
-        exact hγ' k
-    · rw [htrunc, hfree']
-      split_ifs with hk
-      · rw [← hfix, htrunc]
-        simp only [hk, ↓reduceIte]
-      · exact heq k hk
-
 private theorem filter_truncV_eq {γ' : Edge d₁ d₂ → ℕ}
     (hγ' : γ' ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree) (hfix : truncV γ' = γ') :
     (gradings d₁ d₂ P₁.natDegree P₂.natDegree).filter (truncV · = γ') =
@@ -244,47 +205,6 @@ private theorem filter_truncH_eq {γ' : Edge d₁ d₂ → ℕ}
   · intro γ γ' heq
     rw [totalVerticalShadow_congr (fun k hk ↦ heq k fun h ↦
       notMem_horizontalEdges_of_mem hk (mem_sdiff.mp h).1)]
-
-/-- The weighted generating function of a fibre factors into its fixed monomial and free
-coordinate contributions. -/
-private theorem sum_fiber_trunc {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (G : Finset (ι → ℕ)) (trunc : (ι → ℕ) → ι → ℕ) (O : Finset ι) (ℓ : ℕ)
-    (Q : S[X]) (f : ι → ℕ → S[X]) (w : (ι → ℕ) → S) (total : (ι → ℕ) → ℕ)
-    (hprod : ∀ γ, ∏ k, f k (γ k) = C (w γ) * X ^ total γ) (γ' : ι → ℕ)
-    (hfilter : G.filter (trunc · = γ') =
-      Fintype.piFinset fun k ↦ if k ∈ O then range (ℓ + 1) else {γ' k})
-    (hQ : ∀ k ∈ O, ∑ j ∈ range (ℓ + 1), f k j = Q)
-    (h₀ : ∀ k ∈ O, f k (γ' k) = 1) :
-    ∑ γ ∈ G.filter (trunc · = γ'), C (w γ) * X ^ total γ =
-      C (w γ') * X ^ total γ' * Q ^ #O := by
-  simp_rw [← hprod]
-  rw [hfilter]
-  exact sum_piFinset_factor f O (range (ℓ + 1)) Q hQ γ' h₀
-
-/-- Summing the fibres of a projection that preserves a predicate and an auxiliary total
-recovers the full generating function from its fixed points. -/
-private theorem sum_gen_of_truncation {ι : Type*} [DecidableEq ι]
-    (G : Finset ι) (trunc : ι → ι) (C A : ι → Prop) [DecidablePred C] [DecidablePred A]
-    (m : ι → ℕ) (f : ι → S[X]) (Q : S[X]) (r : ℕ → ℕ)
-    (hC : ∀ γ, C (trunc γ) ↔ C γ) (hm : ∀ γ, m (trunc γ) = m γ)
-    (hA : ∀ γ, A (trunc γ)) (hfix : ∀ γ, A γ → trunc γ = γ)
-    (hG : ∀ γ ∈ G, trunc γ ∈ G)
-    (hfiber : ∀ γ ∈ G, trunc γ = γ →
-      ∑ δ ∈ G.filter (trunc · = γ), f δ = f γ * Q ^ r (m γ)) (q : ℕ) :
-    ∑ γ ∈ G with C γ ∧ m γ = q, f γ =
-      (∑ γ ∈ G with C γ ∧ m γ = q ∧ A γ, f γ) * Q ^ r q := by
-  rw [← sum_fiberwise_of_maps_to (g := trunc) ?_, sum_mul]
-  · refine sum_congr rfl fun γ' hγ' ↦ ?_
-    obtain ⟨hγ'G, hc', hq', hs'⟩ := mem_filter.mp hγ'
-    rw [← hq', ← hfiber γ' hγ'G (hfix γ' hs'), filter_filter]
-    congr 1
-    refine filter_congr fun γ _ ↦ ⟨fun h ↦ h.2, fun h ↦ ⟨⟨?_, ?_⟩, h⟩⟩
-    · rw [← hC, h]
-      exact hc'
-    · rw [← hm, h]
-  · intro γ hγ
-    obtain ⟨hγG, hc, hq⟩ := mem_filter.mp hγ
-    exact mem_filter.mpr ⟨hG γ hγG, (hC γ).mpr hc, by rw [hm, hq], hA γ⟩
 
 /-- The generating function of a fibre of the vertical truncation. -/
 private theorem sum_fiber_truncV (hP₁ : P₁.coeff 0 = 1) {γ' : Edge d₁ d₂ → ℕ}
