@@ -373,9 +373,9 @@ theorem exists_tight_one_two :
     rw [tight_iff]
     refine ⟨hshadow, ?_, ?_, ?_⟩
     · rw [hp]
-    · rw [hq] 
+    · rw [hq]
       decide
-    · rw [hp, hq] 
+    · rw [hp, hq]
       decide
   exact ⟨γ, hp, hq, hshadow, ht, hn⟩
 
@@ -431,10 +431,10 @@ theorem exists_tight_two_one :
   have ht : Tight γ := by
     rw [tight_iff]
     refine ⟨hshadow, ?_, ?_, ?_⟩
-    · rw [hp] 
+    · rw [hp]
       decide
     · rw [hq]
-    · rw [hp, hq] 
+    · rw [hp, hq]
       decide
   exact ⟨γ, hp, hq, hshadow, ht, hn⟩
 
