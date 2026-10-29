@@ -106,7 +106,7 @@ theorem compatible_congr_of_horizontal {γ γ' : Edge d₁ d₂ → ℕ}
   refine or_congr_right (exists_congr fun e ↦ and_congr_right fun he ↦
     horizontalBalanced_congr fun k hk ↦ hV k ?_)
   have hev : e ∈ cyclicIcc h v := by
-    rw [mem_cyclicIcc, ← val_sub_le_val_sub_iff]
+    rw [mem_cyclicIcc, ← Fin.val_sub_le_val_sub_iff]
     exact he.le
   have hkv := mem_cyclicIcc.mp (cyclicIcc_subset_of_mem hev (mem_inter.mp hk).1)
   rw [mem_horizontalShadow] at hsh
@@ -129,7 +129,7 @@ theorem compatible_congr_of_vertical {γ γ' : Edge d₁ d₂ → ℕ}
   refine or_congr_left (exists_congr fun e ↦ and_congr_right fun he ↦
     verticalBalanced_congr' fun k hk ↦ hH k ?_)
   have hkv : (v - k).val ≤ (v - h).val := by
-    rw [val_sub_le_val_sub_iff]
+    rw [Fin.val_sub_le_val_sub_iff]
     exact (mem_cyclicIcc.mp (mem_inter.mp hk).1).trans he.le
   rw [mem_verticalShadow] at hsh
   rw [mem_totalVerticalShadow]
