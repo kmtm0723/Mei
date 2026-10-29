@@ -12,8 +12,7 @@ public import Mei.Algebra.BigOperators.Ring.Finset
 # Generating functions of finite projections
 
 Weighted monomial sums over fibres factor into a fixed monomial and the local free-coordinate
-contributions. Summing fibres of a projection that preserves a predicate and an auxiliary
-statistic recovers a generating function from its fixed points.
+contributions.
 -/
 
 public section
@@ -38,29 +37,5 @@ theorem sum_fiber_trunc {S : Type*} [CommSemiring S] {ι : Type*} [Fintype ι] [
   rw [hfilter]
   exact sum_piFinset_factor f O (range (ℓ + 1)) Q hQ γ' h₀
 
-/-- Summing the fibres of a projection that preserves a predicate and an auxiliary total
-recovers the full generating function from its fixed points. -/
-theorem sum_gen_of_truncation {S : Type*} [Semiring S] {ι : Type*} [DecidableEq ι]
-    (G : Finset ι) (trunc : ι → ι) (C A : ι → Prop) [DecidablePred C] [DecidablePred A]
-    (m : ι → ℕ) (f : ι → S[X]) (Q : S[X]) (r : ℕ → ℕ)
-    (hC : ∀ γ, C (trunc γ) ↔ C γ) (hm : ∀ γ, m (trunc γ) = m γ)
-    (hA : ∀ γ, A (trunc γ)) (hfix : ∀ γ, A γ → trunc γ = γ)
-    (hG : ∀ γ ∈ G, trunc γ ∈ G)
-    (hfiber : ∀ γ ∈ G, trunc γ = γ →
-      ∑ δ ∈ G.filter (trunc · = γ), f δ = f γ * Q ^ r (m γ)) (q : ℕ) :
-    ∑ γ ∈ G with C γ ∧ m γ = q, f γ =
-      (∑ γ ∈ G with C γ ∧ m γ = q ∧ A γ, f γ) * Q ^ r q := by
-  rw [← sum_fiberwise_of_maps_to (g := trunc) ?_, sum_mul]
-  · refine sum_congr rfl fun γ' hγ' ↦ ?_
-    obtain ⟨hγ'G, hc', hq', hs'⟩ := mem_filter.mp hγ'
-    rw [← hq', ← hfiber γ' hγ'G (hfix γ' hs'), filter_filter]
-    congr 1
-    refine filter_congr fun γ _ ↦ ⟨fun h ↦ h.2, fun h ↦ ⟨⟨?_, ?_⟩, h⟩⟩
-    · rw [← hC, h]
-      exact hc'
-    · rw [← hm, h]
-  · intro γ hγ
-    obtain ⟨hγG, hc, hq⟩ := mem_filter.mp hγ
-    exact mem_filter.mpr ⟨hG γ hγG, (hC γ).mpr hc, by rw [hm, hq], hA γ⟩
 
 end Polynomial

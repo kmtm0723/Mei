@@ -70,8 +70,8 @@ theorem rankTwoPowCoeff_zero {P : S[X]} (hP : P.coeff 0 = 1) (r : ℤ) :
 theorem rankTwoPowCoeff_sub_eq_coeff_pow (P : S[X]) (d q s : ℕ) :
     rankTwoPowCoeff P ((d : ℤ) - q) s = (P ^ (d - min d q)).coeff s := by
   rcases le_or_gt q d with h | h
-  · rw [rankTwoPowCoeff_of_nonneg P (by omega), min_eq_right h,
-      show ((d : ℤ) - q).toNat = d - q by omega]
+  · have h_toNat : ((d : ℤ) - q).toNat = d - q := by omega
+    rw [rankTwoPowCoeff_of_nonneg P (by omega), min_eq_right h, h_toNat]
   · rw [rankTwoPowCoeff_of_neg P (by omega), min_eq_left h.le, Nat.sub_self, pow_zero, coeff_one]
 
 
