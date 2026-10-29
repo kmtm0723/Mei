@@ -177,83 +177,114 @@ private theorem truncH_eq_self {γ : Edge d₁ d₂ → ℕ}
     exact hk.2 (hs ((mem_horizontalSupport γ).mpr ⟨hk.1, Ne.symm hγ⟩))
   · rfl
 
-/-- The fibre of the vertical truncation over a truncated grading `γ'`. -/
+/-- A coordinatewise zeroing projection has independent free coordinates in each fibre. -/
+private theorem filter_trunc_eq {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (G : Finset (ι → ℕ)) (bound : ι → ℕ) (free : (ι → ℕ) → Finset ι)
+    (trunc : (ι → ℕ) → ι → ℕ) (ℓ : ℕ)
+    (hG : ∀ γ, γ ∈ G ↔ ∀ k, γ k ≤ bound k)
+    (htrunc : ∀ γ k, trunc γ k = if k ∈ free γ then 0 else γ k)
+    (hbound : ∀ γ k, k ∈ free γ → bound k = ℓ)
+    (hfree : ∀ γ γ', (∀ k ∉ free γ', γ k = γ' k) → free γ = free γ')
+    {γ' : ι → ℕ} (hγ' : γ' ∈ G) (hfix : trunc γ' = γ') :
+    G.filter (trunc · = γ') =
+      Fintype.piFinset fun k ↦ if k ∈ free γ' then range (ℓ + 1) else {γ' k} := by
+  have hfree_trunc (γ) : free (trunc γ) = free γ :=
+    hfree _ _ fun k hk ↦ by simp only [htrunc, hk, ↓reduceIte]
+  ext γ
+  rw [hG] at hγ'
+  simp only [mem_filter, hG, Fintype.mem_piFinset]
+  constructor
+  · rintro ⟨hb, rfl⟩ k
+    rw [hfree_trunc]
+    split_ifs with hk
+    · exact mem_range.mpr (Nat.lt_succ_iff.mpr ((hbound γ k hk) ▸ hb k))
+    · exact mem_singleton.mpr (by simp only [htrunc, hk, ↓reduceIte])
+  · intro hT
+    have heq : ∀ k ∉ free γ', γ k = γ' k := fun k hk ↦ by
+      have := hT k
+      simpa only [hk, ↓reduceIte, mem_singleton] using this
+    have hfree' := hfree γ γ' heq
+    refine ⟨fun k ↦ ?_, funext fun k ↦ ?_⟩
+    · have := hT k
+      split_ifs at this with hk
+      · rw [hbound γ' k hk]
+        exact Nat.lt_succ_iff.mp (mem_range.mp this)
+      · rw [mem_singleton.mp this]
+        exact hγ' k
+    · rw [htrunc, hfree']
+      split_ifs with hk
+      · rw [← hfix, htrunc]
+        simp only [hk, ↓reduceIte]
+      · exact heq k hk
+
 private theorem filter_truncV_eq {γ' : Edge d₁ d₂ → ℕ}
     (hγ' : γ' ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree) (hfix : truncV γ' = γ') :
     (gradings d₁ d₂ P₁.natDegree P₂.natDegree).filter (truncV · = γ') =
       Fintype.piFinset fun k ↦ if k ∈ verticalEdges d₁ d₂ \ totalHorizontalShadow γ' then
         range (P₁.natDegree + 1) else {γ' k} := by
-  ext γ
-  rw [mem_gradings] at hγ'
-  simp only [mem_filter, mem_gradings, Fintype.mem_piFinset]
-  constructor
-  · rintro ⟨hb, rfl⟩ k
-    rw [totalHorizontalShadow_truncV]
-    split_ifs with hk
-    · have := hb k
-      simp only [mem_verticalEdges.mp (mem_sdiff.mp hk).1, ↓reduceIte] at this
-      exact mem_range.mpr (by omega)
-    · exact mem_singleton.mpr (truncV_eq_of_notMem hk).symm
-  · intro hT
-    have hH : ∀ k ∈ horizontalEdges d₁ d₂, γ k = γ' k := fun k hk ↦ by
-      have hk' : k ∉ verticalEdges d₁ d₂ \ totalHorizontalShadow γ' :=
-        fun hmem ↦ notMem_verticalEdges_of_mem hk (mem_sdiff.mp hmem).1
-      have := hT k
-      simpa only [hk', ↓reduceIte, mem_singleton] using this
-    have hsh : totalHorizontalShadow γ = totalHorizontalShadow γ' := totalHorizontalShadow_congr hH
-    refine ⟨fun k ↦ ?_, funext fun k ↦ ?_⟩
-    · have := hT k
-      split_ifs at this with hk
-      · simp only [mem_verticalEdges.mp (mem_sdiff.mp hk).1, ↓reduceIte]
-        exact Nat.lt_succ_iff.mp (mem_range.mp this)
-      · rw [mem_singleton.mp this]
-        exact hγ' k
-    · have := hT k
-      unfold truncV
-      rw [hsh]
-      split_ifs at this ⊢ with hk
-      · rw [← hfix]
-        simp [truncV, hk]
-      · exact mem_singleton.mp this
+  apply filter_trunc_eq _ (fun k ↦ if step k = D then P₁.natDegree else P₂.natDegree)
+    (fun γ ↦ verticalEdges d₁ d₂ \ totalHorizontalShadow γ) truncV P₁.natDegree
+    (fun _ ↦ mem_gradings) (fun _ _ ↦ rfl) ?_ ?_ hγ' hfix
+  · intro γ k hk
+    simp only [mem_verticalEdges.mp (mem_sdiff.mp hk).1, ↓reduceIte]
+  · intro γ γ' heq
+    rw [totalHorizontalShadow_congr (fun k hk ↦ heq k fun h ↦
+      notMem_verticalEdges_of_mem hk (mem_sdiff.mp h).1)]
 
-/-- The fibre of the horizontal truncation over a truncated grading `γ'`. -/
 private theorem filter_truncH_eq {γ' : Edge d₁ d₂ → ℕ}
     (hγ' : γ' ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree) (hfix : truncH γ' = γ') :
     (gradings d₁ d₂ P₁.natDegree P₂.natDegree).filter (truncH · = γ') =
       Fintype.piFinset fun k ↦ if k ∈ horizontalEdges d₁ d₂ \ totalVerticalShadow γ' then
         range (P₂.natDegree + 1) else {γ' k} := by
-  ext γ
-  rw [mem_gradings] at hγ'
-  simp only [mem_filter, mem_gradings, Fintype.mem_piFinset]
-  constructor
-  · rintro ⟨hb, rfl⟩ k
-    rw [totalVerticalShadow_truncH]
-    split_ifs with hk
-    · have := hb k
-      simp only [mem_horizontalEdges.mp (mem_sdiff.mp hk).1, reduceCtorEq, ↓reduceIte] at this
-      exact mem_range.mpr (by omega)
-    · exact mem_singleton.mpr (truncH_eq_of_notMem hk).symm
-  · intro hT
-    have hV : ∀ k ∈ verticalEdges d₁ d₂, γ k = γ' k := fun k hk ↦ by
-      have hk' : k ∉ horizontalEdges d₁ d₂ \ totalVerticalShadow γ' :=
-        fun hmem ↦ notMem_horizontalEdges_of_mem hk (mem_sdiff.mp hmem).1
-      have := hT k
-      simpa only [hk', ↓reduceIte, mem_singleton] using this
-    have hsh : totalVerticalShadow γ = totalVerticalShadow γ' := totalVerticalShadow_congr hV
-    refine ⟨fun k ↦ ?_, funext fun k ↦ ?_⟩
-    · have := hT k
-      split_ifs at this with hk
-      · simp only [mem_horizontalEdges.mp (mem_sdiff.mp hk).1, reduceCtorEq, ↓reduceIte]
-        exact Nat.lt_succ_iff.mp (mem_range.mp this)
-      · rw [mem_singleton.mp this]
-        exact hγ' k
-    · have := hT k
-      unfold truncH
-      rw [hsh]
-      split_ifs at this ⊢ with hk
-      · rw [← hfix]
-        simp [truncH, hk]
-      · exact mem_singleton.mp this
+  apply filter_trunc_eq _ (fun k ↦ if step k = D then P₁.natDegree else P₂.natDegree)
+    (fun γ ↦ horizontalEdges d₁ d₂ \ totalVerticalShadow γ) truncH P₂.natDegree
+    (fun _ ↦ mem_gradings) (fun _ _ ↦ rfl) ?_ ?_ hγ' hfix
+  · intro γ k hk
+    simp only [mem_horizontalEdges.mp (mem_sdiff.mp hk).1, reduceCtorEq, ↓reduceIte]
+  · intro γ γ' heq
+    rw [totalVerticalShadow_congr (fun k hk ↦ heq k fun h ↦
+      notMem_horizontalEdges_of_mem hk (mem_sdiff.mp h).1)]
+
+/-- The weighted generating function of a fibre factors into its fixed monomial and free
+coordinate contributions. -/
+private theorem sum_fiber_trunc {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (G : Finset (ι → ℕ)) (trunc : (ι → ℕ) → ι → ℕ) (O : Finset ι) (ℓ : ℕ)
+    (Q : S[X]) (f : ι → ℕ → S[X]) (w : (ι → ℕ) → S) (total : (ι → ℕ) → ℕ)
+    (hprod : ∀ γ, ∏ k, f k (γ k) = C (w γ) * X ^ total γ) (γ' : ι → ℕ)
+    (hfilter : G.filter (trunc · = γ') =
+      Fintype.piFinset fun k ↦ if k ∈ O then range (ℓ + 1) else {γ' k})
+    (hQ : ∀ k ∈ O, ∑ j ∈ range (ℓ + 1), f k j = Q)
+    (h₀ : ∀ k ∈ O, f k (γ' k) = 1) :
+    ∑ γ ∈ G.filter (trunc · = γ'), C (w γ) * X ^ total γ =
+      C (w γ') * X ^ total γ' * Q ^ #O := by
+  simp_rw [← hprod]
+  rw [hfilter]
+  exact sum_piFinset_factor f O (range (ℓ + 1)) Q hQ γ' h₀
+
+/-- Summing the fibres of a projection that preserves a predicate and an auxiliary total
+recovers the full generating function from its fixed points. -/
+private theorem sum_gen_of_truncation {ι : Type*} [DecidableEq ι]
+    (G : Finset ι) (trunc : ι → ι) (C A : ι → Prop) [DecidablePred C] [DecidablePred A]
+    (m : ι → ℕ) (f : ι → S[X]) (Q : S[X]) (r : ℕ → ℕ)
+    (hC : ∀ γ, C (trunc γ) ↔ C γ) (hm : ∀ γ, m (trunc γ) = m γ)
+    (hA : ∀ γ, A (trunc γ)) (hfix : ∀ γ, A γ → trunc γ = γ)
+    (hG : ∀ γ ∈ G, trunc γ ∈ G)
+    (hfiber : ∀ γ ∈ G, trunc γ = γ →
+      ∑ δ ∈ G.filter (trunc · = γ), f δ = f γ * Q ^ r (m γ)) (q : ℕ) :
+    ∑ γ ∈ G with C γ ∧ m γ = q, f γ =
+      (∑ γ ∈ G with C γ ∧ m γ = q ∧ A γ, f γ) * Q ^ r q := by
+  rw [← sum_fiberwise_of_maps_to (g := trunc) ?_, sum_mul]
+  · refine sum_congr rfl fun γ' hγ' ↦ ?_
+    obtain ⟨hγ'G, hc', hq', hs'⟩ := mem_filter.mp hγ'
+    rw [← hq', ← hfiber γ' hγ'G (hfix γ' hs'), filter_filter]
+    congr 1
+    refine filter_congr fun γ _ ↦ ⟨fun h ↦ h.2, fun h ↦ ⟨⟨?_, ?_⟩, h⟩⟩
+    · rw [← hC, h]
+      exact hc'
+    · rw [← hm, h]
+  · intro γ hγ
+    obtain ⟨hγG, hc, hq⟩ := mem_filter.mp hγ
+    exact mem_filter.mpr ⟨hG γ hγG, (hC γ).mpr hc, by rw [hm, hq], hA γ⟩
 
 /-- The generating function of a fibre of the vertical truncation. -/
 private theorem sum_fiber_truncV (hP₁ : P₁.coeff 0 = 1) {γ' : Edge d₁ d₂ → ℕ}
@@ -261,19 +292,21 @@ private theorem sum_fiber_truncV (hP₁ : P₁.coeff 0 = 1) {γ' : Edge d₁ d�
     ∑ γ ∈ (gradings d₁ d₂ P₁.natDegree P₂.natDegree).filter (truncV · = γ'),
         C (weight P₁ P₂ γ) * X ^ verticalTotal γ =
       C (weight P₁ P₂ γ') * X ^ verticalTotal γ' * P₁ ^ (d₂ - min d₂ (horizontalTotal γ')) := by
-  rw [filter_truncV_eq P₁ P₂ hγ' hfix]
-  simp_rw [← prod_factorV P₁ P₂]
-  rw [sum_piFinset_factor (factorV P₁ P₂) _ (range (P₁.natDegree + 1)) P₁ ?_ γ' ?_,
-    card_sdiff_of_subset (totalHorizontalShadow_subset γ'), card_verticalEdges,
-    card_totalHorizontalShadow]
-  · intro k hk
+  have hQ : ∀ k ∈ verticalEdges d₁ d₂ \ totalHorizontalShadow γ',
+      ∑ j ∈ range (P₁.natDegree + 1), factorV P₁ P₂ k j = P₁ := by
+    intro k hk
     simp only [factorV, mem_verticalEdges.mp (mem_sdiff.mp hk).1, ↓reduceIte]
     exact (as_sum_range_C_mul_X_pow P₁).symm
-  · intro k hk
-    have h₀ : γ' k = 0 := by
+  have h₀ : ∀ k ∈ verticalEdges d₁ d₂ \ totalHorizontalShadow γ', factorV P₁ P₂ k (γ' k) = 1 := by
+    intro k hk
+    have hz : γ' k = 0 := by
       rw [← hfix]
       simp [truncV, hk]
-    simp [factorV, mem_verticalEdges.mp (mem_sdiff.mp hk).1, h₀, hP₁]
+    simp [factorV, mem_verticalEdges.mp (mem_sdiff.mp hk).1, hz, hP₁]
+  simpa only [card_sdiff_of_subset (totalHorizontalShadow_subset γ'), card_verticalEdges,
+    card_totalHorizontalShadow] using sum_fiber_trunc _ truncV _ P₁.natDegree P₁
+      (factorV P₁ P₂) (weight P₁ P₂) verticalTotal (prod_factorV P₁ P₂) γ'
+      (filter_truncV_eq P₁ P₂ hγ' hfix) hQ h₀
 
 /-- Summing over the fibres of the vertical truncation: the generating function by `p` of the
 compatible gradings with `q` fixed is that of the gradings counted by `C₊`, times
@@ -284,22 +317,13 @@ private theorem sum_compatible_genV (hP₁ : P₁.coeff 0 = 1) (q : ℕ) :
       (∑ γ ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree with Compatible γ ∧
           horizontalTotal γ = q ∧ verticalSupport γ ⊆ totalHorizontalShadow γ,
           C (weight P₁ P₂ γ) * X ^ verticalTotal γ) * P₁ ^ (d₂ - min d₂ q) := by
-  rw [← sum_fiberwise_of_maps_to (g := truncV) ?_, sum_mul]
-  · refine sum_congr rfl fun γ' hγ' ↦ ?_
-    obtain ⟨hγ'g, hc', hq', hs'⟩ := mem_filter.mp hγ'
-    have hfix := truncV_eq_self hs'
-    rw [← hq', ← sum_fiber_truncV P₁ P₂ hP₁ hγ'g hfix, filter_filter]
-    congr 1
-    refine filter_congr fun γ _ ↦ ⟨fun h ↦ h.2, fun h ↦ ⟨⟨?_, ?_⟩, h⟩⟩
-    · rw [← compatible_truncV, h]
-      exact hc'
-    · rw [← horizontalTotal_truncV, h]
-  · intro γ hγ
-    obtain ⟨hγg, hc, hq⟩ := mem_filter.mp hγ
-    refine mem_filter.mpr ⟨?_, (compatible_truncV γ).mpr hc, by rw [horizontalTotal_truncV, hq],
-      verticalSupport_truncV γ⟩
-    rw [mem_gradings] at hγg ⊢
-    exact fun k ↦ (truncV_le γ k).trans (hγg k)
+  apply sum_gen_of_truncation _ truncV Compatible
+    (fun γ ↦ verticalSupport γ ⊆ totalHorizontalShadow γ) horizontalTotal
+    (fun γ ↦ C (weight P₁ P₂ γ) * X ^ verticalTotal γ) P₁ (fun t ↦ d₂ - min d₂ t)
+    compatible_truncV horizontalTotal_truncV verticalSupport_truncV (fun _ ↦ truncV_eq_self) ?_
+    (fun _ hγ hfix ↦ sum_fiber_truncV P₁ P₂ hP₁ hγ hfix) q
+  intro γ hγ
+  exact mem_gradings.mpr fun k ↦ (truncV_le γ k).trans ((mem_gradings.mp hγ) k)
 
 /-- **The `C₊` side of (R).** When `P₁` has constant coefficient `1`,
 `∑_{s ≤ p} [x^s] P₁^{d₂ - min(d₂, q)} C₊(p - s, q)` is the weight sum of all compatible
@@ -310,7 +334,17 @@ theorem sum_coeff_mul_cplus (hP₁ : P₁.coeff 0 = 1) (p q : ℕ) :
   have key := congrArg (coeff · p) (sum_compatible_genV (d₁ := d₁) (d₂ := d₂) P₁ P₂ hP₁ q)
   conv_rhs at key => rw [mul_comm]
   simp only [coeff_sum_C_mul_X_pow, coeff_mul_sum_C_mul_X_pow] at key
-  simpa only [cplus_def, compatibleSum_def, and_assoc, and_left_comm, and_comm] using key.symm
+  simp only [cplus_def, compatibleSum_def]
+  refine Eq.trans ?_ (key.symm.trans ?_)
+  · refine sum_congr rfl fun k _ ↦ ?_
+    apply congrArg (fun F : Finset (Edge d₁ d₂ → ℕ) ↦
+      (P₁ ^ (d₂ - min d₂ q)).coeff k * ∑ γ ∈ F, weight P₁ P₂ γ)
+    exact filter_congr fun _ _ ↦
+      ⟨fun ⟨hc, hp, hq, hs⟩ ↦ ⟨⟨hc, hq, hs⟩, hp⟩,
+        fun ⟨⟨hc, hq, hs⟩, hp⟩ ↦ ⟨hc, hp, hq, hs⟩⟩
+  · apply congrArg (fun F : Finset (Edge d₁ d₂ → ℕ) ↦ ∑ γ ∈ F, weight P₁ P₂ γ)
+    exact filter_congr fun _ _ ↦
+      ⟨fun ⟨⟨hc, hq⟩, hp⟩ ↦ ⟨hc, hp, hq⟩, fun ⟨hc, hp, hq⟩ ↦ ⟨⟨hc, hq⟩, hp⟩⟩
 
 /-- The generating function of a fibre of the horizontal truncation. -/
 private theorem sum_fiber_truncH (hP₂ : P₂.coeff 0 = 1) {γ' : Edge d₁ d₂ → ℕ}
@@ -318,19 +352,21 @@ private theorem sum_fiber_truncH (hP₂ : P₂.coeff 0 = 1) {γ' : Edge d₁ d�
     ∑ γ ∈ (gradings d₁ d₂ P₁.natDegree P₂.natDegree).filter (truncH · = γ'),
         C (weight P₁ P₂ γ) * X ^ horizontalTotal γ =
       C (weight P₁ P₂ γ') * X ^ horizontalTotal γ' * P₂ ^ (d₁ - min d₁ (verticalTotal γ')) := by
-  rw [filter_truncH_eq P₁ P₂ hγ' hfix]
-  simp_rw [← prod_factorH P₁ P₂]
-  rw [sum_piFinset_factor (factorH P₁ P₂) _ (range (P₂.natDegree + 1)) P₂ ?_ γ' ?_,
-    card_sdiff_of_subset (totalVerticalShadow_subset γ'), card_horizontalEdges,
-    card_totalVerticalShadow]
-  · intro k hk
+  have hQ : ∀ k ∈ horizontalEdges d₁ d₂ \ totalVerticalShadow γ',
+      ∑ j ∈ range (P₂.natDegree + 1), factorH P₁ P₂ k j = P₂ := by
+    intro k hk
     simp only [factorH, mem_horizontalEdges.mp (mem_sdiff.mp hk).1, reduceCtorEq, ↓reduceIte]
     exact (as_sum_range_C_mul_X_pow P₂).symm
-  · intro k hk
-    have h₀ : γ' k = 0 := by
+  have h₀ : ∀ k ∈ horizontalEdges d₁ d₂ \ totalVerticalShadow γ', factorH P₁ P₂ k (γ' k) = 1 := by
+    intro k hk
+    have hz : γ' k = 0 := by
       rw [← hfix]
       simp [truncH, hk]
-    simp [factorH, mem_horizontalEdges.mp (mem_sdiff.mp hk).1, h₀, hP₂]
+    simp [factorH, mem_horizontalEdges.mp (mem_sdiff.mp hk).1, hz, hP₂]
+  simpa only [card_sdiff_of_subset (totalVerticalShadow_subset γ'), card_horizontalEdges,
+    card_totalVerticalShadow] using sum_fiber_trunc _ truncH _ P₂.natDegree P₂
+      (factorH P₁ P₂) (weight P₁ P₂) horizontalTotal (prod_factorH P₁ P₂) γ'
+      (filter_truncH_eq P₁ P₂ hγ' hfix) hQ h₀
 
 /-- Summing over the fibres of the horizontal truncation: the generating function by `q` of the
 compatible gradings with `p` fixed is that of the gradings counted by `C₋`, times
@@ -341,22 +377,13 @@ private theorem sum_compatible_genH (hP₂ : P₂.coeff 0 = 1) (p : ℕ) :
       (∑ γ ∈ gradings d₁ d₂ P₁.natDegree P₂.natDegree with Compatible γ ∧
           verticalTotal γ = p ∧ horizontalSupport γ ⊆ totalVerticalShadow γ,
           C (weight P₁ P₂ γ) * X ^ horizontalTotal γ) * P₂ ^ (d₁ - min d₁ p) := by
-  rw [← sum_fiberwise_of_maps_to (g := truncH) ?_, sum_mul]
-  · refine sum_congr rfl fun γ' hγ' ↦ ?_
-    obtain ⟨hγ'g, hc', hp', hs'⟩ := mem_filter.mp hγ'
-    have hfix := truncH_eq_self hs'
-    rw [← hp', ← sum_fiber_truncH P₁ P₂ hP₂ hγ'g hfix, filter_filter]
-    congr 1
-    refine filter_congr fun γ _ ↦ ⟨fun h ↦ h.2, fun h ↦ ⟨⟨?_, ?_⟩, h⟩⟩
-    · rw [← compatible_truncH, h]
-      exact hc'
-    · rw [← verticalTotal_truncH, h]
-  · intro γ hγ
-    obtain ⟨hγg, hc, hp⟩ := mem_filter.mp hγ
-    refine mem_filter.mpr ⟨?_, (compatible_truncH γ).mpr hc, by rw [verticalTotal_truncH, hp],
-      horizontalSupport_truncH γ⟩
-    rw [mem_gradings] at hγg ⊢
-    exact fun k ↦ (truncH_le γ k).trans (hγg k)
+  apply sum_gen_of_truncation _ truncH Compatible
+    (fun γ ↦ horizontalSupport γ ⊆ totalVerticalShadow γ) verticalTotal
+    (fun γ ↦ C (weight P₁ P₂ γ) * X ^ horizontalTotal γ) P₂ (fun t ↦ d₁ - min d₁ t)
+    compatible_truncH verticalTotal_truncH horizontalSupport_truncH (fun _ ↦ truncH_eq_self) ?_
+    (fun _ hγ hfix ↦ sum_fiber_truncH P₁ P₂ hP₂ hγ hfix) p
+  intro γ hγ
+  exact mem_gradings.mpr fun k ↦ (truncH_le γ k).trans ((mem_gradings.mp hγ) k)
 
 /-- **The `C₋` side of (R).** When `P₂` has constant coefficient `1`,
 `∑_{s ≤ q} [y^s] P₂^{d₁ - min(d₁, p)} C₋(p, q - s)` is the weight sum of all compatible
@@ -367,7 +394,17 @@ theorem sum_coeff_mul_cminus (hP₂ : P₂.coeff 0 = 1) (p q : ℕ) :
   have key := congrArg (coeff · q) (sum_compatible_genH (d₁ := d₁) (d₂ := d₂) P₁ P₂ hP₂ p)
   conv_rhs at key => rw [mul_comm]
   simp only [coeff_sum_C_mul_X_pow, coeff_mul_sum_C_mul_X_pow] at key
-  simpa only [cminus_def, compatibleSum_def, and_assoc, and_left_comm, and_comm] using key.symm
+  simp only [cminus_def, compatibleSum_def]
+  refine Eq.trans ?_ (key.symm.trans ?_)
+  · refine sum_congr rfl fun k _ ↦ ?_
+    apply congrArg (fun F : Finset (Edge d₁ d₂ → ℕ) ↦
+      (P₂ ^ (d₁ - min d₁ p)).coeff k * ∑ γ ∈ F, weight P₁ P₂ γ)
+    exact filter_congr fun _ _ ↦
+      ⟨fun ⟨hc, hp, hq, hs⟩ ↦ ⟨⟨hc, hp, hs⟩, hq⟩,
+        fun ⟨⟨hc, hp, hs⟩, hq⟩ ↦ ⟨hc, hp, hq, hs⟩⟩
+  · apply congrArg (fun F : Finset (Edge d₁ d₂ → ℕ) ↦ ∑ γ ∈ F, weight P₁ P₂ γ)
+    exact filter_congr fun _ _ ↦
+      ⟨fun ⟨⟨hc, hp⟩, hq⟩ ↦ ⟨hc, hp, hq⟩, fun ⟨hc, hp, hq⟩ ↦ ⟨⟨hc, hp⟩, hq⟩⟩
 
 /-- **The recursion (R).** When `P₁` and `P₂` have constant coefficient `1`,
 `∑_{s ≤ p} [x^s] P₁^{d₂ - min(d₂, q)} C₊(p - s, q)` equals
