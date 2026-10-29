@@ -229,30 +229,16 @@ private theorem sum_weight_compl_reflect (ρ : Fin n → ℕ) (x y : Fin n) :
   simp only [weight_def, mem_compl_reflect, Function.comp_apply]
 
 private theorem card_inter_reflect (x y : Fin n) :
-    #(cyclicIcc x y ∩ reflect B) = #(cyclicIcc (-y) (-x) ∩ Bᶜ) :=
-  card_nbij' Neg.neg Neg.neg
-    (fun k hk ↦ by
-      rw [mem_coe, mem_inter] at hk ⊢
-      exact ⟨neg_mem_cyclicIcc.mpr (by rw [neg_neg, neg_neg]; exact hk.1),
-        mem_compl.mpr ((mem_reflect B).mp hk.2)⟩)
-    (fun k hk ↦ by
-      rw [mem_coe, mem_inter] at hk ⊢
-      exact ⟨neg_mem_cyclicIcc.mpr hk.1,
-        (mem_reflect B).mpr (by rw [neg_neg]; exact mem_compl.mp hk.2)⟩)
-    (fun k _ ↦ neg_neg k) (fun k _ ↦ neg_neg k)
+    #(cyclicIcc x y ∩ reflect B) = #(cyclicIcc (-y) (-x) ∩ Bᶜ) := by
+  simp_rw [← filter_mem_eq_inter, card_filter]
+  rw [sum_cyclicIcc_neg]
+  simp only [mem_reflect, mem_compl]
 
 private theorem card_inter_compl_reflect (x y : Fin n) :
-    #(cyclicIcc x y ∩ (reflect B)ᶜ) = #(cyclicIcc (-y) (-x) ∩ B) :=
-  card_nbij' Neg.neg Neg.neg
-    (fun k hk ↦ by
-      rw [mem_coe, mem_inter] at hk ⊢
-      exact ⟨neg_mem_cyclicIcc.mpr (by rw [neg_neg, neg_neg]; exact hk.1),
-        (mem_compl_reflect B).mp hk.2⟩)
-    (fun k hk ↦ by
-      rw [mem_coe, mem_inter] at hk ⊢
-      exact ⟨neg_mem_cyclicIcc.mpr hk.1,
-        (mem_compl_reflect B).mpr (by rw [neg_neg]; exact hk.2)⟩)
-    (fun k _ ↦ neg_neg k) (fun k _ ↦ neg_neg k)
+    #(cyclicIcc x y ∩ (reflect B)ᶜ) = #(cyclicIcc (-y) (-x) ∩ B) := by
+  simp_rw [← filter_mem_eq_inter, card_filter]
+  rw [sum_cyclicIcc_neg]
+  simp only [mem_compl_reflect]
 
 /-- A non-sink carrying `τ` tokens that is matched backwards for `(Bᶜ, σ)` becomes a matched
 sink of the reversed cycle. -/
