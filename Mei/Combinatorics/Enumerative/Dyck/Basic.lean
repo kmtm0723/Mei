@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.Combinatorics.Enumerative.DyckWord
-public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Data.Fintype.Fin
 
 /-!
 # Maximal Dyck paths
@@ -24,7 +24,7 @@ The path has `d₁` horizontal and `d₂` vertical steps. It is the Dyck word `(
 
 public section
 
-open DyckStep
+open DyckStep Finset
 
 namespace Mei
 
@@ -113,17 +113,15 @@ theorem count_D_maximalDyckPath (d₁ d₂ : ℕ) : (maximalDyckPath d₁ d₂).
   · rw [maximalDyckPath_of_ne_zero _ h, ← blocks, (counts_blocks d₁ d₂ d₁).2,
       Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero h)]
 
-/-- A list of steps has as many entries as `U`s and `D`s together. -/
-private theorem length_eq_count_U_add_count_D (l : List DyckStep) :
-    l.length = l.count U + l.count D := by
-  induction l with
-  | nil => simp
-  | cons s l ih => cases s <;> simp [ih] <;> omega
-
 /-- The path has `d₁ + d₂` steps. -/
 @[simp]
 theorem length_maximalDyckPath (d₁ d₂ : ℕ) : (maximalDyckPath d₁ d₂).length = d₁ + d₂ := by
-  rw [length_eq_count_U_add_count_D, count_U_maximalDyckPath, count_D_maximalDyckPath]
+  have hnot : (fun s : DyckStep ↦ decide (¬(s == U))) = (fun s ↦ s == D) := by
+    funext s
+    cases s <;> rfl
+  rw [List.length_eq_countP_add_countP (fun s ↦ s == U), hnot,
+    ← List.count_eq_countP, ← List.count_eq_countP, count_U_maximalDyckPath,
+    count_D_maximalDyckPath]
 
 /-- A path with no vertical steps is horizontal. -/
 @[simp]
@@ -171,5 +169,91 @@ theorem count_take_maximalDyckPath {d₁ d₂ : ℕ} (hd : 0 < d₁ + d₂) (k :
     omega
   · rw [maximalDyckPath_of_ne_zero _ hd₁.ne', ← blocks]
     exact count_take_blocks d₂ hd₁ d₁ k
+
+namespace MaximalDyckPath
+
+/-- The edges of the maximal Dyck path of `(d₁, d₂)`, indexed in traversal order. -/
+abbrev Edge (d₁ d₂ : ℕ) := Fin (d₁ + d₂)
+
+variable {d₁ d₂ : ℕ}
+
+/-- The step taken along an edge of the maximal Dyck path. -/
+def step (e : Edge d₁ d₂) : DyckStep :=
+  (maximalDyckPath d₁ d₂)[e.val]'(by rw [length_maximalDyckPath]; exact e.isLt)
+
+/-- An edge has the indexed step of the maximal Dyck path. -/
+theorem step_def (e : Edge d₁ d₂) :
+    step e = (maximalDyckPath d₁ d₂)[e.val]'(by rw [length_maximalDyckPath]; exact e.isLt) :=
+  (rfl)
+
+variable (d₁ d₂) in
+/-- The vertical edges of the maximal Dyck path. -/
+def verticalEdges : Finset (Edge d₁ d₂) := {e | step e = D}
+
+variable (d₁ d₂) in
+/-- The horizontal edges of the maximal Dyck path. -/
+def horizontalEdges : Finset (Edge d₁ d₂) := {e | step e = U}
+
+@[simp]
+theorem mem_verticalEdges {e : Edge d₁ d₂} : e ∈ verticalEdges d₁ d₂ ↔ step e = D := by
+  simp [verticalEdges]
+
+@[simp]
+theorem mem_horizontalEdges {e : Edge d₁ d₂} : e ∈ horizontalEdges d₁ d₂ ↔ step e = U := by
+  simp [horizontalEdges]
+
+/-- Counting edges of a given step type counts that step in the path. -/
+private theorem card_step_eq (s : DyckStep) :
+    #{e : Edge d₁ d₂ | step e = s} = (maximalDyckPath d₁ d₂).count s :=
+  Fin.card_filter_univ_eq_vector_get_eq_count s
+    ⟨maximalDyckPath d₁ d₂, length_maximalDyckPath d₁ d₂⟩
+
+/-- The path has `d₂` vertical edges. -/
+@[simp]
+theorem card_verticalEdges : #(verticalEdges d₁ d₂) = d₂ := by
+  rw [verticalEdges, card_step_eq, count_D_maximalDyckPath]
+
+/-- The path has `d₁` horizontal edges. -/
+@[simp]
+theorem card_horizontalEdges : #(horizontalEdges d₁ d₂) = d₁ := by
+  rw [horizontalEdges, card_step_eq, count_U_maximalDyckPath]
+
+/-- Every edge is horizontal or vertical. -/
+theorem mem_horizontalEdges_or_mem_verticalEdges (e : Edge d₁ d₂) :
+    e ∈ horizontalEdges d₁ d₂ ∨ e ∈ verticalEdges d₁ d₂ := by
+  simpa using (step e).dichotomy
+
+/-- No edge is both horizontal and vertical. -/
+theorem disjoint_horizontalEdges_verticalEdges :
+    Disjoint (horizontalEdges d₁ d₂) (verticalEdges d₁ d₂) := by
+  rw [Finset.disjoint_left]
+  intro e hh hv
+  rw [mem_horizontalEdges] at hh
+  rw [mem_verticalEdges, hh] at hv
+  exact DyckStep.noConfusion hv
+
+/-- A horizontal edge is not vertical. -/
+theorem notMem_verticalEdges_of_mem {e : Edge d₁ d₂} (he : e ∈ horizontalEdges d₁ d₂) :
+    e ∉ verticalEdges d₁ d₂ :=
+  Finset.disjoint_left.mp disjoint_horizontalEdges_verticalEdges he
+
+/-- A vertical edge is not horizontal. -/
+theorem notMem_horizontalEdges_of_mem {e : Edge d₁ d₂} (he : e ∈ verticalEdges d₁ d₂) :
+    e ∉ horizontalEdges d₁ d₂ :=
+  Finset.disjoint_right.mp disjoint_horizontalEdges_verticalEdges he
+
+/-- The horizontal edges are the edges that are not vertical. -/
+theorem compl_verticalEdges : (verticalEdges d₁ d₂)ᶜ = horizontalEdges d₁ d₂ := by
+  ext e
+  rw [mem_compl]
+  rcases mem_horizontalEdges_or_mem_verticalEdges e with he | he
+  · exact iff_of_true (notMem_verticalEdges_of_mem he) he
+  · exact iff_of_false (not_not.mpr he) (notMem_horizontalEdges_of_mem he)
+
+/-- The vertical edges are the edges that are not horizontal. -/
+theorem compl_horizontalEdges : (horizontalEdges d₁ d₂)ᶜ = verticalEdges d₁ d₂ := by
+  rw [← compl_verticalEdges, compl_compl]
+
+end MaximalDyckPath
 
 end Mei

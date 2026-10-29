@@ -5,8 +5,7 @@ Authors: Claude
 -/
 module
 
-public import Mei.Combinatorics.Enumerative.DyckGrading
-public import Mei.Combinatorics.Enumerative.CyclicMatching
+public import Mei.Combinatorics.Enumerative.Dyck.Grading
 import Mathlib.Tactic.Abel
 
 /-!
@@ -29,32 +28,20 @@ namespace Mei.MaximalDyckPath
 
 variable {d₁ d₂ : ℕ}
 
-/-- The horizontal edges are the edges that are not vertical. -/
-theorem compl_verticalEdges : (verticalEdges d₁ d₂)ᶜ = horizontalEdges d₁ d₂ := by
-  ext e
-  rw [mem_compl]
-  rcases mem_horizontalEdges_or_mem_verticalEdges e with he | he
-  · exact iff_of_true (notMem_verticalEdges_of_mem he) he
-  · exact iff_of_false (not_not.mpr he) (notMem_horizontalEdges_of_mem he)
-
-/-- The vertical edges are the edges that are not horizontal. -/
-theorem compl_horizontalEdges : (horizontalEdges d₁ d₂)ᶜ = verticalEdges d₁ d₂ := by
-  rw [← compl_verticalEdges, compl_compl]
-
 variable (γ : Edge d₁ d₂ → ℕ)
 
 /-- Vertical balance is the vanishing of the weight with vertical sinks. -/
 theorem verticalBalanced_iff (h e : Edge d₁ d₂) :
     VerticalBalanced γ h e ↔
       ∑ k ∈ cyclicIcc h e, CyclicMatching.weight (verticalEdges d₁ d₂) γ k = 0 := by
-  rw [VerticalBalanced, sum_weight_eq, compl_verticalEdges, sub_eq_zero,
+  rw [verticalBalanced_iff_card_eq_sum, sum_weight_eq, compl_verticalEdges, sub_eq_zero,
     eq_comm, Nat.cast_inj]
 
 /-- The total horizontal shadow is the set of matched vertical sinks. -/
 theorem totalHorizontalShadow_eq :
     totalHorizontalShadow γ = {v ∈ verticalEdges d₁ d₂ | Matched (verticalEdges d₁ d₂) γ v} := by
   ext v
-  rw [mem_filter, mem_totalHorizontalShadow, Matched]
+  rw [mem_filter, mem_totalHorizontalShadow, matched_iff_forall]
   simp only [mem_horizontalShadow, verticalBalanced_iff, ← compl_verticalEdges, mem_compl]
   constructor
   · rintro ⟨h, hh, hv, hall⟩
@@ -100,9 +87,9 @@ private theorem horizontalBalanced_iff (e v : Edge d₁ d₂) :
   have hw (k : Edge d₁ d₂) :
       CyclicMatching.weight (reflectedHorizontalEdges d₁ d₂) (γ ∘ Neg.neg)
         ((Equiv.neg _).toEmbedding k) = CyclicMatching.weight (horizontalEdges d₁ d₂) γ k := by
-    simp only [weight_def, Equiv.toEmbedding_apply, Equiv.neg_apply,
+    simp only [CyclicMatching.weight_def, Equiv.toEmbedding_apply, Equiv.neg_apply,
       mem_reflectedHorizontalEdges, neg_neg, Function.comp_apply]
-  rw [himage, sum_map, HorizontalBalanced]
+  rw [himage, sum_map, horizontalBalanced_iff_card_eq_sum]
   simp only [hw]
   rw [sum_weight_eq, compl_horizontalEdges, sub_eq_zero, eq_comm, Nat.cast_inj]
 
@@ -115,7 +102,7 @@ private theorem totalVerticalShadow_eq :
   ext k
   have : NeZero (d₁ + d₂) := ⟨k.pos.ne'⟩
   rw [mem_totalVerticalShadow, mem_map_equiv, Equiv.neg_symm, Equiv.neg_apply, mem_filter,
-    mem_reflectedHorizontalEdges, neg_neg, Matched]
+    mem_reflectedHorizontalEdges, neg_neg, matched_iff_forall]
   constructor
   · rintro ⟨v, hv, hk⟩
     obtain ⟨hkH, hall⟩ := (mem_verticalShadow γ).mp hk
