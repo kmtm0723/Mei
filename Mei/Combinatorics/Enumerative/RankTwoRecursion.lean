@@ -24,7 +24,7 @@ When the constant coefficients of `P₁` and `P₂` are `1`, an `IsRankTwoSoluti
 `s = 0` terms of (R) are `C₊(p, q)` and `C₋(p, q)`, all other terms have smaller total degree,
 and (V) kills one of the two new values. Hence two families satisfying (R), (V) and the initial
 values coincide, by induction on `p + q`. The definitions and recursion work over any
-commutative semiring; uniqueness additionally requires additive cancellation.
+semiring; uniqueness additionally requires additive cancellation.
 
 The recursion, vanishing conditions and uniqueness are from Burcroff–Lee–Mou,
 *Positivity of generalized cluster scattering diagrams*, Corollary 5.29
@@ -37,7 +37,7 @@ open Finset Polynomial
 
 namespace Polynomial
 
-variable {S : Type*} [CommSemiring S]
+variable {S : Type*} [Semiring S]
 
 /-- `π_{r,s}(P)`: the coefficient of `z^s` in `P^r` for `r ≥ 0`; for `r < 0` it is `1` at
 `s = 0` and `0` otherwise. -/
@@ -58,15 +58,18 @@ theorem powCoeff_of_neg (P : S[X]) {r : ℤ} (hr : r < 0) (s : ℕ) :
 @[simp]
 theorem powCoeff_zero {P : S[X]} (hP : P.coeff 0 = 1) (r : ℤ) : powCoeff P r 0 = 1 := by
   rcases le_or_gt 0 r with hr | hr
-  · rw [powCoeff_of_nonneg P hr, coeff_zero_eq_eval_zero, eval_pow, ← coeff_zero_eq_eval_zero,
-      hP, one_pow]
+  · rw [powCoeff_of_nonneg P hr]
+    change Polynomial.constantCoeff (P ^ r.toNat) = 1
+    rw [map_pow]
+    change P.coeff 0 ^ r.toNat = 1
+    rw [hP, one_pow]
   · simp [powCoeff_of_neg P hr]
 
 end Polynomial
 
 namespace Mei.RankTwo
 
-variable {S : Type*} [CommSemiring S]
+variable {S : Type*} [Semiring S]
 variable (d₁ d₂ : ℕ) (P₁ P₂ : S[X])
 
 /-- The initial values, the recursion (R) and the vanishing conditions (V) for a pair of
