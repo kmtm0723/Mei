@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import Mei.Combinatorics.Enumerative.DyckShadow
+public import Mei.Combinatorics.Enumerative.Dyck.Shadow
 public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Algebra.Polynomial.Degree.Support
 
@@ -44,13 +44,14 @@ section Truncation
 theorem verticalBalanced_congr {γ γ' : Edge d₁ d₂ → ℕ}
     (hH : ∀ k ∈ horizontalEdges d₁ d₂, γ k = γ' k) (h e : Edge d₁ d₂) :
     VerticalBalanced γ h e ↔ VerticalBalanced γ' h e := by
-  rw [VerticalBalanced, VerticalBalanced, sum_congr rfl fun k hk ↦ hH k (mem_inter.mp hk).2]
+  rw [verticalBalanced_iff_card_eq_sum, verticalBalanced_iff_card_eq_sum,
+    sum_congr rfl fun k hk ↦ hH k (mem_inter.mp hk).2]
 
 /-- Horizontal balance on `ev` only depends on the vertical grades on `ev`. -/
 theorem horizontalBalanced_congr {γ γ' : Edge d₁ d₂ → ℕ} {e v : Edge d₁ d₂}
     (hV : ∀ k ∈ cyclicIcc e v ∩ verticalEdges d₁ d₂, γ k = γ' k) :
     HorizontalBalanced γ e v ↔ HorizontalBalanced γ' e v := by
-  rw [HorizontalBalanced, HorizontalBalanced, sum_congr rfl hV]
+  rw [horizontalBalanced_iff_card_eq_sum, horizontalBalanced_iff_card_eq_sum, sum_congr rfl hV]
 
 /-- Horizontal balance only depends on the vertical grades. -/
 theorem horizontalBalanced_congr' {γ γ' : Edge d₁ d₂ → ℕ}
@@ -62,7 +63,7 @@ theorem horizontalBalanced_congr' {γ γ' : Edge d₁ d₂ → ℕ}
 theorem verticalBalanced_congr' {γ γ' : Edge d₁ d₂ → ℕ} {h e : Edge d₁ d₂}
     (hH : ∀ k ∈ cyclicIcc h e ∩ horizontalEdges d₁ d₂, γ k = γ' k) :
     VerticalBalanced γ h e ↔ VerticalBalanced γ' h e := by
-  rw [VerticalBalanced, VerticalBalanced, sum_congr rfl hH]
+  rw [verticalBalanced_iff_card_eq_sum, verticalBalanced_iff_card_eq_sum, sum_congr rfl hH]
 
 /-- The local horizontal shadows only depend on the horizontal grades. -/
 theorem horizontalShadow_congr {γ γ' : Edge d₁ d₂ → ℕ}
@@ -95,6 +96,7 @@ horizontal grades that agree on the total horizontal shadow are compatible toget
 theorem compatible_congr_of_horizontal {γ γ' : Edge d₁ d₂ → ℕ}
     (hH : ∀ k ∈ horizontalEdges d₁ d₂, γ k = γ' k)
     (hV : ∀ k ∈ totalHorizontalShadow γ, γ k = γ' k) : Compatible γ ↔ Compatible γ' := by
+  rw [compatible_iff, compatible_iff]
   refine forall₂_congr fun h hh ↦ forall₂_congr fun v hv ↦ ?_
   simp only [verticalBalanced_congr hH]
   by_cases hA : ∃ e, (e - h).val < (v - h).val ∧ VerticalBalanced γ' h e
@@ -117,6 +119,7 @@ vertical grades that agree on the total vertical shadow are compatible together.
 theorem compatible_congr_of_vertical {γ γ' : Edge d₁ d₂ → ℕ}
     (hV : ∀ k ∈ verticalEdges d₁ d₂, γ k = γ' k)
     (hH : ∀ k ∈ totalVerticalShadow γ, γ k = γ' k) : Compatible γ ↔ Compatible γ' := by
+  rw [compatible_iff, compatible_iff]
   refine forall₂_congr fun h hh ↦ forall₂_congr fun v hv ↦ ?_
   simp only [horizontalBalanced_congr' hV]
   by_cases hB : ∃ e, (v - e).val < (v - h).val ∧ HorizontalBalanced γ' e v
@@ -174,14 +177,14 @@ private theorem prod_factorV (γ : Edge d₁ d₂ → ℕ) :
     ∏ k, factorV P₁ P₂ k (γ k) = C (weight P₁ P₂ γ) * X ^ verticalTotal γ := by
   simp only [factorV]
   rw [prod_ite, filter_step_eq_D, filter_step_ne_D, prod_mul_distrib, prod_pow_eq_pow_sum,
-    weight_eq_prod, map_mul, map_prod, map_prod, verticalTotal_eq]
+    weight_def, map_mul, map_prod, map_prod, verticalTotal_eq]
   ring
 
 private theorem prod_factorH (γ : Edge d₁ d₂ → ℕ) :
     ∏ k, factorH P₁ P₂ k (γ k) = C (weight P₁ P₂ γ) * X ^ horizontalTotal γ := by
   simp only [factorH]
   rw [prod_ite, filter_step_eq_D, filter_step_ne_D, prod_mul_distrib, prod_pow_eq_pow_sum,
-    weight_eq_prod, map_mul, map_prod, map_prod, horizontalTotal_eq]
+    weight_def, map_mul, map_prod, map_prod, horizontalTotal_eq]
   ring
 
 /-- Grading the edges of `O` freely and the others as `γ'` multiplies the generating function
