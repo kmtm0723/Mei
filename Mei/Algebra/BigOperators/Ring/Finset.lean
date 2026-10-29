@@ -6,7 +6,6 @@ Authors: Codex, Claude Code
 module
 
 public import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Tactic.Ring
 
 /-!
 # Factoring sums over finite families of functions
@@ -29,15 +28,13 @@ theorem sum_piFinset_factor {ι α R : Type*} [Fintype ι] [DecidableEq ι]
   classical
   rw [← prod_univ_sum]
   have h₁ : ∀ k, ∑ j ∈ (if k ∈ O then T else {g k}), f k j =
-      if k ∈ O then Q * f k (g k) else f k (g k) := by
+      (if k ∈ O then Q else 1) * f k (g k) := by
     intro k
     split_ifs with hk
-    · rw [hQ k hk, h₀ k hk, mul_one]
-    · rw [sum_singleton]
-  rw [prod_congr rfl fun k _ ↦ h₁ k, prod_ite, prod_mul_distrib, ← prod_mul_prod_compl
-    (univ.filter (· ∈ O)), compl_filter]
-  rw [prod_congr rfl fun k hk ↦ h₀ k (mem_filter.mp hk).2, prod_const_one, one_mul,
-    prod_const, filter_mem_eq_inter, univ_inter]
-  ring
+    · simp only [hQ k hk, h₀ k hk, mul_one]
+    · simp only [sum_singleton, one_mul]
+  rw [prod_congr rfl fun k _ ↦ h₁ k, prod_mul_distrib]
+  simp only [prod_ite, prod_const, filter_mem_eq_inter, univ_inter, one_pow, mul_one]
+  exact mul_comm _ _
 
 end Finset

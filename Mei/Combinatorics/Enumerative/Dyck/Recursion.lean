@@ -72,15 +72,17 @@ private theorem filter_step_ne_D :
 private theorem prod_factorV (γ : Edge d₁ d₂ → ℕ) :
     ∏ k, factorV P₁ P₂ k (γ k) = C (weight P₁ P₂ γ) * X ^ verticalTotal γ := by
   simp only [factorV]
-  rw [prod_ite, filter_step_eq_D, filter_step_ne_D, prod_mul_distrib, prod_pow_eq_pow_sum,
-    weight_def, map_mul, map_prod, map_prod, verticalTotal_eq]
+  rw [prod_ite]
+  simp only [filter_step_eq_D, filter_step_ne_D, prod_mul_distrib, prod_pow_eq_pow_sum,
+    weight_def, map_mul, map_prod, verticalTotal_eq]
   ring
 
 private theorem prod_factorH (γ : Edge d₁ d₂ → ℕ) :
     ∏ k, factorH P₁ P₂ k (γ k) = C (weight P₁ P₂ γ) * X ^ horizontalTotal γ := by
   simp only [factorH]
-  rw [prod_ite, filter_step_eq_D, filter_step_ne_D, prod_mul_distrib, prod_pow_eq_pow_sum,
-    weight_def, map_mul, map_prod, map_prod, horizontalTotal_eq]
+  rw [prod_ite]
+  simp only [filter_step_eq_D, filter_step_ne_D, prod_mul_distrib, prod_pow_eq_pow_sum,
+    weight_def, map_mul, map_prod, horizontalTotal_eq]
   ring
 
 /-- Zero the vertical grades outside the total horizontal shadow. -/
