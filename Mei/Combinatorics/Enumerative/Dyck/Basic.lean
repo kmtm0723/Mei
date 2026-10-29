@@ -130,13 +130,7 @@ theorem maximalDyckPath_zero_right (d₁ : ℕ) : maximalDyckPath d₁ 0 = List.
   · simp
   · rw [maximalDyckPath_of_ne_zero _ h]
     simp only [mul_zero, Nat.zero_div, Nat.sub_self, List.replicate_zero]
-    induction d₁ with
-    | zero => simp
-    | succ n ih =>
-      rcases eq_or_ne n 0 with rfl | hn
-      · simp
-      · rw [List.range_succ, List.flatMap_append, ih hn, List.replicate_succ']
-        simp
+    rw [← List.map_eq_flatMap, List.map_const', List.length_range]
 
 /-- The diagonal path alternates horizontal and vertical steps. -/
 theorem maximalDyckPath_self (a : ℕ) :
@@ -148,12 +142,7 @@ theorem maximalDyckPath_self (a : ℕ) :
       rw [Nat.mul_div_cancel _ (Nat.pos_of_ne_zero h), Nat.mul_div_cancel _ (Nat.pos_of_ne_zero h)]
       omega
     simp only [hblock, List.replicate_one]
-    clear hblock h
-    induction a with
-    | zero => simp
-    | succ n ih =>
-      rw [List.range_succ, List.flatMap_append, ih, List.replicate_succ', List.flatten_append]
-      simp
+    rw [List.flatMap, List.map_const', List.length_range]
 
 /-- **The path stays near the diagonal.** With `x` horizontal and `y` vertical steps in a prefix,
 `d₁ y ≤ d₂ x < d₁ y + d₁ + d₂`: the prefix lies weakly below the diagonal, at lattice distance
@@ -243,6 +232,7 @@ theorem notMem_horizontalEdges_of_mem {e : Edge d₁ d₂} (he : e ∈ verticalE
   Finset.disjoint_right.mp disjoint_horizontalEdges_verticalEdges he
 
 /-- The horizontal edges are the edges that are not vertical. -/
+@[simp]
 theorem compl_verticalEdges : (verticalEdges d₁ d₂)ᶜ = horizontalEdges d₁ d₂ := by
   ext e
   rw [mem_compl]
@@ -251,6 +241,7 @@ theorem compl_verticalEdges : (verticalEdges d₁ d₂)ᶜ = horizontalEdges d�
   · exact iff_of_false (not_not.mpr he) (notMem_horizontalEdges_of_mem he)
 
 /-- The vertical edges are the edges that are not horizontal. -/
+@[simp]
 theorem compl_horizontalEdges : (horizontalEdges d₁ d₂)ᶜ = verticalEdges d₁ d₂ := by
   rw [← compl_verticalEdges, compl_compl]
 
