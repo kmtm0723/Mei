@@ -72,11 +72,13 @@ theorem verticalTotal_eq : verticalTotal γ = ∑ v ∈ verticalEdges d₁ d₂,
 theorem horizontalTotal_eq : horizontalTotal γ = ∑ h ∈ horizontalEdges d₁ d₂, γ h := (rfl)
 
 /-- With no horizontal edges, every grading has zero horizontal total. -/
+@[simp]
 theorem horizontalTotal_zero_left (γ : Edge 0 d₂ → ℕ) : horizontalTotal γ = 0 := by
   have hH : horizontalEdges 0 d₂ = ∅ := by rw [← card_eq_zero, card_horizontalEdges]
   rw [horizontalTotal_eq, hH, sum_empty]
 
 /-- With no vertical edges, every grading has zero vertical total. -/
+@[simp]
 theorem verticalTotal_zero_right (γ : Edge d₁ 0 → ℕ) : verticalTotal γ = 0 := by
   have hV : verticalEdges d₁ 0 = ∅ := by rw [← card_eq_zero, card_verticalEdges]
   rw [verticalTotal_eq, hV, sum_empty]
