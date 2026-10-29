@@ -58,11 +58,8 @@ theorem powCoeff_of_neg (P : S[X]) {r : ℤ} (hr : r < 0) (s : ℕ) :
 @[simp]
 theorem powCoeff_zero {P : S[X]} (hP : P.coeff 0 = 1) (r : ℤ) : powCoeff P r 0 = 1 := by
   rcases le_or_gt 0 r with hr | hr
-  · rw [powCoeff_of_nonneg P hr]
-    change Polynomial.constantCoeff (P ^ r.toNat) = 1
-    rw [map_pow]
-    change P.coeff 0 ^ r.toNat = 1
-    rw [hP, one_pow]
+  · rw [powCoeff_of_nonneg P hr, ← constantCoeff_apply, map_pow, constantCoeff_apply,
+      hP, one_pow]
   · simp [powCoeff_of_neg P hr]
 
 end Polynomial
