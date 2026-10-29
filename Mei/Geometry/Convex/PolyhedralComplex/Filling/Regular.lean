@@ -39,21 +39,6 @@ variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ 
   {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
   (C : FinitePolyhedralComplex h) (ν : C.walls → V →ₗ[ℝ] ℝ)
 
-private theorem sampling_of_endpoints {n : ℕ}
-    {x y : WallComplement (fun P : C.walls => (P : Set V))}
-    (e : x ⟶ y) (v : Fin (n + 1) → WallComplement (fun P : C.walls => (P : Set V)))
-    (t : Fin (n + 1) → unitInterval) (ht0 : t 0 = 0) (ht1 : t (Fin.last n) = 1)
-    (hmono : Monotone t)
-    (hv : ∀ j, (v j).val = AffineMap.lineMap x.val y.val (t j : ℝ))
-    (edge : ∀ a : Fin n, v a.castSucc ⟶ v a.succ) :
-    C.segmentCrossingWord ν e =
-      (List.ofFn (fun a : Fin n => C.segmentCrossingWord ν (edge a))).reverse.prod := by
-  have hx : v 0 = x := by ext; simpa [ht0] using hv 0
-  have hy : v (Fin.last n) = y := by ext; simpa [ht1] using hv (Fin.last n)
-  subst x
-  subst y
-  exact C.segmentCrossingWord_eq_prod_sampling ν v e t hmono hv edge
-
 /-- A square filled in the complement of singular support has trivial boundary
 word. Its sides are the given affine segments; neither the square nor its sides
 need be embedded or nondegenerate. No consistency or label relations are assumed. -/
@@ -105,7 +90,7 @@ theorem crossingWord_boundary_eq_one_of_regular_filling
   have hrow (b : Fin 2) : C.segmentCrossingWord ν (e₁ b) =
       (List.ofFn (fun a : Fin n => C.segmentCrossingWord ν
         (e a (if b = 0 then 0 else Fin.last n)))).reverse.prod := by
-    apply C.sampling_of_endpoints ν (e₁ b)
+    apply C.segmentCrossingWord_eq_prod_sampling_of_endpoints ν (e₁ b)
       (fun a => v (a, if b = 0 then 0 else Fin.last n)) (fun a => t a.val)
       ht0 ht1 (fun _ _ hab => htmono hab)
     intro a
@@ -116,7 +101,7 @@ theorem crossingWord_boundary_eq_one_of_regular_filling
   have hcol (a : Fin 2) : C.segmentCrossingWord ν (e₂ a) =
       (List.ofFn (fun b : Fin n => C.segmentCrossingWord ν
         (g (if a = 0 then 0 else Fin.last n) b))).reverse.prod := by
-    apply C.sampling_of_endpoints ν (e₂ a)
+    apply C.segmentCrossingWord_eq_prod_sampling_of_endpoints ν (e₂ a)
       (fun b => v (if a = 0 then 0 else Fin.last n, b)) (fun b => t b.val)
       ht0 ht1 (fun _ _ hab => htmono hab)
     intro b
