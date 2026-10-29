@@ -614,7 +614,7 @@ private theorem weight_compl (σ : Fin n → ℕ) (k : Fin n) :
 omit [NeZero n] in
 private theorem weight_compl_of_mem (σ : Fin n → ℕ) {k : Fin n} (hk : k ∈ B) :
     weight Bᶜ σ k = σ k := by
-  simp [weight_compl, hk]
+  simp [hk]
 
 /-- From a segment `[s, e]` on which the first walk stays strictly above its start and the
 second walk does not decrease, starting at a non-sink, produce a mutually visible pair: the
