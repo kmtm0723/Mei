@@ -29,7 +29,7 @@ open Finset Polynomial Mei.RankTwo
 
 namespace Polynomial
 
-variable {S : Type*} [CommSemiring S]
+variable {S : Type*} [Semiring S]
 
 /-- `π_{d - q, s}(P)` is the coefficient of `z^s` in `P ^ (d - min d q)`: for `q > d` both are
 `1` at `s = 0` and `0` otherwise. -/
