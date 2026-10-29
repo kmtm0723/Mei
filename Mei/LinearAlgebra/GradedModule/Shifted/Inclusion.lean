@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.LinearAlgebra.GradedModule.Shifted.Component
-public import Mei.LinearAlgebra.ModuleFiltration.Map
+public import Mei.Algebra.PositiveDegrees.Naturality
 
 /-!
 # Inclusions between shifted coefficient supports
@@ -44,13 +44,6 @@ def shiftedSupportInclusion (hpq : p - q ∈ P) :
 theorem coe_shiftedSupportInclusion (hpq : p - q ∈ P) (x : shiftedSubmodule ℳ P p) :
     (shiftedSupportInclusion ℳ P p q hpq x : M) = x := (rfl)
 
-/-- The support inclusion is injective. -/
-theorem shiftedSupportInclusion_injective (hpq : p - q ∈ P) :
-    Function.Injective (shiftedSupportInclusion ℳ P p q hpq) := by
-  intro x y h
-  apply Subtype.ext
-  simpa only [coe_shiftedSupportInclusion] using
-    congrArg (fun z : shiftedSubmodule ℳ P q => (z : M)) h
 
 end Mei
 
@@ -112,28 +105,32 @@ theorem shiftedCompletedInclusion_of (x : shiftedSubmodule ℳ d.monoid p) :
       (d.shiftedFiltration ℳ q).of (shiftedSupportInclusion ℳ d.monoid p q hpq x) :=
   ModuleFiltration.completionMap_of _ _ _ _ _ _ x
 
-/-- Every component retained by both finite quotients is unchanged by inclusion. -/
-theorem shiftedQuotientComponent_inclusion (u : Γ) (k : ℕ)
-    (hp : d.degree (u - p) ≤ k) (hq : d.degree (u - q) ≤ k)
-    (x : (d.shiftedFiltration ℳ p).quotient k) :
-    d.shiftedQuotientComponent ℳ q u k hq (d.shiftedQuotientInclusion ℳ p q hpq k x) =
-      d.shiftedQuotientComponent ℳ p u k hp x := by
-  obtain ⟨a, rfl⟩ := ((d.shiftedFiltration ℳ p).submodule (k + 1)).mkQ_surjective x
-  simp
-
 /-- Origin inclusion preserves every ambient homogeneous component. -/
 @[simp]
 theorem shiftedHomogeneousComponent_inclusion (u : Γ) (x : d.ShiftedCoefficients ℳ p) :
     d.shiftedHomogeneousComponent ℳ q u (d.shiftedCompletedInclusion ℳ p q hpq x) =
       d.shiftedHomogeneousComponent ℳ p u x := by
-  let k := max (d.degree (u - p)).toNat (d.degree (u - q)).toNat
-  have hp : d.degree (u - p) ≤ k :=
-    (Int.self_le_toNat _).trans (Int.ofNat_le.mpr (le_max_left _ _))
-  have hq : d.degree (u - q) ≤ k :=
-    (Int.self_le_toNat _).trans (Int.ofNat_le.mpr (le_max_right _ _))
-  rw [d.shiftedHomogeneousComponent_eq ℳ q u k hq,
-    d.shiftedHomogeneousComponent_eq ℳ p u k hp, projection_shiftedCompletedInclusion,
-    d.shiftedQuotientComponent_inclusion ℳ p q hpq u k hp hq]
+  have hhom (n : Γ) (a : shiftedSubmodule ℳ d.monoid p)
+      (ha : a ∈ shiftedGrading ℳ d.monoid p n) :
+      shiftedSupportInclusion ℳ d.monoid p q hpq a ∈
+        shiftedGrading ℳ d.monoid q (p + n - q) := by
+    apply (mem_shiftedGrading ℳ d.monoid q).mpr
+    rw [coe_shiftedSupportInclusion]
+    simpa only [show q + (p + n - q) = p + n by abel] using
+      (mem_shiftedGrading ℳ d.monoid p).mp ha
+  have h := d.completionComponent_completionMap_of_injective d
+    (shiftedGrading ℳ d.monoid p) (shiftedGrading ℳ d.monoid q)
+    (d.shiftedFiltration ℳ p) (d.shiftedFiltration ℳ q)
+    (d.shiftedFiltration_succ ℳ p) (d.shiftedFiltration_succ ℳ q)
+    (shiftedSupportInclusion ℳ d.monoid p q hpq) (fun n => p + n - q) hhom
+    id monotone_id (fun k => d.shiftedSupportInclusion_filtered ℳ p q hpq (k + 1))
+    (by intro a b h; simpa using congrArg (fun n : Γ => n + q) h) (u - p) x
+  apply Subtype.ext
+  have h' := congrArg (fun a : shiftedSubmodule ℳ d.monoid q => (a : M)) h
+  rw [coe_shiftedSupportInclusion, coe_completionComponent_shiftedGrading,
+    coe_completionComponent_shiftedGrading] at h'
+  rw [show p + (u - p) = u by abel, show q + (u - q) = u by abel] at h'
+  exact h'
 
 /-- The completed support inclusion is injective, as it preserves all components. -/
 theorem shiftedCompletedInclusion_injective :
