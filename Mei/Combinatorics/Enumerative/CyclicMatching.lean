@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Fin.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Algebra.Order.SuccPred.PartialSups
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
@@ -36,16 +37,9 @@ public section
 
 open Finset
 
-namespace Mei.CyclicMatching
+namespace Fin
 
 variable {n : ℕ}
-
-/-- The cyclic interval from `e` to `e'`, both included. -/
-def cyclicIcc (e e' : Fin n) : Finset (Fin n) := {k | (k - e).val ≤ (e' - e).val}
-
-@[simp]
-theorem mem_cyclicIcc {e e' k : Fin n} : k ∈ cyclicIcc e e' ↔ (k - e).val ≤ (e' - e).val := by
-  simp [cyclicIcc]
 
 /-- The offset of `k` from `e` vanishes exactly at `e`. -/
 theorem val_sub_eq_zero_iff {k e : Fin n} : (k - e).val = 0 ↔ k = e := by
@@ -58,12 +52,6 @@ theorem val_sub_eq_zero_iff {k e : Fin n} : (k - e).val = 0 ↔ k = e := by
 theorem val_sub_self (e : Fin n) : (e - e).val = 0 :=
   val_sub_eq_zero_iff.mpr rfl
 
-/-- The one-point cyclic interval. -/
-@[simp]
-theorem cyclicIcc_self (e : Fin n) : cyclicIcc e e = {e} := by
-  ext k
-  rw [mem_cyclicIcc, val_sub_self, Nat.le_zero, val_sub_eq_zero_iff, mem_singleton]
-
 /-- A position lies in the cyclic interval `[a, c]` exactly when its distance to `c` is at most
 the length of the interval. -/
 theorem val_sub_le_val_sub_iff (a b c : Fin n) :
@@ -72,6 +60,27 @@ theorem val_sub_le_val_sub_iff (a b c : Fin n) :
   have hcb : c - b = (c - a) - (b - a) := by abel
   rw [hcb]
   exact Fin.sub_le_iff
+
+end Fin
+
+namespace Mei.CyclicMatching
+
+open Fin (val_sub_eq_zero_iff val_sub_self val_sub_le_val_sub_iff)
+
+variable {n : ℕ}
+
+/-- The cyclic interval from `e` to `e'`, both included. -/
+def cyclicIcc (e e' : Fin n) : Finset (Fin n) := {k | (k - e).val ≤ (e' - e).val}
+
+@[simp]
+theorem mem_cyclicIcc {e e' k : Fin n} : k ∈ cyclicIcc e e' ↔ (k - e).val ≤ (e' - e).val := by
+  simp [cyclicIcc]
+
+/-- The one-point cyclic interval. -/
+@[simp]
+theorem cyclicIcc_self (e : Fin n) : cyclicIcc e e = {e} := by
+  ext k
+  rw [mem_cyclicIcc, val_sub_self, Nat.le_zero, val_sub_eq_zero_iff, mem_singleton]
 
 /-- Negation reverses cyclic intervals. -/
 theorem neg_mem_cyclicIcc {e v x : Fin n} : -x ∈ cyclicIcc e v ↔ x ∈ cyclicIcc (-v) (-e) := by
@@ -331,20 +340,18 @@ private theorem matched_iff {v : Fin n} (hv : v ∈ B) :
       linarith
 
 /-- The running minimum of the walk up to time `k`. -/
-private def runMin (k : ℕ) : ℤ := ((range (k + 1)).image (walk B τ)).min' (by simp)
+private def runMin (k : ℕ) : ℤ := partialSups (α := ℤᵒᵈ) (walk B τ) k
 
 private theorem runMin_le {a k : ℕ} (h : a ≤ k) : runMin B τ k ≤ walk B τ a :=
-  min'_le _ _ (mem_image_of_mem _ (mem_range.mpr (Nat.lt_succ_of_le h)))
+  le_partialSups_of_le (α := ℤᵒᵈ) (walk B τ) h
 
 private theorem exists_runMin (k : ℕ) : ∃ a ≤ k, walk B τ a = runMin B τ k := by
-  obtain ⟨a, ha, he⟩ := mem_image.mp (min'_mem ((range (k + 1)).image (walk B τ)) (by simp))
-  exact ⟨a, Nat.lt_succ_iff.mp (mem_range.mp ha), he⟩
+  obtain ⟨a, ha, he⟩ := exists_partialSups_eq (α := ℤᵒᵈ) (walk B τ) k
+  exact ⟨a, ha, he.symm⟩
 
 private theorem runMin_succ (k : ℕ) :
-    runMin B τ (k + 1) = min (runMin B τ k) (walk B τ (k + 1)) := by
-  simp only [runMin, range_add_one (n := k + 1), image_insert]
-  rw [min'_insert _ _ (by simp)]
-  exact min_comm _ _
+    runMin B τ (k + 1) = min (runMin B τ k) (walk B τ (k + 1)) :=
+  partialSups_add_one (α := ℤᵒᵈ) (walk B τ) k
 
 /-- The running minimum drops by at most one per step. -/
 private theorem runMin_succ_ge (k : ℕ) : runMin B τ k - 1 ≤ runMin B τ (k + 1) := by
