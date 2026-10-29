@@ -40,7 +40,7 @@ theorem sum_fiber_trunc {S : Type*} [CommSemiring S] {ι : Type*} [Fintype ι] [
 
 /-- Summing the fibres of a projection that preserves a predicate and an auxiliary total
 recovers the full generating function from its fixed points. -/
-theorem sum_gen_of_truncation {S : Type*} [CommSemiring S] {ι : Type*} [DecidableEq ι]
+theorem sum_gen_of_truncation {S : Type*} [Semiring S] {ι : Type*} [DecidableEq ι]
     (G : Finset ι) (trunc : ι → ι) (C A : ι → Prop) [DecidablePred C] [DecidablePred A]
     (m : ι → ℕ) (f : ι → S[X]) (Q : S[X]) (r : ℕ → ℕ)
     (hC : ∀ γ, C (trunc γ) ↔ C γ) (hm : ∀ γ, m (trunc γ) = m γ)
