@@ -7,6 +7,7 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Cylinder.Basic
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Consistency
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Uniqueness
 public import Mei.Geometry.Convex.Polyhedron.Path.Cylinder
 import Mei.Geometry.Convex.Polyhedron.Path.AffineTransport
 
@@ -16,10 +17,14 @@ import Mei.Geometry.Convex.Polyhedron.Path.AffineTransport
 Projection of an admissible path through cylinder walls preserves every signed
 crossing, including simultaneous crossings of repeated walls. Consequently its
 finite-order path product is that of its spatial projection. Cylinder lifting
-preserves consistency and finite and completed endpoint transport.
+preserves consistency and finite and completed endpoint transport. Lifting paths
+at a fixed extra coordinate proves the converse consistency implication, so a
+diagram is consistent exactly when its cylinder is, and cylinder lifting carries
+outgoing completions to outgoing completions.
 
 This connects `DirectedDiagram.cylinder` with
-`Quiver.Path.wallPathProduct_cylinderProjection`. Principal cylinders and their
+`Quiver.Path.wallPathProduct_cylinderProjection` and its fixed-coordinate section
+`WallComplement.cylinderLift`. Principal cylinders and their
 path products occur in Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster
 algebras*, §1 and Appendix B, arXiv:1411.1394v2.
 -/
@@ -113,6 +118,51 @@ theorem levelPathProduct_cylinder (k : ℕ)
       q, e, r, W, ν, label]
     rfl
 
+/-- Lift a finite-order base path while keeping the extra coordinate fixed. -/
+def levelCylinderLift (k : ℕ) (e : E) :
+    WallComplement (fun a : D.active k => (D.wall a).support) ⥤q
+      WallComplement (fun a : (D.cylinder h').active k =>
+        ((D.cylinder h').wall a).support) :=
+  WallComplement.cylinderLift (fun a : D.active k => (D.wall a).support) e ⋙q
+    (ContinuousAffineEquiv.refl ℝ (V × E)).wallComplementMap
+      (Set.equivOfEq (D.cylinder_active h' k)).symm
+      (by intro a; simp)
+
+/-- The fixed-coordinate lift places a base point at the chosen extra coordinate. -/
+@[simp]
+theorem levelCylinderLift_obj_val (k : ℕ) (e : E)
+    (x : WallComplement (fun a : D.active k => (D.wall a).support)) :
+    ((D.levelCylinderLift h' k e).obj x).val = (x.val, e) := by
+  simp [levelCylinderLift]
+
+/-- The fixed-coordinate lift commutes with reversal. -/
+instance (k : ℕ) (e : E) : (D.levelCylinderLift h' k e).MapReverse where
+  map_reverse' _ := PLift.ext (Subsingleton.elim _ _)
+
+/-- Lifting then projecting recovers the base path prefunctor. -/
+@[simp]
+theorem levelCylinderLift_comp_projection (k : ℕ) (e : E) :
+    D.levelCylinderLift h' k e ⋙q D.levelCylinderProjection h' k = Prefunctor.id _ := by
+  refine Prefunctor.ext (fun x => WallComplement.ext ?_) ?_
+  · simp
+  · intros
+    exact PLift.ext (Subsingleton.elim _ _)
+
+/-- A fixed-coordinate lift has exactly the original finite-order product. -/
+theorem levelPathProduct_levelCylinderLift (k : ℕ) (e : E)
+    {x y : WallComplement (fun a : D.active k => (D.wall a).support)}
+    (p : AdmissiblePLPath x y) :
+    (D.cylinder h').levelPathProduct k ((D.levelCylinderLift h' k e).mapPath p) =
+      D.levelPathProduct k p := by
+  rw [levelPathProduct_cylinder]
+  have he := congrArg
+    (fun F : WallComplement (fun a : D.active k => (D.wall a).support) ⥤q
+        WallComplement (fun a : D.active k => (D.wall a).support) =>
+      D.levelPathProduct k (F.mapPath p)) (D.levelCylinderLift_comp_projection h' k e)
+  simp only [Prefunctor.mapPath_comp_apply, Prefunctor.mapPath_id] at he
+  -- The endpoints of the composite prefunctor are its successive object maps.
+  convert he using 1 <;> rfl
+
 variable {D}
 
 /-- Finite-order consistency is preserved by adjoining unrestricted coordinates. -/
@@ -132,6 +182,24 @@ theorem Consistent.cylinder (hD : D.Consistent)
   exact ((D.consistent_iff.mp hD) k).cylinder h'
 
 variable (D)
+
+/-- A cylinder is consistent at a cutoff exactly when its base is. -/
+@[simp]
+theorem cylinder_levelConsistent_iff (k : ℕ) :
+    (D.cylinder h').LevelConsistent k ↔ D.LevelConsistent k := by
+  constructor
+  · intro hc
+    rw [levelConsistent_def] at hc ⊢
+    intro x y p q
+    have he := hc ((D.levelCylinderLift h' k (0 : E)).mapPath p)
+      ((D.levelCylinderLift h' k (0 : E)).mapPath q)
+    simpa only [levelPathProduct_levelCylinderLift] using he
+  · exact fun hc => hc.cylinder h'
+
+/-- Cylinder lifting preserves and reflects all-order consistency. -/
+@[simp]
+theorem cylinder_consistent_iff : (D.cylinder h').Consistent ↔ D.Consistent := by
+  simp only [consistent_iff, cylinder_levelConsistent_iff]
 
 /-- Finite endpoint transport in the cylinder depends only on projected endpoints. -/
 theorem levelTransport_cylinder {k : ℕ} (hD : D.LevelConsistent k)
@@ -201,5 +269,17 @@ theorem transport_cylinder (hD : D.Consistent) (x y : (D.cylinder h').Point) :
   obtain ⟨p⟩ := (D.cylinder h').exists_path x y
   rw [(D.cylinder h').transport_eq_pathProduct _ p,
     pathProduct_cylinder, D.transport_eq_pathProduct hD]
+
+omit D in
+/-- The cylinder over an outgoing completion is an outgoing completion of the
+cylinder input, retaining every indexed initial wall. -/
+theorem IsOutgoingCompletion.cylinder {ι₀ κ : Type*}
+    {D₀ : ι₀ → DirectedWall (d := d) h (H.project (AddMonoidHom.fst Λ K))}
+    {C : DirectedDiagram (d := d) h (H.project (AddMonoidHom.fst Λ K)) (ι₀ ⊕ κ)}
+    (hC : IsOutgoingCompletion D₀ C) :
+    IsOutgoingCompletion (fun a => (D₀ a).cylinder h') (C.cylinder h') where
+  wall_inl a := by rw [cylinder_wall, hC.wall_inl]
+  outgoing_inr a := by simpa using hC.outgoing_inr a
+  consistent := hC.consistent.cylinder h'
 
 end Mei.DirectedDiagram
