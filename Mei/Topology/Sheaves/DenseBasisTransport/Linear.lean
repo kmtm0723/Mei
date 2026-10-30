@@ -61,8 +61,6 @@ private def coefficientFunctions (U : Opens X) :
     intro V hV hVU x y hx hy
     exact IsAdditive.map_zero (T := T) V hV x y hx hy)
   add_mem' {a b} ha hb := by
-    change T.prelocal.sheafify.pred
-      (fun x hx => a ⟨⟨x.val, hx⟩, x.property⟩ + b ⟨⟨x.val, hx⟩, x.property⟩)
     exact T.prelocal.sheafify_inductionOn₂' T.prelocal T.prelocal
       (fun f g hx => f hx + g hx) (by
         intro U V a b ha hb
@@ -124,14 +122,14 @@ theorem value_sum {ι : Type*} {U : Opens X} (s : Finset ι)
 variable (R : Type r) [Semiring R] [Module R M]
 
 /-- Chart transports commute with coefficient scalars. -/
-class IsLinear : Prop where
+class PreservesSMul : Prop where
   /-- Transport preserves scalar multiplication. -/
   map_smul : ∀ U hU x y hx hy (a : R) b,
     T.transport U hU x y hx hy (a • b) = a • T.transport U hU x y hx hy b
 
-attribute [simp] IsLinear.map_smul
+attribute [simp] PreservesSMul.map_smul
 
-variable [T.IsLinear R]
+variable [T.PreservesSMul R]
 
 omit [T.IsAdditive] in
 private theorem smul_locallyParallel (a : R) {U : Opens X}
@@ -142,7 +140,7 @@ private theorem smul_locallyParallel (a : R) {U : Opens X}
       intro V f hf
       rw [prelocal_pred_iff] at hf ⊢
       intro W hW hWV x y hx hy
-      rw [IsLinear.map_smul]
+      rw [PreservesSMul.map_smul]
       exact congrArg (a • ·) (hf W hW hWV x y hx hy)) (T.locallyParallel_value s)
 
 instance instSMulSections (U : Opens X) : SMul R (T.sheaf.presheaf.obj (op U)) where
