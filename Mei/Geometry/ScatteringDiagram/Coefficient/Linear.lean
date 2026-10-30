@@ -47,7 +47,7 @@ instance instAddCommMonoidCoefficientSections (U : Opens C.regularSpace) :
 
 variable (R : Type*) [Semiring R] [Module R M] [SMulCommClass H R M]
 
-instance coefficientTransport_isLinear : (D.coefficientTransport M).IsLinear R where
+instance coefficientTransport_preservesSMul : (D.coefficientTransport M).PreservesSMul R where
   map_smul U hU x y hx hy a b := by
     have hUC : U ∈ C.coefficientCharts := by simpa only [coefficientTransport_basis] using hU
     rw [D.coefficientTransport_transport M U hUC x y hx hy]
