@@ -64,6 +64,12 @@ def logComponent (g : d.completedBCHGroup ℒ) (n : N) : ℒ n :=
   d.completionComponent ℒ F (fun k => d.degreeIdeal_toSubmodule ℒ k) n
     ((d.completedBCHExp ℒ).symm g)
 
+/-- Read a logarithmic coefficient from the completed exponential coordinate. -/
+theorem logComponent_def (g : d.completedBCHGroup ℒ) (n : N) :
+    d.logComponent ℒ g n =
+      d.completionComponent ℒ F (fun k => d.degreeIdeal_toSubmodule ℒ k) n
+        ((d.completedBCHExp ℒ).symm g) := (rfl)
+
 /-- The homogeneous factor of degree `n`: the completed exponential of the degree-`n`
 logarithmic coefficient. -/
 def homogeneousFactor (g : d.completedBCHGroup ℒ) (n : N) : d.completedBCHGroup ℒ :=
@@ -451,7 +457,7 @@ theorem logComponent_completedMap_eq_sum (f : GradedLieHom T ℒ ℳ)
     (e.logComponent ℳ (f.completedMap g) m : L') =
       ∑ n ∈ (d.finite_cutoff (T.modulus k)).toFinset with T n = m,
         f (d.logComponent ℒ g n : L) := by
-  simp only [PositiveDegrees.logComponent, f.completedBCHExp_symm_completedMap]
+  simp only [PositiveDegrees.logComponent_def, f.completedBCHExp_symm_completedMap]
   exact d.completionComponent_completionMap_eq_sum e ℒ ℳ F G
     (fun k => d.degreeIdeal_toSubmodule ℒ k) (fun k => e.degreeIdeal_toSubmodule ℳ k)
     f.toLieHom.toLinearMap T (fun _ _ hx => f.map_mem hx) T.modulus T.monotone_modulus
@@ -464,7 +470,7 @@ theorem logComponent_completedMap_of_injective (f : GradedLieHom T ℒ ℳ)
     (hT : Function.Injective T) (g : d.completedBCHGroup ℒ) (n : N) :
     (e.logComponent ℳ (f.completedMap g) (T n) : L') =
       f (d.logComponent ℒ g n : L) := by
-  simp only [PositiveDegrees.logComponent, f.completedBCHExp_symm_completedMap]
+  simp only [PositiveDegrees.logComponent_def, f.completedBCHExp_symm_completedMap]
   exact d.completionComponent_completionMap_of_injective e ℒ ℳ F G
     (fun k => d.degreeIdeal_toSubmodule ℒ k) (fun k => e.degreeIdeal_toSubmodule ℳ k)
     f.toLieHom.toLinearMap T (fun _ _ hx => f.map_mem hx) T.modulus T.monotone_modulus

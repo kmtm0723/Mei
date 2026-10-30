@@ -166,18 +166,16 @@ theorem completedBCHExp_symm_completedMap (f : GradedLieHom T ℒ ℳ)
         (fun k _ hx => f.map_mem_degreeIdeal k hx) ((d.completedBCHExp ℒ).symm g) := by
   apply (G).completion_ext
   intro k
+  rw [ModuleFiltration.projection_completionMap]
   rw [← LieIdeal.completionProjection_apply,
-    PositiveDegrees.completionProjection_completedBCHExp_symm,
-    projection_completedMap]
+    e.completionProjection_completedBCHExp_symm ℳ, projection_completedMap]
   refine ((f.truncatedMap k le_rfl).log_bchGroupMap
     (CompletedGroup.projection (T.modulus k) g)).trans ?_
-  rw [(F).projection_completionMap,
-    ← LieIdeal.completionProjection_apply,
-    PositiveDegrees.completionProjection_completedBCHExp_symm]
-  obtain ⟨x, hx⟩ := (d.degreeIdeal ℒ (T.modulus k)).surjective_mkQ
-    (BCHGroup.log (L := d.truncatedLie ℒ (T.modulus k))
-      (CompletedGroup.projection (T.modulus k) g))
-  rw [← hx, LieIdeal.mkQ_apply, f.truncatedMap_mk, Submodule.mapQ_apply]
-  rfl
+  rw [← d.completionProjection_completedBCHExp_symm ℒ,
+    LieIdeal.completionProjection_apply]
+  rw [truncatedMap_def]
+  exact LinearMap.congr_fun
+    ((d.degreeIdeal ℒ (T.modulus k)).toLinearMap_mapQ (e.degreeIdeal ℳ k)
+      f.toLieHom (fun _ hx => f.map_mem_degreeIdeal k hx)) _
 
 end Mei.GradedLieHom
