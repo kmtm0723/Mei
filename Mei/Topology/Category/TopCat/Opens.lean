@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Category.TopCat.Opens
 
 /-!
-# Images of opens under identity and composite open embeddings
+# Images of opens under identity and composite open maps
 
 The image-open functor identifies the identity image with the original open,
 and the image under a composite with successive images. These equalities supply
@@ -22,20 +22,20 @@ open CategoryTheory TopologicalSpace TopCat
 
 universe u
 
-namespace Topology.IsOpenEmbedding
+namespace IsOpenMap
 
-/-- The image of an open under the identity open embedding is the original open. -/
+/-- The image of an open under the identity open map is the original open. -/
 @[simp]
 theorem functor_obj_id {X : TopCat.{u}} (U : Opens X) :
-    (functor (f := 𝟙 X) IsOpenEmbedding.id).obj U = U :=
+    (functor (f := 𝟙 X) IsOpenMap.id).obj U = U :=
   Opens.ext (Set.image_id _)
 
 /-- Taking the image of an open under a composite is taking successive images. -/
 @[simp]
 theorem functor_obj_comp {X Y Z : TopCat.{u}} {j : X ⟶ Y} {k : Y ⟶ Z}
-    (hj : IsOpenEmbedding j) (hk : IsOpenEmbedding k) (U : Opens X) :
+    (hj : IsOpenMap j) (hk : IsOpenMap k) (U : Opens X) :
     (functor (f := j ≫ k) (hk.comp hj)).obj U = hk.functor.obj (hj.functor.obj U) := by
   apply Opens.ext
   exact (Set.image_image k j (U : Set X)).symm
 
-end Topology.IsOpenEmbedding
+end IsOpenMap
