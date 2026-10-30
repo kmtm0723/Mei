@@ -82,10 +82,10 @@ def id (T : DenseBasisTransport S M) (R : Type r) [Semiring R] [Module R M] :
   mapPoint_val _ := rfl
   mapCoefficients := LinearMap.id
   map_basis B hB := by
-    rw [IsOpenEmbedding.functor_obj_id]
+    rw [IsOpenMap.functor_obj_id]
     exact hB
   map_transport B hB x y hx hy m := by
-    simp only [LinearMap.id_apply, IsOpenEmbedding.functor_obj_id, _root_.id_eq]
+    simp only [LinearMap.id_apply, IsOpenMap.functor_obj_id, _root_.id_eq]
 
 /-- Identity transport fixes each coefficient point. -/
 @[simp]
@@ -106,12 +106,12 @@ def comp [RingHomCompTriple σ τ ρ] (g : T'.SemilinearIntertwiner T'' τ k hk)
     exact (g.mapPoint_val (f.mapPoint x)).trans (congrArg k (f.mapPoint_val x))
   mapCoefficients := g.mapCoefficients.comp f.mapCoefficients
   map_basis B hB := by
-    rw [hj.functor_obj_comp hk]
+    rw [hj.isOpenMap.functor_obj_comp hk.isOpenMap]
     exact g.map_basis _ (f.map_basis B hB)
   map_transport B hB x y hx hy m := by
     simp only [LinearMap.comp_apply]
     rw [f.map_transport, g.map_transport]
-    simp only [hj.functor_obj_comp hk, Function.comp_apply]
+    simp only [hj.isOpenMap.functor_obj_comp hk.isOpenMap, Function.comp_apply]
 
 /-- Composite transport sends coefficient points by the two successive point maps. -/
 @[simp]
@@ -178,7 +178,7 @@ identity-image open. -/
 @[simp]
 theorem sections_id (U : Opens X) :
     (id T R).sections U = T.restrictionLinearMap R
-      (IsOpenEmbedding.functor_obj_id U).le := by
+      (IsOpenMap.functor_obj_id U).le := by
   symm
   apply T.semilinearMapOfIntertwining_unique
   intro s x hx
@@ -190,7 +190,7 @@ theorem sections_comp [RingHomCompTriple σ τ ρ] (g : T'.SemilinearIntertwiner
     (f : T.SemilinearIntertwiner T' σ j hj) (U : Opens X) :
     (g.comp (ρ := ρ) f).sections U =
       (T''.restrictionLinearMap R''
-        (hj.functor_obj_comp hk U).le).comp
+        (hj.isOpenMap.functor_obj_comp hk.isOpenMap U).le).comp
         ((g.sections (hj.functor.obj U)).comp (f.sections U)) := by
   symm
   apply T.semilinearMapOfIntertwining_unique
