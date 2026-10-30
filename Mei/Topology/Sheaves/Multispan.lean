@@ -7,6 +7,7 @@ module
 
 public import Mei.Algebra.Category.SemimoduleCat.Multispan.Basic
 public import Mei.Topology.Sheaves.Span
+public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Multiequalizer
 
 /-!
 # Linear matching families from local common face lifts
@@ -35,14 +36,12 @@ namespace CategoryTheory.Limits.MultispanIndex
 variable {X : TopCat.{u}} {J : MultispanShape}
 
 /-- Evaluate an incidence diagram of sheaves on one open. This is an abbreviation
-so matching-family components retain the original section carriers. -/
+so matching-family components retain the original section carriers. It uses
+Mathlib's mapping of multispan indices by the sheaf-evaluation functor. -/
 @[simps!]
-abbrev sectionsIndex {C : Type w} [Category.{t} C]
-    (I : MultispanIndex J (X.Sheaf C)) (U : Opens X) : MultispanIndex J C where
-  left b := (I.left b).obj.obj (op U)
-  right j := (I.right j).obj.obj (op U)
-  fst b := (I.fst b).hom.app (op U)
-  snd b := (I.snd b).hom.app (op U)
+noncomputable abbrev sectionsIndex {C : Type w} [Category.{t} C]
+    (I : MultispanIndex J (X.Sheaf C)) (U : Opens X) : MultispanIndex J C :=
+  I.map ((sheafSections (Opens.grothendieckTopology X) C).obj (op U))
 
 variable {R : Type r} [Semiring R]
   (I : MultispanIndex J (X.Sheaf (SemimoduleCat.{v} R)))
