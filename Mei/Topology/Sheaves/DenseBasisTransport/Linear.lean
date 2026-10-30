@@ -110,10 +110,21 @@ theorem value_nsmul {U : Opens X} (n : ℕ) (s : T.sheaf.presheaf.obj (op U))
   | zero => simp only [zero_nsmul, value_zero]
   | succ n hn => simp only [succ_nsmul, value_add, hn]
 
+/-- Evaluation preserves finite sums of locally parallel sections. -/
+@[simp]
+theorem value_sum {ι : Type*} {U : Opens X} (s : Finset ι)
+    (f : ι → T.sheaf.presheaf.obj (op U)) (x : S) (hx : x.val ∈ U) :
+    T.value (∑ i ∈ s, f i) x hx = ∑ i ∈ s, T.value (f i) x hx := by
+  let e : T.sheaf.presheaf.obj (op U) →+ M :=
+    { toFun t := T.value t x hx
+      map_zero' := T.value_zero x hx
+      map_add' s t := T.value_add s t x hx }
+  exact map_sum e f s
+
 variable (R : Type r) [Semiring R] [Module R M]
 
 /-- Chart transports commute with coefficient scalars. -/
-class IsLinear [T.IsAdditive] : Prop where
+class IsLinear : Prop where
   /-- Transport preserves scalar multiplication. -/
   map_smul : ∀ U hU x y hx hy (a : R) b,
     T.transport U hU x y hx hy (a • b) = a • T.transport U hU x y hx hy b
@@ -122,6 +133,7 @@ attribute [simp] IsLinear.map_smul
 
 variable [T.IsLinear R]
 
+omit [T.IsAdditive] in
 private theorem smul_locallyParallel (a : R) {U : Opens X}
     (s : T.sheaf.presheaf.obj (op U)) :
     T.prelocal.sheafify.pred (fun x hx => a • T.value s ⟨x.val, hx⟩ x.property) :=
@@ -137,6 +149,7 @@ instance instSMulSections (U : Opens X) : SMul R (T.sheaf.presheaf.obj (op U)) w
   smul a s := T.sectionOfLocallyParallel
     (fun x hx => a • T.value s ⟨x.val, hx⟩ x.property) (by exact T.smul_locallyParallel R a s)
 
+omit [T.IsAdditive] in
 /-- Scalar multiplication is pointwise at coefficient points. -/
 @[simp]
 theorem value_smul {U : Opens X} (a : R) (s : T.sheaf.presheaf.obj (op U))
@@ -230,6 +243,20 @@ def semimodulePresheaf : X.Presheaf (SemimoduleCat.{max u v} R) where
     intro s
     exact ConcreteCategory.congr_hom (T.sheaf.presheaf.map_comp f g) s
 
+/-- The semimodule presheaf has exactly the original section carriers. -/
+@[simp]
+theorem semimodulePresheaf_obj (U : (Opens X)ᵒᵖ) :
+    (T.semimodulePresheaf R).obj U =
+      SemimoduleCat.of R (T.sheaf.presheaf.obj (op U.unop)) := by rfl
+
+/-- The semimodule presheaf maps are the original linear restrictions. -/
+@[simp]
+theorem semimodulePresheaf_map {U V : (Opens X)ᵒᵖ} (f : U ⟶ V) :
+    (T.semimodulePresheaf R).map f =
+      eqToHom (T.semimodulePresheaf_obj R U) ≫
+        SemimoduleCat.ofHom (T.restrictionLinearMap R f.unop.le) ≫
+          eqToHom (T.semimodulePresheaf_obj R V).symm := by rfl
+
 /-- Forgetting linear structure recovers the existing presheaf exactly. -/
 @[simp]
 theorem semimodulePresheaf_comp_forget :
@@ -243,8 +270,11 @@ def semimoduleSheaf : X.Sheaf (SemimoduleCat.{max u v} R) where
     (forget (SemimoduleCat.{max u v} R))).mpr
     (by simpa only [semimodulePresheaf_comp_forget] using T.sheaf.property)
 
-/-- Forgetting the semimodule-valued sheaf gives the original transport presheaf. -/
+/-- The semimodule sheaf uses the characterized linear presheaf. -/
 @[simp]
+theorem semimoduleSheaf_obj : (T.semimoduleSheaf R).obj = T.semimodulePresheaf R := by rfl
+
+/-- Forgetting the semimodule-valued sheaf gives the original transport presheaf. -/
 theorem semimoduleSheaf_comp_forget :
     (T.semimoduleSheaf R).obj ⋙ forget (SemimoduleCat R) = T.sheaf.presheaf := by
   exact T.semimodulePresheaf_comp_forget R
