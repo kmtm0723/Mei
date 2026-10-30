@@ -30,9 +30,25 @@ value `1` reads `c / κ(n)` off the linear coefficient of the wall function, by
 `isPositive_completedAeval_single_iff`. Hence for `ℤ →+* ℚ` the
 power `Ψ[n]^c` preserves integral coefficients exactly when `c ∈ κ(n) ℤ`.
 
-This integrality criterion is the one used to show that the exponents in the ordered
-factorization of a rank-two product of normalized dilogarithm powers are integers, so that
-its factors are again of the form `Ψ[tn]^(s κ(tn))` with `s` an integer.
+More generally, integrality detects the lowest logarithmic coefficient of an arbitrary
+completed skew label `g`. If all coefficients of `g` vanish below the degree `deg n` of `n`
+and its coefficient in degree `n` is `c X_n`, then at order `deg n` the label acts by
+`z^p ↦ z^p + ∑ c_m ⟨m, p⟩ z^{p + r(m)}`, summed over its coefficients `c_m X_m` of degree
+`deg n`. The monomials `z^{p + r(m)}` are distinct, so the same pairing reads off `c / κ(n)`.
+
+For a finite product `C = Ψ[m₁]^{c₁} ⋯ Ψ[m_r]^{c_r}` of rational dilogarithm powers at pairwise
+distinct degrees, in any order, this gives integrality of all normalized exponents
+`cᵢ / κ(mᵢ)` by induction on the degree. If a label `g` agrees with `C` at order `k` and acts
+integrally, the factors of degree below `deg mᵢ ≤ k` have integral normalized exponents, so
+they and their inverses act integrally.
+Removing them from `g` leaves a label that lies in the degree filtration, by
+`PositiveDegrees.inv_prod_filter_mul_prod_mem_degreeFiltration_and_logComponent`, and has
+lowest coefficient `cᵢ X_{mᵢ}`. Hence `C` acts integrally exactly when every `cᵢ` lies in
+`κ(mᵢ) ℤ`. This is the integrality step in the ordering of rank-two products of normalized
+dilogarithm powers: the normalized exponent `cᵢ / κ(mᵢ)` of an ordered factorization agreeing
+with an integral product at order `k` is an integer whenever `deg mᵢ ≤ k`, so each such factor
+is again of the form
+`Ψ[tn]^(s κ(tn))` with `s` an integer.
 
 ## Main statements
 
@@ -42,12 +58,21 @@ its factors are again of the form `Ψ[tn]^(s κ(tn))` with `s` an integer.
   preserves `S`-integral coefficients, then `c / κ(n)` lies in the image of `S`.
 * `Mei.SkewLatticeDatum.forall_isPositive_completedBCHAction_rayExp_iff`: over `ℚ`, `Ψ[n]^c`
   preserves integral coefficients if and only if `c` is an integer multiple of `κ(n)`.
+* `Mei.SkewLatticeDatum.algebraMap_inv_rayIndex_mul_mem_rangeS_of_isPositive`: the lowest
+  logarithmic coefficient `c X_n` of a label preserving `S`-integral coefficients has
+  `c / κ(n)` in the image of `S`.
+* `Mei.SkewLatticeDatum.exists_eq_intCast_mul_rayIndex_of_projection_eq_prod`: a label
+  preserving integral coefficients that agrees at order `k` with a product of dilogarithm
+  powers `Ψ[mᵢ]^{cᵢ}` at distinct degrees has `cᵢ ∈ κ(mᵢ) ℤ` whenever `deg mᵢ ≤ k`.
+* `Mei.SkewLatticeDatum.forall_isPositive_completedBCHAction_prod_rayExp_iff`: such a product
+  preserves integral coefficients if and only if every `cᵢ` lies in `κ(mᵢ) ℤ`.
 
 ## References
 
 * Tomoki Nakanishi, *Cluster algebras and scattering diagrams, Part III*, §5.2, the lemma
-  that `Ψ[tn]^(s δ(tn))` acts on `ℤ[[P_pr]]` if and only if `s` is an integer,
-  arXiv:2111.00800v6.
+  that `Ψ[tn]^(s δ(tn))` acts on `ℤ[[P_pr]]` if and only if `s` is an integer, and the
+  lemma, proved from it by induction on the degree, that the exponents of the ordered
+  product produced by the ordering algorithm are integers, arXiv:2111.00800v6.
 * Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*, §1.1 and
   Appendix B, arXiv:1411.1394v2, for the principal realization.
 -/
@@ -76,6 +101,8 @@ local notation "ρ" => AddMonoidHom.id Lpr
 local notation "ℳ" => tropicalVertexGrading (R := R) e ρ
 local notation "β" => D.coefficientForm R
 local notation "hβ" => D.isAlt_coefficientForm R
+local notation "𝔤" => SkewLieAlgebra.positiveLieAlgebra β hβ d
+local notation "𝓛" => SkewLieAlgebra.positiveGrading β hβ d
 
 open TropicalVertexCoefficientAction
 
@@ -166,6 +193,86 @@ section Principal
 
 variable {S : Type*} [Semiring S]
   [Fact ((D.principalPositiveDegrees d).monoid ≤ D.principalCoefficientMonoid d)]
+
+include hn hn0 in
+/-- **Integrality detects the lowest logarithmic coefficient.** Let `g` be a completed skew
+label whose logarithmic coefficients vanish in all degrees below that of a nonzero allowed
+degree `n`, and whose principal action preserves the coefficients integral for the image of
+`S[Q_pr]`. If its coefficient in degree `n` is `c X_n`, then `c / κ(n)` lies in the image
+of `S`. At order `deg n` the action sends `z^p` to `z^p + ∑ c_m ⟨m, p⟩ z^{p + r(m)}`, summed
+over the coefficients `c_m X_m` of degree `deg n`, and the monomials `z^{p + r(m)}` are
+distinct. -/
+theorem algebraMap_inv_rayIndex_mul_mem_rangeS_of_isPositive [Module.Free ℤ D.sublattice]
+    (φ : S →+* R) {g : d.completedBCHGroup 𝓛}
+    (hg : g ∈ CompletedGroup.degreeFiltration (d.groupTower 𝓛) (d.degree n).toNat)
+    (h : ∀ x : (Fpr).completion, (Fpr).IsPositive (mapRingHom Qpr φ).rangeS x →
+      (Fpr).IsPositive (mapRingHom Qpr φ).rangeS
+        ((Fpr).completedBCHAction (R := R) e ℳ ((D.principalGradedLieHom d).completedMap g) x))
+    {c : R}
+    (hc : ((d.logComponent 𝓛 g n : 𝔤) : D.skewLieAlgebra R) = SkewLieAlgebra.single β hβ n c) :
+    algebraMap ℚ R (D.sublattice.toAddSubgroup.rayIndex n)⁻¹ * c ∈ φ.rangeS := by
+  classical
+  have hnN : (n : N) ≠ 0 := fun h => hn0 (Subtype.ext h)
+  have hκ := D.sublattice.toAddSubgroup.rayIndex_pos hnN
+  obtain ⟨a, ha⟩ : ∃ a : ℕ, (d.degree n).toNat = a + 1 :=
+    ⟨(d.degree n).toNat - 1, by have := d.degree_pos hn hn0; omega⟩
+  have hdeg : d.degree n = (a + 1 : ℕ) := by have := d.degree_pos hn hn0; omega
+  rw [ha] at hg
+  -- A character `χ` with `χ (κ(n) n) = 1`, and the monomial `z^p` for `p = (χ, 0)`.
+  obtain ⟨χ, hχ⟩ := TauCeti.isPrimitive_def.mp
+    (D.sublattice.toAddSubgroup.isPrimitive_rayVector hκ)
+  obtain ⟨p, hpv⟩ : ∃ p : Qpr, p.val = (χ, 0) := ⟨⟨_, by simp⟩, rfl⟩
+  have hp : D.principalNormal n p.val = 1 := by rw [hpv, principalNormal_apply]; exact hχ
+  have hev : D.principalEvaluation (R := R) n p.val =
+      algebraMap ℚ R (D.sublattice.toAddSubgroup.rayIndex n)⁻¹ := by
+    have h₁ := D.intCast_principalNormal_apply (R := R) n p.val
+    rw [hp, Int.cast_one] at h₁
+    calc D.principalEvaluation (R := R) n p.val
+        = algebraMap ℚ R ((D.sublattice.toAddSubgroup.rayIndex n)⁻¹ *
+            D.sublattice.toAddSubgroup.rayIndex n) * D.principalEvaluation (R := R) n p.val := by
+          rw [inv_mul_cancel₀ hκ.ne', map_one, one_mul]
+      _ = algebraMap ℚ R (D.sublattice.toAddSubgroup.rayIndex n)⁻¹ := by
+          rw [map_mul, mul_assoc, ← h₁, mul_one]
+  -- The order-`(a + 1)` projection of the image of `z^p`.
+  have hpos := h ((Fpr).toCompletion (single p 1)) (AlgFiltration.isPositive_toCompletion
+    (RingHom.mem_rangeS.mpr ⟨single p 1, by simp [mapRingHom_single]⟩))
+  rw [AlgFiltration.isPositive_iff] at hpos
+  obtain ⟨b, hb, hbx⟩ := hpos (a + 1)
+  rw [projection_completedBCHAction_single_of_mem_degreeFiltration D d hg
+    (d.log_projection_eq_mkQ_sum 𝓛 g (a + 1)).symm p, Ideal.Quotient.eq] at hbx
+  -- The monomial `z^{p + r(n)}` has order `a + 1`, so it does not occur in the difference.
+  obtain ⟨q, hq⟩ : ∃ q : Qpr, q = ⟨(D.principalCharacter n, n), by simp [hn]⟩ + p := ⟨_, rfl⟩
+  have hq2 : q.val.2 = n := by simp [hq, hpv]
+  have hzero : (b - (single p 1 + D.principalCoefficientAction d
+      (∑ m ∈ (d.finite_cutoff (a + 1)).toFinset, (d.logComponent 𝓛 g m : 𝔤))
+        (single p 1))).coeff q = 0 := by
+    by_contra hne
+    have := (D.mem_principalCoefficientFiltration_ideal_iff d _ _).mp hbx q
+      (Finsupp.mem_support_iff.mpr hne)
+    rw [hq2, hdeg] at this
+    push_cast at this
+    omega
+  have hpq : p ≠ q := fun h => hn0 (by rw [← hq2, ← h, hpv])
+  -- Only the degree-`n` coefficient contributes to `z^{p + r(n)}`.
+  have hsum : SkewLieAlgebra.toFinsupp β hβ
+      (∑ m ∈ (d.finite_cutoff (a + 1)).toFinset, (d.logComponent 𝓛 g m : 𝔤)).val n = c := by
+    have hnc : n ∈ (d.finite_cutoff (a + 1)).toFinset :=
+      (d.finite_cutoff (a + 1)).mem_toFinset.mpr (d.mem_cutoff.mpr ⟨hn, hdeg.le⟩)
+    rw [AddSubmonoidClass.coe_finsetSum, map_sum, Finset.sum_apply',
+      Finset.sum_eq_single_of_mem n hnc, hc, SkewLieAlgebra.toFinsupp_single,
+      Finsupp.single_eq_same]
+    intro m _ hmn
+    obtain ⟨r, hr⟩ := (SkewLieAlgebra.mem_grade_iff β hβ m _).mp
+      ((SkewLieAlgebra.mem_positiveGrading_iff β hβ d m _).mp (d.logComponent 𝓛 g m).property)
+    rw [← hr, SkewLieAlgebra.toFinsupp_single, Finsupp.single_eq_of_ne (Ne.symm hmn)]
+  have hcoeff := D.principalCoefficientAction_coeff d
+    (∑ m ∈ (d.finite_cutoff (a + 1)).toFinset, (d.logComponent 𝓛 g m : 𝔤)) ⟨n, hn⟩ p 1
+  rw [hsum, hev, one_mul, ← hq] at hcoeff
+  rw [coeff_sub, coeff_add, Finsupp.sub_apply, Finsupp.add_apply, hcoeff, coeff_single,
+    Finsupp.single_eq_of_ne (Ne.symm hpq), zero_add, sub_eq_zero] at hzero
+  obtain ⟨b', rfl⟩ := RingHom.mem_rangeS.mp hb
+  rw [coeff_mapRingHom] at hzero
+  exact RingHom.mem_rangeS.mpr ⟨_, hzero.trans (mul_comm _ _)⟩
 
 /-- **Integrality detects the exponent.** If the principal action of `Ψ[n]^c`, for a
 rational exponent `c`, sends coefficients integral for the image of `S[Q_pr]` to such
@@ -270,5 +377,174 @@ theorem forall_isPositive_completedBCHAction_rayExp_iff [Module.Free ℤ D.subla
     exact D.isPositive_completedBCHAction_rayExp_zsmul d hn hn0 _ (Int.castRingHom ℚ) s hx
 
 end Principal
+
+section Product
+
+variable [Fact ((D.principalPositiveDegrees d).monoid ≤ D.principalCoefficientMonoid d)]
+
+local notation "βℚ" => D.coefficientForm ℚ
+local notation "hβℚ" => D.isAlt_coefficientForm ℚ
+local notation "𝔤ℚ" => SkewLieAlgebra.positiveLieAlgebra βℚ hβℚ d
+local notation "𝓛ℚ" => SkewLieAlgebra.positiveGrading βℚ hβℚ d
+local notation "Fℚ" => TropicalVertexCoefficientAction.filtration
+  (R := ℚ) (D.principalPositiveDegrees d) Qpr
+
+include hn hn0 in
+/-- A dilogarithm power `Ψ[n]^c` with `c ∈ κ(n) ℤ` preserves integral principal coefficients. -/
+private theorem isPositive_completedBCHAction_rayExp_of_eq {c : ℚ} {s : ℤ}
+    (hs : c = s * D.sublattice.toAddSubgroup.rayIndex n) {x : (Fℚ).completion}
+    (hx : (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS x) :
+    (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS
+      ((Fℚ).completedBCHAction (R := ℚ) e (tropicalVertexGrading (R := ℚ) e ρ)
+        ((D.principalGradedLieHom (R := ℚ) d).completedMap
+          (SkewLieAlgebra.rayExp βℚ hβℚ hn hn0 (c • negDilogNeg ℚ))) x) := by
+  subst hs
+  simpa only [Algebra.algebraMap_self, RingHom.id_apply] using
+    D.isPositive_completedBCHAction_rayExp_zsmul (R := ℚ) d hn hn0 Qpr (Int.castRingHom ℚ) s hx
+
+omit [Module.Free ℤ N] in
+/-- A finite product of labels whose principal actions preserve the coefficients with integer
+monomial coefficients has the same property. -/
+private theorem isPositive_completedBCHAction_list_prod (L : List (d.completedBCHGroup 𝓛ℚ))
+    (hL : ∀ y ∈ L, ∀ x : (Fℚ).completion,
+      (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS x →
+        (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS
+          ((Fℚ).completedBCHAction (R := ℚ) e (tropicalVertexGrading (R := ℚ) e ρ)
+            ((D.principalGradedLieHom (R := ℚ) d).completedMap y) x))
+    {x : (Fℚ).completion} (hx : (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS x) :
+    (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS
+      ((Fℚ).completedBCHAction (R := ℚ) e (tropicalVertexGrading (R := ℚ) e ρ)
+        ((D.principalGradedLieHom (R := ℚ) d).completedMap L.prod) x) := by
+  induction L generalizing x with
+  | nil => simpa only [List.prod_nil, map_one, AlgEquiv.one_apply] using hx
+  | cons y L ih =>
+    simp only [List.prod_cons, map_mul, AlgEquiv.mul_apply]
+    exact hL y List.mem_cons_self _ (ih (fun z hz => hL z (List.mem_cons_of_mem y hz)) hx)
+
+/-- **Integrality of the exponents of a product of dilogarithm powers.** Let
+`C = Ψ[m₁]^{c₁} ⋯ Ψ[m_r]^{c_r}` be a finite product of rational powers of dilogarithm
+elements at pairwise distinct nonzero allowed degrees, in any order. If a completed skew label
+`g` agrees with `C` at order `k` and its principal action preserves the completed coefficients
+with integer monomial coefficients, then every exponent `cᵢ` with `deg mᵢ ≤ k` is an integer
+multiple of `κ(mᵢ)`, so that `Ψ[mᵢ]^{cᵢ}` is an integral power of the normalized factor
+`Ψ[mᵢ]^{κ(mᵢ)}`. By induction on `deg mᵢ`, the factors of smaller degree act integrally;
+removing them leaves a label whose lowest coefficient in degree `mᵢ` is `cᵢ X_{mᵢ}`. -/
+theorem exists_eq_intCast_mul_rayIndex_of_projection_eq_prod [Module.Free ℤ D.sublattice]
+    {r : ℕ} (m : Fin r → D.unfrozen) (hm : ∀ i, m i ∈ d.monoid) (hm0 : ∀ i, m i ≠ 0)
+    (hinj : Function.Injective m) (c : Fin r → ℚ) {g : d.completedBCHGroup 𝓛ℚ}
+    (hg : ∀ x : (Fℚ).completion,
+      (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS x →
+        (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS
+          ((Fℚ).completedBCHAction (R := ℚ) e (tropicalVertexGrading (R := ℚ) e ρ)
+            ((D.principalGradedLieHom (R := ℚ) d).completedMap g) x))
+    {k : ℕ}
+    (hk : CompletedGroup.projection k g = CompletedGroup.projection k
+      (List.ofFn fun i => SkewLieAlgebra.rayExp βℚ hβℚ (hm i) (hm0 i) (c i • negDilogNeg ℚ)).prod)
+    (i : Fin r) (hi : d.degree (m i) ≤ k) :
+    ∃ s : ℤ, c i = s * D.sublattice.toAddSubgroup.rayIndex (m i) := by
+  classical
+  rw [List.ofFn_eq_map] at hk
+  suffices H : ∀ ℓ : ℕ, ∀ i, (d.degree (m i)).toNat = ℓ → d.degree (m i) ≤ k →
+      ∃ s : ℤ, c i = s * D.sublattice.toAddSubgroup.rayIndex (m i) from H _ i rfl hi
+  intro ℓ
+  induction ℓ using Nat.strong_induction_on with
+  | _ ℓ IH =>
+  intro i hiℓ hik
+  have hdi := d.degree_pos (hm i) (hm0 i)
+  obtain ⟨a, rfl⟩ : ∃ a : ℕ, ℓ = a + 1 := ⟨ℓ - 1, by omega⟩
+  obtain ⟨hmem, hc⟩ := SkewLieAlgebra.inv_prod_filter_mul_mem_and_logComponent
+    βℚ hβℚ m hm hm0 hinj c hk i (a := a) (by omega) (by omega)
+  obtain ⟨Ψ, hΨ⟩ : ∃ Ψ : Fin r → d.completedBCHGroup 𝓛ℚ, Ψ = fun j =>
+    SkewLieAlgebra.rayExp βℚ hβℚ (hm j) (hm0 j) (c j • negDilogNeg ℚ) := ⟨_, rfl⟩
+  rw [← hΨ] at hmem hc
+  obtain ⟨w, hw⟩ : ∃ w, w =
+      (((List.finRange r).filter fun j => d.degree (m j) < d.degree (m i)).map Ψ).prod :=
+    ⟨_, rfl⟩
+  rw [← hw] at hmem hc
+  -- Labels whose principal action preserves integral coefficients form a monoid.
+  obtain ⟨P, hP⟩ : ∃ P : d.completedBCHGroup 𝓛ℚ → Prop, P = fun h => ∀ x : (Fℚ).completion,
+      (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS x →
+        (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS
+          ((Fℚ).completedBCHAction (R := ℚ) e (tropicalVertexGrading (R := ℚ) e ρ)
+            ((D.principalGradedLieHom (R := ℚ) d).completedMap h) x) := ⟨_, rfl⟩
+  have hPprod (L : List (d.completedBCHGroup 𝓛ℚ)) (hL : ∀ y ∈ L, P y) : P L.prod := by
+    subst hP
+    exact fun x hx => D.isPositive_completedBCHAction_list_prod d
+      L hL hx
+  -- The factors of smaller degree have integral exponents, so the inverse of their product
+  -- acts integrally.
+  have hPw : P w⁻¹ := by
+    rw [hw, List.prod_inv_reverse]
+    refine hPprod _ fun y hy => ?_
+    simp only [List.mem_reverse, List.mem_map, List.mem_filter, List.mem_finRange, true_and,
+      decide_eq_true_eq] at hy
+    obtain ⟨_, ⟨j, hj, rfl⟩, rfl⟩ := hy
+    have := d.degree_pos (hm j) (hm0 j)
+    obtain ⟨s, hs⟩ := IH _ (by omega) j rfl (by omega)
+    rw [hΨ, ← SkewLieAlgebra.rayExp_neg, ← neg_smul, hP]
+    exact fun z hz => D.isPositive_completedBCHAction_rayExp_of_eq d (hm j) (hm0 j)
+      (s := -s) (by rw [hs, Int.cast_neg, neg_mul]) hz
+  have hPh : P (w⁻¹ * g) := by
+    have h₂ := hPprod [w⁻¹, g] fun y hy => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
+      rcases hy with rfl | rfl
+      exacts [hPw, hP ▸ hg]
+    simpa only [List.prod_cons, List.prod_nil, mul_one] using h₂
+  rw [hP] at hPh
+  obtain ⟨s, hs⟩ := RingHom.mem_rangeS.mp
+    (D.algebraMap_inv_rayIndex_mul_mem_rangeS_of_isPositive (R := ℚ) d (hm i) (hm0 i)
+      (Int.castRingHom ℚ) (hiℓ ▸ hmem) hPh hc)
+  have hκ := D.sublattice.toAddSubgroup.rayIndex_pos (n := (m i : N))
+    (fun h => hm0 i (Subtype.ext h))
+  refine ⟨s, ?_⟩
+  rw [eq_intCast, Algebra.algebraMap_self, RingHom.id_apply] at hs
+  rw [hs, mul_comm _ (c i), mul_assoc, inv_mul_cancel₀ hκ.ne', mul_one]
+
+/-- A finite product of dilogarithm powers `Ψ[mᵢ]^{cᵢ}` with every `cᵢ ∈ κ(mᵢ) ℤ` preserves
+integral principal coefficients. -/
+private theorem isPositive_completedBCHAction_ofFn_prod_rayExp {r : ℕ} (m : Fin r → D.unfrozen)
+    (hm : ∀ i, m i ∈ d.monoid) (hm0 : ∀ i, m i ≠ 0) (c : Fin r → ℚ)
+    (h : ∀ i, ∃ s : ℤ, c i = s * D.sublattice.toAddSubgroup.rayIndex (m i))
+    {x : (Fℚ).completion} (hx : (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS x) :
+    (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS
+      ((Fℚ).completedBCHAction (R := ℚ) e (tropicalVertexGrading (R := ℚ) e ρ)
+        ((D.principalGradedLieHom (R := ℚ) d).completedMap (List.ofFn fun i =>
+          SkewLieAlgebra.rayExp βℚ hβℚ (hm i) (hm0 i) (c i • negDilogNeg ℚ)).prod) x) := by
+  have hfac : ∀ j, ∀ z : (Fℚ).completion,
+      (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS z →
+        (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS
+          ((Fℚ).completedBCHAction (R := ℚ) e (tropicalVertexGrading (R := ℚ) e ρ)
+            ((D.principalGradedLieHom (R := ℚ) d).completedMap
+              (SkewLieAlgebra.rayExp βℚ hβℚ (hm j) (hm0 j) (c j • negDilogNeg ℚ))) z) :=
+    fun j z hz => (h j).elim fun s hs =>
+      D.isPositive_completedBCHAction_rayExp_of_eq d (hm j) (hm0 j) hs hz
+  refine D.isPositive_completedBCHAction_list_prod d _ (fun y hy => ?_) hx
+  rw [List.ofFn_eq_map, List.mem_map] at hy
+  obtain ⟨j, -, rfl⟩ := hy
+  exact hfac j
+
+/-- **Integrality criterion for products of dilogarithm powers.** A finite product
+`Ψ[m₁]^{c₁} ⋯ Ψ[m_r]^{c_r}` of rational powers of dilogarithm elements at pairwise distinct
+nonzero allowed degrees, in any order, preserves the completed principal coefficients with
+integer monomial coefficients if and only if every exponent `cᵢ` is an integer multiple of
+`κ(mᵢ)`. -/
+theorem forall_isPositive_completedBCHAction_prod_rayExp_iff [Module.Free ℤ D.sublattice]
+    {r : ℕ} (m : Fin r → D.unfrozen) (hm : ∀ i, m i ∈ d.monoid) (hm0 : ∀ i, m i ≠ 0)
+    (hinj : Function.Injective m) (c : Fin r → ℚ) :
+    (∀ x : (Fℚ).completion,
+      (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS x →
+        (Fℚ).IsPositive (mapRingHom Qpr (Int.castRingHom ℚ)).rangeS
+          ((Fℚ).completedBCHAction (R := ℚ) e (tropicalVertexGrading (R := ℚ) e ρ)
+            ((D.principalGradedLieHom (R := ℚ) d).completedMap (List.ofFn fun i =>
+              SkewLieAlgebra.rayExp βℚ hβℚ (hm i) (hm0 i) (c i • negDilogNeg ℚ)).prod) x)) ↔
+      ∀ i, ∃ s : ℤ, c i = s * D.sublattice.toAddSubgroup.rayIndex (m i) := by
+  constructor
+  · intro h i
+    exact D.exists_eq_intCast_mul_rayIndex_of_projection_eq_prod d m hm hm0 hinj c h rfl i
+      (Int.self_le_toNat _)
+  · intro h x hx
+    exact D.isPositive_completedBCHAction_ofFn_prod_rayExp d m hm hm0 c h hx
+
+end Product
 
 end Mei.SkewLatticeDatum
