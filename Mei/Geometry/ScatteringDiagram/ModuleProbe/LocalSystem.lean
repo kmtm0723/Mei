@@ -64,15 +64,14 @@ attribute [local instance] coefficientMulAction
 
 /-- The finite coefficient action preserves addition through its linear BCH representation. -/
 instance coefficientDistribMulAction (k : ℕ) :
-    DistribMulAction (d.truncatedGroup ℒ k) ((F).quotient k) where
-  __ := coefficientMulAction d ℳ p ℒ k
-  smul_zero g := ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ k g).map_zero
-  smul_add g a b := ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ k g).map_add a b
+    DistribMulAction (d.truncatedGroup ℒ k) ((F).quotient k) :=
+  DistribMulAction.compHom _ ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ k)
 
 /-- The finite coefficient action commutes with the coefficient scalars. -/
 instance coefficientSMulCommClass (k : ℕ) :
-    SMulCommClass (d.truncatedGroup ℒ k) R ((F).quotient k) where
-  smul_comm g r a := ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ k g).map_smul r a
+    SMulCommClass (d.truncatedGroup ℒ k) R ((F).quotient k) :=
+  SMul.comp.smulCommClass (β := R)
+    ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ k)
 
 /-- Generic probe endpoints among the coefficient points of the adapted base
 complex. Genericity is required only for the initial coefficient field. -/
