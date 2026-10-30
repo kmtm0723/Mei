@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Geometry.ScatteringDiagram.Coefficient.LocalSystem
-public import Mei.Topology.Sheaves.DenseBasisTransport.Linear
+public import Mei.Topology.Sheaves.DenseBasisTransport.Linear.Basic
 
 /-!
 # Semimodule-valued coefficient local systems
