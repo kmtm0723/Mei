@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Geometry.Affine.FiniteRay.Map
-public import Mathlib.Data.Set.Card
+public import Mathlib.Data.Set.Card.Arithmetic
 
 /-!
 # Hyperplane encounters of finite affine rays
@@ -152,9 +152,7 @@ theorem encard_hyperplane_times_le (A : Set ℝ) (c : ℝ)
   have hinj : Set.InjOn rank {t | t ∈ A ∧ f (β t) = c} := by
     intro s hs t ht he
     exact eq_of_hyperplane_eq_of_rank_eq β f A c htrans hs ht (congrArg Fin.val he)
-  simpa using Set.encard_le_encard_of_injOn
-    (show Set.MapsTo rank {t | t ∈ A ∧ f (β t) = c} Set.univ from fun _ _ => Set.mem_univ _)
-    hinj
+  simpa using Set.encard_le_encard_of_injOn (Set.mapsTo_univ rank _) hinj
 
 /-- Transverse encounters of a finite affine ray with a hyperplane form a finite set. -/
 theorem finite_hyperplane_times (A : Set ℝ) (c : ℝ)
@@ -173,19 +171,19 @@ theorem encard_hyperplane_encounters_le {ι : Type*} [Finite ι]
       Nat.card ι * (β.bends.support.card + 1) := by
   classical
   let := Fintype.ofFinite ι
-  let rank : ℝ → Fin (β.bends.support.card + 1) := fun t =>
-    ⟨(β.bends.support.filter (· < t)).card,
-      Nat.lt_succ_of_le (Finset.card_filter_le _ _)⟩
-  let code : ι × ℝ → ι × Fin (β.bends.support.card + 1) := fun p => (p.1, rank p.2)
-  have hinj : Set.InjOn code {p : ι × ℝ | p.2 ∈ A ∧ F p.1 (β p.2) = c p.1} := by
-    rintro ⟨i, s⟩ hs ⟨j, t⟩ ht he
-    have hij : i = j := congrArg Prod.fst he
-    subst j
-    apply congrArg (Prod.mk i)
-    exact eq_of_hyperplane_eq_of_rank_eq β (F i) A (c i) (htrans i) hs ht
-      (congrArg (fun p => (p.2 : ℕ)) he)
-  simpa [Nat.card_eq_fintype_card] using Set.encard_le_encard_of_injOn
-    (show Set.MapsTo code {p : ι × ℝ | p.2 ∈ A ∧ F p.1 (β p.2) = c p.1} Set.univ from
-      fun _ _ => Set.mem_univ _) hinj
+  have he : {p : ι × ℝ | p.2 ∈ A ∧ F p.1 (β p.2) = c p.1} =
+      ⋃ j, ({j} ×ˢ {t | t ∈ A ∧ F j (β t) = c j}) := by
+    ext ⟨j, t⟩
+    simp
+  rw [he]
+  calc
+    _ ≤ ∑ j : ι, ({j} ×ˢ {t | t ∈ A ∧ F j (β t) = c j}).encard :=
+      Set.encard_iUnion_le_of_fintype _
+    _ = ∑ j : ι, {t | t ∈ A ∧ F j (β t) = c j}.encard := by
+      simp only [Set.encard_prod, Set.encard_singleton, one_mul]
+    _ ≤ ∑ _j : ι, ((β.bends.support.card : ℕ∞) + 1) :=
+      Finset.sum_le_sum fun j _ => β.encard_hyperplane_times_le (F j) A (c j) (htrans j)
+    _ = Nat.card ι * (β.bends.support.card + 1) := by
+      simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, Nat.card_eq_fintype_card]
 
 end Mei.FiniteAffineRay
