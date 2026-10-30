@@ -85,6 +85,8 @@ theorem existsUnique_hom_lift_of_local (A : C) (U : Opens X)
     intro x hx
     let z : U := ⟨x, hx⟩
     refine ⟨N z, hN z, hxN z, ?_⟩
+    -- The Hom sheaf uses coyoneda, so restriction is definitionally postcomposition.
+    -- Expose that representation here to apply f.hom.naturality in the value category.
     change (s ≫ f.hom.app (op U)) ≫ G.obj.map (homOfLE (hN z)).op = _
     rw [Category.assoc, ← f.hom.naturality, ← Category.assoc]
     exact (congrArg (fun q => q ≫ f.hom.app (op (N z))) (hs z)).trans (hf z)
@@ -93,6 +95,8 @@ theorem existsUnique_hom_lift_of_local (A : C) (U : Opens X)
     intro x hx
     let z : U := ⟨x, hx⟩
     refine ⟨N z, hN z, hxN z, ?_⟩
+    -- The Hom sheaf uses coyoneda, so restriction is definitionally postcomposition.
+    -- Expose that representation here to apply g.hom.naturality in the value category.
     change (s ≫ g.hom.app (op U)) ≫ K.obj.map (homOfLE (hN z)).op = _
     rw [Category.assoc, ← g.hom.naturality, ← Category.assoc]
     exact (congrArg (fun q => q ≫ g.hom.app (op (N z))) (hs z)).trans (hg z)
