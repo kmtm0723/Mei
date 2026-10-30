@@ -31,6 +31,7 @@ theorem functor_obj_id {X : TopCat.{u}} (U : Opens X) :
   Opens.ext (Set.image_id _)
 
 /-- Taking the image of an open under a composite is taking successive images. -/
+@[simp]
 theorem functor_obj_comp {X Y Z : TopCat.{u}} {j : X ⟶ Y} {k : Y ⟶ Z}
     (hj : IsOpenEmbedding j) (hk : IsOpenEmbedding k) (U : Opens X) :
     (functor (f := j ≫ k) (hk.comp hj)).obj U = hk.functor.obj (hj.functor.obj U) := by
