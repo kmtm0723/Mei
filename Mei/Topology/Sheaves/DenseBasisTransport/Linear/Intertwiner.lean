@@ -38,7 +38,6 @@ variable {X Y Z : TopCat.{u}} {S : Set X} {S' : Set Y} {S'' : Set Z}
 
 /-- A semilinear coefficient map compatible with the charts and transports of an
 open embedding. The point map need not exhaust the target coefficient domain. -/
-@[ext]
 structure SemilinearIntertwiner (σ : R →+* R') (j : X ⟶ Y) (hj : IsOpenEmbedding j) where
   /-- Map from source coefficient points to target coefficient points. -/
   mapPoint : S → S'
@@ -60,6 +59,21 @@ namespace SemilinearIntertwiner
 variable {T T'} {T'' : DenseBasisTransport S'' P}
   {σ : R →+* R'} {τ : R' →+* R''} {ρ : R →+* R''}
   {j : X ⟶ Y} {k : Y ⟶ Z} {hj : IsOpenEmbedding j} {hk : IsOpenEmbedding k}
+
+/-- An intertwiner is determined by its semilinear coefficient map: the ambient
+map already determines the image of every coefficient point. -/
+@[ext]
+theorem ext {f g : T.SemilinearIntertwiner T' σ j hj}
+    (h : f.mapCoefficients = g.mapCoefficients) : f = g := by
+  have hq : f.mapPoint = g.mapPoint := by
+    funext x
+    apply Subtype.ext
+    exact (f.mapPoint_val x).trans (g.mapPoint_val x).symm
+  cases f
+  cases g
+  cases hq
+  cases h
+  rfl
 
 /-- The identity coefficient intertwiner over the identity open embedding. -/
 def id (T : DenseBasisTransport S M) (R : Type r) [Semiring R] [Module R M] :
@@ -131,6 +145,25 @@ theorem value_sections (f : T.SemilinearIntertwiner T' σ j hj) (U : Opens X)
         f.mapCoefficients (T.value s x hx) :=
   T.value_semilinearMapOfIntertwining T' R R' j hj f.mapPoint f.mapPoint_val
     f.mapCoefficients f.map_basis f.map_transport U s x hx
+
+/-- Dense mapped coefficient values determine the whole semilinear section map. -/
+theorem sections_unique (f : T.SemilinearIntertwiner T' σ j hj) (U : Opens X)
+    (ψ : T.sheaf.presheaf.obj (op U) →ₛₗ[σ]
+      T'.sheaf.presheaf.obj (op (hj.functor.obj U)))
+    (hψ : ∀ s x hx, T'.value (ψ s) (f.mapPoint x)
+      (mem_image_of_mem j hj f.mapPoint f.mapPoint_val U x hx) =
+        f.mapCoefficients (T.value s x hx)) : ψ = f.sections U :=
+  T.semilinearMapOfIntertwining_unique T' R R' j hj f.mapPoint f.mapPoint_val
+    f.mapCoefficients f.map_basis f.map_transport U ψ hψ
+
+/-- Linear evaluation commutes semilinearly with the section map of an intertwiner. -/
+theorem evaluationLinearMap_comp_sections (f : T.SemilinearIntertwiner T' σ j hj)
+    (U : Opens X) (x : S) (hx : x.val ∈ U) :
+    (T'.evaluationLinearMap R' (f.mapPoint x)
+      (mem_image_of_mem j hj f.mapPoint f.mapPoint_val U x hx)).comp (f.sections U) =
+        f.mapCoefficients.comp (T.evaluationLinearMap R x hx) :=
+  T.evaluationLinearMap_comp_semilinearMapOfIntertwining T' R R' j hj
+    f.mapPoint f.mapPoint_val f.mapCoefficients f.map_basis f.map_transport U x hx
 
 /-- Restriction commutes with the section map of an intertwiner. -/
 theorem sections_restrict (f : T.SemilinearIntertwiner T' σ j hj)
