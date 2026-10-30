@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Topology.Sheaves.DenseBasisTransport.Morphism
-public import Mei.Topology.Sheaves.DenseBasisTransport.Linear
+public import Mei.Topology.Sheaves.DenseBasisTransport.Linear.Basic
 
 /-!
 # Semilinear maps of transport sections
@@ -106,21 +106,24 @@ theorem semilinearMapOfIntertwining_restrict {U V : Opens X} (hVU : V ≤ U)
         (T.restrictionLinearMap R hVU s) =
       T'.restrictionLinearMap R' (hj.functor.map (homOfLE hVU)).le
         (T.semilinearMapOfIntertwining T' R R' j hj q hq φ hchart htransport U s) := by
-  apply T.section_ext_image T' j hj q hq le_rfl
-  intro x hx
-  have hxV := hj.injective.mem_set_image.mp (hq x ▸ hx)
+  let α := (T.mapOfIntertwining T' j hj q hq φ hchart htransport).hom
+  -- Give the components their original section carriers so the public
+  -- restriction equations apply through the Type-valued image restriction.
+  let eU : T.sheaf.presheaf.obj (op U) →
+      T'.sheaf.presheaf.obj (op (hj.functor.obj U)) := α.app (op U)
+  let eV : T.sheaf.presheaf.obj (op V) →
+      T'.sheaf.presheaf.obj (op (hj.functor.obj V)) := α.app (op V)
   calc
-    T'.value (T.semilinearMapOfIntertwining T' R R' j hj q hq φ hchart htransport V
-        (T.restrictionLinearMap R hVU s)) (q x) hx =
-      φ (T.value (T.restrictionLinearMap R hVU s) x hxV) :=
-        T.value_semilinearMapOfIntertwining T' R R' j hj q hq φ hchart htransport V _ x hxV
-    _ = φ (T.value s x (hVU hxV)) :=
-      congrArg φ (T.value_restrictionLinearMap R hVU s x hxV)
-    _ = T'.value (T'.restrictionLinearMap R' (hj.functor.map (homOfLE hVU)).le
-        (T.semilinearMapOfIntertwining T' R R' j hj q hq φ hchart htransport U s)) (q x) hx :=
-      (T.value_semilinearMapOfIntertwining T' R R' j hj q hq φ hchart htransport U s x
-        (hVU hxV)).symm.trans
-        (T'.value_restrictionLinearMap R' (hj.functor.map (homOfLE hVU)).le _ (q x) hx).symm
+    T.semilinearMapOfIntertwining T' R R' j hj q hq φ hchart htransport V
+        (T.restrictionLinearMap R hVU s) = eV (T.restrictionLinearMap R hVU s) := rfl
+    _ = eV (T.sheaf.presheaf.map (homOfLE hVU).op s) :=
+      congrArg eV (T.restrictionLinearMap_apply R hVU s)
+    _ = T'.sheaf.presheaf.map (hj.functor.map (homOfLE hVU)).op (eU s) :=
+      α.naturality_apply (homOfLE hVU).op s
+    _ = T'.restrictionLinearMap R' (hj.functor.map (homOfLE hVU)).le (eU s) :=
+      (T'.restrictionLinearMap_apply R' (hj.functor.map (homOfLE hVU)).le (eU s)).symm
+    _ = T'.restrictionLinearMap R' (hj.functor.map (homOfLE hVU)).le
+        (T.semilinearMapOfIntertwining T' R R' j hj q hq φ hchart htransport U s) := rfl
 
 /-- Linear evaluation commutes semilinearly with changing coefficients. -/
 theorem evaluationLinearMap_comp_semilinearMapOfIntertwining (U : Opens X)
