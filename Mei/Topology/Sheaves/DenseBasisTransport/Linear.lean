@@ -7,6 +7,8 @@ module
 
 public import Mei.Topology.Sheaves.DenseBasisTransport
 public import Mei.Algebra.Category.SemimoduleCat.Limits
+public import Mathlib.Algebra.Module.Pi
+public import Mathlib.Algebra.Group.TransferInstance
 
 /-!
 # Linear sections of dense-domain transport sheaves
@@ -17,8 +19,9 @@ scalar multiplication are pointwise on the dense coefficient domain. Restriction
 and evaluation are linear; on a preconnected subopen of a transport chart,
 evaluation is a linear equivalence.
 
-The closure proofs use Mathlib's operation induction for
-`PrelocalPredicate.sheafify`, so the underlying type-valued sheaf is unchanged.
+Finite linear combinations of locally parallel sections remain locally parallel.
+Restriction and evaluation preserve these combinations, so coefficient identities
+can be checked in a chart and carried to smaller opens.
 -/
 
 public noncomputable section
@@ -41,70 +44,63 @@ class IsAdditive : Prop where
     T.transport U hU x y hx hy (a + b) =
       T.transport U hU x y hx hy a + T.transport U hU x y hx hy b
 
+attribute [simp] IsAdditive.map_zero IsAdditive.map_add
+
 variable [T.IsAdditive]
 
-private theorem zero_locallyParallel (U : Opens X) :
-    T.prelocal.sheafify.pred (fun (_ : U) _ => (0 : M)) :=
-  PrelocalPredicate.sheafifyOf (by
+-- Mathlib's operation induction for sheafification gives closure on the
+-- existing section predicate; the coefficient functions below use a Type-valued
+-- index so their pointwise algebra is supplied by Mathlib's Pi instances.
+private def coefficientFunctions (U : Opens X) :
+    AddSubmonoid ({x : S // x.val ∈ U} → M) where
+  carrier := {f | T.prelocal.sheafify.pred (U := U)
+    (fun x hx => f ⟨⟨x.val, hx⟩, x.property⟩)}
+  zero_mem' := PrelocalPredicate.sheafifyOf (P := T.prelocal)
+    (f := fun (_ : U) _ => (0 : M)) (by
     rw [prelocal_pred_iff]
     intro V hV hVU x y hx hy
-    exact IsAdditive.map_zero V hV x y hx hy)
+    exact IsAdditive.map_zero (T := T) V hV x y hx hy)
+  add_mem' {a b} ha hb := by
+    change T.prelocal.sheafify.pred
+      (fun x hx => a ⟨⟨x.val, hx⟩, x.property⟩ + b ⟨⟨x.val, hx⟩, x.property⟩)
+    exact T.prelocal.sheafify_inductionOn₂' T.prelocal T.prelocal
+      (fun f g hx => f hx + g hx) (by
+        intro U V a b ha hb
+        rw [prelocal_pred_iff] at ha hb ⊢
+        intro W hW hWI x y hx hy
+        rw [IsAdditive.map_add]
+        exact congrArg₂ (· + ·) (ha W hW (fun z hz => (hWI hz).1) x y hx hy)
+          (hb W hW (fun z hz => (hWI hz).2) x y hx hy))
+      (a := fun x hx => a ⟨⟨x.val, hx⟩, x.property⟩)
+      (b := fun x hx => b ⟨⟨x.val, hx⟩, x.property⟩) ha hb
 
-private theorem add_locallyParallel {U : Opens X}
-    (s t : T.sheaf.presheaf.obj (op U)) :
-    T.prelocal.sheafify.pred
-      (fun x hx => T.value s ⟨x.val, hx⟩ x.property + T.value t ⟨x.val, hx⟩ x.property) :=
-  T.prelocal.sheafify_inductionOn₂' T.prelocal T.prelocal (fun f g hx => f hx + g hx)
-    (by
-      intro U V a b ha hb
-      rw [prelocal_pred_iff] at ha hb ⊢
-      intro W hW hWI x y hx hy
-      rw [IsAdditive.map_add]
-      exact congrArg₂ (· + ·) (ha W hW (fun z hz => (hWI hz).1) x y hx hy)
-        (hb W hW (fun z hz => (hWI hz).2) x y hx hy))
-    (T.locallyParallel_value s) (T.locallyParallel_value t)
+private def coefficientFunctionsEquiv (U : Opens X) :
+    T.sheaf.presheaf.obj (op U) ≃ T.coefficientFunctions U where
+  toFun s := ⟨fun x => T.value s x.val x.property, T.locallyParallel_value s⟩
+  invFun f := T.sectionOfLocallyParallel (fun x hx => f.val ⟨⟨x.val, hx⟩, x.property⟩) f.property
+  left_inv s := T.section_ext fun x hx => T.value_sectionOfLocallyParallel _ _ x hx
+  right_inv f := by
+    apply Subtype.ext
+    funext x
+    exact T.value_sectionOfLocallyParallel _ _ x.val x.property
 
-instance instZeroSections (U : Opens X) : Zero (T.sheaf.presheaf.obj (op U)) where
-  zero := T.sectionOfLocallyParallel (fun _ _ => 0) (by exact T.zero_locallyParallel U)
-
-instance instAddSections (U : Opens X) : Add (T.sheaf.presheaf.obj (op U)) where
-  add s t := T.sectionOfLocallyParallel
-    (fun x hx => T.value s ⟨x.val, hx⟩ x.property + T.value t ⟨x.val, hx⟩ x.property)
-    (by exact T.add_locallyParallel s t)
+-- Keep the predicate representation private; values have the public equations below.
+@[no_expose]
+instance instAddCommMonoidSections (U : Opens X) :
+    AddCommMonoid (T.sheaf.presheaf.obj (op U)) := by
+  exact (T.coefficientFunctionsEquiv U).addCommMonoid
 
 /-- Zero sections have zero coefficients. -/
 @[simp]
 theorem value_zero {U : Opens X} (x : S) (hx : x.val ∈ U) :
     T.value (0 : T.sheaf.presheaf.obj (op U)) x hx = 0 := by
-  exact T.value_sectionOfLocallyParallel _ _ x hx
+  simp [Equiv.zero_def, coefficientFunctionsEquiv, value_sectionOfLocallyParallel]
 
 /-- Section addition is pointwise at coefficient points. -/
 @[simp]
 theorem value_add {U : Opens X} (s t : T.sheaf.presheaf.obj (op U))
     (x : S) (hx : x.val ∈ U) : T.value (s + t) x hx = T.value s x hx + T.value t x hx := by
-  exact T.value_sectionOfLocallyParallel _ _ x hx
-
-instance instAddCommMonoidSections (U : Opens X) :
-    AddCommMonoid (T.sheaf.presheaf.obj (op U)) where
-  __ := T.instZeroSections U
-  __ := T.instAddSections U
-  add_assoc s t q := by
-    apply T.section_ext
-    intro x hx
-    simp only [value_add, add_assoc]
-  zero_add s := by
-    apply T.section_ext
-    intro x hx
-    simp only [value_add, value_zero, zero_add]
-  add_zero s := by
-    apply T.section_ext
-    intro x hx
-    simp only [value_add, value_zero, add_zero]
-  add_comm s t := by
-    apply T.section_ext
-    intro x hx
-    simp only [value_add, add_comm]
-  nsmul := nsmulRec
+  simp [Equiv.add_def, coefficientFunctionsEquiv, value_sectionOfLocallyParallel]
 
 /-- Repeated section addition is pointwise, independently of any scalar ring. -/
 @[simp]
@@ -121,6 +117,8 @@ class IsLinear [T.IsAdditive] : Prop where
   /-- Transport preserves scalar multiplication. -/
   map_smul : ∀ U hU x y hx hy (a : R) b,
     T.transport U hU x y hx hy (a • b) = a • T.transport U hU x y hx hy b
+
+attribute [simp] IsLinear.map_smul
 
 variable [T.IsLinear R]
 
@@ -145,32 +143,14 @@ theorem value_smul {U : Opens X} (a : R) (s : T.sheaf.presheaf.obj (op U))
     (x : S) (hx : x.val ∈ U) : T.value (a • s) x hx = a • T.value s x hx := by
   exact T.value_sectionOfLocallyParallel _ _ x hx
 
-instance instModuleSections (U : Opens X) : Module R (T.sheaf.presheaf.obj (op U)) where
-  __ := T.instSMulSections R U
-  one_smul s := by
-    apply T.section_ext
-    intro x hx
-    simp only [value_smul, one_smul]
-  mul_smul a b s := by
-    apply T.section_ext
-    intro x hx
-    simp only [value_smul, mul_smul]
-  smul_zero a := by
-    apply T.section_ext
-    intro x hx
-    simp only [value_smul, value_zero, smul_zero]
-  smul_add a s t := by
-    apply T.section_ext
-    intro x hx
-    simp only [value_smul, value_add, smul_add]
-  add_smul a b s := by
-    apply T.section_ext
-    intro x hx
-    simp only [value_smul, value_add, add_smul]
-  zero_smul s := by
-    apply T.section_ext
-    intro x hx
-    simp only [value_smul, value_zero, zero_smul]
+instance instModuleSections (U : Opens X) : Module R (T.sheaf.presheaf.obj (op U)) := by
+  let e : T.sheaf.presheaf.obj (op U) →+ ({x : S // x.val ∈ U} → M) :=
+    { toFun s x := T.value s x.val x.property
+      map_zero' := by funext x; exact T.value_zero x.val x.property
+      map_add' s t := by funext x; exact T.value_add s t x.val x.property }
+  exact Function.Injective.module R e
+    (fun s t he => T.section_ext fun x hx => congrFun he ⟨x, hx⟩)
+    (fun a s => funext fun x => T.value_smul R a s x.val x.property)
 
 /-- Evaluation at any coefficient point is linear. -/
 def evaluationLinearMap {U : Opens X} (x : S) (hx : x.val ∈ U) :
