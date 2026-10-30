@@ -46,21 +46,8 @@ variable {R Γ Λ V : Type*} {M L : Type u} {κ : Type*}
   (B : DirectedDiagram (d := d) h H κ)
 
 local notation "F" => d.shiftedFiltration ℳ p
-local notation "A" => d.shiftedLieFiltration ℒ ℳ p
 
 attribute [local instance] coefficientMulAction
-
-/-- The finite coefficient action preserves addition through its linear BCH representation. -/
-instance coefficientDistribMulAction (k : ℕ) :
-    DistribMulAction (d.truncatedGroup ℒ k) ((F).quotient k) where
-  __ := coefficientMulAction d ℳ p ℒ k
-  smul_zero g := ((A).truncatedBCHAction d ℒ k g).map_zero
-  smul_add g a b := ((A).truncatedBCHAction d ℒ k g).map_add a b
-
-/-- The finite coefficient action commutes with the coefficient scalars. -/
-instance coefficientSMulCommClass (k : ℕ) :
-    SMulCommClass (d.truncatedGroup ℒ k) R ((F).quotient k) where
-  smul_comm g r a := ((A).truncatedBCHAction d ℒ k g).map_smul r a
 
 /-- The concrete cutoff transport, bundled with its linear coefficient map. -/
 def coefficientTransitionIntertwiner {k l : ℕ} (hkl : k ≤ l)
@@ -81,6 +68,16 @@ def coefficientTransitionIntertwiner {k l : ℕ} (hkl : k ≤ l)
   map_transport U hU x y hx hy a :=
     transition_coefficientTransport d ℳ p ℒ H h B hkl νk hνk νl hνl U
       (by simpa using hU) x y hx hy a
+
+/-- The concrete intertwiner uses the original quotient transition on coefficients. -/
+@[simp]
+theorem coefficientTransitionIntertwiner_mapCoefficients {k l : ℕ} (hkl : k ≤ l)
+    (νk : (B.adaptedComplex k).walls → V →ₗ[ℝ] ℝ)
+    (hνk : ∀ Q, (νk Q).ker = (affineSpan ℝ (Q : Set V)).direction)
+    (νl : (B.adaptedComplex l).walls → V →ₗ[ℝ] ℝ)
+    (hνl : ∀ Q, (νl Q).ker = (affineSpan ℝ (Q : Set V)).direction) :
+    (coefficientTransitionIntertwiner d ℳ p ℒ H h B hkl νk hνk νl hνl).mapCoefficients =
+      (F).transition hkl := by rfl
 
 /-- The linear map has exactly the original cutoff morphism as its underlying function. -/
 theorem coefficientTransitionIntertwiner_sections {k l : ℕ} (hkl : k ≤ l)
