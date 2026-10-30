@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Topology.Sheaves.DenseBasisTransport.Linear.Morphism
+public import Mei.Topology.Category.TopCat.Opens
 
 /-!
 # Composing semilinear coefficient transport
@@ -60,31 +61,29 @@ variable {T T'} {T'' : DenseBasisTransport S'' P}
   {σ : R →+* R'} {τ : R' →+* R''} {ρ : R →+* R''}
   {j : X ⟶ Y} {k : Y ⟶ Z} {hj : IsOpenEmbedding j} {hk : IsOpenEmbedding k}
 
-private theorem image_comp (U : Opens X) :
-    (Topology.IsOpenEmbedding.functor (f := j ≫ k) (hk.comp hj)).obj U =
-      hk.functor.obj (hj.functor.obj U) := by
-  apply Opens.ext
-  exact (Set.image_image k j (U : Set X)).symm
-
 /-- The identity coefficient intertwiner over the identity open embedding. -/
-@[expose, simps! mapPoint mapCoefficients_apply]
 def id (T : DenseBasisTransport S M) (R : Type r) [Semiring R] [Module R M] :
     T.SemilinearIntertwiner T (RingHom.id R) (𝟙 X) IsOpenEmbedding.id where
   mapPoint := _root_.id
   mapPoint_val _ := rfl
   mapCoefficients := LinearMap.id
   map_basis B hB := by
-    have he : (Topology.IsOpenEmbedding.functor (f := 𝟙 X) IsOpenEmbedding.id).obj B = B :=
-      Opens.ext (Set.image_id _)
-    rw [he]
+    rw [IsOpenEmbedding.functor_obj_id]
     exact hB
   map_transport B hB x y hx hy m := by
-    have he : (Topology.IsOpenEmbedding.functor (f := 𝟙 X) IsOpenEmbedding.id).obj B = B :=
-      Opens.ext (Set.image_id _)
-    simp only [LinearMap.id_apply, he, _root_.id_eq]
+    simp only [LinearMap.id_apply, IsOpenEmbedding.functor_obj_id, _root_.id_eq]
+
+/-- Identity transport fixes each coefficient point. -/
+@[simp]
+theorem id_mapPoint (T : DenseBasisTransport S M) (R : Type r)
+    [Semiring R] [Module R M] (x : S) : (id T R).mapPoint x = x := by rfl
+
+/-- Identity transport fixes each coefficient value. -/
+@[simp]
+theorem id_mapCoefficients_apply (T : DenseBasisTransport S M) (R : Type r)
+    [Semiring R] [Module R M] (m : M) : (id T R).mapCoefficients m = m := by rfl
 
 /-- Compose coefficient intertwiners and their ambient open embeddings. -/
-@[expose, simps! mapPoint mapCoefficients_apply]
 def comp [RingHomCompTriple σ τ ρ] (g : T'.SemilinearIntertwiner T'' τ k hk)
     (f : T.SemilinearIntertwiner T' σ j hj) :
     T.SemilinearIntertwiner T'' ρ (j ≫ k) (hk.comp hj) where
@@ -93,12 +92,26 @@ def comp [RingHomCompTriple σ τ ρ] (g : T'.SemilinearIntertwiner T'' τ k hk)
     exact (g.mapPoint_val (f.mapPoint x)).trans (congrArg k (f.mapPoint_val x))
   mapCoefficients := g.mapCoefficients.comp f.mapCoefficients
   map_basis B hB := by
-    rw [image_comp (hj := hj) (hk := hk)]
+    rw [hj.functor_obj_comp hk]
     exact g.map_basis _ (f.map_basis B hB)
   map_transport B hB x y hx hy m := by
     simp only [LinearMap.comp_apply]
     rw [f.map_transport, g.map_transport]
-    simp only [image_comp (hj := hj) (hk := hk), Function.comp_apply]
+    simp only [hj.functor_obj_comp hk, Function.comp_apply]
+
+/-- Composite transport sends coefficient points by the two successive point maps. -/
+@[simp]
+theorem comp_mapPoint [RingHomCompTriple σ τ ρ]
+    (g : T'.SemilinearIntertwiner T'' τ k hk)
+    (f : T.SemilinearIntertwiner T' σ j hj) (x : S) :
+    (g.comp (ρ := ρ) f).mapPoint x = g.mapPoint (f.mapPoint x) := by rfl
+
+/-- Composite transport applies the two semilinear coefficient maps successively. -/
+@[simp]
+theorem comp_mapCoefficients_apply [RingHomCompTriple σ τ ρ]
+    (g : T'.SemilinearIntertwiner T'' τ k hk)
+    (f : T.SemilinearIntertwiner T' σ j hj) (m : M) :
+    (g.comp (ρ := ρ) f).mapCoefficients m = g.mapCoefficients (f.mapCoefficients m) := by rfl
 
 variable [T.IsAdditive] [T'.IsAdditive] [T''.IsAdditive]
   [T.PreservesSMul R] [T'.PreservesSMul R'] [T''.PreservesSMul R'']
@@ -132,9 +145,7 @@ identity-image open. -/
 @[simp]
 theorem sections_id (U : Opens X) :
     (id T R).sections U = T.restrictionLinearMap R
-      (show (Topology.IsOpenEmbedding.functor (f := 𝟙 X) IsOpenEmbedding.id).obj U ≤ U from by
-        rintro _ ⟨x, hx, rfl⟩
-        exact hx) := by
+      (IsOpenEmbedding.functor_obj_id U).le := by
   symm
   apply T.semilinearMapOfIntertwining_unique
   intro s x hx
@@ -146,10 +157,7 @@ theorem sections_comp [RingHomCompTriple σ τ ρ] (g : T'.SemilinearIntertwiner
     (f : T.SemilinearIntertwiner T' σ j hj) (U : Opens X) :
     (g.comp (ρ := ρ) f).sections U =
       (T''.restrictionLinearMap R''
-        (show (Topology.IsOpenEmbedding.functor (f := j ≫ k) (hk.comp hj)).obj U ≤
-          hk.functor.obj (hj.functor.obj U) from by
-          rintro _ ⟨x, hx, rfl⟩
-          exact ⟨j x, ⟨x, hx, rfl⟩, rfl⟩)).comp
+        (hj.functor_obj_comp hk U).le).comp
         ((g.sections (hj.functor.obj U)).comp (f.sections U)) := by
   symm
   apply T.semilinearMapOfIntertwining_unique
