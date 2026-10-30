@@ -28,21 +28,24 @@ public section
 
 open CategoryTheory TopologicalSpace Opposite TopCat
 
-universe u v r
+universe u v r w t
 
 namespace CategoryTheory.Limits.MultispanIndex
 
-variable {X : TopCat.{u}} {R : Type r} [Semiring R] {J : MultispanShape}
-  (I : MultispanIndex J (X.Sheaf (SemimoduleCat.{v} R)))
+variable {X : TopCat.{u}} {J : MultispanShape}
 
 /-- Evaluate an incidence diagram of sheaves on one open. This is an abbreviation
 so matching-family components retain the original section carriers. -/
 @[simps!]
-abbrev sectionsIndex (U : Opens X) : MultispanIndex J (SemimoduleCat.{v} R) where
+abbrev sectionsIndex {C : Type w} [Category.{t} C]
+    (I : MultispanIndex J (X.Sheaf C)) (U : Opens X) : MultispanIndex J C where
   left b := (I.left b).obj.obj (op U)
   right j := (I.right j).obj.obj (op U)
   fst b := (I.fst b).hom.app (op U)
   snd b := (I.snd b).hom.app (op U)
+
+variable {R : Type r} [Semiring R]
+  (I : MultispanIndex J (X.Sheaf (SemimoduleCat.{v} R)))
 
 /-- Linear chamber maps with local common face lifts extend uniquely to a linear
 matching family. Joint injectivity is required only on subopens of the chosen
