@@ -35,27 +35,6 @@ namespace TopCat.Sheaf
 
 variable {C : Type w} [Category.{v} C]
 
-section Local
-
-variable {X : TopCat.{u}} (F : X.Sheaf C)
-
-/-- Locally isomorphic restrictions induce locally bijective restrictions on the
-existing sheaf of morphisms from any fixed object. -/
-theorem hasLocallyBijectivePreconnectedRestrictions_sheafOver
-    (hF : ∀ x : X, ∃ U : Opens X, x ∈ U ∧
-      ∀ (V : Opens X) (hVU : V ≤ U), (V : Set X).Nonempty → IsPreconnected (V : Set X) →
-        IsIso (F.obj.map (homOfLE hVU).op)) (H : C) :
-    HasLocallyBijectivePreconnectedRestrictions (X := X) (CategoryTheory.sheafOver F H) := by
-  constructor
-  intro x
-  obtain ⟨U, hxU, hU⟩ := hF x
-  refine ⟨U, hxU, fun V hVU hne hconn => ?_⟩
-  have := hU V hVU hne hconn
-  exact (isIso_iff_bijective ((coyoneda.obj (op H)).map (F.obj.map (homOfLE hVU).op))).mp
-    inferInstance
-
-end Local
-
 section Facets
 
 variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
