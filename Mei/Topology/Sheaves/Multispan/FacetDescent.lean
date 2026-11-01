@@ -113,18 +113,20 @@ theorem existsUnique_sections_lift_of_facets (hS : IsOpen S)
     rw [hℓ]
     exact ConcreteCategory.congr_hom (hβ j) a
   · intro a j
-    let δ : E ⟶ (I.right j).obj.obj (op U) := SemimoduleCat.ofHom
-      ((SemimoduleCat.sectionsEval (I.sectionsIndex U).multispan (.right j)).comp m)
-    have hδa (a : E) : δ.hom a = (m a).val (.right j) := by
-      change ((SemimoduleCat.sectionsEval (I.sectionsIndex U).multispan (.right j)).comp m) a = _
-      simp only [LinearMap.comp_apply, SemimoduleCat.sectionsEval_apply]
+    let ev : SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan →ₗ[R]
+        (I.right j).obj.obj (op U) :=
+      SemimoduleCat.sectionsEval (I.sectionsIndex U).multispan (.right j)
+    let δ : E ⟶ (I.right j).obj.obj (op U) := SemimoduleCat.ofHom (ev.comp m)
+    have hδa (a : E) : δ.hom a = (m a).val (.right j) :=
+      (congrArg (fun f : E →ₗ[R] (I.right j).obj.obj (op U) => f a)
+        (SemimoduleCat.hom_ofHom (ev.comp m))).trans
+          ((LinearMap.comp_apply ev m a).trans
+            (SemimoduleCat.sectionsEval_apply (I.sectionsIndex U).multispan (.right j) (m a)))
     have hδ : δ ≫ (I.right j).obj.map (homOfLE ((hGO j).trans (hOU j))).op = α j := by
       apply SemimoduleCat.hom_ext
       apply LinearMap.ext
       intro a
-      change (I.right j).obj.map _ (δ.hom a) = _
-      rw [hδa]
-      exact hm a j
+      simpa only [SemimoduleCat.hom_comp, LinearMap.comp_apply, hδa] using hm a j
     exact (hδa a).symm.trans (ConcreteCategory.congr_hom
       (hrestrict j ((hGO j).trans (hOU j)) (hdense j) (hδ.trans (hβ j).symm)) a)
 
