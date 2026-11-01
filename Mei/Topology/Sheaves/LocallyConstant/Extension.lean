@@ -31,7 +31,7 @@ public section
 
 open CategoryTheory TopologicalSpace Opposite Topology
 
-universe u v
+universe u v w
 
 namespace TopCat.Sheaf
 
@@ -62,6 +62,26 @@ theorem map_injective_of_subset_closure {G U : Opens X} (hGU : G ≤ U)
     isPreconnected_connectedComponentIn).injective ?_⟩
   simpa only [← Functor.map_comp_apply, ← op_comp, homOfLE_comp] using
     F.presheaf.restrict_eq_of_le hGU hGU hPG hst
+
+section Hom
+
+variable {C : Type w} [Category.{v} C]
+
+/-- On a locally connected space, morphisms to sections of a locally constant
+sheaf are determined by their postcompositions with restriction to a dense open. -/
+theorem hom_restrict_injective_of_subset_closure {X : TopCat.{u}}
+    [LocallyConnectedSpace X] (F : X.Sheaf C)
+    (hF : ∀ x : X, ∃ W : Opens X, x ∈ W ∧
+      ∀ (B : Opens X) (hBW : B ≤ W), (B : Set X).Nonempty →
+        IsPreconnected (B : Set X) → IsIso (F.obj.map (homOfLE hBW).op))
+    (H : C) {G U : Opens X} (hGU : G ≤ U)
+    (hdense : (U : Set X) ⊆ closure (G : Set X)) :
+    Function.Injective (fun t : H ⟶ F.obj.obj (op U) =>
+      t ≫ F.obj.map (homOfLE hGU).op) := by
+  have := F.hasLocallyBijectivePreconnectedRestrictions_sheafOver hF H
+  exact TopCat.Sheaf.map_injective_of_subset_closure (sheafOver F H) hGU hdense
+
+end Hom
 
 /-- On a locally connected space, a section over a dense open subset `G` of `U` extends to `U`
 if it extends to a neighborhood of every point of `U`; the extension is unique. -/
