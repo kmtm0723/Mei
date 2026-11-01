@@ -41,7 +41,7 @@ variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V]
 /-- On an open subset `S` of a finite-dimensional real vector space, the linear
 chamber maps `α j` extend uniquely to a matching family under these conditions:
 the right sheaves have locally isomorphic restrictions on nonempty preconnected
-opens; `G j ≤ O j ≤ U` and `G j` is dense in `U`; each `α j` extends locally across
+opens; `G j ≤ O j ≤ U` and `G j` is dense in `O j`; each `α j` extends locally across
 `O j \ G j`; `U \ O j` lies in countably many affine subspaces of codimension at
 least two; each face span is jointly injective on every subopen of `U`; and common
 local face lifts agree with the incident `α j` on `N ⊓ G j`.
@@ -55,7 +55,7 @@ theorem existsUnique_sections_lift_of_facets (hS : IsOpen S)
           IsIso ((I.right j).obj.map (homOfLE hBW).op))
     (E : SemimoduleCat.{v} R) (U : Opens (TopCat.of S))
     (G O : J.R → Opens (TopCat.of S)) (hGO : ∀ j, G j ≤ O j) (hOU : ∀ j, O j ≤ U)
-    (hdense : ∀ j, (U : Set (TopCat.of S)) ⊆ closure (G j : Set (TopCat.of S)))
+    (hdense : ∀ j, (O j : Set (TopCat.of S)) ⊆ closure (G j : Set (TopCat.of S)))
     {κ : Type*} [Countable κ] (A : J.R → κ → AffineSubspace ℝ V)
     (hA : ∀ j k, Module.finrank ℝ (A j k).direction + 1 < Module.finrank ℝ V)
     (hsing : ∀ j x, x ∈ U → x ∉ O j → ∃ k, (x : V) ∈ A j k)
@@ -82,9 +82,19 @@ theorem existsUnique_sections_lift_of_facets (hS : IsOpen S)
         ((ℓ a).val (.right j)) = (α j).hom a := by
   classical
   have : LocallyConnectedSpace (TopCat.of S) := hS.locallyConnectedSpace
+  have hdenseU (j : J.R) : (U : Set (TopCat.of S)) ⊆ closure (G j : Set (TopCat.of S)) := by
+    have hOUdense : (U : Set (TopCat.of S)) ⊆ closure (O j : Set (TopCat.of S)) := by
+      intro x hx
+      apply mem_closure_iff.mpr
+      intro W hW hxW
+      obtain ⟨N, _, hNW, _, _, y, hyN, hyO⟩ :=
+        hS.exists_isPreconnected_inter_of_subset_iUnion (A j) (hA j)
+          (O := (O j : Set (TopCat.of S))) (hsing j) hx (hW.mem_nhds hxW)
+      exact ⟨y, hNW hyN, hyO⟩
+    exact hOUdense.trans (closure_minimal (hdense j) isClosed_closure)
   have hExt (j : J.R) := TopCat.Sheaf.existsUnique_hom_extension_of_facets
     (I.right j) (hRight j) hS (A j) (hA j) (hGO j) (hOU j)
-    (fun x hx => hdense j (hOU j hx)) (hsing j) E (α j) (hfacet j)
+    (hdense j) (hsing j) E (α j) (hfacet j)
   choose β hβ using fun j => (hExt j).exists
   have hβN (j : J.R) (N : Opens (TopCat.of S)) (hNU : N ≤ U) :
       (β j ≫ (I.right j).obj.map (homOfLE hNU).op) ≫
@@ -99,11 +109,11 @@ theorem existsUnique_sections_lift_of_facets (hS : IsOpen S)
     refine ⟨N, hNU, t, hxN, ?_, ?_⟩
     · apply (I.right (J.fst b)).hom_restrict_injective_of_subset_closure
         (hRight (J.fst b)) E inf_le_left
-        (fun z hz => N.isOpen.inter_closure ⟨hz, hdense _ (hNU hz)⟩)
+        (fun z hz => N.isOpen.inter_closure ⟨hz, hdenseU _ (hNU hz)⟩)
       exact hf.trans (hβN _ N hNU).symm
     · apply (I.right (J.snd b)).hom_restrict_injective_of_subset_closure
         (hRight (J.snd b)) E inf_le_left
-        (fun z hz => N.isOpen.inter_closure ⟨hz, hdense _ (hNU hz)⟩)
+        (fun z hz => N.isOpen.inter_closure ⟨hz, hdenseU _ (hNU hz)⟩)
       exact hg.trans (hβN _ N hNU).symm)
   refine ⟨ℓ, ?_, fun m hm => huniq m ?_⟩
   · intro a j
@@ -123,7 +133,6 @@ theorem existsUnique_sections_lift_of_facets (hS : IsOpen S)
       intro a
       simpa only [SemimoduleCat.hom_comp, LinearMap.comp_apply, hδa] using hm a j
     exact (hδa a).symm.trans (ConcreteCategory.congr_hom
-      ((I.right j).hom_restrict_injective_of_subset_closure (hRight j) E
-        ((hGO j).trans (hOU j)) (hdense j) (hδ.trans (hβ j).symm)) a)
+      ((hExt j).unique hδ (hβ j)) a)
 
 end CategoryTheory.Limits.MultispanIndex
