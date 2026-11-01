@@ -84,13 +84,6 @@ theorem existsUnique_sections_lift_of_facets (hS : IsOpen S)
     (I.right j) (hRight j) hS (A j) (hA j) (hGO j) (hOU j)
     (fun x hx => hdense j (hOU j hx)) (hsing j) E (α j) (hfacet j)
   choose β hβ using fun j => (hExt j).exists
-  have hrestrict (j : J.R) {P Q : Opens (TopCat.of S)} (hPQ : P ≤ Q)
-      (hd : (Q : Set (TopCat.of S)) ⊆ closure (P : Set (TopCat.of S))) :
-      Function.Injective (fun t : E ⟶ (I.right j).obj.obj (op Q) =>
-        t ≫ (I.right j).obj.map (homOfLE hPQ).op) := by
-    have := (I.right j).hasLocallyBijectivePreconnectedRestrictions_sheafOver (hRight j) E
-    -- Hom-sheaf restriction is postcomposition by the original restriction map.
-    exact TopCat.Sheaf.map_injective_of_subset_closure (sheafOver (I.right j) E) hPQ hd
   have hβN (j : J.R) (N : Opens (TopCat.of S)) (hNU : N ≤ U) :
       (β j ≫ (I.right j).obj.map (homOfLE hNU).op) ≫
           (I.right j).obj.map (homOfLE (inf_le_left : N ⊓ G j ≤ N)).op =
@@ -102,10 +95,12 @@ theorem existsUnique_sections_lift_of_facets (hS : IsOpen S)
     intro b x hx
     obtain ⟨N, hNU, t, hxN, hf, hg⟩ := hface b x hx
     refine ⟨N, hNU, t, hxN, ?_, ?_⟩
-    · apply hrestrict (J.fst b) inf_le_left
+    · apply (I.right (J.fst b)).hom_restrict_injective_of_subset_closure
+        (hRight (J.fst b)) E inf_le_left
         (fun z hz => N.isOpen.inter_closure ⟨hz, hdense _ (hNU hz)⟩)
       exact hf.trans (hβN _ N hNU).symm
-    · apply hrestrict (J.snd b) inf_le_left
+    · apply (I.right (J.snd b)).hom_restrict_injective_of_subset_closure
+        (hRight (J.snd b)) E inf_le_left
         (fun z hz => N.isOpen.inter_closure ⟨hz, hdense _ (hNU hz)⟩)
       exact hg.trans (hβN _ N hNU).symm)
   refine ⟨ℓ, ?_, fun m hm => huniq m ?_⟩
@@ -117,17 +112,16 @@ theorem existsUnique_sections_lift_of_facets (hS : IsOpen S)
         (I.right j).obj.obj (op U) :=
       SemimoduleCat.sectionsEval (I.sectionsIndex U).multispan (.right j)
     let δ : E ⟶ (I.right j).obj.obj (op U) := SemimoduleCat.ofHom (ev.comp m)
-    have hδa (a : E) : δ.hom a = (m a).val (.right j) :=
-      (congrArg (fun f : E →ₗ[R] (I.right j).obj.obj (op U) => f a)
-        (SemimoduleCat.hom_ofHom (ev.comp m))).trans
-          ((LinearMap.comp_apply ev m a).trans
-            (SemimoduleCat.sectionsEval_apply (I.sectionsIndex U).multispan (.right j) (m a)))
+    have hδa (a : E) : δ.hom a = (m a).val (.right j) := by
+      simp only [δ, SemimoduleCat.hom_ofHom]
+      exact SemimoduleCat.sectionsEval_apply (I.sectionsIndex U).multispan (.right j) (m a)
     have hδ : δ ≫ (I.right j).obj.map (homOfLE ((hGO j).trans (hOU j))).op = α j := by
       apply SemimoduleCat.hom_ext
       apply LinearMap.ext
       intro a
       simpa only [SemimoduleCat.hom_comp, LinearMap.comp_apply, hδa] using hm a j
     exact (hδa a).symm.trans (ConcreteCategory.congr_hom
-      (hrestrict j ((hGO j).trans (hOU j)) (hdense j) (hδ.trans (hβ j).symm)) a)
+      ((I.right j).hom_restrict_injective_of_subset_closure (hRight j) E
+        ((hGO j).trans (hOU j)) (hdense j) (hδ.trans (hβ j).symm)) a)
 
 end CategoryTheory.Limits.MultispanIndex
