@@ -17,15 +17,12 @@ map must extend locally across its interior facets. At a coefficient face a
 common local lift need only agree with the prescribed maps on the incident top
 strata; equality with the extended chamber maps follows from density.
 
-The chamber maps may be finite sums of branches. Only their totals enter the
-facet equations and common lifts, so separate branches need not extend or lift.
-The chamber stratifications may differ and the incidence diagram may be infinite.
+Facet extension of the chamber maps, together with gluing of local face lifts,
+produces a matching family of sections. The chamber stratifications may differ
+and the incidence diagram may be infinite.
 
-We combine `TopCat.Sheaf.existsUnique_hom_extension_of_facets` with
-`MultispanIndex.existsUnique_sections_lift_of_local`. The former removes the
-interior facets and countably many affine codimension-two obstacles; the latter
-glues the common coefficient-face lifts and assembles the existing matching
-family submodule. No new matching-family carrier is introduced.
+Usage note: if a prescribed chamber map is a finite sum of branch maps, the
+conditions concern that sum; the separate branches need not extend or lift.
 -/
 
 public section
@@ -41,11 +38,16 @@ variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V]
   {J : MultispanShape}
   (I : MultispanIndex J ((TopCat.of S).Sheaf (SemimoduleCat.{v} R)))
 
-/-- Linear maps on dense top strata extend uniquely to a matching family when
-their totals extend across interior facets and have common local coefficient-face
-lifts. The face equations are tested only on the incident top strata. Individual
-summands need not extend or admit common lifts, and neither individual face leg
-must be injective. -/
+/-- On an open subset `S` of a finite-dimensional real vector space, the linear
+chamber maps `α j` extend uniquely to a matching family under these conditions:
+the right sheaves have locally isomorphic restrictions on nonempty preconnected
+opens; `G j ≤ O j ≤ U` and `G j` is dense in `U`; each `α j` extends locally across
+`O j \ G j`; `U \ O j` lies in countably many affine subspaces of codimension at
+least two; each face span is jointly injective on every subopen of `U`; and common
+local face lifts agree with the incident `α j` on `N ⊓ G j`.
+
+Usage note: when `α j` is a finite sum, the conditions apply to that map, without
+requiring extensions or lifts of its individual summands. -/
 theorem existsUnique_sections_lift_of_facets (hS : IsOpen S)
     (hRight : ∀ j x, ∃ W : Opens (TopCat.of S), x ∈ W ∧
       ∀ (B : Opens (TopCat.of S)) (hBW : B ≤ W),
