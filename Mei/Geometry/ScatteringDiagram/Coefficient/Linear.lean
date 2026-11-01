@@ -45,15 +45,6 @@ instance instAddCommMonoidCoefficientSections (U : Opens C.regularSpace) :
     AddCommMonoid ((D.coefficientLocalSystem M).presheaf.obj (op U)) :=
   (D.coefficientTransport M).instAddCommMonoidSections U
 
-/-- Addition of coefficient-local-system sections is pointwise on off-wall values. -/
-@[simp]
-theorem coefficientLocalSystem_value_add {U : Opens C.regularSpace}
-    (s t : (D.coefficientLocalSystem M).presheaf.obj (op U))
-    (x : C.coefficientPoints) (hx : x.val ∈ U) :
-    (D.coefficientTransport M).value (s + t) x hx =
-      (D.coefficientTransport M).value s x hx + (D.coefficientTransport M).value t x hx := by
-  exact (D.coefficientTransport M).value_add s t x hx
-
 variable (R : Type*) [Semiring R] [Module R M] [SMulCommClass H R M]
 
 instance coefficientTransport_preservesSMul : (D.coefficientTransport M).PreservesSMul R where
@@ -65,15 +56,6 @@ instance coefficientTransport_preservesSMul : (D.coefficientTransport M).Preserv
 instance instModuleCoefficientSections (U : Opens C.regularSpace) :
     Module R ((D.coefficientLocalSystem M).presheaf.obj (op U)) :=
   (D.coefficientTransport M).instModuleSections R U
-
-/-- Scalar multiplication of coefficient-local-system sections is pointwise on off-wall values. -/
-@[simp]
-theorem coefficientLocalSystem_value_smul {U : Opens C.regularSpace} (r : R)
-    (s : (D.coefficientLocalSystem M).presheaf.obj (op U))
-    (x : C.coefficientPoints) (hx : x.val ∈ U) :
-    (D.coefficientTransport M).value (r • s) x hx =
-      r • (D.coefficientTransport M).value s x hx := by
-  exact (D.coefficientTransport M).value_smul (R := R) r s x hx
 
 /-- The original coefficient local system with its semimodule structure.
 Wall labels need not commute and no global consistency is assumed. -/
