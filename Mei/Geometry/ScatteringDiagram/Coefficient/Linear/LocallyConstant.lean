@@ -62,19 +62,25 @@ variable [SMulCommClass G R M]
 as a linear map into coefficient-local-system sections. Its value at a point
 `x` of the open is `g x a` for incoming coefficient `a`. -/
 def locallyConstantCoefficientSections :
-    E →ₗ[R] (D.coefficientLocalSystem M).presheaf.obj (op U) where
-  toFun a := (D.coefficientTransport M).sectionOfLocallyParallel
-    (fun x : U => fun _ => g x a) (D.locallyParallel_locallyConstant hoff g a)
-  map_add' a b := by
-    apply (D.coefficientTransport M).section_ext
-    intro x hx
-    simp only [D.coefficientLocalSystem_value_add,
-      DenseBasisTransport.value_sectionOfLocallyParallel, map_add]
-  map_smul' r a := by
-    apply (D.coefficientTransport M).section_ext
-    intro x hx
-    simp only [D.coefficientLocalSystem_value_smul,
-      DenseBasisTransport.value_sectionOfLocallyParallel, map_smul, RingHom.id_apply]
+    E →ₗ[R] (D.coefficientLocalSystem M).presheaf.obj (op U) := by
+  let T := D.coefficientTransport M
+  -- Construct with the transport-section instances so the generic value lemmas
+  -- match directly. These are the instances registered on coefficient sections.
+  letI : AddCommMonoid (T.sheaf.presheaf.obj (op U)) := T.instAddCommMonoidSections U
+  letI : Module R (T.sheaf.presheaf.obj (op U)) := T.instModuleSections R U
+  exact ({
+    toFun a := T.sectionOfLocallyParallel
+      (fun x : U => fun _ => g x a) (D.locallyParallel_locallyConstant hoff g a)
+    map_add' a b := by
+      apply T.section_ext
+      intro x hx
+      simp only [T.value_add, DenseBasisTransport.value_sectionOfLocallyParallel, map_add]
+    map_smul' r a := by
+      apply T.section_ext
+      intro x hx
+      simp only [T.value_smul (R := R),
+        DenseBasisTransport.value_sectionOfLocallyParallel, map_smul, RingHom.id_apply]
+  } : E →ₗ[R] T.sheaf.presheaf.obj (op U))
 
 /-- The constructed section reads the prescribed linear coefficient map. -/
 @[simp]
