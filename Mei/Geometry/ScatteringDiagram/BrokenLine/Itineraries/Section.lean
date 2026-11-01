@@ -70,25 +70,22 @@ theorem exists_cutoffDecoratedEvaluation_sections (k : ℕ) :
       fun Q he => congrArg (fun l : ℳ 0 →ₗ[R] M => l.comp α) he)
   let g : LocallyConstant U (E →ₗ[R] M) :=
     ⟨fun x => F x.val.val, (IsLocallyConstant.iff_eventually_eq _).mpr hF⟩
-  refine ⟨D.locallyConstantCoefficientSections hoff g, ?_, ?_⟩
-  · intro a x hx
-    exact (D.value_locallyConstantCoefficientSections hoff g a x hx).trans
-      (cutoffDecoratedEvaluationLinearMap_apply d ℳ T (fun q => i (w q))
-        f c ε P W S A k x.val.val (α a))
-  · intro t ht
-    apply LinearMap.ext
-    intro a
-    apply (D.coefficientTransport M).section_ext
-    intro x hx
-    calc
-      (D.coefficientTransport M).value (t a) x hx =
+  have hg (x : U) (a : E) : g x a =
+      cutoffDecoratedEvaluation d ℳ T (α a) (fun q => i (w q))
+        f c ε P W S A k x.val.val := by
+    simp [g, F, LinearMap.comp_apply, cutoffDecoratedEvaluationLinearMap_apply]
+  have hexist (a : E) (x : C.coefficientPoints) (hx : x.val ∈ U) :
+      (D.coefficientTransport M).value
+        (D.locallyConstantCoefficientSections hoff g a) x hx =
           cutoffDecoratedEvaluation d ℳ T (α a) (fun q => i (w q))
-            f c ε P W S A k x.val.val := ht a x hx
-      _ = g ⟨x.val, hx⟩ a :=
-        (cutoffDecoratedEvaluationLinearMap_apply d ℳ T (fun q => i (w q))
-          f c ε P W S A k x.val.val (α a)).symm
-      _ = (D.coefficientTransport M).value
-          (D.locallyConstantCoefficientSections hoff g a) x hx :=
-        (D.value_locallyConstantCoefficientSections hoff g a x hx).symm
+            f c ε P W S A k x.val.val :=
+    (D.value_locallyConstantCoefficientSections hoff g a x hx).trans (hg ⟨x.val, hx⟩ a)
+  refine ⟨D.locallyConstantCoefficientSections hoff g, hexist, ?_⟩
+  intro t ht
+  apply LinearMap.ext
+  intro a
+  apply (D.coefficientTransport M).section_ext
+  intro x hx
+  exact (ht a x hx).trans (hexist a x hx).symm
 
 end Mei.FiniteWallDiagram
