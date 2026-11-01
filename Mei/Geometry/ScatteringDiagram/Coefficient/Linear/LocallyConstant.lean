@@ -11,10 +11,9 @@ public import Mei.Geometry.ScatteringDiagram.Coefficient.Linear
 # Linear coefficient sections away from walls
 
 Locally constant families of linear coefficient maps on an off-wall open define
-linear maps into the existing coefficient local system. Local transport in a
+linear maps into `coefficientLocalSystem`. Local transport in a
 convex chart contained in that open is the identity, since its segments meet no
-walls. The construction uses the original section carrier and its public value
-and linear-operation equations.
+walls.
 -/
 
 public noncomputable section
@@ -27,33 +26,6 @@ variable {N V G M : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace 
   {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i} {C : FinitePolyhedralComplex h}
   [Group G] (D : FiniteWallDiagram C G)
 
-section Transport
-
-variable [MulAction G M]
-
-/-- Transport within a convex regular chart consisting of off-wall points is
-the identity, without any global consistency assumption on the diagram. -/
-theorem coefficientTransport_eq_refl_of_subset (B : Opens C.regularSpace)
-    (hB : B ∈ C.coefficientCharts) (hoff : (B : Set C.regularSpace) ⊆ C.coefficientPoints)
-    (x y : C.coefficientPoints) (hx : x.val ∈ B) (hy : y.val ∈ B) :
-    (D.coefficientTransport M).transport B
-      (by simpa only [D.coefficientTransport_basis M] using hB) x y hx hy = Equiv.refl M := by
-  have hcross : WallComplement.crossings
-      (⟨x.val.val, x.property⟩ : WallComplement (fun P : C.walls => (P : Set V)))
-      ⟨y.val.val, y.property⟩ = ∅ := by
-    apply Set.eq_empty_iff_forall_notMem.mpr
-    rintro ⟨P, t⟩ ht
-    obtain ⟨htI, htP⟩ := (WallComplement.mem_crossings _ _ P t).mp ht
-    have hz := ((C.mem_coefficientCharts B).mp hB).segment_subset ⟨x.val, hx, rfl⟩ ⟨y.val, hy, rfl⟩
-      (lineMap_mem_segment ℝ x.val.val y.val.val htI)
-    obtain ⟨z, hzB, he⟩ := hz
-    exact hoff hzB P (he.symm ▸ htP)
-  ext a
-  rw [D.coefficientTransport_transport M B hB x y hx hy, coefficientPathTransport_apply,
-    D.pathProduct_toPath_eq_one _ hcross, one_smul]
-  rfl
-
-end Transport
 
 variable {R E : Type*} [Semiring R] [AddCommMonoid M] [DistribMulAction G M]
   [Module R M] [AddCommMonoid E] [Module R E]
@@ -87,8 +59,8 @@ private theorem locallyParallel_locallyConstant (a : E) :
 variable [SMulCommClass G R M]
 
 /-- A locally constant family of linear coefficient maps on an off-wall open,
-as a linear map into the actual coefficient local-system sections. No values
-are added at wall points outside the chosen open. -/
+as a linear map into coefficient-local-system sections. Its value at a point
+`x` of the open is `g x a` for incoming coefficient `a`. -/
 def locallyConstantCoefficientSections :
     E →ₗ[R] (D.coefficientLocalSystem M).presheaf.obj (op U) where
   toFun a := (D.coefficientTransport M).sectionOfLocallyParallel
@@ -96,16 +68,13 @@ def locallyConstantCoefficientSections :
   map_add' a b := by
     apply (D.coefficientTransport M).section_ext
     intro x hx
-    -- The concrete coefficient-section instances wrap the transport-section
-    -- instances. Default transparency identifies these wrappers for value_add.
-    erw [(D.coefficientTransport M).value_add]
-    simp only [DenseBasisTransport.value_sectionOfLocallyParallel, map_add]
+    simp only [D.coefficientLocalSystem_value_add,
+      DenseBasisTransport.value_sectionOfLocallyParallel, map_add]
   map_smul' r a := by
     apply (D.coefficientTransport M).section_ext
     intro x hx
-    -- As above, reduce the concrete scalar-action wrapper before evaluation.
-    erw [(D.coefficientTransport M).value_smul (R := R)]
-    simp only [DenseBasisTransport.value_sectionOfLocallyParallel, map_smul, RingHom.id_apply]
+    simp only [D.coefficientLocalSystem_value_smul,
+      DenseBasisTransport.value_sectionOfLocallyParallel, map_smul, RingHom.id_apply]
 
 /-- The constructed section reads the prescribed linear coefficient map. -/
 @[simp]
