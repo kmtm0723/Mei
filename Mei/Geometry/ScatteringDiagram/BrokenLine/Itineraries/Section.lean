@@ -11,10 +11,10 @@ public import Mei.Geometry.ScatteringDiagram.Coefficient.Linear.LocallyConstant
 /-!
 # Generic cutoff ray evaluations as coefficient sections
 
-The existing cutoff evaluation linear map is locally constant away from one
+`cutoffDecoratedEvaluationLinearMap` is locally constant away from one
 finite exceptional arrangement, uniformly over incoming coefficients. On any
 off-wall open consisting of generic points, it therefore defines a linear map
-into the actual coefficient local system. Its values are the original sums over
+into `coefficientLocalSystem`. Its values are `cutoffDecoratedEvaluation`, summed over
 actual decorated rays, with their incoming tails and endpoint admission retained.
 
 These are top-stratum section maps for facet descent. No extension across the
@@ -47,8 +47,8 @@ variable {N V G Γ R M E J K : Type*} [AddCommGroup N]
 include hf hP hW hS hA in
 /-- One exceptional arrangement supplies actual coefficient-section maps for
 every generic off-wall open and every incoming linear parameter map. The
-arrangement is independent of the input and of the open. Values remain the
-original full cutoff ray evaluation, even when rays bend outside the open. -/
+arrangement is independent of the input and of the open. Values are
+`cutoffDecoratedEvaluation`, including rays that bend outside the open. -/
 theorem exists_cutoffDecoratedEvaluation_sections (k : ℕ) :
     ∃ 𝒜 : ExceptionalArrangement V, ∀ (U : Opens C.regularSpace)
       (_ : (U : Set C.regularSpace) ⊆ C.coefficientPoints),
