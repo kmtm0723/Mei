@@ -70,11 +70,8 @@ theorem existsUnique_comp_eq_and_comp_eq_on_span_singleton
       f.comp ℓ = α.comp (Submodule.span R {a}).subtype ∧
         g.comp ℓ = β.comp (Submodule.span R {a}).subtype := by
   apply (existsUnique_comp_eq_and_comp_eq_iff hfg).mpr
-  have hspan : Submodule.span R {a} ≤ (range (f.prod g)).comap (α.prod β) := by
-    apply Submodule.span_le.mpr
-    intro z hz
-    obtain rfl := Set.mem_singleton_iff.mp hz
-    exact ha
+  have hspan : Submodule.span R {a} ≤ (range (f.prod g)).comap (α.prod β) :=
+    (Submodule.span_singleton_le_iff_mem _ _).mpr ha
   exact fun z => hspan z.property
 
 end LinearMap
