@@ -16,8 +16,9 @@ rational-normal polyhedra carrying fixed linear maps. A chart contributes on its
 relative interior. The same charts and maps apply simultaneously to every incoming
 coefficient, even when addition or scalar multiplication kills individual histories.
 A single common partition works for every cutoff in a bounded finite range,
-including all lower-dimensional strata. The one-cutoff presentation is obtained
-by summing its disjoint relative interiors.
+including all lower-dimensional strata. The one-cutoff presentation uses the
+corresponding single-family weighted
+presentation, derived from the same partition theorem.
 
 This is a presentation of the actual evaluation operator, with the original
 incoming tails and endpoint admission. Boundary points of a closed chart are
@@ -45,9 +46,9 @@ variable {R M Γ V J K Λ : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
   (hC : IsRationalNormalPolyhedron h C)
 
 include hf hP hW hS hC in
-/-- All actual cutoff operators through `k` share a finite closed rational-normal
-partition, simultaneously for every input. Relative interiors are nonempty,
-pairwise disjoint, cover the whole endpoint space, and carry fixed linear maps. -/
+/-- All actual cutoff operators through `k` share a finite family of closed
+rational-normal polyhedra whose relative interiors partition the endpoint space.
+Those interiors are nonempty and carry fixed linear maps for every input. -/
 theorem exists_cutoffDecoratedEvaluationLinearMap_commonPartition (k : ℕ) :
     ∃ (n : ℕ) (A : Fin n → Set V) (L : Fin n → Fin (k + 1) → ℳ 0 →ₗ[R] M),
       (∀ j, (A j).Nonempty ∧ IsRationalNormalPolyhedron h (A j) ∧
@@ -78,16 +79,11 @@ theorem exists_cutoffDecoratedEvaluationLinearMap_polyhedralCharts (k : ℕ) :
         ∀ Q, cutoffDecoratedEvaluationLinearMap d ℳ T (fun q => i (w q))
           f c ε P W S C k Q = ∑ j, if Q ∈ intrinsicInterior ℝ (A j) then L j else 0 := by
   classical
-  obtain ⟨n, A, L, hA, hdisj, hcover, hval⟩ :=
-    exists_cutoffDecoratedEvaluationLinearMap_commonPartition
+  obtain ⟨n, D, L, hD, hL⟩ :=
+    exists_cutoffDecoratedEvaluationLinearMap_semilinearPresentation
       d ℳ T f c ε P W S C h w hf hP hW hS hC k
-  refine ⟨n, A, fun j => L j (Fin.last k), fun j => ⟨(hA j).1, (hA j).2.1⟩, ?_⟩
-  intro Q
-  obtain ⟨j, hj⟩ := Set.mem_iUnion.mp (hcover.symm ▸ Set.mem_univ Q)
-  rw [Finset.sum_eq_single j, ite_eq_left hj]
-  · simpa only [Fin.val_last] using hval j (Fin.last k) Q hj
-  · intro b _ hbj
-    exact ite_eq_right (fun hb => Set.disjoint_left.mp (hdisj hbj) hb hj)
-  · simp
+  obtain ⟨m, B, L', hB, hsum⟩ :=
+    IsRationalSemilinear.exists_weighted_polyhedralCharts D hD L
+  exact ⟨m, B, L', hB, fun Q => (hL Q).trans (hsum Q)⟩
 
 end Mei
