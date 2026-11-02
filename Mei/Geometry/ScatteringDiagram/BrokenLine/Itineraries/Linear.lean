@@ -240,9 +240,9 @@ theorem exists_cutoffDecoratedEvaluationLinearMap_semilinearPresentation (k : â„
   intro a
   rw [cutoffDecoratedEvaluationLinearMap_apply, cutoffDecoratedEvaluation_eq_uniform_sum]
   simp only [LinearMap.sum_apply]
-  exact Fintype.sum_equiv e _ _ (fun b => by
-    simp only [e.symm_apply_apply]
-    rfl)
+  simp only [cutoffEvaluationSummand, D, L, Set.mem_ofPred_eq]
+  exact (e.symm.sum_comp _).symm
+
 
 /-- One finite exceptional arrangement makes the entire evaluation linear map
 locally constant. The arrangement and the neighborhood work simultaneously for
