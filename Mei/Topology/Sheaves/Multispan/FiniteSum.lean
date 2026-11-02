@@ -80,7 +80,11 @@ theorem existsUnique_finiteSum_sections_descent_gluing
       (SemimoduleCat.sectionsMap (η.sectionsMultispan (iSup U))).comp L = m := by
   let α i j := SemimoduleCat.ofHom (∑ b, β i j b)
   have hex i := I.existsUnique_sections_lift_of_local E (U i) (α i)
-    (fun W hW => hinj W (hW.trans (le_iSup U i))) (hface i)
+    (fun W hW => hinj W (hW.trans (le_iSup U i))) (by
+      intro a b x hx
+      obtain ⟨N, hNU, t, hxN, ht₁, ht₂⟩ := hface i b x hx
+      exact ⟨N, hNU, t.hom a, hxN, ConcreteCategory.congr_hom ht₁ a,
+        ConcreteCategory.congr_hom ht₂ a⟩)
   choose ℓ hℓ huniq using hex
   have hℓ' i a j : (ℓ i a).val (.right j) = (∑ b, β i j b) a := by
     simpa only [α, SemimoduleCat.hom_ofHom] using hℓ i a j
