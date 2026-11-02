@@ -50,9 +50,11 @@ private theorem locallyParallel_locallyConstant (a : E) :
   refine ⟨W, ⟨x, hxA, rfl⟩, homOfLE hWU, ?_⟩
   rw [DenseBasisTransport.prelocal_pred_iff]
   intro B' hB' hB'W y z hy hz
-  rw [D.coefficientTransport_eq_refl_of_subset B'
-    (by simpa only [D.coefficientTransport_basis M] using hB')
-    (fun q hq => hoff (hWU (hB'W hq))) y z hy hz, Equiv.refl_apply]
+  have hchart : B' ∈ C.coefficientCharts := by
+    simpa only [D.coefficientTransport_basis M] using hB'
+  rw [D.coefficientTransport_transport M B' hchart y z hy hz,
+    D.coefficientPathTransport_coefficientSegment_eq_refl_of_subset B' hchart
+      (fun q hq => hoff (hWU (hB'W hq))) y z hy hz, Equiv.refl_apply]
   exact congrArg (fun f : E →ₗ[R] M => f a)
     ((hsame ⟨y.val, hB'W hy⟩).trans (hsame ⟨z.val, hB'W hz⟩).symm)
 
@@ -92,6 +94,7 @@ theorem value_locallyConstantCoefficientSections (a : E) (x : C.coefficientPoint
 
 /-- Restricting the section map only restricts its endpoint domain; the
 locally constant input maps themselves are pulled back by the open inclusion. -/
+@[simp]
 theorem locallyConstantCoefficientSections_restrict {U' : Opens C.regularSpace}
     (hU'U : U' ≤ U) (a : E) :
     (D.coefficientTransport M).restrictionLinearMap R hU'U
