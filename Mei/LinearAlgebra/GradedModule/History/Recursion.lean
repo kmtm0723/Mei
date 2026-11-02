@@ -19,8 +19,7 @@ Only the histories of each actual input are needed; the grading may be infinite.
 Uniform finite support on an input range gives the corresponding identity of
 linear maps, including after any final linear output map. Finite generation of
 that range supplies such supports through `exists_uniform_homogeneousHistory_support`.
-The proofs reuse the existing finite recursion and finite component expansions,
-and retain their semiring hypotheses without additive cancellation.
+All statements hold over a semiring and semimodule; no additive cancellation is assumed.
 -/
 
 public noncomputable section
@@ -41,7 +40,7 @@ theorem sum_sum_homogeneousHistory_eq_finiteRecursion (r : ℕ) (a : M) :
     Module.End.finiteRecursion_apply]
 
 /-- Every solution of a nilpotent recursion equals its finite homogeneous
-history expansion. The uniqueness argument needs no subtraction. -/
+history expansion. No additive cancellation is assumed. -/
 theorem eq_sum_sum_homogeneousHistory_of_eq_add {r : ℕ} (hU : U ^ r = 0)
     {a x : M} (hx : x = a + U x) :
     x = ∑ j ∈ Finset.range r,
@@ -52,7 +51,7 @@ theorem eq_sum_sum_homogeneousHistory_of_eq_add {r : ℕ} (hU : U ^ r = 0)
 
 /-- Uniform finite history supports give the finite recursion as a linear-map
 identity on the input range, also after any final projection or linear output map. -/
-theorem sum_sum_comp_homogeneousHistory_eq_finiteRecursion
+theorem sum_sum_comp_homogeneousHistory_comp_eq_comp_finiteRecursion_comp
     {E N : Type*} [AddCommMonoid E] [Module R E] [AddCommMonoid N] [Module R N]
     (a : E →ₗ[R] M) (b : M →ₗ[R] N) (r : ℕ)
     (S : (j : ℕ) → Finset (Fin j → ι))
