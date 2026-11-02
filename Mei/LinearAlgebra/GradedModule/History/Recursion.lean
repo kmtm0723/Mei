@@ -7,6 +7,7 @@ module
 
 public import Mei.LinearAlgebra.End.Recursion
 public import Mei.LinearAlgebra.GradedModule.History.Uniform
+public import Mei.LinearAlgebra.GradedModule.History.Positive
 
 /-!
 # Homogeneous histories of finite recursion solutions
@@ -19,6 +20,8 @@ Only the histories of each actual input are needed; the grading may be infinite.
 Uniform finite support on an input range gives the corresponding identity of
 linear maps, including after any final linear output map. Finite generation of
 that range supplies such supports through `exists_uniform_homogeneousHistory_support`.
+Component maps preserving chosen additive positive monoids also preserve each
+component of finite recursion solutions, including for mixed-degree inputs.
 All statements hold over a semiring and semimodule; no additive cancellation is assumed.
 -/
 
@@ -70,5 +73,32 @@ theorem sum_sum_comp_homogeneousHistory_comp_eq_comp_finiteRecursion_comp
       intro x
       simp only [LinearMap.sum_apply, LinearMap.comp_apply, List.ofFn_const,
         List.prod_replicate, Module.End.finiteRecursion_apply, map_sum]
+
+/-- Finite recursion preserves componentwise positive inputs if every homogeneous
+component of the endomorphism preserves the chosen additive positive monoids. -/
+theorem finiteRecursion_component_mem_addSubmonoid (Pos : ι → AddSubmonoid M)
+    (hU : ∀ i q x, x ∈ ℳ i → x ∈ Pos i →
+      (DirectSum.decompose ℳ (U x) q : M) ∈ Pos q)
+    (r : ℕ) (a : M) (ha : ∀ i, (DirectSum.decompose ℳ a i : M) ∈ Pos i) (q : ι) :
+    (DirectSum.decompose ℳ (U.finiteRecursion r a) q : M) ∈ Pos q := by
+  rw [← sum_sum_homogeneousHistory_eq_finiteRecursion ℳ U r a]
+  simp only [DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
+  apply (Pos q).sum_mem
+  intro j _
+  apply (Pos q).sum_mem
+  intro p _
+  exact homogeneousHistory_component_mem_addSubmonoid_of_components ℳ Pos
+    (fun _ : Fin j => U) p (fun _ i => hU i _) a ha q
+
+/-- Every solution of a nilpotent homogeneous recursion has positive components
+when its input and the selected component maps preserve the positive monoids. -/
+theorem component_mem_addSubmonoid_of_eq_add (Pos : ι → AddSubmonoid M)
+    (hU : ∀ i q x, x ∈ ℳ i → x ∈ Pos i →
+      (DirectSum.decompose ℳ (U x) q : M) ∈ Pos q)
+    {r : ℕ} (hnil : U ^ r = 0) {a x : M}
+    (ha : ∀ i, (DirectSum.decompose ℳ a i : M) ∈ Pos i)
+    (hx : x = a + U x) (q : ι) : (DirectSum.decompose ℳ x q : M) ∈ Pos q := by
+  rw [U.eq_finiteRecursion_of_eq_add hnil hx]
+  exact finiteRecursion_component_mem_addSubmonoid ℳ U Pos hU r a ha q
 
 end Mei
