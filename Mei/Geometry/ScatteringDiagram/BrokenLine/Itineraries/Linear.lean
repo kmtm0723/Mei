@@ -193,14 +193,17 @@ variable {Λ : Type*} [AddCommGroup Λ] {i : Λ →+ V}
 
 include hf hP hW hS hC
 
-/-- One finite exceptional arrangement makes the entire evaluation linear map
-locally constant. The arrangement and the neighborhood work simultaneously for
-all incoming coefficients, even when their surviving ray types differ. -/
-theorem exists_cutoffDecoratedEvaluationLinearMap_eventually_eq (k : ℕ) :
-    ∃ E : ExceptionalArrangement V, ∀ Q, E.IsGeneric Q → ∀ᶠ Q' in nhds Q,
-      cutoffDecoratedEvaluationLinearMap d ℳ T (fun q => i (w q)) f c ε P W S C k Q' =
-        cutoffDecoratedEvaluationLinearMap d ℳ T (fun q => i (w q)) f c ε P W S C k Q := by
+open Classical in
+/-- The actual cutoff-ray evaluation operator is a finite sum of fixed linear
+maps on rational semilinear endpoint domains. The domains and maps work for all
+incoming coefficients simultaneously, including coefficients that kill histories. -/
+theorem exists_cutoffDecoratedEvaluationLinearMap_semilinearPresentation (k : ℕ) :
+    ∃ (n : ℕ) (A : Fin n → Set V) (L : Fin n → ℳ 0 →ₗ[R] M),
+      (∀ j, IsRationalSemilinear h (A j)) ∧
+        ∀ Q, cutoffDecoratedEvaluationLinearMap d ℳ T (fun q => i (w q))
+          f c ε P W S C k Q = ∑ j, if Q ∈ A j then L j else 0 := by
   classical
+  let := Fintype.ofFinite (CutoffEvaluationIndex (J := J) d k)
   let D (b : CutoffEvaluationIndex (J := J) d k) : Set V :=
     {Q | cutoffEvaluationCondition d (fun q => i (w q)) f c ε P W S C k Q b}
   have hD (b : CutoffEvaluationIndex (J := J) d k) : IsRationalSemilinear h (D b) := by
@@ -227,17 +230,37 @@ theorem exists_cutoffDecoratedEvaluationLinearMap_eventually_eq (k : ℕ) :
     · have he : D b = ∅ := Set.eq_empty_iff_forall_notMem.mpr fun _ hQ => hd hQ.1
       rw [he]
       exact IsRationalSemilinear.empty h
-  obtain ⟨E, _, hstable⟩ := IsRationalSemilinear.exists_membershipArrangement hD
+  obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin (CutoffEvaluationIndex (J := J) d k)
+  let L (b : CutoffEvaluationIndex (J := J) d k) :=
+    (homogeneousHistory ℳ (fun j => T (b.1.val.get j)) (fun j => (b.2 j : Γ))).comp
+      (ℳ 0).subtype
+  refine ⟨n, fun j => D (e.symm j), fun j => L (e.symm j), fun j => hD _, ?_⟩
+  intro Q
+  apply LinearMap.ext
+  intro a
+  rw [cutoffDecoratedEvaluationLinearMap_apply, cutoffDecoratedEvaluation_eq_uniform_sum]
+  simp only [LinearMap.sum_apply]
+  exact Fintype.sum_equiv e _ _ (fun b => by
+    simp only [e.symm_apply_apply]
+    rfl)
+
+/-- One finite exceptional arrangement makes the entire evaluation linear map
+locally constant. The arrangement and the neighborhood work simultaneously for
+all incoming coefficients, even when their surviving ray types differ. -/
+theorem exists_cutoffDecoratedEvaluationLinearMap_eventually_eq (k : ℕ) :
+    ∃ E : ExceptionalArrangement V, ∀ Q, E.IsGeneric Q → ∀ᶠ Q' in nhds Q,
+      cutoffDecoratedEvaluationLinearMap d ℳ T (fun q => i (w q)) f c ε P W S C k Q' =
+        cutoffDecoratedEvaluationLinearMap d ℳ T (fun q => i (w q)) f c ε P W S C k Q := by
+  classical
+  obtain ⟨n, A, L, hA, hL⟩ :=
+    exists_cutoffDecoratedEvaluationLinearMap_semilinearPresentation
+      d ℳ T f c ε P W S C h w hf hP hW hS hC k
+  obtain ⟨E, _, hstable⟩ := IsRationalSemilinear.exists_membershipArrangement hA
   refine ⟨E, fun Q hQ => (hstable Q hQ).mono fun Q' hQQ' => ?_⟩
-  ext a
-  simp only [cutoffDecoratedEvaluationLinearMap_apply,
-    cutoffDecoratedEvaluation_eq_uniform_sum]
+  rw [hL, hL]
   apply Finset.sum_congr rfl
-  intro b _
-  have hb : cutoffEvaluationCondition d (fun q => i (w q)) f c ε P W S C k Q' b ↔
-      cutoffEvaluationCondition d (fun q => i (w q)) f c ε P W S C k Q b := hQQ' b
-  simp only [cutoffEvaluationSummand]
-  rw [hb]
+  intro j _
+  rw [hQQ' j]
 
 end Rational
 
