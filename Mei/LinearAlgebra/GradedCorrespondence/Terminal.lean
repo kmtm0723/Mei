@@ -23,10 +23,10 @@ include all three normal signs simultaneously. This is the coefficient identity
 at a terminal ordinary-wall crossing.
 
 The two totals commute with grading-preserving coefficient maps that intertwine
-the wall actions and preserve the relevant normal sign. The totals preserve
-chosen additive positive monoids when the transports used in their respective
-normal-sign branches do so. These maps may kill
+the wall actions and preserve the relevant normal sign. These maps may kill
 coefficients or identify degrees; only their finite homogeneous sums are used.
+The totals preserve chosen additive positive monoids when the transports used
+in their respective normal-sign branches do so.
 
 We use `GradedCorrespondence.graph` and Mathlib's internal direct-sum universal
 property. The terminal-face convention is that of Gross–Hacking–Siebert,
