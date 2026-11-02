@@ -112,34 +112,23 @@ theorem existsUnique_sections_lift_of_local (E : SemimoduleCat.{v} R)
     hinj (by
       intro c x hx
       obtain ⟨N, hNU, t, hxN, hf, hg⟩ := hloc a c x hx
-      let f := ((I.sectionsIndex N).fst c).hom.prod ((I.sectionsIndex N).snd c).hom
-      let g :=
-        (((I.right (J.fst c)).obj.map (homOfLE hNU).op).hom.comp (α (J.fst c)).hom).prod
-        (((I.right (J.snd c)).obj.map (homOfLE hNU).op).hom.comp (α (J.snd c)).hom)
-      have hPg : P ≤ f.range.comap g := by
-        apply Submodule.span_le.mpr
-        intro z hz
-        obtain rfl := Set.mem_singleton_iff.mp hz
-        exact ⟨t, Prod.ext hf hg⟩
+      -- Specify the original face maps so the lift equations already use the
+      -- original section carriers; no mapped-index wrapper is unfolded below.
       obtain ⟨ψ, ⟨hψf, hψg⟩, -⟩ :=
-        (LinearMap.existsUnique_comp_eq_and_comp_eq_iff (hinj N hNU c)
-          (α := (((I.right (J.fst c)).obj.map (homOfLE hNU).op).hom.comp
-            (α (J.fst c)).hom).comp P.subtype)
-          (β := (((I.right (J.snd c)).obj.map (homOfLE hNU).op).hom.comp
-            (α (J.snd c)).hom).comp P.subtype)).mpr (fun z : P => hPg z.property)
+        LinearMap.existsUnique_comp_eq_and_comp_eq_on_span_singleton
+          (f := ((I.fst c).hom.app (op N)).hom)
+          (g := ((I.snd c).hom.app (op N)).hom) (hinj N hNU c)
+          (α := ((I.right (J.fst c)).obj.map (homOfLE hNU).op).hom.comp
+            (α (J.fst c)).hom)
+          (β := ((I.right (J.snd c)).obj.map (homOfLE hNU).op).hom.comp
+            (α (J.snd c)).hom) a ⟨t, Prod.ext hf hg⟩
       refine ⟨N, hNU, SemimoduleCat.ofHom ψ, hxN, ?_, ?_⟩
-      -- Evaluation retains the original sheaf components. Express both goals
-      -- as linear-map compositions to use the common-lift equations directly.
       · apply SemimoduleCat.hom_ext
-        change ((I.sectionsIndex N).fst c).hom.comp ψ =
-          ((I.right (J.fst c)).obj.map (homOfLE hNU).op).hom.comp
-            ((α (J.fst c)).hom.comp P.subtype)
-        exact hψf
+        simpa only [SemimoduleCat.hom_comp, SemimoduleCat.hom_ofHom, β,
+          P, LinearMap.comp_assoc] using hψf
       · apply SemimoduleCat.hom_ext
-        change ((I.sectionsIndex N).snd c).hom.comp ψ =
-          ((I.right (J.snd c)).obj.map (homOfLE hNU).op).hom.comp
-            ((α (J.snd c)).hom.comp P.subtype)
-        exact hψg)
+        simpa only [SemimoduleCat.hom_comp, SemimoduleCat.hom_ofHom, β,
+          P, LinearMap.comp_assoc] using hψg)
   let aP : P := ⟨a, Submodule.mem_span_singleton_self a⟩
   have hright (j : J.R) : (ℓ aP).val (.right j) = (α j).hom a := by
     simpa only [β, SemimoduleCat.hom_ofHom, LinearMap.comp_apply,
@@ -147,6 +136,5 @@ theorem existsUnique_sections_lift_of_local (E : SemimoduleCat.{v} R)
   have hface := (I.sectionsIndex U).mem_sectionsSubmodule_multispan.mp (ℓ aP).property
   exact ⟨(ℓ aP).val (.left b), Prod.ext ((hface.1 b).trans (hright _))
     ((hface.2 b).trans (hright _))⟩
-
 
 end CategoryTheory.Limits.MultispanIndex
