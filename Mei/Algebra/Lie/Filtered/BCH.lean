@@ -60,6 +60,19 @@ noncomputable def truncatedBCHAction (k : ℕ) :
     ((Units.map (F.truncatedEnvelopingAction d ℒ k).toMonoidHom).comp
       (truncatedBCHToUnits d ℒ k))
 
+/-- Applying the truncated BCH action termwise to a finite word preserves its
+product as a linear endomorphism. -/
+theorem truncatedBCHAction_list_ofFn_prod_toLinearMap (k : ℕ) {n : ℕ}
+    (g : Fin n → BCHGroup (d.truncatedLie ℒ k)) :
+    (List.ofFn (fun j => (F.truncatedBCHAction d ℒ k (g j)).toLinearMap)).prod =
+      (F.truncatedBCHAction d ℒ k (List.ofFn g).prod).toLinearMap := by
+  let act := (LinearEquiv.automorphismGroup.toLinearMapMonoidHom
+    (R := R) (M := F.quotient k)).comp
+    (F.truncatedBCHAction d ℒ k)
+  simpa only [List.map_ofFn, Function.comp_def, act, MonoidHom.comp_apply,
+    LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply] using
+    (map_list_prod act (List.ofFn g)).symm
+
 /-- The order-zero BCH group acts trivially on the coefficient quotient. -/
 theorem truncatedBCHAction_zero (g : BCHGroup (d.truncatedLie ℒ 0))
     (a : F.quotient 0) : F.truncatedBCHAction d ℒ 0 g a = a := by
