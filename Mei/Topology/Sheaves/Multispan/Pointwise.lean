@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mei.LinearAlgebra.CommonLift
 public import Mei.Topology.Sheaves.Multispan
 
 /-!
@@ -68,29 +69,25 @@ theorem existsUnique_sections_lift_of_pointwise_local (E : SemimoduleCat.{v} R)
         intro z hz
         obtain rfl := Set.mem_singleton_iff.mp hz
         exact ⟨t, Prod.ext hf hg⟩
-      let ψ : P →ₗ[R] (I.left c).obj.obj (op N) :=
-        (LinearEquiv.ofInjective f (hinj N hNU c)).symm.toLinearMap.comp
-          (g.restrict (fun z hz => hPg hz))
-      have hψ (z : P) : f (ψ z) = g z :=
-        LinearEquiv.ofInjective_symm_apply f (h := hinj N hNU c)
-          (g.restrict (fun z hz => hPg hz) z)
+      obtain ⟨ψ, ⟨hψf, hψg⟩, -⟩ :=
+        (LinearMap.existsUnique_comp_eq_and_comp_eq_iff (hinj N hNU c)
+          (α := (((I.right (J.fst c)).obj.map (homOfLE hNU).op).hom.comp
+            (α (J.fst c)).hom).comp P.subtype)
+          (β := (((I.right (J.snd c)).obj.map (homOfLE hNU).op).hom.comp
+            (α (J.snd c)).hom).comp P.subtype)).mpr (fun z : P => hPg z.property)
       refine ⟨N, hNU, SemimoduleCat.ofHom ψ, hxN, ?_, ?_⟩
+      -- Evaluation retains the original sheaf components. Express both goals
+      -- as linear-map compositions to use the common-lift equations directly.
       · apply SemimoduleCat.hom_ext
-        apply LinearMap.ext
-        intro z
-        have hz := congrArg _root_.Prod.fst (hψ z)
-        change (I.fst c).hom.app (op N) (ψ z) =
-          (I.right (J.fst c)).obj.map (homOfLE hNU).op ((α (J.fst c)).hom z.val) at hz
-        simpa only [β, SemimoduleCat.hom_comp, SemimoduleCat.hom_ofHom,
-          LinearMap.comp_apply, Submodule.subtype_apply] using hz
+        change ((I.sectionsIndex N).fst c).hom.comp ψ =
+          ((I.right (J.fst c)).obj.map (homOfLE hNU).op).hom.comp
+            ((α (J.fst c)).hom.comp P.subtype)
+        exact hψf
       · apply SemimoduleCat.hom_ext
-        apply LinearMap.ext
-        intro z
-        have hz := congrArg _root_.Prod.snd (hψ z)
-        change (I.snd c).hom.app (op N) (ψ z) =
-          (I.right (J.snd c)).obj.map (homOfLE hNU).op ((α (J.snd c)).hom z.val) at hz
-        simpa only [β, SemimoduleCat.hom_comp, SemimoduleCat.hom_ofHom,
-          LinearMap.comp_apply, Submodule.subtype_apply] using hz)
+        change ((I.sectionsIndex N).snd c).hom.comp ψ =
+          ((I.right (J.snd c)).obj.map (homOfLE hNU).op).hom.comp
+            ((α (J.snd c)).hom.comp P.subtype)
+        exact hψg)
   let aP : P := ⟨a, Submodule.mem_span_singleton_self a⟩
   have hright (j : J.R) : (ℓ aP).val (.right j) = (α j).hom a := by
     simpa only [β, SemimoduleCat.hom_ofHom, LinearMap.comp_apply,
