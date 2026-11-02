@@ -22,7 +22,9 @@ Intertwining filtered coefficient maps preserve these solutions, including when
 the source and target cutoffs are compared by a nonidentity monotone modulus.
 
 The original module need not be complete or separated, and its endomorphism need
-not be nilpotent. This supplies the algebraic uniqueness step for comparing
+not be nilpotent. The solution preserves all input filtration terms, and its
+correction has one higher order, so it retains the leading class. This supplies
+the algebraic uniqueness step for comparing
 independent geometric recursions; it does not establish those geometric equations.
 -/
 
@@ -89,12 +91,51 @@ theorem projection_completionRecursion (k : ℕ) (a : F.completion) :
       F.quotientRecursion f hf k (F.projection k a) :=
   F.projection_lift _ _ k a
 
+/-- Completed recursion preserves every filtration term of its input. -/
+theorem completionRecursion_mem_completedFiltration {k : ℕ} {a : F.completion}
+    (ha : a ∈ F.completedFiltration.submodule k) :
+    F.completionRecursion f hf a ∈ F.completedFiltration.submodule k := by
+  cases k with
+  | zero => simp
+  | succ k =>
+    rw [completedFiltration_succ, LinearMap.mem_ker] at ha ⊢
+    rw [projection_completionRecursion, ha, map_zero]
+
 /-- The completed solution satisfies the recursion at every finite order. -/
 theorem projection_completionRecursion_eq_add (k : ℕ) (a : F.completion) :
     F.projection k (F.completionRecursion f hf a) = F.projection k a +
       F.quotientRaisingEnd f hf k (F.projection k (F.completionRecursion f hf a)) := by
   simpa only [projection_completionRecursion] using
     F.quotientRecursion_eq_add f hf k (F.projection k a)
+
+/-- The completed recursion solution has exactly the same filtration order as
+its input, even when the original module filtration is not separated. -/
+@[simp]
+theorem completionRecursion_mem_completedFiltration_iff (k : ℕ) (a : F.completion) :
+    F.completionRecursion f hf a ∈ F.completedFiltration.submodule k ↔
+      a ∈ F.completedFiltration.submodule k := by
+  constructor
+  · intro h
+    cases k with
+    | zero => simp
+    | succ k =>
+      rw [completedFiltration_succ, LinearMap.mem_ker] at h ⊢
+      have he := F.projection_completionRecursion_eq_add f hf k a
+      rw [h, map_zero, add_zero] at he
+      exact he.symm
+  · exact F.completionRecursion_mem_completedFiltration f hf
+
+/-- For an input of order at least `k`, the recursion correction has order at least
+`k + 1`. In particular the solution has the same leading class as its input. -/
+theorem completionRecursion_sub_self_mem_completedFiltration {k : ℕ} {a : F.completion}
+    (ha : a ∈ F.completedFiltration.submodule k) :
+    F.completionRecursion f hf a - a ∈ F.completedFiltration.submodule (k + 1) := by
+  have hs := F.completionRecursion_mem_completedFiltration f hf ha
+  obtain ⟨m, hm, he⟩ := F.exists_projection_eq_of_mem_completedFiltration (k := k) hs
+  rw [completedFiltration_succ, LinearMap.mem_ker, map_sub,
+    F.projection_completionRecursion_eq_add f hf k a, add_sub_cancel_left,
+    ← he, quotientRaisingEnd_mk, Submodule.Quotient.mk_eq_zero]
+  exact hf k hm
 
 /-- A compatible solution is uniquely determined by its finite-order recursions. -/
 theorem eq_completionRecursion_of_forall_projection_eq_add {a x : F.completion}
