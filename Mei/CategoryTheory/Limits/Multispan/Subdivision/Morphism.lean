@@ -33,6 +33,19 @@ def mapNatTrans (η : I.multispan ⟶ I'.multispan) :
     (D.index I).multispan ⟶ (D.index I').multispan :=
   (D.multispanIso I).hom ≫ Functor.whiskerLeft D.projection η ≫ (D.multispanIso I').inv
 
+/-- Subdivision preserves the identity coefficient transformation. -/
+@[simp]
+theorem mapNatTrans_id (I : MultispanIndex J C) :
+    D.mapNatTrans (𝟙 I.multispan) = 𝟙 (D.index I).multispan := by
+  simp only [mapNatTrans, Functor.whiskerLeft_id', Category.id_comp, Iso.hom_inv_id]
+
+/-- Subdivision preserves composition of coefficient transformations. -/
+@[simp]
+theorem mapNatTrans_comp {I'' : MultispanIndex J C}
+    (η : I.multispan ⟶ I'.multispan) (θ : I'.multispan ⟶ I''.multispan) :
+    D.mapNatTrans (η ≫ θ) = D.mapNatTrans η ≫ D.mapNatTrans θ := by
+  simp only [mapNatTrans, Functor.whiskerLeft_comp, Category.assoc, Iso.inv_hom_id_assoc]
+
 /-- A copied original face carries its original coefficient transformation. -/
 @[simp]
 theorem mapNatTrans_app_copy (η : I.multispan ⟶ I'.multispan)
