@@ -75,14 +75,6 @@ theorem sectionsMap_restrict (η : D ⟶ D') {U V : Opens X} (hVU : V ≤ U) :
   simp only [LinearMap.comp_apply, Functor.sectionsRestrict_apply, sectionsMap_apply]
   exact (ConcreteCategory.congr_hom ((η.app j).hom.naturality (homOfLE hVU).op) (s.val j)).symm
 
-/-- Restriction commutes with coefficient transport after any incoming linear map. -/
-theorem sectionsMap_restrict_comp (η : D ⟶ D') {E : Type*}
-    [AddCommMonoid E] [Module R E] {U V : Opens X} (hVU : V ≤ U)
-    (L : E →ₗ[R] SemimoduleCat.sectionsSubmodule (D.sectionsOver U)) :
-    (D'.sectionsRestrict hVU).comp ((η.sectionsMap U).comp L) =
-      (η.sectionsMap V).comp ((D.sectionsRestrict hVU).comp L) := by
-  rw [← LinearMap.comp_assoc, sectionsMap_restrict, LinearMap.comp_assoc]
-
 /-- Compatible local matching families remain compatible after any coefficient
 transformation, and therefore still have a unique glued linear map. -/
 theorem existsUnique_sectionsMap_gluing (η : D ⟶ D') (E : SemimoduleCat.{v} R)
@@ -96,6 +88,7 @@ theorem existsUnique_sectionsMap_gluing (η : D ⟶ D') (E : SemimoduleCat.{v} R
         (η.sectionsMap (U i)).comp (ℓ i) := by
   apply D'.existsUnique_sections_gluing E U
   intro i k
-  rw [sectionsMap_restrict_comp, hcompat, ← sectionsMap_restrict_comp]
+  rw [← LinearMap.comp_assoc, sectionsMap_restrict, LinearMap.comp_assoc, hcompat,
+    ← LinearMap.comp_assoc, ← sectionsMap_restrict, LinearMap.comp_assoc]
 
 end CategoryTheory.NatTrans
