@@ -22,6 +22,8 @@ its value. It supplies linear branch totals for matching families and local
 resolution identities, without finiteness assumptions on homogeneous modules.
 For rational polyhedral data, one finite exceptional arrangement makes this
 entire linear map locally constant, simultaneously for every input.
+Countably many systems have a dense Gδ common generic locus, with a neighborhood
+for each operator that works for all of its inputs.
 
 The proof uses `CutoffDecoratedRay.length_le`,
 `cutoffDecoratedEvaluation_def` and the linear maps `homogeneousHistory`.
@@ -261,6 +263,40 @@ theorem exists_cutoffDecoratedEvaluationLinearMap_eventually_eq (k : ℕ) :
   apply Finset.sum_congr rfl
   intro j _
   rw [hQQ' j]
+
+section Countable
+
+omit hC
+
+variable {τ : Type*} [Countable τ] [FiniteDimensional ℝ V]
+  {M' : τ → Type*} [∀ t, AddCommMonoid (M' t)] [∀ t, Module R (M' t)]
+  (𝓜 : ∀ t, Γ → Submodule R (M' t)) [∀ t, DirectSum.Decomposition (𝓜 t)]
+  (actions : ∀ t, J → Module.End R (M' t)) (cutoff : τ → ℕ)
+  (sources : τ → Set V) (directions : τ → Γ → Λ)
+  (hsources : ∀ t, IsRationalNormalPolyhedron h (sources t))
+
+include hf hP hW hS hsources in
+/-- A countable collection of actual cutoff-ray operators has a dense Gδ common
+generic locus. Coefficient modules, actions, cutoffs, source domains and directions may vary.
+At each generic endpoint, the neighborhood for one operator works for all its
+inputs; different operators may require different neighborhoods. -/
+theorem exists_cutoffDecoratedEvaluationLinearMap_dense_commonGeneric :
+    ∃ E : τ → ExceptionalArrangement V,
+      Dense {Q | ∀ t, (E t).IsGeneric Q} ∧ IsGδ {Q | ∀ t, (E t).IsGeneric Q} ∧
+        ∀ t Q, (E t).IsGeneric Q → ∀ᶠ Q' in nhds Q,
+          cutoffDecoratedEvaluationLinearMap d (𝓜 t) (actions t) (fun q => i (directions t q))
+            f c ε P W S (sources t) (cutoff t) Q' =
+          cutoffDecoratedEvaluationLinearMap d (𝓜 t) (actions t) (fun q => i (directions t q))
+            f c ε P W S (sources t) (cutoff t) Q := by
+  classical
+  choose E hE using fun t =>
+    exists_cutoffDecoratedEvaluationLinearMap_eventually_eq
+      d (𝓜 t) (actions t) f c ε P W S (sources t)
+      h (directions t) hf hP hW hS (hsources t) (cutoff t)
+  exact ⟨E, ExceptionalArrangement.dense_iInter_isGeneric E,
+    ExceptionalArrangement.isGδ_iInter_isGeneric E, hE⟩
+
+end Countable
 
 end Rational
 
