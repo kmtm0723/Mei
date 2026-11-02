@@ -81,6 +81,18 @@ theorem hom_restrict_injective_of_subset_closure {X : TopCat.{u}}
   have := F.hasLocallyBijectivePreconnectedRestrictions_sheafOver hF H
   exact TopCat.Sheaf.map_injective_of_subset_closure (sheafOver F H) hGU hdense
 
+/-- On a locally connected space, restriction to a dense open is a monomorphism
+for any sheaf with locally isomorphic restrictions on nonempty preconnected opens. -/
+theorem mono_map_of_subset_closure {X : TopCat.{u}} [LocallyConnectedSpace X]
+    (F : X.Sheaf C)
+    (hF : ∀ x : X, ∃ W : Opens X, x ∈ W ∧
+      ∀ (B : Opens X) (hBW : B ≤ W), (B : Set X).Nonempty →
+        IsPreconnected (B : Set X) → IsIso (F.obj.map (homOfLE hBW).op))
+    {G U : Opens X} (hGU : G ≤ U) (hdense : (U : Set X) ⊆ closure (G : Set X)) :
+    Mono (F.obj.map (homOfLE hGU).op) where
+  right_cancellation {Z} _ _ he :=
+    F.hom_restrict_injective_of_subset_closure hF Z hGU hdense he
+
 end Hom
 
 /-- On a locally connected space, a section over a dense open subset `G` of `U` extends to `U`
