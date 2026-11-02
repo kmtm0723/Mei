@@ -59,11 +59,7 @@ theorem existsUnique_linearMap_extension_of_facets
     ∃! t : H →ₗ[R] T.sheaf.presheaf.obj (op U),
       ∀ a (y : A) (hyB : y.val ∈ B),
         T.value (t a) y ((hBO.trans hOU) hyB) = T.value (s a) y hyB := by
-  let e (W : Opens (TopCat.of S)) :
-      (T.semimoduleSheaf R).obj.obj (op W) ≅
-        SemimoduleCat.of R (T.sheaf.presheaf.obj (op W)) := eqToIso
-    ((congrArg (fun F => F.obj (op W)) (T.semimoduleSheaf_obj R)).trans
-      (T.semimodulePresheaf_obj R (op W)))
+  let e := T.semimoduleSheafObjIso R
   -- Convert local value equations into morphism equations on the overlap.
   have hlocal : ∀ x ∈ O, x ∉ B → ∃ (N : Opens (TopCat.of S))
       (t : H ⟶ (T.semimoduleSheaf R).obj.obj (op N)), x ∈ N ∧
