@@ -82,11 +82,12 @@ variable {M}
 
 /-- Transport within a convex regular chart consisting of off-wall points is
 the identity, without any global consistency assumption on the diagram. -/
-theorem coefficientTransport_eq_refl_of_subset (B : Opens C.regularSpace)
+@[simp]
+theorem coefficientPathTransport_coefficientSegment_eq_refl_of_subset (B : Opens C.regularSpace)
     (hB : B ∈ C.coefficientCharts) (hoff : (B : Set C.regularSpace) ⊆ C.coefficientPoints)
     (x y : C.coefficientPoints) (hx : x.val ∈ B) (hy : y.val ∈ B) :
-    (D.coefficientTransport M).transport B
-      (by simpa only [D.coefficientTransport_basis M] using hB) x y hx hy = Equiv.refl M := by
+    D.coefficientPathTransport M (C.coefficientSegment B hB x y hx hy).toPath =
+      Equiv.refl M := by
   have hcross : WallComplement.crossings
       (⟨x.val.val, x.property⟩ : WallComplement (fun P : C.walls => (P : Set V)))
       ⟨y.val.val, y.property⟩ = ∅ := by
@@ -98,8 +99,7 @@ theorem coefficientTransport_eq_refl_of_subset (B : Opens C.regularSpace)
     obtain ⟨z, hzB, he⟩ := hz
     exact hoff hzB P (he.symm ▸ htP)
   ext a
-  rw [D.coefficientTransport_transport M B hB x y hx hy, coefficientPathTransport_apply,
-    D.pathProduct_toPath_eq_one _ hcross, one_smul]
+  rw [coefficientPathTransport_apply, D.pathProduct_toPath_eq_one _ hcross, one_smul]
   rfl
 
 
