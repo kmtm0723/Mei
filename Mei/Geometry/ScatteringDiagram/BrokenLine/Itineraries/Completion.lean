@@ -7,6 +7,7 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.BrokenLine.Itineraries.Cutoff
 public import Mei.Geometry.ScatteringDiagram.BrokenLine.Itineraries.Map
+public import Mei.Geometry.ScatteringDiagram.BrokenLine.Itineraries.Linear
 public import Mei.Algebra.Lie.Graded.Shifted.Basic
 public import Mei.Algebra.Lie.Filtered.BCH
 public import Mei.LinearAlgebra.GradedModule.Shifted.Quotient
@@ -18,8 +19,10 @@ For a fixed finite signed encounter alphabet, the actual cutoff decorated-ray
 sums of a positive Lie action commute with coefficient truncation. A surviving
 history has every segment degree in the smaller cutoff, so the larger inventory
 contributes exactly the smaller ray fiber after zero decorations are discarded.
-The compatible sums define a coefficient in `ShiftedCoefficients`, with each
-projection equal to the full finite weighted evaluation at that order.
+The compatible linear evaluation maps lift to a linear map into
+`ShiftedCoefficients`, with each projection equal to the full finite weighted
+evaluation at that order. This retains cancellations and scalar annihilation
+at each finite stage and in the completion.
 
 All encounters and geometric admission conditions are retained at every order.
 The labels may become identities after truncation; their supports remain in the
@@ -79,10 +82,14 @@ theorem transition_cutoffDecoratedEvaluation_shiftedBCHAction
   exact cutoffDecoratedEvaluation_eq_of_supported d (G k) _ _ v f c ε P W S C h
     (fun _ _ hx hne => d.mem_cutoff_of_mem_shiftedQuotientGrading_ne_zero ℳ p hx hne) Q
 
-local notation "input" => fun (k : ℕ) (a : shiftedGrading ℳ d.monoid p 0) =>
-  (Subtype.mk (Submodule.Quotient.mk (a : shiftedSubmodule ℳ d.monoid p))
-    (Iff.mpr (mem_shiftedQuotientGrading_iff d ℳ p)
-      (Exists.intro a (And.intro (Subtype.property a) rfl))) : G k 0)
+-- Restricting the quotient map changes only the homogeneous membership proof;
+-- its underlying function is the quotient class of the original input.
+local notation "input" => fun k : ℕ =>
+  LinearMap.codRestrict (G k 0)
+    (LinearMap.comp (Submodule.mkQ (ModuleFiltration.submodule F (k + 1)))
+      (Submodule.subtype (shiftedGrading ℳ d.monoid p 0)))
+    (fun a => Iff.mpr (mem_shiftedQuotientGrading_iff d ℳ p)
+      (Exists.intro a (And.intro (Subtype.property a) rfl)))
 
 /-- The full finite evaluations of completed labels form a compatible quotient
 family, for an original relative-degree-zero incoming coefficient. -/
@@ -98,19 +105,29 @@ theorem transition_cutoffDecoratedEvaluation_completedBCHAction
       (d.truncationMap ℒ h).bchGroupMap (CompletedGroup.projection l (g j)) =
         CompletedGroup.projection k (g j) :=
     CompletedGroup.map_projection k l h (g j)
-  simpa only [hg, ModuleFiltration.transition_mk] using
+  have ha : (⟨(F).transition h (input l a),
+      d.transition_mem_shiftedQuotientGrading ℳ p h (input l a).property⟩ : G k 0) =
+      input k a := by
+    apply Subtype.ext
+    simp only [LinearMap.codRestrict_apply, LinearMap.comp_apply, Submodule.mkQ_apply,
+      Submodule.subtype_apply, ModuleFiltration.transition_mk]
+  simpa only [hg, ha] using
     d.transition_cutoffDecoratedEvaluation_shiftedBCHAction ℒ ℳ p v f c ε P W S C Q h
       (fun j => CompletedGroup.projection l (g j)) (input l a)
 
 /-- The completed weighted evaluation of all finite encounter itineraries in
-a fixed finite alphabet. Its order-`k` value is the actual full cutoff ray sum. -/
-def completedBCHCutoffEvaluation (g : J → d.completedBCHGroup ℒ)
-    (a : shiftedGrading ℳ d.monoid p 0) : d.ShiftedCoefficients ℳ p :=
-  ⟨fun k => cutoffDecoratedEvaluation d (G k.unop)
-      (T k.unop (fun j => CompletedGroup.projection k.unop (g j)))
-      (input k.unop a) v f c ε P W S C k.unop Q,
-    ((F).mem_completionSubmodule_iff _).mpr fun _ _ h =>
-      d.transition_cutoffDecoratedEvaluation_completedBCHAction ℒ ℳ p v f c ε P W S C Q h g a⟩
+a fixed finite alphabet, linear in the original relative-degree-zero input.
+Its order-`k` value is the actual full cutoff ray sum. -/
+def completedBCHCutoffEvaluation (g : J → d.completedBCHGroup ℒ) :
+    shiftedGrading ℳ d.monoid p 0 →ₗ[R] d.ShiftedCoefficients ℳ p :=
+  (F).lift
+    (fun k => (cutoffDecoratedEvaluationLinearMap d (G k)
+      (T k (fun j => CompletedGroup.projection k (g j)))
+      v f c ε P W S C k Q).comp (input k))
+    (fun k l h => LinearMap.ext fun a => by
+      simpa only [LinearMap.comp_apply, cutoffDecoratedEvaluationLinearMap_apply] using
+        d.transition_cutoffDecoratedEvaluation_completedBCHAction ℒ ℳ p
+          v f c ε P W S C Q h g a)
 
 /-- Each projection of the completed evaluation is the whole finite weighted
 ray sum at that cutoff, without fixing an encounter word in advance. -/
@@ -120,19 +137,7 @@ theorem projection_completedBCHCutoffEvaluation
     (F).projection k (d.completedBCHCutoffEvaluation ℒ ℳ p v f c ε P W S C Q g a) =
       cutoffDecoratedEvaluation d (G k) (T k (fun j => CompletedGroup.projection k (g j)))
         (input k a) v f c ε P W S C k Q := by
-  rw [completedBCHCutoffEvaluation, ModuleFiltration.projection_mk]
-
-/-- Zero incoming coefficient has zero completed evaluation, including when
-nonzero coefficients can be killed at individual cutoffs. -/
-@[simp]
-theorem completedBCHCutoffEvaluation_zero (g : J → d.completedBCHGroup ℒ) :
-    d.completedBCHCutoffEvaluation ℒ ℳ p v f c ε P W S C Q g 0 = 0 := by
-  apply (F).completion_ext
-  intro k
-  rw [projection_completedBCHCutoffEvaluation, map_zero]
-  have hz : input k (0 : shiftedGrading ℳ d.monoid p 0) = (0 : G k 0) := by
-    apply Subtype.ext
-    exact Submodule.Quotient.mk_zero _
-  rw [hz, cutoffDecoratedEvaluation_zero]
+  rw [completedBCHCutoffEvaluation, ModuleFiltration.projection_lift,
+    LinearMap.comp_apply, cutoffDecoratedEvaluationLinearMap_apply]
 
 end Mei.PositiveDegrees
