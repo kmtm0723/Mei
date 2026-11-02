@@ -139,18 +139,19 @@ variable {N : Type*} [AddCommGroup N] [Module R N]
 
 include hfg
 
-/-- A filtered intertwiner preserves the finite recursion solutions, although
-the source and target sums can have different lengths. -/
-theorem mapQ_quotientRecursion (k : ℕ) (a : F.quotient (ρ k)) :
-    (F.submodule (ρ k + 1)).mapQ (G.submodule (k + 1)) r (hr k)
-        (F.quotientRecursion f hf (ρ k) a) =
+/-- A comparison between any two chosen quotients preserves their recursion
+solutions. Only that pair of orders needs a filtration bound. -/
+theorem mapQ_quotientRecursion (l k : ℕ)
+    (hrk : F.submodule (l + 1) ≤ (G.submodule (k + 1)).comap r) (a : F.quotient l) :
+    (F.submodule (l + 1)).mapQ (G.submodule (k + 1)) r hrk
+        (F.quotientRecursion f hf l a) =
       G.quotientRecursion g hg k
-        ((F.submodule (ρ k + 1)).mapQ (G.submodule (k + 1)) r (hr k) a) := by
+        ((F.submodule (l + 1)).mapQ (G.submodule (k + 1)) r hrk a) := by
   exact LinearMap.congr_fun (Module.End.comp_finiteRecursion
-    (F.quotientRaisingEnd f hf (ρ k)) (G.quotientRaisingEnd g hg k)
-    ((F.submodule (ρ k + 1)).mapQ (G.submodule (k + 1)) r (hr k))
-    (LinearMap.ext (F.mapQ_quotientRaisingEnd f hf G g hg r ρ hr hfg k))
-    (F.quotientRaisingEnd_pow_eq_zero f hf (ρ k))
+    (F.quotientRaisingEnd f hf l) (G.quotientRaisingEnd g hg k)
+    ((F.submodule (l + 1)).mapQ (G.submodule (k + 1)) r hrk)
+    (LinearMap.ext (F.mapQ_quotientRaisingEnd f hf G g hg r l k hrk hfg))
+    (F.quotientRaisingEnd_pow_eq_zero f hf l)
     (G.quotientRaisingEnd_pow_eq_zero g hg k)) a
 
 /-- Filtered coefficient intertwiners preserve the completed recursion solution.
@@ -161,7 +162,7 @@ theorem completionMap_completionRecursion (a : F.completion) :
   apply G.completion_ext
   intro k
   simp only [projection_completionMap, projection_completionRecursion]
-  exact F.mapQ_quotientRecursion f hf G g hg r ρ hr hfg k (F.projection (ρ k) a)
+  exact F.mapQ_quotientRecursion f hf G g hg r hfg (ρ k) k (hr k) (F.projection (ρ k) a)
 
 end Naturality
 
