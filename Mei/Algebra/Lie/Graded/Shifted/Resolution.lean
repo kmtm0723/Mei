@@ -17,7 +17,8 @@ At a fixed cutoff, all shifted coefficient pieces outside the finite positive
 degree cutoff vanish. Expanding a word of BCH actions over histories in this
 cutoff therefore gives an identity of linear maps, simultaneously for every
 incoming coefficient. Equal BCH words, including words of different lengths,
-have equal sums of component maps in each retained outgoing degree.
+have equal sums of component maps in each retained outgoing degree. Two blocks
+also admit a nested finite expansion before any output linear map.
 
 These are the coefficient identities needed when comparing local histories
 through a consistent wall configuration. They do not assert that every algebraic
@@ -57,10 +58,8 @@ theorem sum_homogeneousHistory_truncatedBCHAction (k : ℕ) {n : ℕ}
         (fun j => (r j).val) =
       ((F).truncatedBCHAction d ℒ k (List.ofFn g).prod).toLinearMap := by
   classical
-  have hS (r : Γ) (hr : r ∉ (d.finite_cutoff k).toFinset) : G(k) r = ⊥ :=
-    d.shiftedQuotientGrading_piece_eq_bot ℳ p
-      (fun hmem => hr ((d.finite_cutoff k).mem_toFinset.mpr hmem))
-  rw [sum_homogeneousHistory_eq_prod G(k) _ hS]
+  rw [sum_homogeneousHistory_eq_prod G(k) _
+    (d.shiftedQuotientGrading_piece_eq_bot ℳ p)]
   let act := (LinearEquiv.automorphismGroup.toLinearMapMonoidHom
     (R := R) (M := (F).quotient k)).comp
     ((F).truncatedBCHAction d ℒ k)
@@ -95,5 +94,51 @@ theorem sum_component_homogeneousHistory_eq_of_prod_eq
     d.sum_homogeneousHistory_truncatedBCHAction ℒ ℳ p k g,
     ← map_sum, ← LinearMap.sum_apply,
     d.sum_homogeneousHistory_truncatedBCHAction ℒ ℳ p k g', hg]
+
+/-- The nested finite sums of two BCH blocks recover their composite action in
+the whole quotient, followed by any output linear map. The right block acts first,
+and both finite index sets are independent of the incoming input. -/
+theorem sum_comp_homogeneousHistory_append_truncatedBCHAction
+    {E O : Type*} [AddCommMonoid E] [Module R E] [AddCommMonoid O] [Module R O]
+    (k : ℕ) {n m : ℕ} (g : Fin n → d.truncatedGroup ℒ k)
+    (u : Fin m → d.truncatedGroup ℒ k)
+    (a : E →ₗ[R] (F).quotient k) (b : (F).quotient k →ₗ[R] O) :
+    (∑ r ∈ Fintype.piFinset (fun _ : Fin m => (d.finite_cutoff k).toFinset),
+      ∑ s ∈ Fintype.piFinset (fun _ : Fin n => (d.finite_cutoff k).toFinset),
+        b.comp
+          ((homogeneousHistory G(k)
+            (fun j => ((F).truncatedBCHAction d ℒ k (g j)).toLinearMap) s).comp
+            ((homogeneousHistory G(k)
+              (fun j => ((F).truncatedBCHAction d ℒ k (u j)).toLinearMap) r).comp a))) =
+      b.comp
+        (((F).truncatedBCHAction d ℒ k (List.ofFn g).prod).toLinearMap.comp
+          (((F).truncatedBCHAction d ℒ k (List.ofFn u).prod).toLinearMap.comp a)) := by
+  classical
+  let T j := ((F).truncatedBCHAction d ℒ k (g j)).toLinearMap
+  let U j := ((F).truncatedBCHAction d ℒ k (u j)).toLinearMap
+  let S := (d.finite_cutoff k).toFinset
+  have hS := d.shiftedQuotientGrading_piece_eq_bot ℳ p (k := k)
+  have hz {l : ℕ} (v : Fin l → Module.End R ((F).quotient k))
+      (b : E →ₗ[R] (F).quotient k) (r : Fin l → Γ)
+      (hr : r ∉ Fintype.piFinset (fun _ => S)) :
+      (homogeneousHistory G(k) v r).comp b = 0 := by
+    rw [homogeneousHistory_eq_zero_of_notMem_piFinset G(k) S hS v r hr,
+      LinearMap.zero_comp]
+  have hT : (List.ofFn T).prod =
+      ((F).truncatedBCHAction d ℒ k (List.ofFn g).prod).toLinearMap :=
+    (sum_homogeneousHistory_eq_prod G(k) S hS T).symm.trans
+      (d.sum_homogeneousHistory_truncatedBCHAction ℒ ℳ p k g)
+  have hU : (List.ofFn U).prod =
+      ((F).truncatedBCHAction d ℒ k (List.ofFn u).prod).toLinearMap :=
+    (sum_homogeneousHistory_eq_prod G(k) S hS U).symm.trans
+      (d.sum_homogeneousHistory_truncatedBCHAction ℒ ℳ p k u)
+  change (∑ r ∈ Fintype.piFinset (fun _ : Fin m => S),
+    ∑ s ∈ Fintype.piFinset (fun _ : Fin n => S),
+      b.comp ((homogeneousHistory G(k) T s).comp
+        ((homogeneousHistory G(k) U r).comp a))) = _
+  simp_rw [sum_comp_homogeneousHistory_comp_eq G(k) T _ b _ (hz T _)]
+  simpa only [LinearMap.comp_assoc, hT, hU] using
+    sum_comp_homogeneousHistory_comp_eq G(k) U a
+      (b.comp (List.ofFn T).prod) _ (hz U a)
 
 end Mei.PositiveDegrees
