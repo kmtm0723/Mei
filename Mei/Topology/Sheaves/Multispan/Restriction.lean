@@ -50,39 +50,52 @@ private theorem sectionsEquiv_toLinearMap (U : Opens X) :
     (I.sectionsEquiv U).toLinearMap =
       SemimoduleCat.sectionsMap (I.evaluatedMultispanIso U).hom := by rfl
 
+-- For an abstract walking object the carriers are dependent matches, so state
+-- the common computation heterogeneously and specialize it at faces/chambers.
+private theorem sectionsEquiv_apply (U : Opens X)
+    (s : SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan)
+    (j : WalkingMultispan J) : HEq ((I.sectionsEquiv U s).val j) (s.val j) := by
+  have he := SemimoduleCat.sectionsMap_apply (I.evaluatedMultispanIso U).hom s j
+  have hv : HEq ((I.sectionsEquiv U s).val j)
+      (((I.evaluatedMultispanIso U).hom.app j).hom (s.val j)) := by
+    simpa only [← sectionsEquiv_toLinearMap, LinearEquiv.coe_toLinearMap] using heq_of_eq he
+  apply hv.trans
+  cases j <;> dsimp only [evaluatedMultispanIso] <;>
+    erw [I.multispanMapIso_hom_app]
+  -- The public component equation leaves the identity on the original section carrier.
+  all_goals rfl
+
 /-- The canonical comparison retains each face value. -/
 @[simp]
 theorem sectionsEquiv_apply_left (U : Opens X)
     (s : SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan) (b : J.L) :
-    (I.sectionsEquiv U s).val (.left b) = s.val (.left b) := by
-  have he := SemimoduleCat.sectionsMap_apply (I.evaluatedMultispanIso U).hom s (.left b)
-  have hc : (I.evaluatedMultispanIso U).hom.app (.left b) =
-      𝟙 ((I.left b).obj.obj (op U)) :=
-    I.multispanMapIso_hom_app ((sheafSections (Opens.grothendieckTopology X)
-      (SemimoduleCat.{v} R)).obj (op U)) (.left b)
-  have hi : ((I.evaluatedMultispanIso U).hom.app (.left b)).hom
-      (s.val (.left b)) = s.val (.left b) := by
-    rw [hc]
-    -- This identity is on the original component carrier after the public comparison equation.
-    rfl
-  simpa only [← sectionsEquiv_toLinearMap, LinearEquiv.coe_toLinearMap] using he.trans hi
+    (I.sectionsEquiv U s).val (.left b) = s.val (.left b) :=
+  eq_of_heq (I.sectionsEquiv_apply U s (.left b))
 
 /-- The canonical comparison retains each chamber value. -/
 @[simp]
 theorem sectionsEquiv_apply_right (U : Opens X)
     (s : SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan) (j : J.R) :
-    (I.sectionsEquiv U s).val (.right j) = s.val (.right j) := by
-  have he := SemimoduleCat.sectionsMap_apply (I.evaluatedMultispanIso U).hom s (.right j)
-  have hc : (I.evaluatedMultispanIso U).hom.app (.right j) =
-      𝟙 ((I.right j).obj.obj (op U)) :=
-    I.multispanMapIso_hom_app ((sheafSections (Opens.grothendieckTopology X)
-      (SemimoduleCat.{v} R)).obj (op U)) (.right j)
-  have hi : ((I.evaluatedMultispanIso U).hom.app (.right j)).hom
-      (s.val (.right j)) = s.val (.right j) := by
-    rw [hc]
-    -- This identity is on the original component carrier after the public comparison equation.
-    rfl
-  simpa only [← sectionsEquiv_toLinearMap, LinearEquiv.coe_toLinearMap] using he.trans hi
+    (I.sectionsEquiv U s).val (.right j) = s.val (.right j) :=
+  eq_of_heq (I.sectionsEquiv_apply U s (.right j))
+
+/-- The inverse comparison retains each face value. -/
+@[simp]
+theorem sectionsEquiv_symm_apply_left (U : Opens X)
+    (s : SemimoduleCat.sectionsSubmodule (I.multispan.sectionsOver U)) (b : J.L) :
+    ((I.sectionsEquiv U).symm s).val (.left b) = s.val (.left b) := by
+  have he := I.sectionsEquiv_apply_left U ((I.sectionsEquiv U).symm s) b
+  rw [LinearEquiv.apply_symm_apply] at he
+  exact he.symm
+
+/-- The inverse comparison retains each chamber value. -/
+@[simp]
+theorem sectionsEquiv_symm_apply_right (U : Opens X)
+    (s : SemimoduleCat.sectionsSubmodule (I.multispan.sectionsOver U)) (j : J.R) :
+    ((I.sectionsEquiv U).symm s).val (.right j) = s.val (.right j) := by
+  have he := I.sectionsEquiv_apply_right U ((I.sectionsEquiv U).symm s) j
+  rw [LinearEquiv.apply_symm_apply] at he
+  exact he.symm
 
 /-- Endpoint restriction on evaluated-index families, transported from the
 existing restriction on matching families of the sheaf diagram. -/
@@ -100,6 +113,47 @@ theorem sectionsEquiv_restrict {U V : Opens X} (hVU : V ≤ U)
       I.multispan.sectionsRestrict hVU (I.sectionsEquiv U s) := by
   simp only [sectionsRestrict, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
     LinearEquiv.apply_symm_apply]
+
+/-- Restriction on evaluated-index families restricts the original face section. -/
+@[simp]
+theorem sectionsRestrict_apply_left {U V : Opens X} (hVU : V ≤ U)
+    (s : SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan) (b : J.L) :
+    (I.sectionsRestrict hVU s).val (.left b) =
+      (I.left b).obj.map (homOfLE hVU).op (s.val (.left b)) := by
+  have he := congrArg (fun z => z.val (.left b)) (I.sectionsEquiv_restrict hVU s)
+  simp only [sectionsEquiv_apply_left, Functor.sectionsRestrict_apply] at he
+  exact he
+
+/-- Restriction on evaluated-index families restricts the original chamber section. -/
+@[simp]
+theorem sectionsRestrict_apply_right {U V : Opens X} (hVU : V ≤ U)
+    (s : SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan) (j : J.R) :
+    (I.sectionsRestrict hVU s).val (.right j) =
+      (I.right j).obj.map (homOfLE hVU).op (s.val (.right j)) := by
+  have he := congrArg (fun z => z.val (.right j)) (I.sectionsEquiv_restrict hVU s)
+  simp only [sectionsEquiv_apply_right, Functor.sectionsRestrict_apply] at he
+  exact he
+
+/-- Restriction along the identity inclusion fixes every evaluated-index family. -/
+@[simp]
+theorem sectionsRestrict_refl (U : Opens X) :
+    I.sectionsRestrict (le_refl U) = LinearMap.id := by
+  apply LinearMap.ext
+  intro s
+  apply (I.sectionsEquiv U).injective
+  simp only [sectionsEquiv_restrict, Functor.sectionsRestrict_refl, LinearMap.id_apply]
+
+/-- Successive restrictions of evaluated-index families compose along inclusions. -/
+@[simp]
+theorem sectionsRestrict_comp {U V W : Opens X} (hVU : V ≤ U) (hWV : W ≤ V) :
+    (I.sectionsRestrict hWV).comp (I.sectionsRestrict hVU) =
+      I.sectionsRestrict (hWV.trans hVU) := by
+  apply LinearMap.ext
+  intro s
+  apply (I.sectionsEquiv W).injective
+  simp only [LinearMap.comp_apply, sectionsEquiv_restrict]
+  exact LinearMap.congr_fun (I.multispan.sectionsRestrict_comp hVU hWV)
+    (I.sectionsEquiv U s)
 
 /-- Coefficient transport commutes with the canonical comparison of evaluated families. -/
 @[simp]
@@ -136,8 +190,8 @@ theorem sectionsRestrict_naturality
   exact ConcreteCategory.congr_hom ((η.app j).hom.naturality (homOfLE hVU).op)
     ((I.sectionsEquiv U s).val j)
 
-/-- Compatible linear matching families on evaluated incidence indices glue
-uniquely, using the existing gluing theorem for sheaf diagrams. -/
+/-- Compatible linear maps into evaluated-index matching families on the opens
+`U i` glue to a unique linear map on `iSup U` restricting to each of them. -/
 theorem existsUnique_sections_gluing (E : SemimoduleCat.{v} R) {ι : Type*}
     (U : ι → Opens X)
     (ℓ : ∀ i, E →ₗ[R] SemimoduleCat.sectionsSubmodule (I.sectionsIndex (U i)).multispan)
