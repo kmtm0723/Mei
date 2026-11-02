@@ -6,13 +6,17 @@ Authors: Codex
 module
 
 public import Mei.LinearAlgebra.GradedModule.History.Basic
+public import Mei.LinearAlgebra.GradedModule.Positive
 
 /-!
 # Positive homogeneous propagation histories
 
 Choose an additive submonoid of positive coefficients for each homogeneous degree.
 If each selected component map preserves these monoids on its homogeneous
-input degree, every segment of a homogeneous history is positive. In particular each
+input degree, every segment of a homogeneous history is positive.
+Mixed-degree inputs with positive components also have positive history outputs
+when each selected map preserves positivity along the recorded degrees for every
+possible initial degree. In particular each
 homogeneous component of its final decoration is positive. No order on the
 coefficient semiring, additive inverses, or basis of the homogeneous pieces is
 required.
@@ -77,5 +81,21 @@ theorem homogeneousHistory_component_mem_addSubmonoid {n : ℕ}
     rwa [DirectSum.decompose_of_mem_same ℳ hm]
   · rw [DirectSum.decompose_of_mem_ne ℳ hm hq]
     exact (Pos q).zero_mem
+
+/-- Componentwise positive inputs, possibly in several degrees, have positive
+history outputs when the selected maps preserve positivity along the recorded
+degrees for every possible initial degree. -/
+theorem homogeneousHistory_component_mem_addSubmonoid_of_components {n : ℕ}
+    (T : Fin n → Module.End R M) (p : Fin n → Γ)
+    (hT : ∀ i j x, x ∈ ℳ (Fin.snoc (α := fun _ => Γ) p i j.succ) →
+      x ∈ Pos (Fin.snoc (α := fun _ => Γ) p i j.succ) →
+        (DirectSum.decompose ℳ (T j x) (p j) : M) ∈ Pos (p j))
+    (a : M) (ha : ∀ i, (DirectSum.decompose ℳ a i : M) ∈ Pos i) (q : Γ) :
+    (DirectSum.decompose ℳ (homogeneousHistory ℳ T p a) q : M) ∈ Pos q := by
+  exact (mem_componentwisePositive ℳ Pos _).mp
+    (map_mem_componentwisePositive ℳ Pos (homogeneousHistory ℳ T p)
+      (fun i q x hx hp => homogeneousHistory_component_mem_addSubmonoid ℳ Pos T p
+        (hT i) ⟨x, hx⟩ hp q)
+      ((mem_componentwisePositive ℳ Pos a).mpr ha)) q
 
 end Mei

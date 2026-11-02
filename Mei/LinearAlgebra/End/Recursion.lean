@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Submodule.LinearMap
 public import Mathlib.Algebra.Ring.GeomSum
+import Mathlib.Algebra.Group.Submonoid.BigOperators
 
 /-!
 # Finite recursion for nilpotent endomorphisms
@@ -18,6 +19,8 @@ of the nilpotency bound, and natural under intertwining linear maps.
 The proofs work over a semiring on an additive commutative monoid: neither
 subtraction nor additive cancellation is needed. In particular, the comparison
 of two independently established recursions applies to semimodule coefficients.
+Any additive submonoid preserved by the endomorphism is preserved by finite
+recursion and contains the nilpotent recursion solution whenever it contains the input.
 The filtration-raising operators on finite module quotients in
 `Mei.LinearAlgebra.ModuleFiltration.Recursion` are an application of this over rings.
 -/
@@ -38,6 +41,14 @@ def finiteRecursion (r : ℕ) : Module.End R M :=
 theorem finiteRecursion_apply (r : ℕ) (a : M) :
     U.finiteRecursion r a = ∑ j ∈ Finset.range r, (U ^ j) a := by
   simp only [finiteRecursion, LinearMap.sum_apply]
+
+/-- Finite recursion preserves any additive submonoid preserved by the endomorphism.
+No nilpotence, grading, or order on the coefficient semiring is required. -/
+theorem finiteRecursion_mem (S : AddSubmonoid M) (hS : ∀ x ∈ S, U x ∈ S)
+    (r : ℕ) {a : M} (ha : a ∈ S) : U.finiteRecursion r a ∈ S := by
+  rw [finiteRecursion_apply]
+  exact S.sum_mem (fun j _ => (Module.End.pow_apply U j a).symm ▸
+    Set.MapsTo.iterate (f := U) (s := S) hS j ha)
 
 /-- A nilpotency bound makes the solution operator satisfy `1 + U * S = S`. -/
 theorem finiteRecursion_eq_one_add_mul {r : ℕ} (hU : U ^ r = 0) :
@@ -77,6 +88,14 @@ theorem existsUnique_eq_add_of_pow_eq_zero {r : ℕ} (hU : U ^ r = 0) (a : M) :
     ∃! x, x = a + U x :=
   ⟨U.finiteRecursion r a, U.finiteRecursion_eq_add hU a,
     fun _ hx => U.eq_finiteRecursion_of_eq_add hU hx⟩
+
+/-- Every solution of a nilpotent recursion belongs to an additive submonoid
+containing its input and preserved by the endomorphism. -/
+theorem mem_of_eq_add_of_pow_eq_zero (S : AddSubmonoid M)
+    (hS : ∀ x ∈ S, U x ∈ S) {r : ℕ} (hnil : U ^ r = 0)
+    {a x : M} (ha : a ∈ S) (hx : x = a + U x) : x ∈ S := by
+  rw [U.eq_finiteRecursion_of_eq_add hnil hx]
+  exact U.finiteRecursion_mem S hS r ha
 
 /-- The solution operator does not depend on the chosen nilpotency bound. -/
 theorem finiteRecursion_eq {r s : ℕ} (hr : U ^ r = 0) (hs : U ^ s = 0) :
