@@ -272,6 +272,14 @@ def semimoduleSheaf : X.Sheaf (SemimoduleCat.{max u v} R) where
 @[simp]
 theorem semimoduleSheaf_obj : (T.semimoduleSheaf R).obj = T.semimodulePresheaf R := by rfl
 
+/-- The canonical object comparison from the linear transport sheaf to its
+original section semimodule, using the existing public object equations. -/
+abbrev semimoduleSheafObjIso (W : Opens X) :
+    (T.semimoduleSheaf R).obj.obj (op W) ≅
+      SemimoduleCat.of R (T.sheaf.presheaf.obj (op W)) :=
+  eqToIso ((congrArg (fun F => F.obj (op W)) (T.semimoduleSheaf_obj R)).trans
+    (T.semimodulePresheaf_obj R (op W)))
+
 /-- Restricting a morphism into the transport sheaf is the corresponding linear
 restriction equation. The casts use the existing public object comparisons;
 they are necessary because imported module definitions retain hidden bodies. -/
@@ -279,20 +287,12 @@ theorem ofHom_restrict_eq_iff (H : SemimoduleCat.{max u v} R)
     {U V : Opens X} (hVU : V ≤ U)
     (t : H →ₗ[R] T.sheaf.presheaf.obj (op U))
     (s : H →ₗ[R] T.sheaf.presheaf.obj (op V)) :
-    let e (W : Opens X) :
-      (T.semimoduleSheaf R).obj.obj (op W) ≅
-        SemimoduleCat.of R (T.sheaf.presheaf.obj (op W)) := eqToIso
-      ((congrArg (fun F => F.obj (op W)) (T.semimoduleSheaf_obj R)).trans
-        (T.semimodulePresheaf_obj R (op W)))
+    let e := T.semimoduleSheafObjIso R
     (SemimoduleCat.ofHom t ≫ (e U).inv) ≫
         (T.semimoduleSheaf R).obj.map (homOfLE hVU).op =
       SemimoduleCat.ofHom s ≫ (e V).inv ↔
         (T.restrictionLinearMap R hVU).comp t = s := by
-  let e (W : Opens X) :
-      (T.semimoduleSheaf R).obj.obj (op W) ≅
-        SemimoduleCat.of R (T.sheaf.presheaf.obj (op W)) := eqToIso
-    ((congrArg (fun F => F.obj (op W)) (T.semimoduleSheaf_obj R)).trans
-      (T.semimodulePresheaf_obj R (op W)))
+  intro e
   have hm : (T.semimoduleSheaf R).obj.map (homOfLE hVU).op =
       (e U).hom ≫ SemimoduleCat.ofHom (T.restrictionLinearMap R hVU) ≫ (e V).inv := by
     have hn := congrArg (fun q => q ≫ eqToHom (T.semimodulePresheaf_obj R (op V)))
@@ -300,13 +300,8 @@ theorem ofHom_restrict_eq_iff (H : SemimoduleCat.{max u v} R)
     rw [T.semimodulePresheaf_map] at hn
     apply (cancel_mono (e V).hom).mp
     simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-    simpa only [e, eqToIso.hom, eqToHom_app, Category.assoc, eqToHom_trans,
+    simpa only [e, semimoduleSheafObjIso, eqToIso.hom, eqToHom_app, Category.assoc, eqToHom_trans,
       eqToHom_trans_assoc, eqToHom_refl, Category.comp_id] using hn
-  -- Name the statement's identical object comparison without unfolding sheaf bodies.
-  change (SemimoduleCat.ofHom t ≫ (e U).inv) ≫
-      (T.semimoduleSheaf R).obj.map (homOfLE hVU).op =
-        SemimoduleCat.ofHom s ≫ (e V).inv ↔
-          (T.restrictionLinearMap R hVU).comp t = s
   rw [hm]
   simp only [Category.assoc, Iso.inv_hom_id_assoc]
   rw [← Category.assoc, cancel_mono]
