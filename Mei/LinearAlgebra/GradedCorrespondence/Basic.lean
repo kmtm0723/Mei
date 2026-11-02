@@ -21,6 +21,11 @@ transfers are exactly the homogeneous components of the equivalence and its inve
 This models propagation of homogeneous coefficients across an invertible identification,
 without requiring that identification to preserve degrees.
 
+The admissible left lifts extend linearly to the whole source by zero on every
+inadmissible piece. This extension is a section on inputs supported in admissible
+degrees; its opposite homogeneous components are the existing transfers. Applying
+the same construction to `C.symm` gives the extension from the right.
+
 The constructions use Mathlib's `DirectSum.decomposeLinearEquiv` and `DirectSum.component`.
 -/
 
@@ -88,6 +93,67 @@ def symm (C : GradedCorrespondence (B := B) 𝒰 𝒱 I J) :
     (j : J) (a : 𝒱 j) : C.right (C.liftRight j a) = a :=
   DFunLike.congr_fun (C.right_liftRight j) a
 
+section TotalLift
+
+variable [DecidableEq ι] [DirectSum.Decomposition 𝒰]
+
+open Classical in
+/-- Extend all chosen admissible left lifts to one linear map, by zero on the
+inadmissible homogeneous pieces. The grading and its admissible set may be infinite. -/
+noncomputable def liftLeftTotal (C : GradedCorrespondence (B := B) 𝒰 𝒱 I J) : U →ₗ[R] B :=
+  (DirectSum.toModule R ι B (fun i => if hi : i ∈ I then C.liftLeft ⟨i, hi⟩ else 0)).comp
+    (DirectSum.decomposeLinearEquiv 𝒰).toLinearMap
+
+open Classical in
+/-- The extended lift agrees with the chosen lift on an admissible homogeneous
+input and vanishes on every inadmissible homogeneous input. -/
+theorem liftLeftTotal_of_mem (C : GradedCorrespondence (B := B) 𝒰 𝒱 I J)
+    {i : ι} {a : U} (ha : a ∈ 𝒰 i) :
+    C.liftLeftTotal a = if hi : i ∈ I then C.liftLeft ⟨i, hi⟩ ⟨a, ha⟩ else 0 := by
+  simp only [liftLeftTotal, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    DirectSum.decomposeLinearEquiv_apply, DirectSum.decompose_of_mem 𝒰 ha,
+    ← DirectSum.lof_eq_of R, DirectSum.toModule_lof]
+  split_ifs <;> rfl
+
+open Classical in
+/-- Mapping an extended homogeneous lift back to its source retains exactly
+the admissible homogeneous input. -/
+theorem left_liftLeftTotal_of_mem (C : GradedCorrespondence (B := B) 𝒰 𝒱 I J)
+    {i : ι} {a : U} (ha : a ∈ 𝒰 i) :
+    C.left (C.liftLeftTotal a) = if i ∈ I then a else 0 := by
+  rw [C.liftLeftTotal_of_mem ha]
+  split_ifs
+  · exact C.left_liftLeft_apply _ _
+  · exact C.left.map_zero
+
+open Classical in
+/-- Every extended lift is a finite sum of the admissible input components. -/
+theorem liftLeftTotal_eq_sum (C : GradedCorrespondence (B := B) 𝒰 𝒱 I J) (a : U) :
+    C.liftLeftTotal a = ∑ i ∈ (DirectSum.decompose 𝒰 a).support,
+      if hi : i ∈ I then C.liftLeft ⟨i, hi⟩ (DirectSum.decompose 𝒰 a i) else 0 := by
+  conv_lhs => rw [← DirectSum.sum_support_decompose 𝒰 a]
+  rw [map_sum]
+  apply Finset.sum_congr rfl
+  intro i _
+  exact C.liftLeftTotal_of_mem (DirectSum.decompose 𝒰 a i).property
+
+open Classical in
+/-- The extended lift is a section on any input supported in admissible degrees. -/
+theorem left_liftLeftTotal_of_support (C : GradedCorrespondence (B := B) 𝒰 𝒱 I J)
+    (a : U) (ha : ∀ i ∈ (DirectSum.decompose 𝒰 a).support, i ∈ I) :
+    C.left (C.liftLeftTotal a) = a := by
+  classical
+  rw [liftLeftTotal_eq_sum]
+  simp only [map_sum]
+  trans ∑ i ∈ (DirectSum.decompose 𝒰 a).support, (DirectSum.decompose 𝒰 a i : U)
+  · apply Finset.sum_congr rfl
+    intro i hi
+    rw [dite_eq_left (ha i hi)]
+    exact C.left_liftLeft_apply ⟨i, ha i hi⟩ _
+  · exact DirectSum.sum_support_decompose 𝒰 a
+
+end TotalLift
+
 section Transfer
 
 variable [DecidableEq κ] [DirectSum.Decomposition 𝒱]
@@ -120,6 +186,21 @@ theorem sum_transfer [∀ j (a : 𝒱 j), Decidable (a ≠ 0)] (C : GradedCorres
   simp only [transfer_apply, DirectSum.sum_support_decompose]
 
 end Transfer
+
+open Classical in
+/-- The opposite component of the extended lift is the chosen homogeneous
+transfer on admissible inputs, and zero on inadmissible inputs. -/
+theorem decompose_right_liftLeftTotal_of_mem
+    [DecidableEq ι] [DirectSum.Decomposition 𝒰]
+    [DecidableEq κ] [DirectSum.Decomposition 𝒱]
+    (C : GradedCorrespondence (B := B) 𝒰 𝒱 I J) {i : ι} {a : U}
+    (ha : a ∈ 𝒰 i) (j : κ) :
+    DirectSum.decompose 𝒱 (C.right (C.liftLeftTotal a)) j =
+      if hi : i ∈ I then C.transfer ⟨i, hi⟩ j ⟨a, ha⟩ else 0 := by
+  rw [C.liftLeftTotal_of_mem ha]
+  split_ifs
+  · exact (C.transfer_apply _ j _).symm
+  · simp
 
 /-- The graph of a linear equivalence, with all degrees admissible on both sides.
 The middle module is `U`; the right lift uses the inverse equivalence. -/
