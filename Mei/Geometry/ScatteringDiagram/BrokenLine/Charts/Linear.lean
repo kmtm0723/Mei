@@ -55,28 +55,8 @@ theorem exists_cutoffDecoratedEvaluationLinearMap_polyhedralCharts (k : ℕ) :
   obtain ⟨n, D, L, hD, hL⟩ :=
     exists_cutoffDecoratedEvaluationLinearMap_semilinearPresentation
       d ℳ T f c ε P W S C h w hf hP hW hS hC k
-  choose ι hι B hB hdisj hcover using
-    fun j => (hD j).exists_disjoint_intrinsicInteriors
-  let (j : Fin n) : Finite (ι j) := hι j
-  let (j : Fin n) : Fintype (ι j) := Fintype.ofFinite (ι j)
-  have hsum (Q : V) : cutoffDecoratedEvaluationLinearMap d ℳ T (fun q => i (w q))
-      f c ε P W S C k Q =
-        ∑ z : Σ j, ι j, if Q ∈ intrinsicInterior ℝ (B z.1 z.2) then L z.1 else 0 := by
-    rw [hL, Fintype.sum_sigma]
-    apply Finset.sum_congr rfl
-    intro j _
-    simpa [Set.indicator, hcover j] using
-      (Finset.indicator_biUnion_apply Finset.univ (fun a => intrinsicInterior ℝ (B j a))
-        (f := fun _ => L j) ((hdisj j).set_pairwise _) Q)
-  obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin (Σ j, ι j)
-  refine ⟨m, fun z => B (e.symm z).1 (e.symm z).2,
-    fun z => L (e.symm z).1, fun z => ?_, ?_⟩
-  · exact ⟨(hB (e.symm z).1 (e.symm z).2).1, (hB (e.symm z).1 (e.symm z).2).2.1⟩
-  · intro Q
-    rw [hsum]
-    exact Fintype.sum_equiv e _ _ (fun z =>
-      (congrArg (fun t : Σ j, ι j =>
-        if Q ∈ intrinsicInterior ℝ (B t.1 t.2) then L t.1 else 0)
-          (e.symm_apply_apply z)).symm)
+  obtain ⟨m, B, L', hB, hsum⟩ :=
+    IsRationalSemilinear.exists_weighted_polyhedralCharts D hD L
+  exact ⟨m, B, L', hB, fun Q => (hL Q).trans (hsum Q)⟩
 
 end Mei
