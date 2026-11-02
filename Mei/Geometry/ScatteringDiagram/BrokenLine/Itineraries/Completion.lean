@@ -36,10 +36,12 @@ quotient gradings. The inverse-limit interpretation follows Mandel,
 *Scattering diagrams, theta functions, and refined tropical curve counts*,
 Definition 2.10 and Theorem 2.14 (arXiv:1503.06183v5).
 
-The input construction, completed-label compatibility, completion definition,
-projection theorem and zero proof adapt the fixed-itinerary construction
+The completed-label compatibility argument adapts the fixed-itinerary construction
 `PositiveDegrees.completedBCHDecoratedRayEvaluation` in
 `Mei.Geometry.ScatteringDiagram.BrokenLine.Truncation` to all encounter itineraries.
+The completion is the `ModuleFiltration.lift` of the finite linear evaluations
+`cutoffDecoratedEvaluationLinearMap`; its projections use the universal lift
+formula, and `map_zero` gives the zero case.
 -/
 
 public noncomputable section
