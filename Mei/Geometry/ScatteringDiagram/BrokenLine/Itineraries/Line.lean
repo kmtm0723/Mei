@@ -7,7 +7,6 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.BrokenLine.Itineraries.Linear
 public import Mei.Geometry.Affine.Generic.Line
-public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Cutoff evaluation between finitely many line events
@@ -61,23 +60,6 @@ theorem exists_cutoffDecoratedEvaluationLinearMap_lineEvents (k : ℕ) :
   classical
   obtain ⟨E, hstable⟩ := exists_cutoffDecoratedEvaluationLinearMap_eventually_eq
     d ℳ T f c ε P W S C h w hf hP hW hS hC k
-  refine ⟨E, fun x hx y => ?_⟩
-  let hfinite := E.finite_nonGeneric_lineMap hx y
-  refine ⟨hfinite.toFinset, fun t => hfinite.mem_toFinset, ?_⟩
-  intro B hB havoid s hs t ht
-  let : PreconnectedSpace B := isPreconnected_iff_preconnectedSpace.mp hB
-  let L (b : B) := cutoffDecoratedEvaluationLinearMap d ℳ T (fun q => i (w q))
-    f c ε P W S C k (AffineMap.lineMap x y (b : ℝ))
-  have hc : Continuous (fun b : B => AffineMap.lineMap x y (b : ℝ)) := by
-    simp only [AffineMap.lineMap_apply, vsub_eq_sub, vadd_eq_add]
-    exact (continuous_subtype_val.smul continuous_const).add continuous_const
-  have hlocal : IsLocallyConstant L := by
-    apply (IsLocallyConstant.iff_eventually_eq L).mpr
-    intro b
-    have hgeneric : E.IsGeneric (AffineMap.lineMap x y (b : ℝ)) := by
-      by_contra hn
-      exact havoid b b.property (hfinite.mem_toFinset.mpr hn)
-    exact hc.continuousAt.tendsto.eventually (hstable _ hgeneric)
-  exact hlocal.apply_eq_of_preconnectedSpace ⟨s, hs⟩ ⟨t, ht⟩
+  exact ⟨E, fun x hx y => E.exists_lineEvents _ hstable hx y⟩
 
 end Mei
