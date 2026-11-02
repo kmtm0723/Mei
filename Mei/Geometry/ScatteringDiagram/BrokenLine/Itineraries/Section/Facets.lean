@@ -7,6 +7,7 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.BrokenLine.Itineraries.Section
 public import Mei.Topology.Sheaves.LocallyConstant.FacetDescent.Hom
+public import Mei.Topology.Sheaves.DenseBasisTransport.Linear.Comparison
 
 /-!
 # Extending actual cutoff-ray sections across facets
@@ -84,42 +85,13 @@ theorem exists_cutoffDecoratedEvaluation_extension_of_facets (k : ℕ) :
   intro B O U hoff hgen hBO hOU hdense κ hκ Z hZ hsing α hfacet
   let F := D.coefficientSemimoduleLocalSystem M R
   let Q := D.coefficientTransport M
-  -- Public presheaf comparisons identify the linear sheaf with the original sections.
-  let e (W : Opens C.regularSpace) :
-      F.obj.obj (op W) ≅ SemimoduleCat.of R (Q.sheaf.presheaf.obj (op W)) :=
-    eqToIso (by rw [show F.obj = Q.semimodulePresheaf R from Q.semimoduleSheaf_obj R,
-      Q.semimodulePresheaf_obj])
+  let e (W : Opens C.regularSpace) := Q.semimoduleSheafSectionsIso R W
   have hres {W W' : Opens C.regularSpace} (hWW' : W' ≤ W) :
       F.obj.map (homOfLE hWW').op = (e W).hom ≫
-        SemimoduleCat.ofHom (Q.restrictionLinearMap R hWW') ≫ (e W').inv := by
-    let hf : F.obj = Q.semimodulePresheaf R := Q.semimoduleSheaf_obj R
-    have hn := congrArg (fun q => q ≫ eqToHom (Q.semimodulePresheaf_obj R (op W')))
-      ((eqToHom hf).naturality (homOfLE hWW').op)
-    rw [Q.semimodulePresheaf_map] at hn
-    apply (cancel_mono (e W').hom).mp
-    simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-    simpa only [e, eqToIso.hom, eqToHom_app, Category.assoc,
-      eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl, Category.comp_id] using hn
+        SemimoduleCat.ofHom (Q.restrictionLinearMap R hWW') ≫ (e W').inv :=
+    Q.semimoduleSheaf_map R hWW'
   obtain ⟨s, hs, -⟩ := h𝒜 B hoff hgen α
-  have hF : ∀ x : C.regularSpace, ∃ W : Opens C.regularSpace, x ∈ W ∧
-      ∀ (B : Opens C.regularSpace) (hBW : B ≤ W),
-        (B : Set C.regularSpace).Nonempty → IsPreconnected (B : Set C.regularSpace) →
-          IsIso (F.obj.map (homOfLE hBW).op) := by
-    intro x
-    obtain ⟨W, hxW, hW⟩ :=
-      TopCat.Sheaf.HasLocallyBijectivePreconnectedRestrictions.exists_bijective_restrictions
-        (F := D.coefficientLocalSystem M) x
-    refine ⟨W, hxW, fun B hBW hne hconn => ?_⟩
-    have hb : Function.Bijective (Q.restrictionLinearMap R hBW) := by
-      have he : (Q.restrictionLinearMap R hBW : _ → _) =
-          Q.sheaf.presheaf.map (homOfLE hBW).op :=
-        funext (Q.restrictionLinearMap_apply R hBW)
-      rw [he]
-      exact hW B hBW hne hconn
-    have : IsIso (SemimoduleCat.ofHom (Q.restrictionLinearMap R hBW)) :=
-      (ConcreteCategory.isIso_iff_bijective _).mpr hb
-    rw [hres]
-    infer_instance
+  have hF := Q.exists_isIso_restrictions_semimoduleSheaf R
   have hlocal : ∀ x ∈ O, x ∉ B → ∃ (N : Opens C.regularSpace)
       (t : H ⟶ F.obj.obj (op N)), x ∈ N ∧
         t ≫ F.obj.map (homOfLE (inf_le_left : N ⊓ B ≤ N)).op =
