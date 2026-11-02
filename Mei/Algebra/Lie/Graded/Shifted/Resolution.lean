@@ -57,13 +57,9 @@ theorem sum_homogeneousHistory_truncatedBCHAction (k : ℕ) {n : ℕ}
         (fun j => (r j).val) =
       ((F).truncatedBCHAction d ℒ k (List.ofFn g).prod).toLinearMap := by
   classical
-  have hS (r : Γ) (hr : r ∉ (d.finite_cutoff k).toFinset) : G(k) r = ⊥ := by
-    apply eq_bot_iff.mpr
-    intro a ha
-    exact (Submodule.mem_bot R).mpr (by
-      by_contra hne
-      exact hr ((d.finite_cutoff k).mem_toFinset.mpr
-        (d.mem_cutoff_of_mem_shiftedQuotientGrading_ne_zero ℳ p ha hne)))
+  have hS (r : Γ) (hr : r ∉ (d.finite_cutoff k).toFinset) : G(k) r = ⊥ :=
+    d.shiftedQuotientGrading_piece_eq_bot ℳ p
+      (fun hmem => hr ((d.finite_cutoff k).mem_toFinset.mpr hmem))
   rw [sum_homogeneousHistory_eq_prod G(k) _ hS]
   let act := (LinearEquiv.automorphismGroup.toLinearMapMonoidHom
     (R := R) (M := (F).quotient k)).comp
