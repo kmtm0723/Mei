@@ -47,20 +47,6 @@ variable {Γ : Type} {R L M : Type*} [AddCommGroup Γ] [CommRing R] [Algebra ℚ
 local notation "F" => d.shiftedLieFiltration ℒ ℳ p
 local notation "G(" k ")" => TauCeti.InternalGrading.piece (d.shiftedQuotientGrading ℳ p k)
 
-/-- Applying the truncated BCH action termwise to a finite word preserves its
-product as a linear endomorphism. -/
-theorem truncatedBCHAction_list_ofFn_prod_toLinearMap (k : ℕ) {n : ℕ}
-    (g : Fin n → d.truncatedGroup ℒ k) :
-    (List.ofFn (fun j => ((F).truncatedBCHAction d ℒ k (g j)).toLinearMap)).prod =
-      ((F).truncatedBCHAction d ℒ k (List.ofFn g).prod).toLinearMap := by
-  let act := (LinearEquiv.automorphismGroup.toLinearMapMonoidHom
-    (R := R) (M := (F).quotient k)).comp
-    ((F).truncatedBCHAction d ℒ k)
-  simpa only [List.map_ofFn, Function.comp_def, act, MonoidHom.comp_apply,
-    LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply] using
-    (map_list_prod act (List.ofFn g)).symm
-
-
 /-- The action of a BCH word is the finite sum of its whole-component history
 maps over the positive degree cutoff. This is an equality of endomorphisms,
 with a finite index set independent of the incoming coefficient. -/
@@ -74,7 +60,7 @@ theorem sum_homogeneousHistory_truncatedBCHAction (k : ℕ) {n : ℕ}
   classical
   rw [sum_homogeneousHistory_eq_prod G(k) _
     (d.shiftedQuotientGrading_piece_eq_bot ℳ p)]
-  exact d.truncatedBCHAction_list_ofFn_prod_toLinearMap ℒ ℳ p k g
+  exact (F).truncatedBCHAction_list_ofFn_prod_toLinearMap d ℒ k g
 
 /-- BCH factorizations with the same product have identical finite sums of
 component maps in any retained outgoing degree. Precomposition allows an
@@ -107,7 +93,7 @@ theorem sum_component_homogeneousHistory_eq_of_prod_eq
 /-- The nested finite sums of two BCH blocks recover their composite action in
 the whole quotient, followed by any output linear map. The right block acts first,
 and both finite index sets are independent of the incoming input. -/
-theorem sum_comp_homogeneousHistory_append_truncatedBCHAction
+theorem sum_sum_comp_homogeneousHistory_comp_truncatedBCHAction
     {E O : Type*} [AddCommMonoid E] [Module R E] [AddCommMonoid O] [Module R O]
     (k : ℕ) {n m : ℕ} (g : Fin n → d.truncatedGroup ℒ k)
     (u : Fin m → d.truncatedGroup ℒ k)
@@ -122,8 +108,8 @@ theorem sum_comp_homogeneousHistory_append_truncatedBCHAction
       b.comp
         (((F).truncatedBCHAction d ℒ k (List.ofFn g).prod).toLinearMap.comp
           (((F).truncatedBCHAction d ℒ k (List.ofFn u).prod).toLinearMap.comp a)) := by
-  simpa only [d.truncatedBCHAction_list_ofFn_prod_toLinearMap ℒ ℳ p k g,
-    d.truncatedBCHAction_list_ofFn_prod_toLinearMap ℒ ℳ p k u] using
+  simpa only [(F).truncatedBCHAction_list_ofFn_prod_toLinearMap d ℒ k g,
+    (F).truncatedBCHAction_list_ofFn_prod_toLinearMap d ℒ k u] using
     sum_sum_comp_homogeneousHistory_comp_eq G(k) (d.finite_cutoff k).toFinset
       (d.shiftedQuotientGrading_piece_eq_bot ℳ p)
       (fun j => ((F).truncatedBCHAction d ℒ k (g j)).toLinearMap)
