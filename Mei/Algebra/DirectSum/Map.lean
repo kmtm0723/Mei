@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
+import Mathlib.Algebra.Group.Submonoid.BigOperators
 
 /-!
 # Homogeneous components under regrading
@@ -17,7 +18,8 @@ not have finite fibers or be injective. This describes how coefficients merge un
 regrading an internally decomposed additive monoid.
 For finite source gradings, reconstruction and regrading also have sums over all degrees.
 Linear maps prescribed on the homogeneous pieces extend uniquely to the whole module,
-with homogeneous-input and finite-support computation formulas.
+with homogeneous-input and finite-support computation formulas. Preserving chosen
+positive monoids on the pieces gives positivity of the extended map.
 
 The proof uses Mathlib's `DirectSum.sum_support_decompose` and homogeneous projection API.
 -/
@@ -58,6 +60,17 @@ theorem homogeneousExtend_eq_sum [∀ i (a : 𝒰 i), Decidable (a ≠ 0)]
   apply Finset.sum_congr rfl
   intro i _
   exact homogeneousExtend_of_mem 𝒰 f (decompose 𝒰 a i).property
+
+/-- A homogeneous extension sends componentwise positive inputs into an additive
+submonoid if each prescribed map does so on its homogeneous positive inputs. -/
+theorem homogeneousExtend_mem_addSubmonoid (f : ∀ i, 𝒰 i →ₗ[R] M)
+    (Pos : ι → AddSubmonoid U) (P : AddSubmonoid M)
+    (hf : ∀ i (a : 𝒰 i), (a : U) ∈ Pos i → f i a ∈ P)
+    (a : U) (ha : ∀ i, (decompose 𝒰 a i : U) ∈ Pos i) :
+    homogeneousExtend 𝒰 f a ∈ P := by
+  classical
+  rw [homogeneousExtend_eq_sum]
+  exact P.sum_mem (fun i _ => hf i _ (ha i))
 
 /-- Prescribed restrictions to the homogeneous pieces determine a linear map uniquely. -/
 theorem homogeneousExtend_unique (f : ∀ i, 𝒰 i →ₗ[R] M) (g : U →ₗ[R] M)
