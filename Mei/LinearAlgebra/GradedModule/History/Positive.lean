@@ -12,7 +12,10 @@ public import Mei.LinearAlgebra.GradedModule.History.Basic
 
 Choose an additive submonoid of positive coefficients for each homogeneous degree.
 If each selected component map preserves these monoids on its homogeneous
-input degree, every segment of a homogeneous history is positive. In particular each
+input degree, every segment of a homogeneous history is positive.
+Mixed-degree inputs with positive components also have positive history outputs
+when each selected map preserves positivity along the recorded degrees for every
+possible initial degree. In particular each
 homogeneous component of its final decoration is positive. No order on the
 coefficient semiring, additive inverses, or basis of the homogeneous pieces is
 required.
@@ -79,11 +82,13 @@ theorem homogeneousHistory_component_mem_addSubmonoid {n : ℕ}
     exact (Pos q).zero_mem
 
 /-- Componentwise positive inputs, possibly in several degrees, have positive
-history outputs when every selected component map preserves the positive monoids. -/
+history outputs when the selected maps preserve positivity along the recorded
+degrees for every possible initial degree. -/
 theorem homogeneousHistory_component_mem_addSubmonoid_of_components {n : ℕ}
     (T : Fin n → Module.End R M) (p : Fin n → Γ)
-    (hT : ∀ j i x, x ∈ ℳ i → x ∈ Pos i →
-      (DirectSum.decompose ℳ (T j x) (p j) : M) ∈ Pos (p j))
+    (hT : ∀ i j x, x ∈ ℳ (Fin.snoc (α := fun _ => Γ) p i j.succ) →
+      x ∈ Pos (Fin.snoc (α := fun _ => Γ) p i j.succ) →
+        (DirectSum.decompose ℳ (T j x) (p j) : M) ∈ Pos (p j))
     (a : M) (ha : ∀ i, (DirectSum.decompose ℳ a i : M) ∈ Pos i) (q : Γ) :
     (DirectSum.decompose ℳ (homogeneousHistory ℳ T p a) q : M) ∈ Pos q := by
   classical
@@ -92,6 +97,36 @@ theorem homogeneousHistory_component_mem_addSubmonoid_of_components {n : ℕ}
   apply (Pos q).sum_mem
   intro i _
   exact homogeneousHistory_component_mem_addSubmonoid ℳ Pos T p
-    (fun j => hT j _) (DirectSum.decompose ℳ a i) (ha i) q
+    (hT i) (DirectSum.decompose ℳ a i) (ha i) q
+
+/-- Elements whose homogeneous components belong to the chosen positive monoids. -/
+def componentwisePositive : AddSubmonoid M where
+  carrier := {x | ∀ q, (DirectSum.decompose ℳ x q : M) ∈ Pos q}
+  zero_mem' := by
+    intro q
+    simpa only [DirectSum.decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero]
+      using (Pos q).zero_mem
+  add_mem' := by
+    intro x y hx hy q
+    simpa only [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add]
+      using (Pos q).add_mem (hx q) (hy q)
+
+@[simp]
+theorem mem_componentwisePositive (x : M) :
+    x ∈ componentwisePositive ℳ Pos ↔
+      ∀ q, (DirectSum.decompose ℳ x q : M) ∈ Pos q := Iff.rfl
+
+/-- Homogeneous componentwise positivity implies preservation of the whole positive monoid. -/
+theorem map_mem_componentwisePositive (U : Module.End R M)
+    (hU : ∀ i q x, x ∈ ℳ i → x ∈ Pos i →
+      (DirectSum.decompose ℳ (U x) q : M) ∈ Pos q)
+    {a : M} (ha : a ∈ componentwisePositive ℳ Pos) :
+    U a ∈ componentwisePositive ℳ Pos := by
+  classical
+  rw [mem_componentwisePositive] at ha ⊢
+  intro q
+  rw [← DirectSum.sum_support_decompose ℳ a]
+  simp only [map_sum, DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
+  exact (Pos q).sum_mem (fun i _ => hU i q _ (DirectSum.decompose ℳ a i).property (ha i))
 
 end Mei
