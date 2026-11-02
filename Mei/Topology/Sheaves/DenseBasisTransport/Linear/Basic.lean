@@ -272,6 +272,29 @@ def semimoduleSheaf : X.Sheaf (SemimoduleCat.{max u v} R) where
 @[simp]
 theorem semimoduleSheaf_obj : (T.semimoduleSheaf R).obj = T.semimodulePresheaf R := by rfl
 
+/-- The linear transport sheaf has the original transport-section semimodule,
+identified by the existing public presheaf comparisons. -/
+def semimoduleSheafSectionsIso (U : Opens X) :
+    (T.semimoduleSheaf R).obj.obj (op U) ≅
+      SemimoduleCat.of R (T.sheaf.presheaf.obj (op U)) :=
+  eqToIso (by rw [T.semimoduleSheaf_obj, T.semimodulePresheaf_obj])
+
+/-- Restriction in the linear sheaf is the original linear restriction under
+the canonical section isomorphisms. -/
+theorem semimoduleSheaf_map {U V : Opens X} (hVU : V ≤ U) :
+    (T.semimoduleSheaf R).obj.map (homOfLE hVU).op =
+      (T.semimoduleSheafSectionsIso R U).hom ≫
+        SemimoduleCat.ofHom (T.restrictionLinearMap R hVU) ≫
+          (T.semimoduleSheafSectionsIso R V).inv := by
+  let hf := T.semimoduleSheaf_obj R
+  have hn := congrArg (fun q => q ≫ eqToHom (T.semimodulePresheaf_obj R (op V)))
+    ((eqToHom hf).naturality (homOfLE hVU).op)
+  rw [T.semimodulePresheaf_map] at hn
+  apply (cancel_mono (T.semimoduleSheafSectionsIso R V).hom).mp
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  simpa only [semimoduleSheafSectionsIso, eqToIso.hom, eqToHom_app, Category.assoc,
+    eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl, Category.comp_id] using hn
+
 /-- Forgetting the semimodule-valued sheaf gives the original transport presheaf. -/
 theorem semimoduleSheaf_comp_forget :
     (T.semimoduleSheaf R).obj ⋙ forget (SemimoduleCat R) = T.sheaf.presheaf := by
