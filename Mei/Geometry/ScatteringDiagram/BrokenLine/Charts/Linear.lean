@@ -7,7 +7,6 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.BrokenLine.Itineraries.Linear
 public import Mei.Geometry.Convex.Polyhedron.Rational.Stratification
-public import Mei.Geometry.Affine.Generic
 
 /-!
 # Input-independent polyhedral operator charts for cutoff rays
@@ -20,9 +19,6 @@ A single common partition works for every cutoff in a bounded finite range,
 including all lower-dimensional strata. The one-cutoff presentation uses the
 corresponding single-family weighted
 presentation, derived from the same partition theorem.
-Countably many such operators, including systems with different coefficient
-modules and cutoffs, have a dense Gδ common generic locus. At each point of this
-locus every operator is locally constant, with a neighborhood for each system.
 
 This is a presentation of the actual evaluation operator, with the original
 incoming tails and endpoint admission. Boundary points of a closed chart are
@@ -89,37 +85,5 @@ theorem exists_cutoffDecoratedEvaluationLinearMap_polyhedralCharts (k : ℕ) :
   obtain ⟨m, B, L', hB, hsum⟩ :=
     IsRationalSemilinear.exists_weighted_polyhedralCharts D hD L
   exact ⟨m, B, L', hB, fun Q => (hL Q).trans (hsum Q)⟩
-
-section Countable
-
-variable {τ : Type*} [Countable τ] [FiniteDimensional ℝ V]
-  (M' : τ → Type*) [∀ t, AddCommMonoid (M' t)] [∀ t, Module R (M' t)]
-  (𝓜 : ∀ t, Γ → Submodule R (M' t)) [∀ t, DirectSum.Decomposition (𝓜 t)]
-  (actions : ∀ t, J → Module.End R (M' t)) (cutoff : τ → ℕ)
-  (sources : τ → Set V) (directions : τ → Γ → Λ)
-  (hsources : ∀ t, IsRationalNormalPolyhedron h (sources t))
-
-include hf hP hW hS hsources in
-/-- A countable collection of actual cutoff-ray operators has a dense Gδ common
-generic locus. Coefficient modules, actions, cutoffs, source domains and directions may vary.
-At each generic endpoint, the neighborhood for one operator works for all its
-inputs; different operators may require different neighborhoods. -/
-theorem exists_cutoffDecoratedEvaluationLinearMap_dense_commonGeneric :
-    ∃ E : τ → ExceptionalArrangement V,
-      Dense {Q | ∀ t, (E t).IsGeneric Q} ∧ IsGδ {Q | ∀ t, (E t).IsGeneric Q} ∧
-        ∀ t Q, (E t).IsGeneric Q → ∀ᶠ Q' in nhds Q,
-          cutoffDecoratedEvaluationLinearMap d (𝓜 t) (actions t) (fun q => i (directions t q))
-            f c ε P W S (sources t) (cutoff t) Q' =
-          cutoffDecoratedEvaluationLinearMap d (𝓜 t) (actions t) (fun q => i (directions t q))
-            f c ε P W S (sources t) (cutoff t) Q := by
-  classical
-  choose E hE using fun t =>
-    exists_cutoffDecoratedEvaluationLinearMap_eventually_eq
-      d (𝓜 t) (actions t) f c ε P W S (sources t)
-      h (directions t) hf hP hW hS (hsources t) (cutoff t)
-  exact ⟨E, ExceptionalArrangement.dense_iInter_isGeneric E,
-    ExceptionalArrangement.isGδ_iInter_isGeneric E, hE⟩
-
-end Countable
 
 end Mei
