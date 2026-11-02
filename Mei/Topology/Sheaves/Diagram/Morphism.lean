@@ -16,8 +16,9 @@ compatible families remain compatible on overlaps. Applying the transformation
 to a glued family gives a glued family of the transformed local maps.
 
 No finiteness, injectivity or surjectivity is imposed on the coefficient maps,
-the incidence category or the endpoint cover. Face values are retained along
-with chamber values.
+the incidence category or the endpoint cover. The map acts on every component `j : J`. When `J` is a
+chamber-and-face
+incidence category, this includes its face components.
 -/
 
 public section
@@ -32,9 +33,9 @@ variable {X : TopCat.{u}} {R : Type r} [Semiring R]
   {J : Type w} [Category.{t} J]
   {D D' D'' : J ⥤ X.Sheaf (SemimoduleCat.{v} R)}
 
-/-- Apply the coefficient transformation on every component of a matching
-family, using the existing linear map on diagram sections. -/
-noncomputable def matchingSectionsMap (η : D ⟶ D') (U : Opens X) :
+/-- The `R`-linear map on matching families over `U` induced by `η`, sending
+each component section `s j` to its image under the coefficient morphism `η.app j`. -/
+noncomputable def sectionsMap (η : D ⟶ D') (U : Opens X) :
     SemimoduleCat.sectionsSubmodule (D.sectionsOver U) →ₗ[R]
       SemimoduleCat.sectionsSubmodule (D'.sectionsOver U) :=
   SemimoduleCat.sectionsMap (Functor.whiskerRight η
@@ -42,54 +43,49 @@ noncomputable def matchingSectionsMap (η : D ⟶ D') (U : Opens X) :
 
 /-- Evaluation uses the original coefficient sheaf morphism on this open. -/
 @[simp]
-theorem matchingSectionsMap_apply (η : D ⟶ D') (U : Opens X)
+theorem sectionsMap_apply (η : D ⟶ D') (U : Opens X)
     (s : SemimoduleCat.sectionsSubmodule (D.sectionsOver U)) (j : J) :
-    (η.matchingSectionsMap U s).val j = (η.app j).hom.app (op U) (s.val j) :=
+    (η.sectionsMap U s).val j = (η.app j).hom.app (op U) (s.val j) :=
   SemimoduleCat.sectionsMap_apply _ s j
 
 /-- Identity coefficient transport fixes all matching-family components. -/
 @[simp]
-theorem matchingSectionsMap_id (U : Opens X) :
-    (𝟙 D : D ⟶ D).matchingSectionsMap U = LinearMap.id := by
-  unfold matchingSectionsMap
+theorem sectionsMap_id (U : Opens X) :
+    (𝟙 D : D ⟶ D).sectionsMap U = LinearMap.id := by
+  unfold sectionsMap
   rw [Functor.whiskerRight_id']
   exact SemimoduleCat.sectionsMap_id
 
 /-- Successive coefficient transformations act by composition on matching families. -/
 @[simp]
-theorem matchingSectionsMap_comp (η : D ⟶ D') (θ : D' ⟶ D'') (U : Opens X) :
-    (η ≫ θ).matchingSectionsMap U =
-      (θ.matchingSectionsMap U).comp (η.matchingSectionsMap U) := by
-  unfold matchingSectionsMap
+theorem sectionsMap_comp (η : D ⟶ D') (θ : D' ⟶ D'') (U : Opens X) :
+    (η ≫ θ).sectionsMap U =
+      (θ.sectionsMap U).comp (η.sectionsMap U) := by
+  unfold sectionsMap
   rw [Functor.whiskerRight_comp, SemimoduleCat.sectionsMap_comp]
 
 /-- Coefficient transport commutes with restriction of the endpoint open. -/
-theorem matchingSectionsMap_restrict (η : D ⟶ D') {U V : Opens X} (hVU : V ≤ U) :
-    (D'.sectionsRestrict hVU).comp (η.matchingSectionsMap U) =
-      (η.matchingSectionsMap V).comp (D.sectionsRestrict hVU) := by
+theorem sectionsMap_restrict (η : D ⟶ D') {U V : Opens X} (hVU : V ≤ U) :
+    (D'.sectionsRestrict hVU).comp (η.sectionsMap U) =
+      (η.sectionsMap V).comp (D.sectionsRestrict hVU) := by
   apply LinearMap.ext
   intro s
   apply Subtype.ext
   funext j
-  simp only [LinearMap.comp_apply, Functor.sectionsRestrict_apply, matchingSectionsMap_apply]
+  simp only [LinearMap.comp_apply, Functor.sectionsRestrict_apply, sectionsMap_apply]
   exact (ConcreteCategory.congr_hom ((η.app j).hom.naturality (homOfLE hVU).op) (s.val j)).symm
 
-/-- Applying a coefficient map to a glued linear family glues the transformed
-local families, on the same endpoint cover. -/
-theorem matchingSectionsMap_gluing (η : D ⟶ D') (E : SemimoduleCat.{v} R)
-    {ι : Type*} (U : ι → Opens X)
-    (ℓ : ∀ i, E →ₗ[R] SemimoduleCat.sectionsSubmodule (D.sectionsOver (U i)))
-    (L : E →ₗ[R] SemimoduleCat.sectionsSubmodule (D.sectionsOver (iSup U)))
-    (hL : ∀ i, (D.sectionsRestrict (le_iSup U i)).comp L = ℓ i) :
-    ∀ i, (D'.sectionsRestrict (le_iSup U i)).comp
-        ((η.matchingSectionsMap (iSup U)).comp L) =
-      (η.matchingSectionsMap (U i)).comp (ℓ i) := by
-  intro i
-  rw [← LinearMap.comp_assoc, matchingSectionsMap_restrict, LinearMap.comp_assoc, hL]
+/-- Restriction commutes with coefficient transport after any incoming linear map. -/
+theorem sectionsMap_restrict_comp (η : D ⟶ D') {E : Type*}
+    [AddCommMonoid E] [Module R E] {U V : Opens X} (hVU : V ≤ U)
+    (L : E →ₗ[R] SemimoduleCat.sectionsSubmodule (D.sectionsOver U)) :
+    (D'.sectionsRestrict hVU).comp ((η.sectionsMap U).comp L) =
+      (η.sectionsMap V).comp ((D.sectionsRestrict hVU).comp L) := by
+  rw [← LinearMap.comp_assoc, sectionsMap_restrict, LinearMap.comp_assoc]
 
 /-- Compatible local matching families remain compatible after any coefficient
 transformation, and therefore still have a unique glued linear map. -/
-theorem existsUnique_matchingSectionsMap_gluing (η : D ⟶ D') (E : SemimoduleCat.{v} R)
+theorem existsUnique_sectionsMap_gluing (η : D ⟶ D') (E : SemimoduleCat.{v} R)
     {ι : Type*} (U : ι → Opens X)
     (ℓ : ∀ i, E →ₗ[R] SemimoduleCat.sectionsSubmodule (D.sectionsOver (U i)))
     (hcompat : ∀ i k,
@@ -97,10 +93,9 @@ theorem existsUnique_matchingSectionsMap_gluing (η : D ⟶ D') (E : SemimoduleC
         (D.sectionsRestrict (inf_le_right : U i ⊓ U k ≤ U k)).comp (ℓ k)) :
     ∃! L : E →ₗ[R] SemimoduleCat.sectionsSubmodule (D'.sectionsOver (iSup U)),
       ∀ i, (D'.sectionsRestrict (le_iSup U i)).comp L =
-        (η.matchingSectionsMap (U i)).comp (ℓ i) := by
+        (η.sectionsMap (U i)).comp (ℓ i) := by
   apply D'.existsUnique_sections_gluing E U
   intro i k
-  rw [← LinearMap.comp_assoc, matchingSectionsMap_restrict, LinearMap.comp_assoc, hcompat,
-    ← LinearMap.comp_assoc, ← matchingSectionsMap_restrict, LinearMap.comp_assoc]
+  rw [sectionsMap_restrict_comp, hcompat, ← sectionsMap_restrict_comp]
 
 end CategoryTheory.NatTrans
