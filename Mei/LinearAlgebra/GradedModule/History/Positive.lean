@@ -78,4 +78,20 @@ theorem homogeneousHistory_component_mem_addSubmonoid {n : ℕ}
   · rw [DirectSum.decompose_of_mem_ne ℳ hm hq]
     exact (Pos q).zero_mem
 
+/-- Componentwise positive inputs, possibly in several degrees, have positive
+history outputs when every selected component map preserves the positive monoids. -/
+theorem homogeneousHistory_component_mem_addSubmonoid_of_components {n : ℕ}
+    (T : Fin n → Module.End R M) (p : Fin n → Γ)
+    (hT : ∀ j i x, x ∈ ℳ i → x ∈ Pos i →
+      (DirectSum.decompose ℳ (T j x) (p j) : M) ∈ Pos (p j))
+    (a : M) (ha : ∀ i, (DirectSum.decompose ℳ a i : M) ∈ Pos i) (q : Γ) :
+    (DirectSum.decompose ℳ (homogeneousHistory ℳ T p a) q : M) ∈ Pos q := by
+  classical
+  rw [← DirectSum.sum_support_decompose ℳ a]
+  simp only [map_sum, DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
+  apply (Pos q).sum_mem
+  intro i _
+  exact homogeneousHistory_component_mem_addSubmonoid ℳ Pos T p
+    (fun j => hT j _) (DirectSum.decompose ℳ a i) (ha i) q
+
 end Mei
