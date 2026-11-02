@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Geometry.ScatteringDiagram.BrokenLine.Itineraries.Linear
+public import Mei.Geometry.Convex.Polyhedron.Rational.Stratification
 
 /-!
 # Input-independent polyhedral operator charts for cutoff rays
@@ -14,7 +15,10 @@ The entire actual cutoff-ray evaluation has a finite presentation by closed
 rational-normal polyhedra carrying fixed linear maps. A chart contributes on its
 relative interior. The same charts and maps apply simultaneously to every incoming
 coefficient, even when addition or scalar multiplication kills individual histories.
-Coincident chart images contribute separately to the sum.
+A single common partition works for every cutoff in a bounded finite range,
+including all lower-dimensional strata. The one-cutoff presentation uses the
+corresponding single-family weighted
+presentation, derived from the same partition theorem.
 
 This is a presentation of the actual evaluation operator, with the original
 incoming tails and endpoint admission. Boundary points of a closed chart are
@@ -40,6 +44,29 @@ variable {R M Γ V J K Λ : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
   (hW : ∀ j, IsRationalNormalPolyhedron h (W j))
   (hS : ∀ j, IsRationalNormalPolyhedron h (S j))
   (hC : IsRationalNormalPolyhedron h C)
+
+include hf hP hW hS hC in
+/-- All actual cutoff operators through `k` share a finite family of closed
+rational-normal polyhedra whose relative interiors partition the endpoint space.
+Those interiors are nonempty and carry fixed linear maps for every input. -/
+theorem exists_cutoffDecoratedEvaluationLinearMap_commonPartition (k : ℕ) :
+    ∃ (n : ℕ) (A : Fin n → Set V) (L : Fin n → Fin (k + 1) → ℳ 0 →ₗ[R] M),
+      (∀ j, (A j).Nonempty ∧ IsRationalNormalPolyhedron h (A j) ∧
+        (intrinsicInterior ℝ (A j)).Nonempty) ∧
+      (Pairwise fun a b => Disjoint (intrinsicInterior ℝ (A a))
+        (intrinsicInterior ℝ (A b))) ∧ (⋃ j, intrinsicInterior ℝ (A j)) = Set.univ ∧
+      ∀ j q Q, Q ∈ intrinsicInterior ℝ (A j) →
+        cutoffDecoratedEvaluationLinearMap d ℳ T (fun p => i (w p))
+          f c ε P W S C q.val Q = L j q := by
+  classical
+  choose n A L hA hsum using fun q : Fin (k + 1) =>
+    exists_cutoffDecoratedEvaluationLinearMap_semilinearPresentation
+      d ℳ T f c ε P W S C h w hf hP hW hS hC q.val
+  obtain ⟨m, B, W, hB, hdisj, hcover, hW⟩ :=
+    IsRationalSemilinear.exists_common_weighted_polyhedralPartition
+      (fun q => Fin (n q)) A hA L
+  exact ⟨m, B, W, hB, hdisj, hcover,
+    fun j q Q hQ => (hsum q Q).trans (hW j q Q hQ)⟩
 
 include hf hP hW hS hC in
 open Classical in
