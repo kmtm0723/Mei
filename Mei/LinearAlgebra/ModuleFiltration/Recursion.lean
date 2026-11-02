@@ -146,20 +146,10 @@ theorem mapQ_quotientRecursion (k : ℕ) (a : F.quotient (ρ k)) :
         (F.quotientRecursion f hf (ρ k) a) =
       G.quotientRecursion g hg k
         ((F.submodule (ρ k + 1)).mapQ (G.submodule (k + 1)) r (hr k) a) := by
-  have hcomm :
-      ((F.submodule (ρ k + 1)).mapQ (G.submodule (k + 1)) r (hr k)).comp
-          (F.quotientRaisingEnd f hf (ρ k)) =
-        (G.quotientRaisingEnd g hg k).comp
-          ((F.submodule (ρ k + 1)).mapQ (G.submodule (k + 1)) r (hr k)) := by
-    apply LinearMap.ext
-    intro x
-    obtain ⟨x, rfl⟩ := (F.submodule (ρ k + 1)).mkQ_surjective x
-    simp only [LinearMap.comp_apply, Submodule.mkQ_apply, quotientRaisingEnd_mk,
-      Submodule.mapQ_apply]
-    exact congrArg Submodule.Quotient.mk (LinearMap.congr_fun hfg x)
   exact LinearMap.congr_fun (Module.End.comp_finiteRecursion
     (F.quotientRaisingEnd f hf (ρ k)) (G.quotientRaisingEnd g hg k)
-    ((F.submodule (ρ k + 1)).mapQ (G.submodule (k + 1)) r (hr k)) hcomm
+    ((F.submodule (ρ k + 1)).mapQ (G.submodule (k + 1)) r (hr k))
+    (LinearMap.ext (F.mapQ_quotientRaisingEnd f hf G g hg r ρ hr hfg k))
     (F.quotientRaisingEnd_pow_eq_zero f hf (ρ k))
     (G.quotientRaisingEnd_pow_eq_zero g hg k)) a
 
