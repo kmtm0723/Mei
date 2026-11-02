@@ -33,6 +33,16 @@ noncomputable def sectionsMultispan :
     Functor.whiskerRight η ((sheafSections (Opens.grothendieckTopology X) C).obj (op U)) ≫
       (I'.multispanMapIso ((sheafSections (Opens.grothendieckTopology X) C).obj (op U))).inv
 
+/-- The canonical mapped-multispan comparison commutes with coefficient evaluation. -/
+theorem sectionsMultispan_comp_multispanMapIso_hom :
+    η.sectionsMultispan U ≫
+        (I'.multispanMapIso ((sheafSections (Opens.grothendieckTopology X) C).obj (op U))).hom =
+      (I.multispanMapIso ((sheafSections (Opens.grothendieckTopology X) C).obj (op U))).hom ≫
+        Functor.whiskerRight η
+          ((sheafSections (Opens.grothendieckTopology X) C).obj (op U)) := by
+  unfold sectionsMultispan
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+
 /-- The face component is the original coefficient morphism evaluated on the open. -/
 @[simp]
 theorem sectionsMultispan_app_left (b : J.L) :
