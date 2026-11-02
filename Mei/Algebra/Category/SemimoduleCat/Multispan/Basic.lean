@@ -132,6 +132,20 @@ theorem restrictSections_injective
     · exact ((I.mem_sectionsSubmodule_multispan.mp s.property).2 b).trans
         ((hr _).trans ((I.mem_sectionsSubmodule_multispan.mp t.property).2 b).symm)
 
+/-- Linear maps into matching sections agree when all chamber components agree
+and every face span is jointly injective. -/
+theorem linearMap_ext_of_injective {E : Type*} [AddCommMonoid E] [Module R E]
+    (hinj : ∀ b, Function.Injective ((I.fst b).hom.prod (I.snd b).hom))
+    {s t : E →ₗ[R] SemimoduleCat.sectionsSubmodule I.multispan}
+    (h : ∀ a j, (s a).val (.right j) = (t a).val (.right j)) : s = t := by
+  apply LinearMap.ext
+  intro a
+  apply I.restrictSections_injective hinj
+  apply Subtype.ext
+  funext j
+  simp only [restrictSections_apply]
+  exact h a j
+
 /-- Matching sections are linearly equivalent to compatible chamber families when the
 face maps are jointly injective. -/
 noncomputable def matchingFamilyEquiv
