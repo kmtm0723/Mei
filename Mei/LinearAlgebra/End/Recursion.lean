@@ -46,14 +46,9 @@ theorem finiteRecursion_apply (r : ℕ) (a : M) :
 No nilpotence, grading, or order on the coefficient semiring is required. -/
 theorem finiteRecursion_mem (S : AddSubmonoid M) (hS : ∀ x ∈ S, U x ∈ S)
     (r : ℕ) {a : M} (ha : a ∈ S) : U.finiteRecursion r a ∈ S := by
-  have hp (j : ℕ) : (U ^ j) a ∈ S := by
-    induction j with
-    | zero => simpa using ha
-    | succ j ih =>
-      rw [pow_succ', Module.End.mul_apply]
-      exact hS _ ih
   rw [finiteRecursion_apply]
-  exact S.sum_mem (fun j _ => hp j)
+  exact S.sum_mem (fun j _ => (Module.End.pow_apply U j a).symm ▸
+    Set.MapsTo.iterate (f := U) (s := S) hS j ha)
 
 /-- A nilpotency bound makes the solution operator satisfy `1 + U * S = S`. -/
 theorem finiteRecursion_eq_one_add_mul {r : ℕ} (hU : U ^ r = 0) :
