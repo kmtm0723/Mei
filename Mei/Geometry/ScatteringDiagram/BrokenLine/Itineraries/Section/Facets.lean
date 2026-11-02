@@ -6,8 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Geometry.ScatteringDiagram.BrokenLine.Itineraries.Section
-public import Mei.Topology.Sheaves.LocallyConstant.FacetDescent.Hom
-public import Mei.Topology.Sheaves.DenseBasisTransport.Linear.Comparison
+public import Mei.Topology.Sheaves.DenseBasisTransport.Linear.FacetDescent
 
 /-!
 # Extending actual cutoff-ray sections across facets
@@ -83,72 +82,13 @@ theorem exists_cutoffDecoratedEvaluation_extension_of_facets (k : ℕ) :
     (E := H) d ℳ T w f c ε P W S A hf hP hW hS hA k
   refine ⟨𝒜, ?_⟩
   intro B O U hoff hgen hBO hOU hdense κ hκ Z hZ hsing α hfacet
-  let F := D.coefficientSemimoduleLocalSystem M R
-  let Q := D.coefficientTransport M
-  let e (W : Opens C.regularSpace) := Q.semimoduleSheafSectionsIso R W
-  have hres {W W' : Opens C.regularSpace} (hWW' : W' ≤ W) :
-      F.obj.map (homOfLE hWW').op = (e W).hom ≫
-        SemimoduleCat.ofHom (Q.restrictionLinearMap R hWW') ≫ (e W').inv :=
-    Q.semimoduleSheaf_map R hWW'
   obtain ⟨s, hs, -⟩ := h𝒜 B hoff hgen α
-  have hF := Q.exists_isIso_restrictions_semimoduleSheaf R
-  have hlocal : ∀ x ∈ O, x ∉ B → ∃ (N : Opens C.regularSpace)
-      (t : H ⟶ F.obj.obj (op N)), x ∈ N ∧
-        t ≫ F.obj.map (homOfLE (inf_le_left : N ⊓ B ≤ N)).op =
-          (SemimoduleCat.ofHom s ≫ (e B).inv) ≫
-            F.obj.map (homOfLE (inf_le_right : N ⊓ B ≤ B)).op := by
-    intro x hx hxn
-    obtain ⟨N, t, hxN, ht⟩ := hfacet x hx hxn
-    refine ⟨N, SemimoduleCat.ofHom t ≫ (e N).inv, hxN, ?_⟩
-    rw [hres, hres]
-    simp only [Category.assoc, Iso.inv_hom_id_assoc]
-    rw [← Category.assoc, ← Category.assoc]
-    apply congrArg (fun q => q ≫ (e (N ⊓ B)).inv)
-    apply SemimoduleCat.hom_ext
-    apply LinearMap.ext
-    intro a
-    apply Q.section_ext
-    intro y hy
-    -- Composition with a linear restriction evaluates the original section map.
-    change Q.value (Q.restrictionLinearMap R inf_le_left (t a)) y hy =
-      Q.value (Q.restrictionLinearMap R inf_le_right (s a)) y hy
-    rw [Q.value_restrictionLinearMap, Q.value_restrictionLinearMap]
-    exact (ht a y hy.1 hy.2).trans (hs a y hy.2).symm
-  obtain ⟨t, ht, huniq⟩ := F.existsUnique_hom_extension_of_facets hF
-    C.isOpen_regularLocus Z hZ hBO hOU hdense hsing H
-      (SemimoduleCat.ofHom s ≫ (e B).inv) hlocal
-  let result := (t ≫ (e U).hom).hom
-  have hr : (Q.restrictionLinearMap R (hBO.trans hOU)).comp result = s := by
-    have he := congrArg (fun z => z ≫ (e B).hom) ht
-    rw [hres] at he
-    simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id] at he
-    exact congrArg SemimoduleCat.Hom.hom he
-  have hvalues (a : H) (y : C.coefficientPoints) (hyB : y.val ∈ B) :
-      Q.value (result a) y ((hBO.trans hOU) hyB) =
-        cutoffDecoratedEvaluation d ℳ T (α a) (fun q => i (w q))
-          f c ε P W S A k y.val.val := by
-    have he := LinearMap.congr_fun hr a
-    exact (Q.value_restrictionLinearMap R _ (result a) y hyB).symm.trans
-      ((congrArg (fun z => Q.value z y hyB) he).trans (hs a y hyB))
-  refine ⟨result, hvalues, fun t' ht' => ?_⟩
-  have he : (Q.restrictionLinearMap R (hBO.trans hOU)).comp t' = s := by
-    apply LinearMap.ext
-    intro a
-    apply Q.section_ext
-    intro y hyB
-    exact (Q.value_restrictionLinearMap R _ (t' a) y hyB).trans
-      ((ht' a y hyB).trans (hs a y hyB).symm)
-  have hm : (SemimoduleCat.ofHom t' ≫ (e U).inv) ≫
-      F.obj.map (homOfLE (hBO.trans hOU)).op =
-        SemimoduleCat.ofHom s ≫ (e B).inv := by
-    rw [hres]
-    simp only [Category.assoc, Iso.inv_hom_id_assoc]
-    rw [← Category.assoc]
-    apply congrArg (fun z => z ≫ (e B).inv)
-    apply SemimoduleCat.hom_ext
-    exact he
-  have hu := congrArg (fun z => z ≫ (e U).hom) (huniq _ hm)
-  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id] at hu
-  exact congrArg SemimoduleCat.Hom.hom hu
+  obtain ⟨t, ht, huniq⟩ := (D.coefficientTransport M).existsUnique_linearMap_extension_of_facets
+    R C.isOpen_regularLocus Z hZ hBO hOU hdense hsing H s (by
+      intro x hx hxn
+      obtain ⟨N, t, hxN, ht⟩ := hfacet x hx hxn
+      exact ⟨N, t, hxN, fun a y hyN hyB => (ht a y hyN hyB).trans (hs a y hyB).symm⟩)
+  refine ⟨t, fun a y hyB => (ht a y hyB).trans (hs a y hyB), fun t' ht' => ?_⟩
+  exact huniq t' (fun a y hyB => (ht' a y hyB).trans (hs a y hyB).symm)
 
 end Mei.FiniteWallDiagram
