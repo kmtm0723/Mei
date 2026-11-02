@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mei.LinearAlgebra.GradedModule.History.Basic
+public import Mei.LinearAlgebra.GradedModule.Positive
 
 /-!
 # Positive homogeneous propagation histories
@@ -91,42 +92,10 @@ theorem homogeneousHistory_component_mem_addSubmonoid_of_components {n : ℕ}
         (DirectSum.decompose ℳ (T j x) (p j) : M) ∈ Pos (p j))
     (a : M) (ha : ∀ i, (DirectSum.decompose ℳ a i : M) ∈ Pos i) (q : Γ) :
     (DirectSum.decompose ℳ (homogeneousHistory ℳ T p a) q : M) ∈ Pos q := by
-  classical
-  rw [← DirectSum.sum_support_decompose ℳ a]
-  simp only [map_sum, DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
-  apply (Pos q).sum_mem
-  intro i _
-  exact homogeneousHistory_component_mem_addSubmonoid ℳ Pos T p
-    (hT i) (DirectSum.decompose ℳ a i) (ha i) q
-
-/-- Elements whose homogeneous components belong to the chosen positive monoids. -/
-def componentwisePositive : AddSubmonoid M where
-  carrier := {x | ∀ q, (DirectSum.decompose ℳ x q : M) ∈ Pos q}
-  zero_mem' := by
-    intro q
-    simpa only [DirectSum.decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero]
-      using (Pos q).zero_mem
-  add_mem' := by
-    intro x y hx hy q
-    simpa only [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add]
-      using (Pos q).add_mem (hx q) (hy q)
-
-@[simp]
-theorem mem_componentwisePositive (x : M) :
-    x ∈ componentwisePositive ℳ Pos ↔
-      ∀ q, (DirectSum.decompose ℳ x q : M) ∈ Pos q := Iff.rfl
-
-/-- Homogeneous componentwise positivity implies preservation of the whole positive monoid. -/
-theorem map_mem_componentwisePositive (U : Module.End R M)
-    (hU : ∀ i q x, x ∈ ℳ i → x ∈ Pos i →
-      (DirectSum.decompose ℳ (U x) q : M) ∈ Pos q)
-    {a : M} (ha : a ∈ componentwisePositive ℳ Pos) :
-    U a ∈ componentwisePositive ℳ Pos := by
-  classical
-  rw [mem_componentwisePositive] at ha ⊢
-  intro q
-  rw [← DirectSum.sum_support_decompose ℳ a]
-  simp only [map_sum, DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
-  exact (Pos q).sum_mem (fun i _ => hU i q _ (DirectSum.decompose ℳ a i).property (ha i))
+  exact (mem_componentwisePositive ℳ Pos _).mp
+    (map_mem_componentwisePositive ℳ Pos (homogeneousHistory ℳ T p)
+      (fun i q x hx hp => homogeneousHistory_component_mem_addSubmonoid ℳ Pos T p
+        (hT i) ⟨x, hx⟩ hp q)
+      ((mem_componentwisePositive ℳ Pos a).mpr ha)) q
 
 end Mei
