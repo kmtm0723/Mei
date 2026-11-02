@@ -12,8 +12,7 @@ public import Mei.Topology.Sheaves.LocallyConstant
 # Comparing transport sections with the semimodule-valued sheaf
 
 Locally bijective restrictions of a transport sheaf become locally isomorphic
-restrictions of its linear enrichment. The section comparison and its restriction
-naturality are the basic construction API in `Linear.Basic`.
+restrictions of its linear enrichment, on the original transport-section carriers.
 -/
 
 public noncomputable section
@@ -45,9 +44,9 @@ theorem exists_isIso_restrictions_semimoduleSheaf
       funext (T.restrictionLinearMap_apply R hVU)
     rw [he]
     exact hU V hVU hne hconn
+  rw [T.semimoduleSheaf_obj, T.semimodulePresheaf_map]
   have : IsIso (SemimoduleCat.ofHom (T.restrictionLinearMap R hVU)) :=
     (ConcreteCategory.isIso_iff_bijective _).mpr hb
-  rw [T.semimoduleSheaf_map]
   infer_instance
 
 end Mei.DenseBasisTransport
