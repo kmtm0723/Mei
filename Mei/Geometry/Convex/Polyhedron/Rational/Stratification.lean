@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mei.Algebra.BigOperators.Group.Finset.Indicator
 public import Mei.Geometry.Convex.Polyhedron.Rational.LocallyClosed
 public import Mei.Geometry.Convex.Polyhedron.SignCell.Interior
 
@@ -120,5 +121,35 @@ theorem IsRationalSemilinear.exists_disjoint_intrinsicInteriors
     · intro x hx
       obtain ⟨σ, hσ, hxσ⟩ := Set.mem_iUnion₂.mp (hs ▸ hx)
       exact Set.mem_iUnion.mpr ⟨⟨σ, hσ, x, hxσ⟩, hxσ⟩
+
+open Classical in
+/-- A finite semilinear weighted sum has a presentation by relative interiors of
+nonempty closed rational-normal polyhedra with fixed weights in any additive
+commutative monoid. Charts from different original domains may coincide. -/
+theorem IsRationalSemilinear.exists_weighted_polyhedralCharts
+    {J β : Type*} [Fintype J] [AddCommMonoid β] (A : J → Set V)
+    (hA : ∀ j, IsRationalSemilinear h (A j)) (L : J → β) :
+    ∃ (m : ℕ) (B : Fin m → Set V) (L' : Fin m → β),
+      (∀ j, (B j).Nonempty ∧ IsRationalNormalPolyhedron h (B j)) ∧
+        ∀ Q, (∑ j, if Q ∈ A j then L j else 0) =
+          ∑ j, if Q ∈ intrinsicInterior ℝ (B j) then L' j else 0 := by
+  classical
+  choose ι hι B hB hdisj hcover using
+    fun j => (hA j).exists_disjoint_intrinsicInteriors
+  let (j : J) : Finite (ι j) := hι j
+  let (j : J) : Fintype (ι j) := Fintype.ofFinite (ι j)
+  have hsum (Q : V) : (∑ j, if Q ∈ A j then L j else 0) =
+      ∑ z : Σ j, ι j, if Q ∈ intrinsicInterior ℝ (B z.1 z.2) then L z.1 else 0 := by
+    rw [Fintype.sum_sigma]
+    apply Finset.sum_congr rfl
+    intro j _
+    exact Set.ite_mem_eq_sum_of_pairwise_disjoint _ (hdisj j) (hcover j) Q (L j)
+  obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin (Σ j, ι j)
+  refine ⟨m, fun z => B (e.symm z).1 (e.symm z).2,
+    fun z => L (e.symm z).1, fun z => ?_, ?_⟩
+  · exact ⟨(hB (e.symm z).1 (e.symm z).2).1, (hB (e.symm z).1 (e.symm z).2).2.1⟩
+  · intro Q
+    rw [hsum]
+    exact (e.symm.sum_comp _).symm
 
 end Mei

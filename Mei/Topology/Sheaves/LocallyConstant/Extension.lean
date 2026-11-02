@@ -67,19 +67,18 @@ section Hom
 
 variable {C : Type w} [Category.{v} C]
 
-/-- On a locally connected space, morphisms to sections of a locally constant
-sheaf are determined by their postcompositions with restriction to a dense open. -/
-theorem hom_restrict_injective_of_subset_closure {X : TopCat.{u}}
-    [LocallyConnectedSpace X] (F : X.Sheaf C)
+/-- On a locally connected space, restriction to a dense open is a monomorphism
+for any sheaf with locally isomorphic restrictions on nonempty preconnected opens. -/
+theorem mono_map_of_subset_closure {X : TopCat.{u}} [LocallyConnectedSpace X]
+    (F : X.Sheaf C)
     (hF : ∀ x : X, ∃ W : Opens X, x ∈ W ∧
       ∀ (B : Opens X) (hBW : B ≤ W), (B : Set X).Nonempty →
         IsPreconnected (B : Set X) → IsIso (F.obj.map (homOfLE hBW).op))
-    (H : C) {G U : Opens X} (hGU : G ≤ U)
-    (hdense : (U : Set X) ⊆ closure (G : Set X)) :
-    Function.Injective (fun t : H ⟶ F.obj.obj (op U) =>
-      t ≫ F.obj.map (homOfLE hGU).op) := by
-  have := F.hasLocallyBijectivePreconnectedRestrictions_sheafOver hF H
-  exact TopCat.Sheaf.map_injective_of_subset_closure (sheafOver F H) hGU hdense
+    {G U : Opens X} (hGU : G ≤ U) (hdense : (U : Set X) ⊆ closure (G : Set X)) :
+    Mono (F.obj.map (homOfLE hGU).op) where
+  right_cancellation {Z} _ _ he := by
+    have := F.hasLocallyBijectivePreconnectedRestrictions_sheafOver hF Z
+    exact map_injective_of_subset_closure (sheafOver F Z) hGU hdense he
 
 end Hom
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
 public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
 # Transverse lines and affine subspaces
@@ -38,6 +39,23 @@ theorem subsingleton_inter_of_disjoint_direction
 
 variable {k V P : Type*} [DivisionRing k] [AddCommGroup V] [Module k V]
   [AddTorsor V P]
+
+/-- The inverse image of an affine obstacle under a scalar-parametrized affine
+map has at most one point if at least one parameter avoids the obstacle. -/
+theorem subsingleton_preimage_of_notMem
+    (S : AffineSubspace k P) (f : k →ᵃ[k] P) {t₀ : k} (ht₀ : f t₀ ∉ S) :
+    (f ⁻¹' (S : Set P)).Subsingleton := by
+  let A := S.comap f
+  have hA : A ≠ ⊤ := by
+    intro he
+    have hmem : t₀ ∈ A := he.symm ▸ AffineSubspace.mem_top k k t₀
+    exact ht₀ (mem_comap.mp hmem)
+  intro s hs t ht
+  have hsA : s ∈ A := mem_comap.mpr hs
+  have htA : t ∈ A := mem_comap.mpr ht
+  rcases eq_bot_or_eq_top A.direction with hd | hd
+  · exact (direction_eq_bot_iff.mp hd) hsA htA
+  · exact (hA ((direction_eq_top_iff_of_nonempty ⟨s, hsA⟩).mp hd)).elim
 
 /-- The parameters at which a transverse line meets an affine subspace form
 a subsingleton. No codimension or nonemptiness assumption is needed. -/
