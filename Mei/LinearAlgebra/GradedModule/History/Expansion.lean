@@ -30,6 +30,23 @@ namespace Mei
 variable {R M ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
   [DecidableEq ι] (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
 
+/-- A history using a degree outside the finite support of the grading is the
+zero linear map, independently of its input. -/
+theorem homogeneousHistory_eq_zero_of_notMem_piFinset (S : Finset ι)
+    (hS : ∀ i, i ∉ S → ℳ i = ⊥) {n : ℕ} (T : Fin n → Module.End R M)
+    (p : Fin n → ι) (hp : p ∉ Fintype.piFinset (fun _ => S)) :
+    homogeneousHistory ℳ T p = 0 := by
+  apply LinearMap.ext
+  intro x
+  by_contra hx
+  apply hp
+  apply Fintype.mem_piFinset.mpr
+  intro j
+  by_contra hj
+  have hstage := homogeneousHistoryStage_mem ℳ T p x j
+  rw [hS _ hj, Submodule.mem_bot] at hstage
+  exact homogeneousHistoryStage_ne_zero ℳ T p hx j.castSucc hstage
+
 /-- If the grading is supported on a finite set, summing all history maps over
 that set recovers the composite as a linear map. The same index set works for
 every input; zero component maps contribute zero. -/
@@ -45,14 +62,11 @@ theorem sum_homogeneousHistory_eq_prod (S : Finset ι)
     exact Subtype.ext (congrFun hpq j)
   have hzero (p : Fin n → ι) (hp : p ∉ Finset.univ.image embed) :
       (homogeneousHistory ℳ T p).comp LinearMap.id = 0 := by
-    ext x
-    by_contra hx
-    have hmem (j : Fin n) : p j ∈ S := by
-      by_contra hj
-      have hstage := homogeneousHistoryStage_mem ℳ T p x j
-      rw [hS _ hj, Submodule.mem_bot] at hstage
-      exact homogeneousHistoryStage_ne_zero ℳ T p hx j.castSucc hstage
-    exact hp (Finset.mem_image.mpr ⟨fun j => ⟨p j, hmem j⟩, Finset.mem_univ _, rfl⟩)
+    have hp' : p ∉ Fintype.piFinset (fun _ => S) := by
+      intro hmem
+      exact hp (Finset.mem_image.mpr
+        ⟨fun j => ⟨p j, (Fintype.mem_piFinset.mp hmem) j⟩, Finset.mem_univ _, rfl⟩)
+    rw [homogeneousHistory_eq_zero_of_notMem_piFinset ℳ S hS T p hp', LinearMap.zero_comp]
   have he := sum_homogeneousHistory_comp_eq ℳ T LinearMap.id
     (Finset.univ.image embed) hzero
   rw [Finset.sum_image (fun p _ q _ hpq => hinj hpq)] at he
