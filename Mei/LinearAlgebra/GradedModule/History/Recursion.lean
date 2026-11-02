@@ -81,24 +81,23 @@ theorem finiteRecursion_component_mem_addSubmonoid (Pos : ι → AddSubmonoid M)
       (DirectSum.decompose ℳ (U x) q : M) ∈ Pos q)
     (r : ℕ) (a : M) (ha : ∀ i, (DirectSum.decompose ℳ a i : M) ∈ Pos i) (q : ι) :
     (DirectSum.decompose ℳ (U.finiteRecursion r a) q : M) ∈ Pos q := by
-  rw [← sum_sum_homogeneousHistory_eq_finiteRecursion ℳ U r a]
-  simp only [DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
-  apply (Pos q).sum_mem
-  intro j _
-  apply (Pos q).sum_mem
-  intro p _
-  exact homogeneousHistory_component_mem_addSubmonoid_of_components ℳ Pos
-    (fun _ : Fin j => U) p (fun _ i => hU i _) a ha q
+  have h := U.finiteRecursion_mem (componentwisePositive ℳ Pos)
+    (fun _ hx => map_mem_componentwisePositive ℳ Pos U hU hx) r
+    ((mem_componentwisePositive ℳ Pos a).mpr ha)
+  exact (mem_componentwisePositive ℳ Pos _).mp h q
 
-/-- Every solution of a nilpotent homogeneous recursion has positive components
-when its input and the selected component maps preserve the positive monoids. -/
+/-- Every solution of a nilpotent recursion has positive components when its input
+does and every component of `U` maps `ℳ i ∩ Pos i` into `Pos q`.
+The endomorphism need not preserve homogeneous degrees. -/
 theorem component_mem_addSubmonoid_of_eq_add (Pos : ι → AddSubmonoid M)
     (hU : ∀ i q x, x ∈ ℳ i → x ∈ Pos i →
       (DirectSum.decompose ℳ (U x) q : M) ∈ Pos q)
     {r : ℕ} (hnil : U ^ r = 0) {a x : M}
     (ha : ∀ i, (DirectSum.decompose ℳ a i : M) ∈ Pos i)
     (hx : x = a + U x) (q : ι) : (DirectSum.decompose ℳ x q : M) ∈ Pos q := by
-  rw [U.eq_finiteRecursion_of_eq_add hnil hx]
-  exact finiteRecursion_component_mem_addSubmonoid ℳ U Pos hU r a ha q
+  have h := U.mem_of_eq_add_of_pow_eq_zero (componentwisePositive ℳ Pos)
+    (fun _ hx => map_mem_componentwisePositive ℳ Pos U hU hx) hnil
+    ((mem_componentwisePositive ℳ Pos a).mpr ha) hx
+  exact (mem_componentwisePositive ℳ Pos _).mp h q
 
 end Mei
