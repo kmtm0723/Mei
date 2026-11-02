@@ -48,6 +48,13 @@ abbrev toModuleFiltration : ModuleFiltration R A where
 theorem toModuleFiltration_submodule (k : ℕ) :
     (F.toModuleFiltration R).submodule k = (F.ideal k).restrictScalars R := (rfl)
 
+/-- Multiplication adds the orders of the module filtration underlying an ideal filtration. -/
+theorem toModuleFiltration_mul_mem (a b : ℕ) {x y : A}
+    (hx : x ∈ (F.toModuleFiltration R).submodule a)
+    (hy : y ∈ (F.toModuleFiltration R).submodule b) :
+    x * y ∈ (F.toModuleFiltration R).submodule (a + b) :=
+  F.mul_mem hx hy
+
 end Mei.AlgFiltration
 
 noncomputable section
@@ -167,38 +174,36 @@ theorem comap_completionIdeal_moduleCompletionEquiv (k : ℕ) :
 
 /-- The scalar-restriction comparison of finite quotients preserves the bilinear
 multiplication induced from the algebra. -/
+@[simp]
 theorem restrictScalarsEquiv_quotientBilinear_mul (k : ℕ)
     (x y : (F.toModuleFiltration R).quotient k) :
     Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))
         (ModuleFiltration.quotientBilinear
           (F.toModuleFiltration R) (F.toModuleFiltration R) (F.toModuleFiltration R)
-          (LinearMap.mul R A) (fun _ _ _ _ hx hy => F.mul_mem hx hy) k x y) =
+          (LinearMap.mul R A) (F.toModuleFiltration_mul_mem R) k x y) =
       Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1)) x *
         Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1)) y := by
   obtain ⟨a, rfl⟩ := ((F.toModuleFiltration R).submodule (k + 1)).mkQ_surjective x
   obtain ⟨b, rfl⟩ := ((F.toModuleFiltration R).submodule (k + 1)).mkQ_surjective y
   simp only [Submodule.mkQ_apply]
-  rw [ModuleFiltration.quotientBilinear_mk
-    (F.toModuleFiltration R) (F.toModuleFiltration R) (F.toModuleFiltration R)
-    (LinearMap.mul R A) (fun _ _ _ _ hx hy => F.mul_mem hx hy) k a b]
-  simp only [Submodule.Quotient.restrictScalarsEquiv_mk, LinearMap.mul_apply']
-  rfl
+  rw [ModuleFiltration.quotientBilinear_mk _ _ _ _ (F.toModuleFiltration_mul_mem R)]
+  simp only [Submodule.Quotient.restrictScalarsEquiv_mk, LinearMap.mul_apply',
+    Ideal.Quotient.mk_eq_mk, map_mul]
 
 /-- Completing multiplication as a bilinear map agrees with multiplication in
  the algebra completion, also for noncommutative algebras. -/
+@[simp]
 theorem moduleCompletionEquiv_completionBilinear_mul
     (x y : (F.toModuleFiltration R).completion) :
     F.moduleCompletionEquiv (R := R)
         (ModuleFiltration.completionBilinear
           (F.toModuleFiltration R) (F.toModuleFiltration R) (F.toModuleFiltration R)
-          (LinearMap.mul R A) (fun _ _ _ _ hx hy => F.mul_mem hx hy) x y) =
+          (LinearMap.mul R A) (F.toModuleFiltration_mul_mem R) x y) =
       F.moduleCompletionEquiv (R := R) x * F.moduleCompletionEquiv (R := R) y := by
   apply F.completion_ext
   intro k
   simp only [projection_moduleCompletionEquiv, map_mul]
-  rw [ModuleFiltration.projection_completionBilinear
-    (F.toModuleFiltration R) (F.toModuleFiltration R) (F.toModuleFiltration R)
-    (LinearMap.mul R A) (fun _ _ _ _ hx hy => F.mul_mem hx hy) k x y]
-  exact F.restrictScalarsEquiv_quotientBilinear_mul (R := R) k _ _
+  rw [ModuleFiltration.projection_completionBilinear _ _ _ _ (F.toModuleFiltration_mul_mem R)]
+  simp only [restrictScalarsEquiv_quotientBilinear_mul]
 
 end Mei.AlgFiltration
