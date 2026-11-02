@@ -26,7 +26,9 @@ Combined labels are allowed.
 This instantiates `GradedCorrespondence.existsUnique_terminalGraphLift` using
 wall annihilation on the actual finite BCH action, without assuming the terminal
 identity. It is the coefficient part of a single ordinary-face resolution;
-matching these branches to a geometric degeneration is independent.
+matching these branches to a geometric degeneration is independent. If incoming
+coefficients and the used transport branches preserve chosen positive monoids,
+the unique common lift has positive values on both sides.
 The wall action convention follows Mandel, *Scattering diagrams, theta functions,
 and refined tropical curve counts*, Definition 2.10 (arXiv:1503.06183v5).
 -/
@@ -67,5 +69,47 @@ theorem existsUnique_shiftedBCH_terminalGraphLift
   apply GradedCorrespondence.existsUnique_terminalGraphLift
   intro r a hr
   exact H.shiftedBCHAction_eq_self_of_normal_eq_zero ℳ p hg a.property hr
+
+/-- Positive incoming coefficients have a unique common terminal lift whose
+negative-side value lies in `Pneg` and whose positive-side value lies in `Ppos`.
+Transport positivity is required only on the corresponding normal-sign branches. -/
+theorem existsUnique_shiftedBCH_terminalGraphLift_mem_addSubmonoid
+    (hg : BCHGroup.log g ∈ H.truncatedRayLieSubalgebra w m k)
+    (Pos : Γ → AddSubmonoid ((F).quotient k))
+    (Pneg Ppos : AddSubmonoid ((F).quotient k))
+    (hLcross : ∀ r (a : 𝓝 r), 0 < weight r →
+      (a : (F).quotient k) ∈ Pos r → (θ).symm a ∈ Pneg)
+    (hLstay : ∀ r (a : 𝓝 r), weight r ≤ 0 →
+      (a : (F).quotient k) ∈ Pos r → (a : (F).quotient k) ∈ Pneg)
+    (hRcross : ∀ r (a : 𝓝 r), weight r < 0 →
+      (a : (F).quotient k) ∈ Pos r → θ a ∈ Ppos)
+    (hRstay : ∀ r (a : 𝓝 r), 0 ≤ weight r →
+      (a : (F).quotient k) ∈ Pos r → (a : (F).quotient k) ∈ Ppos)
+    (α : E →ₗ[R] (F).quotient k) (S : AddSubmonoid E)
+    (hα : ∀ x ∈ S, ∀ r, (DirectSum.decompose 𝓝 (α x) r : (F).quotient k) ∈ Pos r) :
+    ∃! l : E →ₗ[R] (F).quotient k,
+      (GradedCorrespondence.graph 𝓝 𝓝 θ).left.comp l =
+          (GradedCorrespondence.terminalGraphLift 𝓝 θ weight).comp α ∧
+      (GradedCorrespondence.graph 𝓝 𝓝 θ).right.comp l =
+          (GradedCorrespondence.terminalGraphRight 𝓝 θ weight).comp α ∧
+      ∀ x ∈ S, l x ∈ Pneg ∧ θ (l x) ∈ Ppos := by
+  obtain ⟨l, hl, huniq⟩ := H.existsUnique_shiftedBCH_terminalGraphLift ℳ p g hg α
+  refine ⟨l, ⟨hl.1, hl.2, ?_⟩, ?_⟩
+  · intro x hx
+    have hleft : l x = GradedCorrespondence.terminalGraphLift 𝓝 θ weight (α x) := by
+      simpa only [GradedCorrespondence.graph_left, LinearMap.comp_apply, LinearMap.id_apply]
+        using LinearMap.congr_fun hl.1 x
+    have hright : θ (l x) = GradedCorrespondence.terminalGraphRight 𝓝 θ weight (α x) := by
+      simpa only [GradedCorrespondence.graph_right, LinearMap.comp_apply, LinearEquiv.coe_coe]
+        using LinearMap.congr_fun hl.2 x
+    constructor
+    · rw [hleft]
+      exact GradedCorrespondence.terminalGraphLift_mem_addSubmonoid 𝓝 θ weight Pos Pneg
+        hLcross hLstay (α x) (hα x hx)
+    · rw [hright]
+      exact GradedCorrespondence.terminalGraphRight_mem_addSubmonoid 𝓝 θ weight Pos Ppos
+        hRcross hRstay (α x) (hα x hx)
+  · intro l' hl'
+    exact huniq l' ⟨hl'.1, hl'.2.1⟩
 
 end Mei.DirectedWallSpaces
