@@ -195,7 +195,6 @@ target degrees when their source decorations vanish under the comparison. -/
 theorem middle_comp_liftLeftTotal_iff (f : Hom C D σ τ) :
     f.middle.comp C.liftLeftTotal = D.liftLeftTotal.comp f.left ↔
       ∀ i, i ∉ I → ∀ a : 𝒰 i, D.liftLeftTotal (f.left a) = 0 := by
-  classical
   constructor
   · intro h i hi a
     have he := LinearMap.congr_fun h a
@@ -208,9 +207,9 @@ theorem middle_comp_liftLeftTotal_iff (f : Hom C D σ τ) :
     intro a
     simp only [LinearMap.comp_apply, Submodule.subtype_apply]
     by_cases hi : i ∈ I
-    · rw [C.liftLeftTotal_of_mem a.property, dite_eq_left hi,
-        D.liftLeftTotal_of_mem (f.left_mem i a a.property),
-        dite_eq_left (f.admissible_left hi)]
+    · rw [C.liftLeftTotal_coe ⟨i, hi⟩ a,
+        D.liftLeftTotal_coe ⟨σ i, f.admissible_left hi⟩
+          ⟨f.left a, f.left_mem i a a.property⟩]
       exact f.middle_liftLeft ⟨i, hi⟩ a
     · rw [C.liftLeftTotal_coe_of_not_mem a hi, map_zero, hzero i hi a]
 
