@@ -47,6 +47,29 @@ theorem homogeneousHistory_eq_zero_of_notMem_piFinset (S : Finset ι)
   rw [hS _ hj, Submodule.mem_bot] at hstage
   exact homogeneousHistoryStage_ne_zero ℳ T p hx j.castSucc hstage
 
+/-- Two history blocks over a grading with finite support have a nested finite
+expansion between arbitrary input and output linear maps. The right block acts
+first, and both history index sets are independent of the input. -/
+theorem sum_sum_comp_homogeneousHistory_comp_eq (S : Finset ι)
+    (hS : ∀ i, i ∉ S → ℳ i = ⊥) {n m : ℕ}
+    (T : Fin n → Module.End R M) (U : Fin m → Module.End R M)
+    {E O : Type*} [AddCommMonoid E] [Module R E] [AddCommMonoid O] [Module R O]
+    (a : E →ₗ[R] M) (b : M →ₗ[R] O) :
+    (∑ r ∈ Fintype.piFinset (fun _ : Fin m => S),
+      ∑ s ∈ Fintype.piFinset (fun _ : Fin n => S),
+        b.comp ((homogeneousHistory ℳ T s).comp
+          ((homogeneousHistory ℳ U r).comp a))) =
+      b.comp ((List.ofFn T).prod.comp ((List.ofFn U).prod.comp a)) := by
+  classical
+  have hz {l : ℕ} (v : Fin l → Module.End R M) (c : E →ₗ[R] M)
+      (r : Fin l → ι) (hr : r ∉ Fintype.piFinset (fun _ => S)) :
+      (homogeneousHistory ℳ v r).comp c = 0 := by
+    rw [homogeneousHistory_eq_zero_of_notMem_piFinset ℳ S hS v r hr,
+      LinearMap.zero_comp]
+  simp_rw [sum_comp_homogeneousHistory_comp_eq ℳ T _ b _ (hz T _)]
+  simpa only [LinearMap.comp_assoc] using
+    sum_comp_homogeneousHistory_comp_eq ℳ U a (b.comp (List.ofFn T).prod) _ (hz U a)
+
 /-- If the grading is supported on a finite set, summing all history maps over
 that set recovers the composite as a linear map. The same index set works for
 every input; zero component maps contribute zero. -/
