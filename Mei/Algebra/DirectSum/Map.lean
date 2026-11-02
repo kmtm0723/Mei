@@ -42,6 +42,12 @@ theorem homogeneousExtend_of_mem (f : ∀ i, 𝒰 i →ₗ[R] M) {i : ι} {a : U
   simp only [homogeneousExtend, LinearMap.comp_apply, LinearEquiv.coe_coe,
     decomposeLinearEquiv_apply, decompose_of_mem 𝒰 ha, ← lof_eq_of R, toModule_lof]
 
+/-- Evaluate a homogeneous extension directly on a homogeneous subtype. -/
+@[simp]
+theorem homogeneousExtend_coe (f : ∀ i, 𝒰 i →ₗ[R] M) {i : ι} (a : 𝒰 i) :
+    homogeneousExtend 𝒰 f a = f i a :=
+  homogeneousExtend_of_mem 𝒰 f a.property
+
 /-- A homogeneous extension is the finite sum of its homogeneous input values. -/
 theorem homogeneousExtend_eq_sum [∀ i (a : 𝒰 i), Decidable (a ≠ 0)]
     (f : ∀ i, 𝒰 i →ₗ[R] M) (a : U) :
@@ -56,14 +62,12 @@ theorem homogeneousExtend_eq_sum [∀ i (a : 𝒰 i), Decidable (a ≠ 0)]
 /-- Prescribed restrictions to the homogeneous pieces determine a linear map uniquely. -/
 theorem homogeneousExtend_unique (f : ∀ i, 𝒰 i →ₗ[R] M) (g : U →ₗ[R] M)
     (hg : ∀ i, g.comp (𝒰 i).subtype = f i) : g = homogeneousExtend 𝒰 f := by
+  apply decompose_lhom_ext 𝒰
+  intro i
+  rw [hg i]
   apply LinearMap.ext
   intro a
-  induction a using Decomposition.inductionOn 𝒰 with
-  | zero => simp
-  | @homogeneous i a =>
-    rw [homogeneousExtend_of_mem 𝒰 f a.property]
-    exact LinearMap.congr_fun (hg i) a
-  | add a b ha hb => simp_all
+  simp only [LinearMap.comp_apply, Submodule.subtype_apply, homogeneousExtend_coe]
 
 end LinearExtension
 
