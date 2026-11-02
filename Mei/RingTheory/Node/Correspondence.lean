@@ -179,11 +179,10 @@ multiplier, with no invertibility assumption on the slab parameter. -/
 theorem rightLaurentMap_liftLeftTotal_single (n : ℤ) (c : R) :
     rightLaurentMap a ((normalWeightCorrespondence a).liftLeftTotal (single n c)) =
       if 0 ≤ n then single (-n) (c * a ^ n.toNat) else 0 := by
-  rw [GradedCorrespondence.liftLeftTotal_of_mem _ (single_mem_grade n c)]
-  simp only [Set.mem_ofPred_eq]
+  rw [normalWeightCorrespondence_liftLeftTotal_single]
   split_ifs with hn
-  · rw [normalWeightCorrespondence_liftLeft, rightLaurentMap_incomingLift_zero]
-    simp only [coeff_single, Finsupp.single_eq_same]
+  · simpa only [incomingLift_apply, coeff_single, Finsupp.single_eq_same] using
+      rightLaurentMap_incomingLift_zero a ⟨n, hn⟩ ⟨single n c, single_mem_grade n c⟩
   · exact (rightLaurentMap a).map_zero
 
 /-- The opposite image of an incoming coefficient is concentrated in weight `-n`. -/
