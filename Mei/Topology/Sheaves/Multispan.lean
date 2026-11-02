@@ -40,10 +40,9 @@ variable {X : TopCat.{u}} {J : MultispanShape}
 /-- Evaluate an incidence diagram of sheaves on one open. This is an abbreviation
 so matching-family components retain the original section carriers. It uses
 Mathlib's mapping of multispan indices by the sheaf-evaluation functor. -/
-@[simps!]
 noncomputable abbrev sectionsIndex {C : Type w} [Category.{t} C]
     (I : MultispanIndex J (X.Sheaf C)) (U : Opens X) : MultispanIndex J C :=
-  I.map ((sheafSections (Opens.grothendieckTopology X) C).obj (op U))
+  I.map (((TopCat.Sheaf.forget C X).flip).obj (op U))
 
 variable {R : Type r} [Semiring R]
   (I : MultispanIndex J (X.Sheaf (SemimoduleCat.{v} R)))
