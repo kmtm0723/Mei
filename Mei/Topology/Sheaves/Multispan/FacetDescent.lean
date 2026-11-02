@@ -103,8 +103,13 @@ theorem existsUnique_sections_lift_of_facets (hS : IsOpen S)
     simpa only [Category.assoc, ← Functor.map_comp, ← op_comp, homOfLE_comp] using
       congrArg (fun t => t ≫ (I.right j).obj.map
         (homOfLE (inf_le_right : N ⊓ G j ≤ G j)).op) (hβ j)
-  obtain ⟨ℓ, hℓ, huniq⟩ := I.existsUnique_sections_lift_of_local E U β hinj (by
-    intro b x hx
+  have hlinear (b : J.L) (x : S) (hx : x ∈ U) :
+      ∃ (N : Opens (TopCat.of S)) (hNU : N ≤ U)
+        (t : E ⟶ (I.left b).obj.obj (op N)), x ∈ N ∧
+        t ≫ (I.fst b).hom.app (op N) =
+          β (J.fst b) ≫ (I.right (J.fst b)).obj.map (homOfLE hNU).op ∧
+        t ≫ (I.snd b).hom.app (op N) =
+          β (J.snd b) ≫ (I.right (J.snd b)).obj.map (homOfLE hNU).op := by
     obtain ⟨N, hNU, t, hxN, hf, hg⟩ := hface b x hx
     refine ⟨N, hNU, t, hxN, ?_, ?_⟩
     · apply (I.right (J.fst b)).hom_restrict_injective_of_subset_closure
@@ -114,7 +119,12 @@ theorem existsUnique_sections_lift_of_facets (hS : IsOpen S)
     · apply (I.right (J.snd b)).hom_restrict_injective_of_subset_closure
         (hRight (J.snd b)) E inf_le_left
         (fun z hz => N.isOpen.inter_closure ⟨hz, hdenseU _ (hNU hz)⟩)
-      exact hg.trans (hβN _ N hNU).symm)
+      exact hg.trans (hβN _ N hNU).symm
+  obtain ⟨ℓ, hℓ, huniq⟩ := I.existsUnique_sections_lift_of_local E U β hinj (by
+    intro a b x hx
+    obtain ⟨N, hNU, t, hxN, hf, hg⟩ := hlinear b x hx
+    exact ⟨N, hNU, t.hom a, hxN, ConcreteCategory.congr_hom hf a,
+      ConcreteCategory.congr_hom hg a⟩)
   refine ⟨ℓ, ?_, fun m hm => huniq m ?_⟩
   · intro a j
     rw [hℓ]
