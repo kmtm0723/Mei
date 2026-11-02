@@ -22,6 +22,10 @@ No finiteness of the grading set or basis of its pieces is needed. The input may
 include all three normal signs simultaneously. This is the coefficient identity
 at a terminal ordinary-wall crossing.
 
+The two totals commute with grading-preserving coefficient maps that intertwine
+the wall actions and preserve the relevant normal sign. These maps may kill
+coefficients or identify degrees; only their finite homogeneous sums are used.
+
 We use `GradedCorrespondence.graph` and Mathlib's internal direct-sum universal
 property. The terminal-face convention is that of Gross–Hacking–Siebert,
 *Theta functions on varieties with effective anti-canonical class*, §3.2
@@ -113,6 +117,57 @@ theorem terminalGraphRight_eq_sum (a : M) :
   apply Finset.sum_congr rfl
   intro i _
   exact terminalGraphRight_of_mem ℳ e w (DirectSum.decompose ℳ a i).property
+
+section Naturality
+
+variable {N κ : Type*} [AddCommMonoid N] [Module R N] [DecidableEq κ]
+  (𝓝 : κ → Submodule R N) [DirectSum.Decomposition 𝓝]
+  (e' : N ≃ₗ[R] N) (w' : κ → ℤ) (r : M →ₗ[R] N) (σ : ι → κ)
+
+/-- A coefficient map intertwining the wall actions also intertwines the
+negative-side terminal totals. Only positivity of normal degrees must agree;
+the coefficient map and degree map may have kernels or identify degrees. -/
+theorem terminalGraphLift_naturality
+    (hr : ∀ i a, a ∈ ℳ i → r a ∈ 𝓝 (σ i))
+    (he : r.comp e.toLinearMap = e'.toLinearMap.comp r)
+    (hpos : ∀ i, 0 < w i ↔ 0 < w' (σ i)) :
+    r.comp (terminalGraphLift ℳ e w) = (terminalGraphLift 𝓝 e' w').comp r := by
+  apply LinearMap.ext
+  intro a
+  induction a using DirectSum.Decomposition.inductionOn ℳ with
+  | zero => simp
+  | @homogeneous i a =>
+    simp only [LinearMap.comp_apply, terminalGraphLift_of_mem ℳ e w a.property,
+      terminalGraphLift_of_mem 𝓝 e' w' (hr i a a.property), ← hpos i]
+    split_ifs
+    · apply e'.injective
+      simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe,
+        LinearEquiv.apply_symm_apply] using
+        (LinearMap.congr_fun he (e.symm a)).symm
+    · rfl
+  | add a b ha hb => simp_all
+
+/-- A coefficient map intertwining the wall actions also intertwines the
+positive-side terminal totals. Only negativity of normal degrees must agree;
+no injectivity assumption is imposed on either map. -/
+theorem terminalGraphRight_naturality
+    (hr : ∀ i a, a ∈ ℳ i → r a ∈ 𝓝 (σ i))
+    (he : r.comp e.toLinearMap = e'.toLinearMap.comp r)
+    (hneg : ∀ i, w i < 0 ↔ w' (σ i) < 0) :
+    r.comp (terminalGraphRight ℳ e w) = (terminalGraphRight 𝓝 e' w').comp r := by
+  apply LinearMap.ext
+  intro a
+  induction a using DirectSum.Decomposition.inductionOn ℳ with
+  | zero => simp
+  | @homogeneous i a =>
+    simp only [LinearMap.comp_apply, terminalGraphRight_of_mem ℳ e w a.property,
+      terminalGraphRight_of_mem 𝓝 e' w' (hr i a a.property), ← hneg i]
+    split_ifs
+    · exact LinearMap.congr_fun he a
+    · rfl
+  | add a b ha hb => simp_all
+
+end Naturality
 
 /-- Forward transport identifies the two terminal sums when tangent
 coefficients agree. This includes incoming coefficients from either side. -/

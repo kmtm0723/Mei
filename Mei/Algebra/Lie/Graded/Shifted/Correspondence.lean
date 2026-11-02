@@ -9,6 +9,7 @@ public import Mei.Algebra.Lie.Graded.Shifted.Basic
 public import Mei.Algebra.Lie.Filtered.BCH
 public import Mei.LinearAlgebra.GradedModule.Shifted.Quotient
 public import Mei.LinearAlgebra.GradedCorrespondence.Hom
+public import Mei.LinearAlgebra.GradedCorrespondence.Terminal
 
 /-!
 # Finite shifted wall actions as graded correspondences
@@ -17,6 +18,8 @@ Each finite BCH action on shifted coefficients defines the graph correspondence
 of its linear equivalence. Its transfers are the selected homogeneous components
 of the action. Changing the cutoff gives a morphism of these correspondences,
 including compatibility of the chosen inverse lifts.
+The same coefficient truncation commutes with both terminal chamber totals,
+by the generic naturality of the homogeneous graph construction.
 
 Thus either sign of a wall label can be used on the same finite coefficient
 modules. The construction reuses `GradedCorrespondence.graph` and the existing
@@ -98,5 +101,41 @@ theorem shiftedBCHCorrespondenceHom_right {k l : ℕ} (h : k ≤ l)
     (g : BCHGroup (d.truncatedLie ℒ l)) :
     (d.shiftedBCHCorrespondenceHom ℒ ℳ p h g).right =
       (d.shiftedLieFiltration ℒ ℳ p).transition h := (rfl)
+
+/-- Cutting off coefficients commutes with the negative-side terminal total
+for a compatible finite BCH wall label, including mixed normal signs. -/
+theorem transition_terminalGraphLift_shiftedBCHAction {k l : ℕ} (h : k ≤ l)
+    (g : BCHGroup (d.truncatedLie ℒ l)) (w : Γ → ℤ) :
+    ((d.shiftedLieFiltration ℒ ℳ p).transition h).comp
+        (GradedCorrespondence.terminalGraphLift (d.shiftedQuotientGrading ℳ p l).piece
+          ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ l g) w) =
+      (GradedCorrespondence.terminalGraphLift (d.shiftedQuotientGrading ℳ p k).piece
+        ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ k
+          ((d.truncationMap ℒ h).bchGroupMap g)) w).comp
+            ((d.shiftedLieFiltration ℒ ℳ p).transition h) := by
+  refine GradedCorrespondence.terminalGraphLift_naturality
+    _ _ w _ _ w _ id ?_ ?_ (fun _ => Iff.rfl)
+  · intro i a ha
+    exact d.transition_mem_shiftedQuotientGrading ℳ p h ha
+  · exact LinearMap.ext
+      ((d.shiftedLieFiltration ℒ ℳ p).transition_truncatedBCHAction d ℒ h g)
+
+/-- Cutting off coefficients commutes with the positive-side terminal total
+for a compatible finite BCH wall label, including mixed normal signs. -/
+theorem transition_terminalGraphRight_shiftedBCHAction {k l : ℕ} (h : k ≤ l)
+    (g : BCHGroup (d.truncatedLie ℒ l)) (w : Γ → ℤ) :
+    ((d.shiftedLieFiltration ℒ ℳ p).transition h).comp
+        (GradedCorrespondence.terminalGraphRight (d.shiftedQuotientGrading ℳ p l).piece
+          ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ l g) w) =
+      (GradedCorrespondence.terminalGraphRight (d.shiftedQuotientGrading ℳ p k).piece
+        ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ k
+          ((d.truncationMap ℒ h).bchGroupMap g)) w).comp
+            ((d.shiftedLieFiltration ℒ ℳ p).transition h) := by
+  refine GradedCorrespondence.terminalGraphRight_naturality
+    _ _ w _ _ w _ id ?_ ?_ (fun _ => Iff.rfl)
+  · intro i a ha
+    exact d.transition_mem_shiftedQuotientGrading ℳ p h ha
+  · exact LinearMap.ext
+      ((d.shiftedLieFiltration ℒ ℳ p).transition_truncatedBCHAction d ℒ h g)
 
 end Mei.PositiveDegrees
