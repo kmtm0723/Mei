@@ -117,9 +117,8 @@ theorem transition_terminalGraphLift_shiftedBCHAction {k l : ℕ} (h : k ≤ l)
     _ _ w _ _ w _ id ?_ ?_ (fun _ => Iff.rfl)
   · intro i a ha
     exact d.transition_mem_shiftedQuotientGrading ℳ p h ha
-  · simpa only [shiftedBCHCorrespondenceHom_right, shiftedBCHCorrespondenceHom_middle,
-      shiftedBCHCorrespondence, GradedCorrespondence.graph_right] using
-      (d.shiftedBCHCorrespondenceHom ℒ ℳ p h g).right_comm
+  · exact LinearMap.ext
+      ((d.shiftedLieFiltration ℒ ℳ p).transition_truncatedBCHAction d ℒ h g)
 
 /-- Cutting off coefficients commutes with the positive-side terminal total
 for a compatible finite BCH wall label, including mixed normal signs. -/
@@ -136,8 +135,7 @@ theorem transition_terminalGraphRight_shiftedBCHAction {k l : ℕ} (h : k ≤ l)
     _ _ w _ _ w _ id ?_ ?_ (fun _ => Iff.rfl)
   · intro i a ha
     exact d.transition_mem_shiftedQuotientGrading ℳ p h ha
-  · simpa only [shiftedBCHCorrespondenceHom_right, shiftedBCHCorrespondenceHom_middle,
-      shiftedBCHCorrespondence, GradedCorrespondence.graph_right] using
-      (d.shiftedBCHCorrespondenceHom ℒ ℳ p h g).right_comm
+  · exact LinearMap.ext
+      ((d.shiftedLieFiltration ℒ ℳ p).transition_truncatedBCHAction d ℒ h g)
 
 end Mei.PositiveDegrees
