@@ -118,6 +118,15 @@ theorem mem_cutoff_of_mem_shiftedQuotientGrading_ne_zero
       d.map_shiftedGrading_eq_bot ℳ p (lt_of_not_ge hn), Submodule.mem_bot] at ha
     exact hne ha
 
+/-- A homogeneous piece outside the finite positive degree cutoff vanishes. -/
+theorem shiftedQuotientGrading_piece_eq_bot {k : ℕ} {n : Γ} (hn : n ∉ d.cutoff k) :
+    (d.shiftedQuotientGrading ℳ p k).piece n = ⊥ := by
+  apply eq_bot_iff.mpr
+  intro a ha
+  apply (Submodule.mem_bot R).mpr
+  by_contra hne
+  exact hn (d.mem_cutoff_of_mem_shiftedQuotientGrading_ne_zero ℳ p ha hne)
+
 /-- Changing the cutoff preserves the ambient relative degree of every coefficient. -/
 theorem transition_mem_shiftedQuotientGrading {k l : ℕ} (h : k ≤ l) {n : Γ}
     {x : (d.shiftedFiltration ℳ p).quotient l}
