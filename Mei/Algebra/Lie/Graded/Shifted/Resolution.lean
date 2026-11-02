@@ -17,7 +17,8 @@ At a fixed cutoff, all shifted coefficient pieces outside the finite positive
 degree cutoff vanish. Expanding a word of BCH actions over histories in this
 cutoff therefore gives an identity of linear maps, simultaneously for every
 incoming coefficient. Equal BCH words, including words of different lengths,
-have equal sums of component maps in each retained outgoing degree.
+have equal sums of component maps in each retained outgoing degree. Two blocks
+also admit a nested finite expansion before any output linear map.
 
 These are the coefficient identities needed when comparing local histories
 through a consistent wall configuration. They do not assert that every algebraic
@@ -57,20 +58,9 @@ theorem sum_homogeneousHistory_truncatedBCHAction (k : ℕ) {n : ℕ}
         (fun j => (r j).val) =
       ((F).truncatedBCHAction d ℒ k (List.ofFn g).prod).toLinearMap := by
   classical
-  have hS (r : Γ) (hr : r ∉ (d.finite_cutoff k).toFinset) : G(k) r = ⊥ := by
-    apply eq_bot_iff.mpr
-    intro a ha
-    exact (Submodule.mem_bot R).mpr (by
-      by_contra hne
-      exact hr ((d.finite_cutoff k).mem_toFinset.mpr
-        (d.mem_cutoff_of_mem_shiftedQuotientGrading_ne_zero ℳ p ha hne)))
-  rw [sum_homogeneousHistory_eq_prod G(k) _ hS]
-  let act := (LinearEquiv.automorphismGroup.toLinearMapMonoidHom
-    (R := R) (M := (F).quotient k)).comp
-    ((F).truncatedBCHAction d ℒ k)
-  simpa only [List.map_ofFn, Function.comp_def, act, MonoidHom.comp_apply,
-    LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply] using
-    (map_list_prod act (List.ofFn g)).symm
+  rw [sum_homogeneousHistory_eq_prod G(k) _
+    (d.shiftedQuotientGrading_piece_eq_bot ℳ p)]
+  exact (F).truncatedBCHAction_list_ofFn_prod_toLinearMap d ℒ k g
 
 /-- BCH factorizations with the same product have identical finite sums of
 component maps in any retained outgoing degree. Precomposition allows an
@@ -99,5 +89,30 @@ theorem sum_component_homogeneousHistory_eq_of_prod_eq
     d.sum_homogeneousHistory_truncatedBCHAction ℒ ℳ p k g,
     ← map_sum, ← LinearMap.sum_apply,
     d.sum_homogeneousHistory_truncatedBCHAction ℒ ℳ p k g', hg]
+
+/-- The nested finite sums of two BCH blocks recover their composite action in
+the whole quotient, followed by any output linear map. The right block acts first,
+and both finite index sets are independent of the incoming input. -/
+theorem sum_sum_comp_homogeneousHistory_comp_truncatedBCHAction
+    {E O : Type*} [AddCommMonoid E] [Module R E] [AddCommMonoid O] [Module R O]
+    (k : ℕ) {n m : ℕ} (g : Fin n → d.truncatedGroup ℒ k)
+    (u : Fin m → d.truncatedGroup ℒ k)
+    (a : E →ₗ[R] (F).quotient k) (b : (F).quotient k →ₗ[R] O) :
+    (∑ r ∈ Fintype.piFinset (fun _ : Fin m => (d.finite_cutoff k).toFinset),
+      ∑ s ∈ Fintype.piFinset (fun _ : Fin n => (d.finite_cutoff k).toFinset),
+        b.comp
+          ((homogeneousHistory G(k)
+            (fun j => ((F).truncatedBCHAction d ℒ k (g j)).toLinearMap) s).comp
+            ((homogeneousHistory G(k)
+              (fun j => ((F).truncatedBCHAction d ℒ k (u j)).toLinearMap) r).comp a))) =
+      b.comp
+        (((F).truncatedBCHAction d ℒ k (List.ofFn g).prod).toLinearMap.comp
+          (((F).truncatedBCHAction d ℒ k (List.ofFn u).prod).toLinearMap.comp a)) := by
+  simpa only [(F).truncatedBCHAction_list_ofFn_prod_toLinearMap d ℒ k g,
+    (F).truncatedBCHAction_list_ofFn_prod_toLinearMap d ℒ k u] using
+    sum_sum_comp_homogeneousHistory_comp_eq G(k) (d.finite_cutoff k).toFinset
+      (d.shiftedQuotientGrading_piece_eq_bot ℳ p)
+      (fun j => ((F).truncatedBCHAction d ℒ k (g j)).toLinearMap)
+      (fun j => ((F).truncatedBCHAction d ℒ k (u j)).toLinearMap) a b
 
 end Mei.PositiveDegrees
