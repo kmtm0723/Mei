@@ -19,6 +19,9 @@ Their opposite images are `c a^n T^(-n)`. These lifts define a
 `GradedCorrespondence` for the normal-weight gradings of the chambers, including
 weight zero on both sides. The span is jointly injective even when `a` is a zero
 divisor, and its two lifts agree on weight zero.
+The total left lift keeps all nonnegative Laurent inputs and kills negative
+ones. Its opposite image multiplies the coefficient by `a^n` and reverses the
+normal exponent, also when that multiplication kills a nonzero input.
 
 Here `R` may itself be a tangential monoid algebra; the grading in this file records
 only the Laurent exponent, retaining the entire tangential coefficient in each piece.
@@ -145,6 +148,43 @@ theorem normalWeightCorrespondence_liftLeft (n : {n : ℤ | 0 ≤ n}) :
 @[simp]
 theorem normalWeightCorrespondence_liftRight (n : {n : ℤ | 0 ≤ n}) :
     (normalWeightCorrespondence a).liftRight n = incomingLift a 1 n := (rfl)
+
+/-- The total slab lift keeps the nonnegative Laurent monomials as nodal powers
+and sends the inadmissible negative monomials to zero. -/
+@[simp↓]
+theorem normalWeightCorrespondence_liftLeftTotal_single (n : ℤ) (c : R) :
+    (normalWeightCorrespondence a).liftLeftTotal (single n c) =
+      if 0 ≤ n then c • coord a 0 ^ n.toNat else 0 := by
+  rw [GradedCorrespondence.liftLeftTotal_of_mem _ (single_mem_grade n c)]
+  simp only [Set.mem_ofPred_eq]
+  split_ifs with hn
+  · rw [normalWeightCorrespondence_liftLeft, incomingLift_apply]
+    simp only [coeff_single, Finsupp.single_eq_same]
+  · rfl
+
+/-- The source chamber image of the total slab lift is its nonnegative part. -/
+@[simp↓]
+theorem leftLaurentMap_liftLeftTotal_single (n : ℤ) (c : R) :
+    leftLaurentMap a ((normalWeightCorrespondence a).liftLeftTotal (single n c)) =
+      if 0 ≤ n then single n c else 0 := by
+  have he :=
+    (normalWeightCorrespondence a).left_liftLeftTotal_of_mem (single_mem_grade n c)
+  by_cases hn : 0 ≤ n <;>
+    simpa only [normalWeightCorrespondence_left, AlgHom.toLinearMap_apply,
+      Set.mem_ofPred_eq, hn, ite_true, ite_false] using he
+
+/-- The opposite image of the total slab lift retains the full coefficient
+multiplier, with no invertibility assumption on the slab parameter. -/
+@[simp↓]
+theorem rightLaurentMap_liftLeftTotal_single (n : ℤ) (c : R) :
+    rightLaurentMap a ((normalWeightCorrespondence a).liftLeftTotal (single n c)) =
+      if 0 ≤ n then single (-n) (c * a ^ n.toNat) else 0 := by
+  rw [GradedCorrespondence.liftLeftTotal_of_mem _ (single_mem_grade n c)]
+  simp only [Set.mem_ofPred_eq]
+  split_ifs with hn
+  · rw [normalWeightCorrespondence_liftLeft, rightLaurentMap_incomingLift_zero]
+    simp only [coeff_single, Finsupp.single_eq_same]
+  · exact (rightLaurentMap a).map_zero
 
 /-- The opposite image of an incoming coefficient is concentrated in weight `-n`. -/
 @[simp↓]
