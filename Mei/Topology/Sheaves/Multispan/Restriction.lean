@@ -6,149 +6,118 @@ Authors: Codex
 module
 
 public import Mei.Topology.Sheaves.Multispan.Morphism
+public import Mei.Topology.Sheaves.Diagram.Gluing
 
 /-!
-# Endpoint restriction of multispan matching families
+# Gluing coefficient descents on endpoint covers
 
-The original sheaf restrictions give a transformation between the evaluated
-incidence diagrams. Applying the existing linear map on sections restricts all
-face and chamber values together. These restrictions preserve identities and
-composition, commute with coefficient transformations, and preserve coefficient
-descent equations for linear matching families.
+Evaluating an incidence index and evaluating its multispan give canonically
+linearly equivalent matching families. Transporting the existing diagram
+restriction and gluing operations through this equivalence retains all face
+and chamber values. Compatible local coefficient descents then glue to a unique
+global descent on an arbitrary endpoint cover.
 -/
 
-public section
+public noncomputable section
 
 open CategoryTheory TopologicalSpace Opposite TopCat
 
-universe u v r w t
+universe u v r
 
 namespace CategoryTheory.Limits.MultispanIndex
 
-variable {X : TopCat.{u}} {J : MultispanShape}
-
-section Category
-
-variable {C : Type w} [Category.{t} C] (I : MultispanIndex J (X.Sheaf C))
-
-/-- Restrict every original sheaf object in the incidence diagram. Naturality
-is exactly the naturality of the original two face-leg morphisms. -/
-noncomputable def sectionsRestriction {U V : Opens X} (hVU : V ≤ U) :
-    (I.sectionsIndex U).multispan ⟶ (I.sectionsIndex V).multispan where
-  app j := match j with
-    | .left b => (I.left b).obj.map (homOfLE hVU).op
-    | .right j => (I.right j).obj.map (homOfLE hVU).op
-  naturality j k f := by
-    cases f with
-    | id j => simp only [WalkingMultispan.Hom.id_eq_id, Functor.map_id,
-        Category.id_comp, Category.comp_id]
-    | fst b => exact ((I.fst b).hom.naturality (homOfLE hVU).op).symm
-    | snd b => exact ((I.snd b).hom.naturality (homOfLE hVU).op).symm
-
-/-- The face component is the original face-sheaf restriction. -/
-@[simp]
-theorem sectionsRestriction_app_left {U V : Opens X} (hVU : V ≤ U) (b : J.L) :
-    (I.sectionsRestriction hVU).app (.left b) = (I.left b).obj.map (homOfLE hVU).op := by rfl
-
-/-- The chamber component is the original chamber-sheaf restriction. -/
-@[simp]
-theorem sectionsRestriction_app_right {U V : Opens X} (hVU : V ≤ U) (j : J.R) :
-    (I.sectionsRestriction hVU).app (.right j) = (I.right j).obj.map (homOfLE hVU).op := by rfl
-
-/-- Identity endpoint restriction fixes the evaluated incidence diagram. -/
-@[simp]
-theorem sectionsRestriction_refl (U : Opens X) :
-    I.sectionsRestriction (le_refl U) = 𝟙 (I.sectionsIndex U).multispan := by
-  apply NatTrans.ext
-  funext j
-  cases j <;> simp only [sectionsRestriction_app_left, sectionsRestriction_app_right,
-    homOfLE_refl, op_id, Functor.map_id, NatTrans.id_app] <;> rfl
-
-/-- Successive endpoint restrictions give the composite inclusion. -/
-@[simp]
-theorem sectionsRestriction_comp {U V W : Opens X} (hVU : V ≤ U) (hWV : W ≤ V) :
-    I.sectionsRestriction hVU ≫ I.sectionsRestriction hWV =
-      I.sectionsRestriction (hWV.trans hVU) := by
-  symm
-  apply NatTrans.ext
-  funext j
-  cases j with
-  | left b =>
-    rw [NatTrans.comp_app, sectionsRestriction_app_left, sectionsRestriction_app_left,
-      sectionsRestriction_app_left]
-    -- Restate the dependent mapped-index carrier as the original face section object.
-    change (I.left b).obj.map (homOfLE (hWV.trans hVU)).op =
-      (I.left b).obj.map (homOfLE hVU).op ≫ (I.left b).obj.map (homOfLE hWV).op
-    rw [← Functor.map_comp, ← op_comp, homOfLE_comp]
-  | right j =>
-    rw [NatTrans.comp_app, sectionsRestriction_app_right, sectionsRestriction_app_right,
-      sectionsRestriction_app_right]
-    -- The same normalization identifies the original chamber section object.
-    change (I.right j).obj.map (homOfLE (hWV.trans hVU)).op =
-      (I.right j).obj.map (homOfLE hVU).op ≫ (I.right j).obj.map (homOfLE hWV).op
-    rw [← Functor.map_comp, ← op_comp, homOfLE_comp]
-
-/-- Restriction commutes with every coefficient transformation of sheaf multispans. -/
-theorem sectionsRestriction_naturality {I' : MultispanIndex J (X.Sheaf C)}
-    (η : I.multispan ⟶ I'.multispan) {U V : Opens X} (hVU : V ≤ U) :
-    I.sectionsRestriction hVU ≫ η.sectionsMultispan V =
-      η.sectionsMultispan U ≫ I'.sectionsRestriction hVU := by
-  apply NatTrans.ext
-  funext j
-  cases j with
-  | left b =>
-    rw [NatTrans.comp_app, NatTrans.comp_app, sectionsRestriction_app_left,
-      sectionsRestriction_app_left, NatTrans.sectionsMultispan_app_left,
-      NatTrans.sectionsMultispan_app_left]
-    exact (η.app (.left b)).hom.naturality (homOfLE hVU).op
-  | right j =>
-    rw [NatTrans.comp_app, NatTrans.comp_app, sectionsRestriction_app_right,
-      sectionsRestriction_app_right, NatTrans.sectionsMultispan_app_right,
-      NatTrans.sectionsMultispan_app_right]
-    exact (η.app (.right j)).hom.naturality (homOfLE hVU).op
-
-end Category
-
-variable {R : Type r} [Semiring R]
+variable {X : TopCat.{u}} {R : Type r} [Semiring R] {J : MultispanShape}
   (I : MultispanIndex J (X.Sheaf (SemimoduleCat.{v} R)))
 
-/-- Restrict actual matching sections through the existing linear section map. -/
-noncomputable def sectionsRestrict {U V : Opens X} (hVU : V ≤ U) :
+-- Fix both evaluated diagram types at the module boundary before mapping sections.
+private def evaluatedMultispanIso (U : Opens X) :
+    (I.sectionsIndex U).multispan ≅ I.multispan.sectionsOver U :=
+  I.multispanMapIso ((sheafSections (Opens.grothendieckTopology X)
+    (SemimoduleCat.{v} R)).obj (op U))
+
+/-- The canonical linear equivalence between matching families of the evaluated
+incidence index and those of the evaluated sheaf diagram. -/
+def sectionsEquiv (U : Opens X) :
+    SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan ≃ₗ[R]
+      SemimoduleCat.sectionsSubmodule (I.multispan.sectionsOver U) :=
+  LinearEquiv.ofLinearMap
+    (SemimoduleCat.sectionsMap (I.evaluatedMultispanIso U).hom)
+    (SemimoduleCat.sectionsMap (I.evaluatedMultispanIso U).inv)
+    (by rw [← SemimoduleCat.sectionsMap_comp, Iso.inv_hom_id, SemimoduleCat.sectionsMap_id])
+    (by rw [← SemimoduleCat.sectionsMap_comp, Iso.hom_inv_id, SemimoduleCat.sectionsMap_id])
+
+private theorem sectionsEquiv_toLinearMap (U : Opens X) :
+    (I.sectionsEquiv U).toLinearMap =
+      SemimoduleCat.sectionsMap (I.evaluatedMultispanIso U).hom := by rfl
+
+/-- The canonical comparison retains each face value. -/
+@[simp]
+theorem sectionsEquiv_apply_left (U : Opens X)
+    (s : SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan) (b : J.L) :
+    (I.sectionsEquiv U s).val (.left b) = s.val (.left b) := by
+  have he := SemimoduleCat.sectionsMap_apply (I.evaluatedMultispanIso U).hom s (.left b)
+  have hc : (I.evaluatedMultispanIso U).hom.app (.left b) =
+      𝟙 ((I.left b).obj.obj (op U)) :=
+    I.multispanMapIso_hom_app ((sheafSections (Opens.grothendieckTopology X)
+      (SemimoduleCat.{v} R)).obj (op U)) (.left b)
+  have hi : ((I.evaluatedMultispanIso U).hom.app (.left b)).hom
+      (s.val (.left b)) = s.val (.left b) := by
+    rw [hc]
+    -- This identity is on the original component carrier after the public comparison equation.
+    rfl
+  simpa only [← sectionsEquiv_toLinearMap, LinearEquiv.coe_toLinearMap] using he.trans hi
+
+/-- The canonical comparison retains each chamber value. -/
+@[simp]
+theorem sectionsEquiv_apply_right (U : Opens X)
+    (s : SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan) (j : J.R) :
+    (I.sectionsEquiv U s).val (.right j) = s.val (.right j) := by
+  have he := SemimoduleCat.sectionsMap_apply (I.evaluatedMultispanIso U).hom s (.right j)
+  have hc : (I.evaluatedMultispanIso U).hom.app (.right j) =
+      𝟙 ((I.right j).obj.obj (op U)) :=
+    I.multispanMapIso_hom_app ((sheafSections (Opens.grothendieckTopology X)
+      (SemimoduleCat.{v} R)).obj (op U)) (.right j)
+  have hi : ((I.evaluatedMultispanIso U).hom.app (.right j)).hom
+      (s.val (.right j)) = s.val (.right j) := by
+    rw [hc]
+    -- This identity is on the original component carrier after the public comparison equation.
+    rfl
+  simpa only [← sectionsEquiv_toLinearMap, LinearEquiv.coe_toLinearMap] using he.trans hi
+
+/-- Endpoint restriction on evaluated-index families, transported from the
+existing restriction on matching families of the sheaf diagram. -/
+def sectionsRestrict {U V : Opens X} (hVU : V ≤ U) :
     SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan →ₗ[R]
       SemimoduleCat.sectionsSubmodule (I.sectionsIndex V).multispan :=
-  SemimoduleCat.sectionsMap (I.sectionsRestriction hVU)
+  (I.sectionsEquiv V).symm.toLinearMap.comp
+    ((I.multispan.sectionsRestrict hVU).comp (I.sectionsEquiv U).toLinearMap)
 
-/-- Restricting a matching family restricts its original face value. -/
+/-- The canonical comparison intertwines the two matching-family restrictions. -/
 @[simp]
-theorem sectionsRestrict_apply_left {U V : Opens X} (hVU : V ≤ U)
-    (s : SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan) (b : J.L) :
-    (I.sectionsRestrict hVU s).val (.left b) =
-      (I.left b).obj.map (homOfLE hVU).op (s.val (.left b)) := by
-  rw [sectionsRestrict, SemimoduleCat.sectionsMap_apply, sectionsRestriction_app_left]
-  rfl
+theorem sectionsEquiv_restrict {U V : Opens X} (hVU : V ≤ U)
+    (s : SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan) :
+    I.sectionsEquiv V (I.sectionsRestrict hVU s) =
+      I.multispan.sectionsRestrict hVU (I.sectionsEquiv U s) := by
+  simp only [sectionsRestrict, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    LinearEquiv.apply_symm_apply]
 
-/-- Restricting a matching family restricts its original chamber value. -/
+/-- Coefficient transport commutes with the canonical comparison of evaluated families. -/
 @[simp]
-theorem sectionsRestrict_apply_right {U V : Opens X} (hVU : V ≤ U)
-    (s : SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan) (j : J.R) :
-    (I.sectionsRestrict hVU s).val (.right j) =
-      (I.right j).obj.map (homOfLE hVU).op (s.val (.right j)) := by
-  rw [sectionsRestrict, SemimoduleCat.sectionsMap_apply, sectionsRestriction_app_right]
-  rfl
-
-/-- Identity restriction fixes every matching family. -/
-@[simp]
-theorem sectionsRestrict_refl (U : Opens X) :
-    I.sectionsRestrict (le_refl U) = LinearMap.id := by
-  rw [sectionsRestrict, sectionsRestriction_refl, SemimoduleCat.sectionsMap_id]
-
-/-- Linear restrictions compose along endpoint inclusions. -/
-@[simp]
-theorem sectionsRestrict_comp {U V W : Opens X} (hVU : V ≤ U) (hWV : W ≤ V) :
-    (I.sectionsRestrict hWV).comp (I.sectionsRestrict hVU) =
-      I.sectionsRestrict (hWV.trans hVU) := by
-  unfold sectionsRestrict
-  rw [← SemimoduleCat.sectionsMap_comp, I.sectionsRestriction_comp hVU hWV]
+theorem sectionsEquiv_naturality {I' : MultispanIndex J (X.Sheaf (SemimoduleCat.{v} R))}
+    (η : I.multispan ⟶ I'.multispan) (U : Opens X)
+    (s : SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan) :
+    I'.sectionsEquiv U (SemimoduleCat.sectionsMap (η.sectionsMultispan U) s) =
+      SemimoduleCat.sectionsMap (Functor.whiskerRight η
+        (((TopCat.Sheaf.forget (SemimoduleCat.{v} R) X).flip).obj (op U)))
+          (I.sectionsEquiv U s) := by
+  have hn : η.sectionsMultispan U ≫ (I'.evaluatedMultispanIso U).hom =
+      (I.evaluatedMultispanIso U).hom ≫ Functor.whiskerRight η
+        (((TopCat.Sheaf.forget (SemimoduleCat.{v} R) X).flip).obj (op U)) := by
+    unfold evaluatedMultispanIso
+    exact η.sectionsMultispan_comp_multispanMapIso_hom U
+  have he := congrArg SemimoduleCat.sectionsMap hn
+  simp only [SemimoduleCat.sectionsMap_comp, ← sectionsEquiv_toLinearMap] at he
+  exact LinearMap.congr_fun he s
 
 /-- Coefficient transport and endpoint restriction commute on actual matching families. -/
 theorem sectionsRestrict_naturality
@@ -157,19 +126,92 @@ theorem sectionsRestrict_naturality
     (SemimoduleCat.sectionsMap (η.sectionsMultispan V)).comp (I.sectionsRestrict hVU) =
       (I'.sectionsRestrict hVU).comp
         (SemimoduleCat.sectionsMap (η.sectionsMultispan U)) := by
-  simp only [sectionsRestrict, ← SemimoduleCat.sectionsMap_comp, sectionsRestriction_naturality]
+  apply LinearMap.ext
+  intro s
+  apply (I'.sectionsEquiv V).injective
+  simp only [LinearMap.comp_apply, sectionsEquiv_naturality, sectionsEquiv_restrict]
+  apply Subtype.ext
+  funext j
+  simp only [SemimoduleCat.sectionsMap_apply, Functor.sectionsRestrict_apply]
+  exact ConcreteCategory.congr_hom ((η.app j).hom.naturality (homOfLE hVU).op)
+    ((I.sectionsEquiv U s).val j)
 
-/-- A linear coefficient descent remains a descent on every smaller endpoint open. -/
-theorem sections_descent_restrict
+/-- Compatible linear matching families on evaluated incidence indices glue
+uniquely, using the existing gluing theorem for sheaf diagrams. -/
+theorem existsUnique_sections_gluing (E : SemimoduleCat.{v} R) {ι : Type*}
+    (U : ι → Opens X)
+    (ℓ : ∀ i, E →ₗ[R] SemimoduleCat.sectionsSubmodule (I.sectionsIndex (U i)).multispan)
+    (hcompat : ∀ i k,
+      (I.sectionsRestrict (inf_le_left : U i ⊓ U k ≤ U i)).comp (ℓ i) =
+        (I.sectionsRestrict (inf_le_right : U i ⊓ U k ≤ U k)).comp (ℓ k)) :
+    ∃! L : E →ₗ[R] SemimoduleCat.sectionsSubmodule (I.sectionsIndex (iSup U)).multispan,
+      ∀ i, (I.sectionsRestrict (le_iSup U i)).comp L = ℓ i := by
+  let a i := (I.sectionsEquiv (U i)).toLinearMap.comp (ℓ i)
+  have hc : ∀ i k,
+      (I.multispan.sectionsRestrict (inf_le_left : U i ⊓ U k ≤ U i)).comp (a i) =
+        (I.multispan.sectionsRestrict (inf_le_right : U i ⊓ U k ≤ U k)).comp (a k) := by
+    intro i k
+    apply LinearMap.ext
+    intro x
+    have he := congrArg (fun q => I.sectionsEquiv (U i ⊓ U k) (q x)) (hcompat i k)
+    simpa only [a, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+      sectionsEquiv_restrict] using he
+  obtain ⟨L, hL, huniq⟩ := I.multispan.existsUnique_sections_gluing E U a hc
+  let result := (I.sectionsEquiv (iSup U)).symm.toLinearMap.comp L
+  have hr : ∀ i, (I.sectionsRestrict (le_iSup U i)).comp result = ℓ i := by
+    intro i
+    apply LinearMap.ext
+    intro x
+    apply (I.sectionsEquiv (U i)).injective
+    simp only [LinearMap.comp_apply, sectionsEquiv_restrict, result,
+      LinearEquiv.coe_toLinearMap, LinearEquiv.apply_symm_apply]
+    exact LinearMap.congr_fun (hL i) x
+  refine ⟨result, hr, fun m hm => ?_⟩
+  have he : (I.sectionsEquiv (iSup U)).toLinearMap.comp m = L := huniq _ (by
+    intro i
+    apply LinearMap.ext
+    intro x
+    have hi := congrArg (fun q => I.sectionsEquiv (U i) (q x)) (hm i)
+    simpa only [a, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+      sectionsEquiv_restrict] using hi)
+  apply LinearMap.ext
+  intro x
+  apply (I.sectionsEquiv (iSup U)).injective
+  simpa only [result, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    LinearEquiv.apply_symm_apply] using LinearMap.congr_fun he x
+
+/-- Compatible local coefficient descents glue uniquely to a global descent.
+Every local descent must include face values as well as chamber values; no
+injectivity of the coefficient transformation or finiteness of the cover is required. -/
+theorem existsUnique_sections_descent_gluing
     {I' : MultispanIndex J (X.Sheaf (SemimoduleCat.{v} R))}
-    (η : I.multispan ⟶ I'.multispan) {E : Type*} [AddCommMonoid E] [Module R E]
-    {U V : Opens X} (hVU : V ≤ U)
-    (ℓ : E →ₗ[R] SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan)
-    (m : E →ₗ[R] SemimoduleCat.sectionsSubmodule (I'.sectionsIndex U).multispan)
-    (hℓ : (SemimoduleCat.sectionsMap (η.sectionsMultispan U)).comp ℓ = m) :
-    (SemimoduleCat.sectionsMap (η.sectionsMultispan V)).comp
-        ((I.sectionsRestrict hVU).comp ℓ) =
-      (I'.sectionsRestrict hVU).comp m := by
-  rw [← LinearMap.comp_assoc, sectionsRestrict_naturality, LinearMap.comp_assoc, hℓ]
+    (η : I.multispan ⟶ I'.multispan) (E : SemimoduleCat.{v} R) {ι : Type*}
+    (U : ι → Opens X)
+    (m : E →ₗ[R] SemimoduleCat.sectionsSubmodule (I'.sectionsIndex (iSup U)).multispan)
+    (ℓ : ∀ i, E →ₗ[R] SemimoduleCat.sectionsSubmodule (I.sectionsIndex (U i)).multispan)
+    (hcompat : ∀ i k,
+      (I.sectionsRestrict (inf_le_left : U i ⊓ U k ≤ U i)).comp (ℓ i) =
+        (I.sectionsRestrict (inf_le_right : U i ⊓ U k ≤ U k)).comp (ℓ k))
+    (hℓ : ∀ i, (SemimoduleCat.sectionsMap (η.sectionsMultispan (U i))).comp (ℓ i) =
+      (I'.sectionsRestrict (le_iSup U i)).comp m) :
+    ∃! L : E →ₗ[R] SemimoduleCat.sectionsSubmodule (I.sectionsIndex (iSup U)).multispan,
+      (∀ i, (I.sectionsRestrict (le_iSup U i)).comp L = ℓ i) ∧
+        (SemimoduleCat.sectionsMap (η.sectionsMultispan (iSup U))).comp L = m := by
+  obtain ⟨L, hL, huniqL⟩ := I.existsUnique_sections_gluing E U ℓ hcompat
+  let a i := (SemimoduleCat.sectionsMap (η.sectionsMultispan (U i))).comp (ℓ i)
+  have hc : ∀ i k,
+      (I'.sectionsRestrict (inf_le_left : U i ⊓ U k ≤ U i)).comp (a i) =
+        (I'.sectionsRestrict (inf_le_right : U i ⊓ U k ≤ U k)).comp (a k) := by
+    intro i k
+    dsimp only [a]
+    rw [← LinearMap.comp_assoc, ← sectionsRestrict_naturality, LinearMap.comp_assoc,
+      hcompat, ← LinearMap.comp_assoc, sectionsRestrict_naturality, LinearMap.comp_assoc]
+  obtain ⟨M, -, huniqM⟩ := I'.existsUnique_sections_gluing E U a hc
+  have he : (SemimoduleCat.sectionsMap (η.sectionsMultispan (iSup U))).comp L = M :=
+    huniqM _ (by
+      intro i
+      rw [← LinearMap.comp_assoc, ← sectionsRestrict_naturality, LinearMap.comp_assoc, hL])
+  have hm : m = M := huniqM m (fun i => (hℓ i).symm)
+  exact ⟨L, ⟨hL, he.trans hm.symm⟩, fun q hq => huniqL q hq.1⟩
 
 end CategoryTheory.Limits.MultispanIndex
