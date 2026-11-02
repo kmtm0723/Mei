@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mei.Algebra.BigOperators.Group.Finset.Indicator
 public import Mei.Geometry.ScatteringDiagram.BrokenLine.Itineraries
 
 /-!
@@ -62,9 +63,8 @@ theorem cutoffDecoratedEvaluation_eq_sum_charts (k : ℕ)
   rw [cutoffDecoratedEvaluation_eq_sum]
   apply Finset.sum_congr rfl
   intro t _
-  simpa [Set.indicator, hcover t] using
-    (Finset.indicator_biUnion_apply Finset.univ (A t) (f := fun _ => t.decoration)
-      ((hdisj t).set_pairwise _) Q)
+  exact Set.ite_mem_eq_sum_of_pairwise_disjoint (A t) (hdisj t) (hcover t) Q t.decoration
+
 
 section Rational
 
