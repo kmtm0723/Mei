@@ -85,14 +85,14 @@ theorem existsUnique_shiftedBCH_terminalGraphLift_mem_addSubmonoid
       (a : (F).quotient k) ∈ Pos r → θ a ∈ Ppos)
     (hRstay : ∀ r (a : 𝓝 r), 0 ≤ weight r →
       (a : (F).quotient k) ∈ Pos r → (a : (F).quotient k) ∈ Ppos)
-    (α : E →ₗ[R] (F).quotient k) (S : AddSubmonoid E)
-    (hα : ∀ x ∈ S, ∀ r, (DirectSum.decompose 𝓝 (α x) r : (F).quotient k) ∈ Pos r) :
+    (α : E →ₗ[R] (F).quotient k) :
     ∃! l : E →ₗ[R] (F).quotient k,
       (GradedCorrespondence.graph 𝓝 𝓝 θ).left.comp l =
           (GradedCorrespondence.terminalGraphLift 𝓝 θ weight).comp α ∧
       (GradedCorrespondence.graph 𝓝 𝓝 θ).right.comp l =
           (GradedCorrespondence.terminalGraphRight 𝓝 θ weight).comp α ∧
-      ∀ x ∈ S, l x ∈ Pneg ∧ θ (l x) ∈ Ppos := by
+      ∀ x, (∀ r, (DirectSum.decompose 𝓝 (α x) r : (F).quotient k) ∈ Pos r) →
+        l x ∈ Pneg ∧ θ (l x) ∈ Ppos := by
   obtain ⟨l, hl, huniq⟩ := H.existsUnique_shiftedBCH_terminalGraphLift ℳ p g hg α
   refine ⟨l, ⟨hl.1, hl.2, ?_⟩, ?_⟩
   · intro x hx
@@ -105,10 +105,10 @@ theorem existsUnique_shiftedBCH_terminalGraphLift_mem_addSubmonoid
     constructor
     · rw [hleft]
       exact GradedCorrespondence.terminalGraphLift_mem_addSubmonoid 𝓝 θ weight Pos Pneg
-        hLcross hLstay (α x) (hα x hx)
+        hLcross hLstay (α x) hx
     · rw [hright]
       exact GradedCorrespondence.terminalGraphRight_mem_addSubmonoid 𝓝 θ weight Pos Ppos
-        hRcross hRstay (α x) (hα x hx)
+        hRcross hRstay (α x) hx
   · intro l' hl'
     exact huniq l' ⟨hl'.1, hl'.2.1⟩
 
