@@ -44,26 +44,22 @@ open Classical in
 /-- Negative-side values of all incoming homogeneous coefficients. Inputs from
 the positive side cross by the inverse equivalence; the other inputs stay put. -/
 def terminalGraphLift : Module.End R M :=
-  (DirectSum.toModule R ι M (fun i => if 0 < w i then
-    e.symm.toLinearMap.comp (ℳ i).subtype else (ℳ i).subtype)).comp
-      (DirectSum.decomposeLinearEquiv ℳ).toLinearMap
+  DirectSum.homogeneousExtend ℳ (fun i => if 0 < w i then
+    e.symm.toLinearMap.comp (ℳ i).subtype else (ℳ i).subtype)
 
 open Classical in
 /-- Positive-side values of all incoming homogeneous coefficients. Inputs from
 the negative side cross by the equivalence; the other inputs stay put. -/
 def terminalGraphRight : Module.End R M :=
-  (DirectSum.toModule R ι M (fun i => if w i < 0 then
-    e.toLinearMap.comp (ℳ i).subtype else (ℳ i).subtype)).comp
-      (DirectSum.decomposeLinearEquiv ℳ).toLinearMap
+  DirectSum.homogeneousExtend ℳ (fun i => if w i < 0 then
+    e.toLinearMap.comp (ℳ i).subtype else (ℳ i).subtype)
 
 open Classical in
 /-- On one homogeneous input the common-lift candidate is the incoming value
 or its inverse transport, according to its normal degree. -/
 theorem terminalGraphLift_of_mem {i : ι} {a : M} (ha : a ∈ ℳ i) :
     terminalGraphLift ℳ e w a = if 0 < w i then e.symm a else a := by
-  simp only [terminalGraphLift, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    DirectSum.decomposeLinearEquiv_apply, DirectSum.decompose_of_mem ℳ ha,
-    ← DirectSum.lof_eq_of R, DirectSum.toModule_lof]
+  rw [terminalGraphLift, DirectSum.homogeneousExtend_of_mem ℳ _ ha]
   split_ifs <;> rfl
 
 open Classical in
@@ -78,9 +74,7 @@ open Classical in
 or its forward transport, according to its normal degree. -/
 theorem terminalGraphRight_of_mem {i : ι} {a : M} (ha : a ∈ ℳ i) :
     terminalGraphRight ℳ e w a = if w i < 0 then e a else a := by
-  simp only [terminalGraphRight, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    DirectSum.decomposeLinearEquiv_apply, DirectSum.decompose_of_mem ℳ ha,
-    ← DirectSum.lof_eq_of R, DirectSum.toModule_lof]
+  rw [terminalGraphRight, DirectSum.homogeneousExtend_of_mem ℳ _ ha]
   split_ifs <;> rfl
 
 open Classical in
@@ -98,11 +92,10 @@ theorem terminalGraphLift_eq_sum (a : M) :
       ∑ i ∈ (DirectSum.decompose ℳ a).support,
         if 0 < w i then e.symm (DirectSum.decompose ℳ a i) else
           (DirectSum.decompose ℳ a i : M) := by
-  conv_lhs => rw [← DirectSum.sum_support_decompose ℳ a]
-  rw [map_sum]
+  rw [terminalGraphLift, DirectSum.homogeneousExtend_eq_sum]
   apply Finset.sum_congr rfl
   intro i _
-  exact terminalGraphLift_of_mem ℳ e w (DirectSum.decompose ℳ a i).property
+  split_ifs <;> rfl
 
 open Classical in
 /-- The positive-side total is the finite sum of forward-transferred negative
@@ -112,11 +105,10 @@ theorem terminalGraphRight_eq_sum (a : M) :
       ∑ i ∈ (DirectSum.decompose ℳ a).support,
         if w i < 0 then e (DirectSum.decompose ℳ a i) else
           (DirectSum.decompose ℳ a i : M) := by
-  conv_lhs => rw [← DirectSum.sum_support_decompose ℳ a]
-  rw [map_sum]
+  rw [terminalGraphRight, DirectSum.homogeneousExtend_eq_sum]
   apply Finset.sum_congr rfl
   intro i _
-  exact terminalGraphRight_of_mem ℳ e w (DirectSum.decompose ℳ a i).property
+  split_ifs <;> rfl
 
 section Naturality
 
