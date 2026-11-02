@@ -23,8 +23,8 @@ scattering diagram uses such lifts: the face module is identified with the pairs
 coefficients that it relates.
 
 Common lifts reflect through a commuting morphism of spans when the maps on the
-two outer modules are injective and the target lift takes values in the range of
-the middle map. The reflected map is linear even when preimages are given only
+middle and two outer modules are injective and the target lift takes values in
+the range of the middle map. The reflected map is linear even when preimages are given only
 pointwise.
 -/
 
@@ -79,32 +79,22 @@ theorem existsUnique_comp_eq_and_comp_eq_on_span_singleton
     (Submodule.span_singleton_le_iff_mem _ _).mpr ha
   exact fun z => hspan z.property
 
-/-- Let `(n, u, v)` be a commuting morphism of spans, with `u` and `v`
-injective and the source span `(f, g)` jointly injective. A target common lift
+/-- Let `(n, u, v)` be a commuting morphism of spans with all three maps
+injective. A target common lift
 `ℓ'` of `u ∘ₗ α` and `v ∘ₗ β` whose values lie in `range n` reflects to a source
 common lift `ℓ`, with `n ∘ₗ ℓ = ℓ'`. -/
-theorem exists_comp_eq_and_comp_eq_of_injective_comp
+theorem exists_comp_eq_and_comp_eq_and_comp_eq_of_forall_mem_range
     {N' U' V' : Type*} [AddCommMonoid N'] [Module R N']
     [AddCommMonoid U'] [Module R U'] [AddCommMonoid V'] [Module R V']
     {f : N →ₗ[R] U} {g : N →ₗ[R] V} {f' : N' →ₗ[R] U'} {g' : N' →ₗ[R] V'}
     (n : N →ₗ[R] N') (u : U →ₗ[R] U') (v : V →ₗ[R] V')
     (hf : f'.comp n = u.comp f) (hg : g'.comp n = v.comp g)
     (hu : Function.Injective u) (hv : Function.Injective v)
-    (hfg : Function.Injective (f.prod g))
+    (hn : Function.Injective n)
     {α : E →ₗ[R] U} {β : E →ₗ[R] V} (ℓ' : E →ₗ[R] N')
     (hα : f'.comp ℓ' = u.comp α) (hβ : g'.comp ℓ' = v.comp β)
     (hpre : ∀ a, ℓ' a ∈ range n) :
     ∃ ℓ : E →ₗ[R] N, f.comp ℓ = α ∧ g.comp ℓ = β ∧ n.comp ℓ = ℓ' := by
-  have hn : Function.Injective n := by
-    intro x y hxy
-    apply hfg
-    apply Prod.ext
-    · apply hu
-      exact (LinearMap.congr_fun hf x).symm.trans
-        ((congrArg f' hxy).trans (LinearMap.congr_fun hf y))
-    · apply hv
-      exact (LinearMap.congr_fun hg x).symm.trans
-        ((congrArg g' hxy).trans (LinearMap.congr_fun hg y))
   obtain ⟨ℓ, hℓ⟩ := (exists_comp_eq_iff_range_le hn).mpr (fun _ ⟨a, ha⟩ => ha ▸ hpre a)
   refine ⟨ℓ, (cancel_left hu).mp ?_, (cancel_left hv).mp ?_, hℓ⟩
   · rw [← comp_assoc, ← hf, comp_assoc, hℓ, hα]
