@@ -23,6 +23,8 @@ naturality, in particular for comparisons preserving degrees such as truncations
 
 The component formulas use `DirectSum.decompose_map_eq_sum` and Tau Ceti's
 `DirectSum.map_decompose_shift` for arbitrary and injective regradings, respectively.
+Total lifts are natural precisely when target total lifts kill the images of
+inadmissible source pieces; reflecting admissibility is sufficient.
 No additive structure on the degree types is needed for these linear constructions.
 -/
 
@@ -181,6 +183,55 @@ transporting along the double-reversal equalities for its source and target. -/
 
 @[simp] theorem symm_comp (g : Hom D E σ' τ') (f : Hom C D σ τ) :
     (g.comp f).symm = g.symm.comp f.symm := by ext <;> rfl
+
+section TotalLift
+
+variable [DecidableEq ι] [DecidableEq ι']
+  [DirectSum.Decomposition 𝒰] [DirectSum.Decomposition 𝒰']
+
+/-- A correspondence morphism preserves the total lift exactly when target total
+lifts kill the images of inadmissible source pieces. This permits new admissible
+target degrees when their source decorations vanish under the comparison. -/
+theorem middle_comp_liftLeftTotal_iff (f : Hom C D σ τ) :
+    f.middle.comp C.liftLeftTotal = D.liftLeftTotal.comp f.left ↔
+      ∀ i, i ∉ I → ∀ a : 𝒰 i, D.liftLeftTotal (f.left a) = 0 := by
+  classical
+  constructor
+  · intro h i hi a
+    have he := LinearMap.congr_fun h a
+    simpa only [LinearMap.comp_apply, C.liftLeftTotal_coe_of_not_mem a hi, map_zero]
+      using he.symm
+  · intro hzero
+    apply DirectSum.decompose_lhom_ext 𝒰
+    intro i
+    apply LinearMap.ext
+    intro a
+    simp only [LinearMap.comp_apply, Submodule.subtype_apply]
+    by_cases hi : i ∈ I
+    · rw [C.liftLeftTotal_of_mem a.property, dite_eq_left hi,
+        D.liftLeftTotal_of_mem (f.left_mem i a a.property),
+        dite_eq_left (f.admissible_left hi)]
+      exact f.middle_liftLeft ⟨i, hi⟩ a
+    · rw [C.liftLeftTotal_coe_of_not_mem a hi, map_zero, hzero i hi a]
+
+/-- Total lifts of mixed inputs commute with the comparison whenever target total
+lifts kill all images of inadmissible source pieces. -/
+theorem middle_liftLeftTotal (f : Hom C D σ τ)
+    (hzero : ∀ i, i ∉ I → ∀ a : 𝒰 i, D.liftLeftTotal (f.left a) = 0) (a : U) :
+    f.middle (C.liftLeftTotal a) = D.liftLeftTotal (f.left a) :=
+  LinearMap.congr_fun (f.middle_comp_liftLeftTotal_iff.mpr hzero) a
+
+/-- Reflecting admissible degrees is sufficient for naturality of total lifts.
+No injectivity of either degree map or coefficient map is required. Applying this
+to `f.symm` gives the right-lift comparison. -/
+theorem middle_comp_liftLeftTotal_of_reflects_admissible (f : Hom C D σ τ)
+    (hI : ∀ i, σ i ∈ I' → i ∈ I) :
+    f.middle.comp C.liftLeftTotal = D.liftLeftTotal.comp f.left := by
+  apply f.middle_comp_liftLeftTotal_iff.mpr
+  intro i hi a
+  exact D.liftLeftTotal_of_not_mem (fun h => hi (hI i h)) (f.left_mem i a a.property)
+
+end TotalLift
 
 section Transfer
 
