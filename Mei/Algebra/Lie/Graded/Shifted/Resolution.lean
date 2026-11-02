@@ -47,6 +47,20 @@ variable {Γ : Type} {R L M : Type*} [AddCommGroup Γ] [CommRing R] [Algebra ℚ
 local notation "F" => d.shiftedLieFiltration ℒ ℳ p
 local notation "G(" k ")" => TauCeti.InternalGrading.piece (d.shiftedQuotientGrading ℳ p k)
 
+/-- Applying the truncated BCH action termwise to a finite word preserves its
+product as a linear endomorphism. -/
+theorem truncatedBCHAction_list_ofFn_prod_toLinearMap (k : ℕ) {n : ℕ}
+    (g : Fin n → d.truncatedGroup ℒ k) :
+    (List.ofFn (fun j => ((F).truncatedBCHAction d ℒ k (g j)).toLinearMap)).prod =
+      ((F).truncatedBCHAction d ℒ k (List.ofFn g).prod).toLinearMap := by
+  let act := (LinearEquiv.automorphismGroup.toLinearMapMonoidHom
+    (R := R) (M := (F).quotient k)).comp
+    ((F).truncatedBCHAction d ℒ k)
+  simpa only [List.map_ofFn, Function.comp_def, act, MonoidHom.comp_apply,
+    LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply] using
+    (map_list_prod act (List.ofFn g)).symm
+
+
 /-- The action of a BCH word is the finite sum of its whole-component history
 maps over the positive degree cutoff. This is an equality of endomorphisms,
 with a finite index set independent of the incoming coefficient. -/
@@ -60,12 +74,7 @@ theorem sum_homogeneousHistory_truncatedBCHAction (k : ℕ) {n : ℕ}
   classical
   rw [sum_homogeneousHistory_eq_prod G(k) _
     (d.shiftedQuotientGrading_piece_eq_bot ℳ p)]
-  let act := (LinearEquiv.automorphismGroup.toLinearMapMonoidHom
-    (R := R) (M := (F).quotient k)).comp
-    ((F).truncatedBCHAction d ℒ k)
-  simpa only [List.map_ofFn, Function.comp_def, act, MonoidHom.comp_apply,
-    LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply] using
-    (map_list_prod act (List.ofFn g)).symm
+  exact d.truncatedBCHAction_list_ofFn_prod_toLinearMap ℒ ℳ p k g
 
 /-- BCH factorizations with the same product have identical finite sums of
 component maps in any retained outgoing degree. Precomposition allows an
@@ -113,32 +122,11 @@ theorem sum_comp_homogeneousHistory_append_truncatedBCHAction
       b.comp
         (((F).truncatedBCHAction d ℒ k (List.ofFn g).prod).toLinearMap.comp
           (((F).truncatedBCHAction d ℒ k (List.ofFn u).prod).toLinearMap.comp a)) := by
-  classical
-  let T j := ((F).truncatedBCHAction d ℒ k (g j)).toLinearMap
-  let U j := ((F).truncatedBCHAction d ℒ k (u j)).toLinearMap
-  let S := (d.finite_cutoff k).toFinset
-  have hS := d.shiftedQuotientGrading_piece_eq_bot ℳ p (k := k)
-  have hz {l : ℕ} (v : Fin l → Module.End R ((F).quotient k))
-      (b : E →ₗ[R] (F).quotient k) (r : Fin l → Γ)
-      (hr : r ∉ Fintype.piFinset (fun _ => S)) :
-      (homogeneousHistory G(k) v r).comp b = 0 := by
-    rw [homogeneousHistory_eq_zero_of_notMem_piFinset G(k) S hS v r hr,
-      LinearMap.zero_comp]
-  have hT : (List.ofFn T).prod =
-      ((F).truncatedBCHAction d ℒ k (List.ofFn g).prod).toLinearMap :=
-    (sum_homogeneousHistory_eq_prod G(k) S hS T).symm.trans
-      (d.sum_homogeneousHistory_truncatedBCHAction ℒ ℳ p k g)
-  have hU : (List.ofFn U).prod =
-      ((F).truncatedBCHAction d ℒ k (List.ofFn u).prod).toLinearMap :=
-    (sum_homogeneousHistory_eq_prod G(k) S hS U).symm.trans
-      (d.sum_homogeneousHistory_truncatedBCHAction ℒ ℳ p k u)
-  change (∑ r ∈ Fintype.piFinset (fun _ : Fin m => S),
-    ∑ s ∈ Fintype.piFinset (fun _ : Fin n => S),
-      b.comp ((homogeneousHistory G(k) T s).comp
-        ((homogeneousHistory G(k) U r).comp a))) = _
-  simp_rw [sum_comp_homogeneousHistory_comp_eq G(k) T _ b _ (hz T _)]
-  simpa only [LinearMap.comp_assoc, hT, hU] using
-    sum_comp_homogeneousHistory_comp_eq G(k) U a
-      (b.comp (List.ofFn T).prod) _ (hz U a)
+  simpa only [d.truncatedBCHAction_list_ofFn_prod_toLinearMap ℒ ℳ p k g,
+    d.truncatedBCHAction_list_ofFn_prod_toLinearMap ℒ ℳ p k u] using
+    sum_sum_comp_homogeneousHistory_comp_eq G(k) (d.finite_cutoff k).toFinset
+      (d.shiftedQuotientGrading_piece_eq_bot ℳ p)
+      (fun j => ((F).truncatedBCHAction d ℒ k (g j)).toLinearMap)
+      (fun j => ((F).truncatedBCHAction d ℒ k (u j)).toLinearMap) a b
 
 end Mei.PositiveDegrees
