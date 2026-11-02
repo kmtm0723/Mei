@@ -18,6 +18,8 @@ every solution with the sum of its iterates. The solution operators commute with
 all quotient transitions and hence assemble into a linear map on the completion.
 That map solves the recursion for the endomorphism of the completion induced by
 `completionMap`, and every solution of that recursion equals it.
+Intertwining filtered coefficient maps preserve these solutions, including when
+the source and target cutoffs are compared by a nonidentity monotone modulus.
 
 The original module need not be complete or separated, and its endomorphism need
 not be nilpotent. This supplies the algebraic uniqueness step for comparing
@@ -125,5 +127,43 @@ theorem eq_completionRecursion_of_eq_add_completionMap {a x : F.completion}
   intro k
   simpa only [map_add, projection_completionMap, id_eq, quotientRaisingEnd_eq_mapQ] using
     congrArg (F.projection k) hx
+
+section Naturality
+
+variable {N : Type*} [AddCommGroup N] [Module R N]
+  (G : ModuleFiltration R N) (g : Module.End R N)
+  (hg : ∀ k, G.submodule k ≤ (G.submodule (k + 1)).comap g)
+  (r : M →ₗ[R] N) (ρ : ℕ → ℕ) (hρ : Monotone ρ)
+  (hr : ∀ k, F.submodule (ρ k + 1) ≤ (G.submodule (k + 1)).comap r)
+  (hfg : r.comp f = g.comp r)
+
+include hfg
+
+/-- A comparison between any two chosen quotients preserves their recursion
+solutions. Only that pair of orders needs a filtration bound. -/
+theorem mapQ_quotientRecursion (l k : ℕ)
+    (hrk : F.submodule (l + 1) ≤ (G.submodule (k + 1)).comap r) (a : F.quotient l) :
+    (F.submodule (l + 1)).mapQ (G.submodule (k + 1)) r hrk
+        (F.quotientRecursion f hf l a) =
+      G.quotientRecursion g hg k
+        ((F.submodule (l + 1)).mapQ (G.submodule (k + 1)) r hrk a) := by
+  exact LinearMap.congr_fun (Module.End.comp_finiteRecursion
+    (F.quotientRaisingEnd f hf l) (G.quotientRaisingEnd g hg k)
+    ((F.submodule (l + 1)).mapQ (G.submodule (k + 1)) r hrk)
+    (LinearMap.ext (F.mapQ_quotientRaisingEnd f hf G g hg r l k hrk hfg))
+    (F.quotientRaisingEnd_pow_eq_zero f hf l)
+    (G.quotientRaisingEnd_pow_eq_zero g hg k)) a
+
+/-- Filtered coefficient intertwiners preserve the completed recursion solution.
+No same-order cutoff, injectivity, or nilpotence on the original modules is required. -/
+theorem completionMap_completionRecursion (a : F.completion) :
+    F.completionMap G r ρ hρ hr (F.completionRecursion f hf a) =
+      G.completionRecursion g hg (F.completionMap G r ρ hρ hr a) := by
+  apply G.completion_ext
+  intro k
+  simp only [projection_completionMap, projection_completionRecursion]
+  exact F.mapQ_quotientRecursion f hf G g hg r hfg (ρ k) k (hr k) (F.projection (ρ k) a)
+
+end Naturality
 
 end Mei.ModuleFiltration

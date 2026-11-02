@@ -82,4 +82,20 @@ theorem transition_quotientRaisingEnd {k l : ℕ} (hkl : k ≤ l) (x : F.quotien
   obtain ⟨a, rfl⟩ := (F.submodule (l + 1)).mkQ_surjective x
   simp
 
+/-- A filtered coefficient intertwiner commutes with the induced raising maps,
+allowing independently chosen cutoff orders and only a bound at those orders. -/
+theorem mapQ_quotientRaisingEnd {N : Type*} [AddCommGroup N] [Module R N]
+    (G : ModuleFiltration R N) (g : Module.End R N)
+    (hg : ∀ k, G.submodule k ≤ (G.submodule (k + 1)).comap g)
+    (r : M →ₗ[R] N) (l k : ℕ)
+    (hr : F.submodule (l + 1) ≤ (G.submodule (k + 1)).comap r)
+    (hfg : r.comp f = g.comp r) (x : F.quotient l) :
+    (F.submodule (l + 1)).mapQ (G.submodule (k + 1)) r hr
+        (F.quotientRaisingEnd f hf l x) =
+      G.quotientRaisingEnd g hg k
+        ((F.submodule (l + 1)).mapQ (G.submodule (k + 1)) r hr x) := by
+  obtain ⟨a, rfl⟩ := (F.submodule (l + 1)).mkQ_surjective x
+  simp only [Submodule.mkQ_apply, quotientRaisingEnd_mk, Submodule.mapQ_apply]
+  exact congrArg Submodule.Quotient.mk (LinearMap.congr_fun hfg a)
+
 end Mei.ModuleFiltration
