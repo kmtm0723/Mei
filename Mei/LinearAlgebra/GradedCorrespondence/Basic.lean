@@ -126,6 +126,12 @@ theorem liftLeftTotal_of_not_mem (C : GradedCorrespondence (B := B) 𝒰 𝒱 I 
   classical
   rw [C.liftLeftTotal_of_mem ha, dite_eq_right hi]
 
+/-- A homogeneous subtype in an inadmissible degree simplifies to zero. -/
+@[simp]
+theorem liftLeftTotal_coe_of_not_mem (C : GradedCorrespondence (B := B) 𝒰 𝒱 I J)
+    {i : ι} (a : 𝒰 i) (hi : i ∉ I) : C.liftLeftTotal a = 0 :=
+  C.liftLeftTotal_of_not_mem hi a.property
+
 /-- Restricting the total lift to an admissible piece recovers its chosen linear lift. -/
 @[simp]
 theorem liftLeftTotal_comp_subtype (C : GradedCorrespondence (B := B) 𝒰 𝒱 I J)
