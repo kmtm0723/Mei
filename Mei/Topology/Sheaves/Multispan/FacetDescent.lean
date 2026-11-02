@@ -6,7 +6,9 @@ Authors: Codex
 module
 
 public import Mei.Topology.Sheaves.Multispan
+public import Mei.Algebra.Category.SemimoduleCat.Limits
 public import Mei.Topology.Sheaves.LocallyConstant.FacetDescent.Hom
+public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
 # Matching linear families from top-stratum data
@@ -14,8 +16,9 @@ public import Mei.Topology.Sheaves.LocallyConstant.FacetDescent.Hom
 For an incidence diagram of semimodule-valued sheaves, linear maps prescribed on
 the dense top-stratum opens extend uniquely to matching families. Each chamber
 map must extend locally across its interior facets. At a coefficient face a
-common local lift need only agree with the prescribed maps on the incident top
-strata; equality with the extended chamber maps follows from density.
+common local face value need only agree with the prescribed values on the incident
+top strata. It can depend on the incoming input, with no linear choice of face
+values assumed; equality with the extended chamber values follows from density.
 
 Facet extension of the chamber maps, together with gluing of local face lifts,
 produces a matching family of sections. The chamber stratifications may differ
@@ -44,7 +47,8 @@ the right sheaves have locally isomorphic restrictions on nonempty preconnected
 opens; `G j ≤ O j ≤ U` and `G j` is dense in `O j`; each `α j` extends locally across
 `O j \ G j`; `U \ O j` lies in countably many affine subspaces of codimension at
 least two; each face span is jointly injective on every subopen of `U`; and common
-local face lifts agree with the incident `α j` on `N ⊓ G j`.
+local face lifts for each input agree with the incident `α j` on `N ⊓ G j`.
+Their neighborhoods and values may depend on the input; no linear lift is assumed.
 
 Usage note: when `α j` is a finite sum, the conditions apply to that map, without
 requiring extensions or lifts of its individual summands. -/
@@ -67,16 +71,18 @@ theorem existsUnique_sections_lift_of_facets (hS : IsOpen S)
     (hinj : ∀ (W : Opens (TopCat.of S)), W ≤ U → ∀ b,
       Function.Injective (((I.sectionsIndex W).fst b).hom.prod
         ((I.sectionsIndex W).snd b).hom))
-    (hface : ∀ b x, x ∈ U → ∃ (N : Opens (TopCat.of S)) (_ : N ≤ U)
-      (t : E ⟶ (I.left b).obj.obj (op N)), x ∈ N ∧
-        (t ≫ (I.fst b).hom.app (op N)) ≫ (I.right (J.fst b)).obj.map
-          (homOfLE (inf_le_left : N ⊓ G (J.fst b) ≤ N)).op =
-          α (J.fst b) ≫ (I.right (J.fst b)).obj.map
-            (homOfLE (inf_le_right : N ⊓ G (J.fst b) ≤ G (J.fst b))).op ∧
-        (t ≫ (I.snd b).hom.app (op N)) ≫ (I.right (J.snd b)).obj.map
-          (homOfLE (inf_le_left : N ⊓ G (J.snd b) ≤ N)).op =
-          α (J.snd b) ≫ (I.right (J.snd b)).obj.map
-            (homOfLE (inf_le_right : N ⊓ G (J.snd b) ≤ G (J.snd b))).op) :
+    (hface : ∀ (a : E) b x, x ∈ U → ∃ (N : Opens (TopCat.of S)) (_ : N ≤ U)
+      (t : (I.left b).obj.obj (op N)), x ∈ N ∧
+        (I.right (J.fst b)).obj.map (homOfLE (inf_le_left : N ⊓ G (J.fst b) ≤ N)).op
+            ((I.fst b).hom.app (op N) t) =
+          (I.right (J.fst b)).obj.map
+            (homOfLE (inf_le_right : N ⊓ G (J.fst b) ≤ G (J.fst b))).op
+              ((α (J.fst b)).hom a) ∧
+        (I.right (J.snd b)).obj.map (homOfLE (inf_le_left : N ⊓ G (J.snd b) ≤ N)).op
+            ((I.snd b).hom.app (op N) t) =
+          (I.right (J.snd b)).obj.map
+            (homOfLE (inf_le_right : N ⊓ G (J.snd b) ≤ G (J.snd b))).op
+              ((α (J.snd b)).hom a)) :
     ∃! ℓ : E →ₗ[R] SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan,
       ∀ a j, (I.right j).obj.map (homOfLE ((hGO j).trans (hOU j))).op
         ((ℓ a).val (.right j)) = (α j).hom a := by
@@ -103,28 +109,20 @@ theorem existsUnique_sections_lift_of_facets (hS : IsOpen S)
     simpa only [Category.assoc, ← Functor.map_comp, ← op_comp, homOfLE_comp] using
       congrArg (fun t => t ≫ (I.right j).obj.map
         (homOfLE (inf_le_right : N ⊓ G j ≤ G j)).op) (hβ j)
-  have hlinear (b : J.L) (x : S) (hx : x ∈ U) :
-      ∃ (N : Opens (TopCat.of S)) (hNU : N ≤ U)
-        (t : E ⟶ (I.left b).obj.obj (op N)), x ∈ N ∧
-        t ≫ (I.fst b).hom.app (op N) =
-          β (J.fst b) ≫ (I.right (J.fst b)).obj.map (homOfLE hNU).op ∧
-        t ≫ (I.snd b).hom.app (op N) =
-          β (J.snd b) ≫ (I.right (J.snd b)).obj.map (homOfLE hNU).op := by
-    obtain ⟨N, hNU, t, hxN, hf, hg⟩ := hface b x hx
-    refine ⟨N, hNU, t, hxN, ?_, ?_⟩
-    · apply (I.right (J.fst b)).hom_restrict_injective_of_subset_closure
-        (hRight (J.fst b)) E inf_le_left
-        (fun z hz => N.isOpen.inter_closure ⟨hz, hdenseU _ (hNU hz)⟩)
-      exact hf.trans (hβN _ N hNU).symm
-    · apply (I.right (J.snd b)).hom_restrict_injective_of_subset_closure
-        (hRight (J.snd b)) E inf_le_left
-        (fun z hz => N.isOpen.inter_closure ⟨hz, hdenseU _ (hNU hz)⟩)
-      exact hg.trans (hβN _ N hNU).symm
+  have hmapinj (j : J.R) (N : Opens (TopCat.of S)) (hNU : N ≤ U) :
+      Function.Injective ((I.right j).obj.map
+        (homOfLE (inf_le_left : N ⊓ G j ≤ N)).op) := by
+    let := (I.right j).mono_map_of_subset_closure (hRight j) inf_le_left
+      (fun z hz => N.isOpen.inter_closure ⟨hz, hdenseU j (hNU hz)⟩)
+    exact ConcreteCategory.injective_of_mono_of_preservesPullback _
   obtain ⟨ℓ, hℓ, huniq⟩ := I.existsUnique_sections_lift_of_local E U β hinj (by
     intro a b x hx
-    obtain ⟨N, hNU, t, hxN, hf, hg⟩ := hlinear b x hx
-    exact ⟨N, hNU, t.hom a, hxN, ConcreteCategory.congr_hom hf a,
-      ConcreteCategory.congr_hom hg a⟩)
+    obtain ⟨N, hNU, t, hxN, hf, hg⟩ := hface a b x hx
+    refine ⟨N, hNU, t, hxN, ?_, ?_⟩
+    · apply hmapinj (J.fst b) N hNU
+      exact hf.trans (ConcreteCategory.congr_hom (hβN (J.fst b) N hNU) a).symm
+    · apply hmapinj (J.snd b) N hNU
+      exact hg.trans (ConcreteCategory.congr_hom (hβN (J.snd b) N hNU) a).symm)
   refine ⟨ℓ, ?_, fun m hm => huniq m ?_⟩
   · intro a j
     rw [hℓ]
