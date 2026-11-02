@@ -151,38 +151,9 @@ theorem IsRationalSemilinear.exists_disjoint_intrinsicInteriors
       exact Set.mem_iUnion.mpr ⟨⟨σ, hσ, x, hxσ⟩, hxσ⟩
 
 open Classical in
-/-- A finite semilinear weighted sum has a presentation by relative interiors of
-nonempty closed rational-normal polyhedra with fixed weights in any additive
-commutative monoid. Charts from different original domains may coincide. -/
-theorem IsRationalSemilinear.exists_weighted_polyhedralCharts
-    {J β : Type*} [Fintype J] [AddCommMonoid β] (A : J → Set V)
-    (hA : ∀ j, IsRationalSemilinear h (A j)) (L : J → β) :
-    ∃ (m : ℕ) (B : Fin m → Set V) (L' : Fin m → β),
-      (∀ j, (B j).Nonempty ∧ IsRationalNormalPolyhedron h (B j)) ∧
-        ∀ Q, (∑ j, if Q ∈ A j then L j else 0) =
-          ∑ j, if Q ∈ intrinsicInterior ℝ (B j) then L' j else 0 := by
-  classical
-  choose ι hι B hB hdisj hcover using
-    fun j => (hA j).exists_disjoint_intrinsicInteriors
-  let (j : J) : Finite (ι j) := hι j
-  let (j : J) : Fintype (ι j) := Fintype.ofFinite (ι j)
-  have hsum (Q : V) : (∑ j, if Q ∈ A j then L j else 0) =
-      ∑ z : Σ j, ι j, if Q ∈ intrinsicInterior ℝ (B z.1 z.2) then L z.1 else 0 := by
-    rw [Fintype.sum_sigma]
-    apply Finset.sum_congr rfl
-    intro j _
-    exact Set.ite_mem_eq_sum_of_pairwise_disjoint _ (hdisj j) (hcover j) Q (L j)
-  obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin (Σ j, ι j)
-  refine ⟨m, fun z => B (e.symm z).1 (e.symm z).2,
-    fun z => L (e.symm z).1, fun z => ?_, ?_⟩
-  · exact ⟨(hB (e.symm z).1 (e.symm z).2).1, (hB (e.symm z).1 (e.symm z).2).2.1⟩
-  · intro Q
-    rw [hsum]
-    exact (e.symm.sum_comp _).symm
-
-open Classical in
-/-- Finitely many finite weighted semilinear sums share one closed polyhedral
-partition. Each weighted indicator sum takes a single value on the relative
+/-- Finitely many finite weighted semilinear sums share a partition into the
+disjoint relative interiors of closed rational-normal polyhedra. Each weighted
+indicator sum takes a single value on the relative
 interior of every stratum, including boundary strata. The summand index types
 may differ between the weighted sums. -/
 theorem IsRationalSemilinear.exists_common_weighted_polyhedralPartition
@@ -214,5 +185,29 @@ theorem IsRationalSemilinear.exists_common_weighted_polyhedralPartition
     apply Finset.sum_congr rfl
     intro j _
     simp only [hmem (e.symm a) y hy (x (e.symm a)) (hx _) ⟨k, j⟩]
+
+open Classical in
+/-- A finite semilinear weighted sum has a presentation by relative interiors of
+nonempty closed rational-normal polyhedra with fixed weights in any additive
+commutative monoid. Charts from different original domains may coincide. -/
+theorem IsRationalSemilinear.exists_weighted_polyhedralCharts
+    {J β : Type*} [Fintype J] [AddCommMonoid β] (A : J → Set V)
+    (hA : ∀ j, IsRationalSemilinear h (A j)) (L : J → β) :
+    ∃ (m : ℕ) (B : Fin m → Set V) (L' : Fin m → β),
+      (∀ j, (B j).Nonempty ∧ IsRationalNormalPolyhedron h (B j)) ∧
+        ∀ Q, (∑ j, if Q ∈ A j then L j else 0) =
+          ∑ j, if Q ∈ intrinsicInterior ℝ (B j) then L' j else 0 := by
+  classical
+  obtain ⟨n, C, W, hC, hdisj, hcover, hval⟩ :=
+    IsRationalSemilinear.exists_common_weighted_polyhedralPartition
+      (fun _ : Unit => J) (fun _ => A) (fun _ => hA) (fun _ => L)
+  refine ⟨n, C, fun j => W j (), fun j => ⟨(hC j).1, (hC j).2.1⟩, ?_⟩
+  intro Q
+  obtain ⟨j, hj⟩ := Set.mem_iUnion.mp (hcover.symm ▸ Set.mem_univ Q)
+  rw [Finset.sum_eq_single j, ite_eq_left hj]
+  · exact hval j () Q hj
+  · intro b _ hbj
+    exact ite_eq_right (fun hb => Set.disjoint_left.mp (hdisj hbj) hb hj)
+  · simp
 
 end Mei
