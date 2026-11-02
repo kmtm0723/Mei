@@ -23,7 +23,9 @@ include all three normal signs simultaneously. This is the coefficient identity
 at a terminal ordinary-wall crossing.
 
 The two totals commute with grading-preserving coefficient maps that intertwine
-the wall actions and preserve the relevant normal sign. These maps may kill
+the wall actions and preserve the relevant normal sign. The totals preserve
+chosen additive positive monoids when the transports used in their respective
+normal-sign branches do so. These maps may kill
 coefficients or identify degrees; only their finite homogeneous sums are used.
 
 We use `GradedCorrespondence.graph` and Mathlib's internal direct-sum universal
@@ -109,6 +111,36 @@ theorem terminalGraphRight_eq_sum (a : M) :
   apply Finset.sum_congr rfl
   intro i _
   split_ifs <;> rfl
+
+/-- The negative-side terminal total is positive when inverse transport preserves
+positivity on positive normal degrees and unchanged inputs do so on the others. -/
+theorem terminalGraphLift_mem_addSubmonoid (Pos : ι → AddSubmonoid M) (P : AddSubmonoid M)
+    (hcross : ∀ i (a : ℳ i), 0 < w i → (a : M) ∈ Pos i → e.symm a ∈ P)
+    (hstay : ∀ i (a : ℳ i), w i ≤ 0 → (a : M) ∈ Pos i → (a : M) ∈ P)
+    (a : M) (ha : ∀ i, (DirectSum.decompose ℳ a i : M) ∈ Pos i) :
+    terminalGraphLift ℳ e w a ∈ P := by
+  classical
+  rw [terminalGraphLift]
+  apply DirectSum.homogeneousExtend_mem_addSubmonoid ℳ _ Pos P _ a ha
+  intro i x hx
+  split_ifs with h
+  · exact hcross i x h hx
+  · exact hstay i x (by omega) hx
+
+/-- The positive-side terminal total is positive when forward transport preserves
+positivity on negative normal degrees and unchanged inputs do so on the others. -/
+theorem terminalGraphRight_mem_addSubmonoid (Pos : ι → AddSubmonoid M) (P : AddSubmonoid M)
+    (hcross : ∀ i (a : ℳ i), w i < 0 → (a : M) ∈ Pos i → e a ∈ P)
+    (hstay : ∀ i (a : ℳ i), 0 ≤ w i → (a : M) ∈ Pos i → (a : M) ∈ P)
+    (a : M) (ha : ∀ i, (DirectSum.decompose ℳ a i : M) ∈ Pos i) :
+    terminalGraphRight ℳ e w a ∈ P := by
+  classical
+  rw [terminalGraphRight]
+  apply DirectSum.homogeneousExtend_mem_addSubmonoid ℳ _ Pos P _ a ha
+  intro i x hx
+  split_ifs with h
+  · exact hcross i x h hx
+  · exact hstay i x (by omega) hx
 
 section Naturality
 
