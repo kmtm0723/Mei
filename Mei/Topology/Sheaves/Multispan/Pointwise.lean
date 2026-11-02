@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mei.Topology.Sheaves.Multispan
-public import Mathlib.LinearAlgebra.Span.Basic
 
 /-!
 # Matching families from inputwise local face lifts
@@ -18,8 +17,6 @@ follows from the prescribed linear chamber maps. In particular, testing local
 resolution certificates on finite lists of inputs suffices: singleton lists already
 supply the local existence used here.
 
-The proof applies local linear gluing to scalar multiples of each input and then
-uses the characterization of linear matching-family lifts by incident span images.
 No finiteness or finite generation of the incoming module is assumed.
 -/
 
@@ -27,11 +24,11 @@ public section
 
 open CategoryTheory TopologicalSpace Opposite TopCat
 
-universe u v
+universe u v r
 
 namespace CategoryTheory.Limits.MultispanIndex
 
-variable {X : TopCat.{u}} {R : Type v} [Semiring R] {J : MultispanShape}
+variable {X : TopCat.{u}} {R : Type r} [Semiring R] {J : MultispanShape}
   (I : MultispanIndex J (X.Sheaf (SemimoduleCat.{v} R)))
 
 /-- Linear chamber maps admit a unique linear matching family when each individual
@@ -53,29 +50,53 @@ theorem existsUnique_sections_lift_of_pointwise_local (E : SemimoduleCat.{v} R)
   apply ((I.sectionsIndex U).existsUnique_sections_lift_iff
     (fun j => (α j).hom) (hinj U le_rfl)).mpr
   intro a b
-  let β (j : J.R) : SemimoduleCat.of R R ⟶ (I.right j).obj.obj (op U) :=
-    SemimoduleCat.ofHom (LinearMap.toSpanSingleton R _ ((α j).hom a))
-  obtain ⟨ℓ, hℓ, -⟩ := I.existsUnique_sections_lift_of_local (SemimoduleCat.of R R) U β
+  -- Glue on the cyclic submodule of each input. It fits in the section universe
+  -- even when the scalar semiring does not; span closure supplies all local lifts.
+  let P : Submodule R E := Submodule.span R {a}
+  let β (j : J.R) : SemimoduleCat.of R P ⟶ (I.right j).obj.obj (op U) :=
+    SemimoduleCat.ofHom ((α j).hom.comp P.subtype)
+  obtain ⟨ℓ, hℓ, -⟩ := I.existsUnique_sections_lift_of_local (SemimoduleCat.of R P) U β
     hinj (by
       intro c x hx
       obtain ⟨N, hNU, t, hxN, hf, hg⟩ := hloc a c x hx
-      refine ⟨N, hNU, SemimoduleCat.ofHom (LinearMap.toSpanSingleton R _ t), hxN, ?_, ?_⟩
+      let f := ((I.sectionsIndex N).fst c).hom.prod ((I.sectionsIndex N).snd c).hom
+      let g :=
+        (((I.right (J.fst c)).obj.map (homOfLE hNU).op).hom.comp (α (J.fst c)).hom).prod
+        (((I.right (J.snd c)).obj.map (homOfLE hNU).op).hom.comp (α (J.snd c)).hom)
+      have hPg : P ≤ f.range.comap g := by
+        apply Submodule.span_le.mpr
+        intro z hz
+        obtain rfl := Set.mem_singleton_iff.mp hz
+        exact ⟨t, Prod.ext hf hg⟩
+      let ψ : P →ₗ[R] (I.left c).obj.obj (op N) :=
+        (LinearEquiv.ofInjective f (hinj N hNU c)).symm.toLinearMap.comp
+          (g.restrict (fun z hz => hPg hz))
+      have hψ (z : P) : f (ψ z) = g z :=
+        LinearEquiv.ofInjective_symm_apply f (h := hinj N hNU c)
+          (g.restrict (fun z hz => hPg hz) z)
+      refine ⟨N, hNU, SemimoduleCat.ofHom ψ, hxN, ?_, ?_⟩
       · apply SemimoduleCat.hom_ext
         apply LinearMap.ext
-        intro r
+        intro z
+        have hz := congrArg _root_.Prod.fst (hψ z)
+        change (I.fst c).hom.app (op N) (ψ z) =
+          (I.right (J.fst c)).obj.map (homOfLE hNU).op ((α (J.fst c)).hom z.val) at hz
         simpa only [β, SemimoduleCat.hom_comp, SemimoduleCat.hom_ofHom,
-          LinearMap.comp_apply, LinearMap.toSpanSingleton_apply, map_smul] using
-          congrArg (r • ·) hf
+          LinearMap.comp_apply, Submodule.subtype_apply] using hz
       · apply SemimoduleCat.hom_ext
         apply LinearMap.ext
-        intro r
+        intro z
+        have hz := congrArg _root_.Prod.snd (hψ z)
+        change (I.snd c).hom.app (op N) (ψ z) =
+          (I.right (J.snd c)).obj.map (homOfLE hNU).op ((α (J.snd c)).hom z.val) at hz
         simpa only [β, SemimoduleCat.hom_comp, SemimoduleCat.hom_ofHom,
-          LinearMap.comp_apply, LinearMap.toSpanSingleton_apply, map_smul] using
-          congrArg (r • ·) hg)
-  have hright (j : J.R) : (ℓ 1).val (.right j) = (α j).hom a := by
-    simpa only [β, SemimoduleCat.hom_ofHom, LinearMap.toSpanSingleton_apply_one] using hℓ 1 j
-  have hface := (I.sectionsIndex U).mem_sectionsSubmodule_multispan.mp (ℓ 1).property
-  exact ⟨(ℓ 1).val (.left b), Prod.ext ((hface.1 b).trans (hright _))
+          LinearMap.comp_apply, Submodule.subtype_apply] using hz)
+  let aP : P := ⟨a, Submodule.mem_span_singleton_self a⟩
+  have hright (j : J.R) : (ℓ aP).val (.right j) = (α j).hom a := by
+    simpa only [β, SemimoduleCat.hom_ofHom, LinearMap.comp_apply,
+      Submodule.subtype_apply] using hℓ aP j
+  have hface := (I.sectionsIndex U).mem_sectionsSubmodule_multispan.mp (ℓ aP).property
+  exact ⟨(ℓ aP).val (.left b), Prod.ext ((hface.1 b).trans (hright _))
     ((hface.2 b).trans (hright _))⟩
 
 end CategoryTheory.Limits.MultispanIndex
