@@ -78,6 +78,33 @@ theorem coefficientTransport_transport (U : Opens C.regularSpace)
     (D.coefficientTransport M).transport U (by simpa using hU) x y hx hy =
       D.coefficientPathTransport M (C.coefficientSegment U hU x y hx hy).toPath := (rfl)
 
+variable {M}
+
+/-- Transport within a convex regular chart consisting of off-wall points is
+the identity, without any global consistency assumption on the diagram. -/
+@[simp]
+theorem coefficientPathTransport_coefficientSegment_eq_refl_of_subset (B : Opens C.regularSpace)
+    (hB : B ∈ C.coefficientCharts) (hoff : (B : Set C.regularSpace) ⊆ C.coefficientPoints)
+    (x y : C.coefficientPoints) (hx : x.val ∈ B) (hy : y.val ∈ B) :
+    D.coefficientPathTransport M (C.coefficientSegment B hB x y hx hy).toPath =
+      Equiv.refl M := by
+  have hcross : WallComplement.crossings
+      (⟨x.val.val, x.property⟩ : WallComplement (fun P : C.walls => (P : Set V)))
+      ⟨y.val.val, y.property⟩ = ∅ := by
+    apply Set.eq_empty_iff_forall_notMem.mpr
+    rintro ⟨P, t⟩ ht
+    obtain ⟨htI, htP⟩ := (WallComplement.mem_crossings _ _ P t).mp ht
+    have hz := ((C.mem_coefficientCharts B).mp hB).segment_subset ⟨x.val, hx, rfl⟩ ⟨y.val, hy, rfl⟩
+      (lineMap_mem_segment ℝ x.val.val y.val.val htI)
+    obtain ⟨z, hzB, he⟩ := hz
+    exact hoff hzB P (he.symm ▸ htP)
+  ext a
+  rw [coefficientPathTransport_apply, D.pathProduct_toPath_eq_one _ hcross, one_smul]
+  rfl
+
+
+variable (M)
+
 /-- The sheaf of locally parallel coefficient functions on the regular locus.
 Only off-wall values are recorded; the local equations impose wall crossing. -/
 abbrev coefficientLocalSystem : C.regularSpace.Sheaf (Type _) :=
