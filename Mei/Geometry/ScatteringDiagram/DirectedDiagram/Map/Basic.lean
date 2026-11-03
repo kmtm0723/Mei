@@ -102,22 +102,18 @@ theorem map_map (g : GradedLieHom (PositiveDegreeMap.id d) ℳ ℋ)
   funext j
   simp only [map_wall, DirectedWall.map_map]
 
-/-- Forget the walls whose labels the coefficient map kills at the chosen cutoff. -/
+/-- Forget the walls whose labels the coefficient map kills at the chosen cutoff: the
+pushforward path map along `DirectedWall.Pushforward.ofFixedDegree`. -/
 def mapPathPrefunctor (k : ℕ) :
     WallComplement (fun j : D.active k => (D.wall j).support) ⥤q
       WallComplement (fun j : (D.map f hf).active k => ((D.map f hf).wall j).support) :=
-  WallComplement.restrictPrefunctor (fun j : D.active k => (D.wall j).support)
-      (Set.inclusion (D.active_map_subset f hf k)) ⋙q
-    (ContinuousAffineEquiv.refl ℝ V).wallComplementMap (Equiv.refl _) (by
-      intro j
-      ext v
-      simp)
+  levelPathPushforwardOfEq (D.pushforward_ofFixedDegree f hf) k (by simp)
 
 @[simp]
 theorem mapPathPrefunctor_obj_val (k : ℕ)
     (x : WallComplement (fun j : D.active k => (D.wall j).support)) :
-    ((D.mapPathPrefunctor f hf k).obj x).val = x.val := by
-  simp [mapPathPrefunctor]
+    ((D.mapPathPrefunctor f hf k).obj x).val = x.val :=
+  (levelPathPushforwardOfEq_obj_val _ k _ x).trans (by simp)
 
 /-- The finite-order coefficient path map preserves ambient vertices. -/
 theorem vertices_mapPathPrefunctor (k : ℕ)
@@ -136,8 +132,7 @@ theorem levelPathProduct_mapPathPrefunctor (k : ℕ)
     (p : AdmissiblePLPath x y) :
     (D.map f hf).levelPathProduct k ((D.mapPathPrefunctor f hf k).mapPath p) =
       (f.truncatedMap (a := k) k (by simp)).bchGroupMap (D.levelPathProduct k p) :=
-  levelPathProduct_of_pushforward_eq (D.pushforward_ofFixedDegree f hf) k (by simp) _
-    (fun x => by simp) p
+  levelPathProduct_levelPathPushforwardOfEq _ k _ p
 
 /-- A group endomorphism fixes the finite-order product of a path whose vertices
 lie in a convex region, provided it fixes the order-`k` label of every active wall meeting that
@@ -171,25 +166,16 @@ theorem map_levelPathProduct_eq_self (k : ℕ)
     (hm.trans (D.levelPathProduct_eq_wallPathProduct k p _).symm)
 
 /-- Forget coefficient-killed walls along a common all-order path, retaining its
-ambient vertices and segments. -/
-def pathMap : D.Point ⥤q (D.map f hf).Point where
-  obj x := ⟨x.val, fun k j => by
-    have hx := ((D.mapPathPrefunctor f hf k).obj
-      (CommonWallComplement.projection k x)).notMem j
-    simpa only [mapPathPrefunctor_obj_val, CommonWallComplement.projection_val] using hx⟩
-  map a := ⟨fun k => by
-    let b := (D.mapPathPrefunctor f hf k).map
-      ((CommonWallComplement.projectionPrefunctor k).map a)
-    have hb := b.down
-    -- The projected endpoints and their finite images have the same ambient values.
-    convert hb using 1 <;> apply WallComplement.ext <;>
-      simp only [mapPathPrefunctor_obj_val, CommonWallComplement.projection_val,
-        CommonWallComplement.projectionPrefunctor_obj]⟩
+ambient vertices and segments: the pushforward path map along
+`DirectedWall.Pushforward.ofFixedDegree`. -/
+def pathMap : D.Point ⥤q (D.map f hf).Point :=
+  pathPushforwardOfEq (D.pushforward_ofFixedDegree f hf)
 
 /-- The all-order coefficient path map preserves ambient points. -/
 @[simp]
 theorem pathMap_obj_val (x : D.Point) :
-    ((D.pathMap f hf).obj x).val = x.val := (rfl)
+    ((D.pathMap f hf).obj x).val = x.val :=
+  (pathPushforwardOfEq_obj_val _ x).trans (by simp)
 
 /-- The all-order coefficient path map preserves reversal. -/
 instance : (D.pathMap f hf).MapReverse where
@@ -201,7 +187,7 @@ path through the completed BCH group homomorphism. -/
 theorem pathProduct_pathMap {x y : D.Point} (p : Quiver.Path x y) :
     (D.map f hf).pathProduct ((D.pathMap f hf).mapPath p) =
       f.completedMap (D.pathProduct p) :=
-  pathProduct_of_pushforward_eq (D.pushforward_ofFixedDegree f hf) _ (fun x => by simp) p
+  pathProduct_pathPushforwardOfEq _ p
 
 /-- Coefficient maps preserve consistency even though paths may cross supports
 of labels killed by the map. -/

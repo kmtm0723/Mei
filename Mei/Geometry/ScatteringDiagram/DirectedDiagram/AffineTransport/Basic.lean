@@ -142,26 +142,20 @@ theorem active_image_subset (k : ℕ) {a : ℕ} (ha : E.degreeMap.modulus k ≤ 
   exact D.active_pushforward_subset _ k ha
 
 /-- Restrict a source path to the target-active indices and then apply the spatial
-affine map. The source cutoff can be any bound for the prescribed modulus. -/
+affine map: the pushforward path map along `DirectedWall.Pushforward.ofCoordinateChange`.
+The source cutoff can be any bound for the prescribed modulus. -/
 def levelPathImage (k : ℕ) {a : ℕ} (ha : E.degreeMap.modulus k ≤ a) :
     WallComplement (fun j : D.active a => (D.wall j).support) ⥤q
       WallComplement (fun j : (D.image e E hE).active k =>
         ((D.image e E hE).wall j).support) :=
-  WallComplement.restrictPrefunctor (fun j : D.active a => (D.wall j).support)
-      (Set.inclusion (D.active_image_subset e E hE k ha)) ⋙q
-    e.toContinuousAffineEquiv.wallComplementMap (Equiv.refl _) (by
-      intro j
-      simp only [Equiv.refl_apply, image_wall, DirectedWall.image_support,
-        Function.comp_apply]
-      ext v
-      simp)
+  levelPathPushforwardOfEq (D.pushforward_ofCoordinateChange e E hE) k ha
 
 /-- The finite path map sends each vertex to its actual affine image. -/
 @[simp]
 theorem levelPathImage_obj_val (k : ℕ) {a : ℕ} (ha : E.degreeMap.modulus k ≤ a)
     (x : WallComplement (fun j : D.active a => (D.wall j).support)) :
-    ((D.levelPathImage e E hE k ha).obj x).val = e x.val := by
-  simp [levelPathImage]
+    ((D.levelPathImage e E hE k ha).obj x).val = e x.val :=
+  (levelPathPushforwardOfEq_obj_val _ k ha x).trans (e.toContinuousAffineEquiv_apply x.val)
 
 /-- Finite path transport preserves reversal of segments and polygonal paths. -/
 instance (k : ℕ) {a : ℕ} (ha : E.degreeMap.modulus k ≤ a) :
@@ -176,30 +170,19 @@ theorem levelPathProduct_image (k : ℕ) {a : ℕ} (ha : E.degreeMap.modulus k �
     (p : AdmissiblePLPath x y) :
     (D.image e E hE).levelPathProduct k ((D.levelPathImage e E hE k ha).mapPath p) =
       (E.gradedLieHom.truncatedMap k ha).bchGroupMap (D.levelPathProduct a p) :=
-  levelPathProduct_of_pushforward_eq (D.pushforward_ofCoordinateChange e E hE) k ha _
-    (fun x => (D.levelPathImage_obj_val e E hE k ha x).trans
-      (e.toContinuousAffineEquiv_apply x.val).symm) p
+  levelPathProduct_levelPathPushforwardOfEq _ k ha p
 
-/-- Transport a common all-order path. Each target admissibility condition uses
+/-- Transport a common all-order path: the pushforward path map along
+`DirectedWall.Pushforward.ofCoordinateChange`. Each target admissibility condition uses
 the source condition at its prescribed cutoff modulus. -/
-def pathImage : D.Point ⥤q (D.image e E hE).Point where
-  obj x := ⟨e x.val, fun k j => by
-    have hx := ((D.levelPathImage e E hE k le_rfl).obj
-      (CommonWallComplement.projection (E.degreeMap.modulus k) x)).notMem j
-    simpa only [levelPathImage_obj_val, CommonWallComplement.projection_val] using hx⟩
-  map {x y} a := ⟨fun k => by
-    let b := (D.levelPathImage e E hE k le_rfl).map
-      ((CommonWallComplement.projectionPrefunctor (E.degreeMap.modulus k)).map a)
-    have hb := b.down
-    -- The projected endpoints and the finite affine images have the same ambient values.
-    convert hb using 1 <;> apply WallComplement.ext <;>
-      simp only [levelPathImage_obj_val, CommonWallComplement.projection_val,
-        CommonWallComplement.projectionPrefunctor_obj]⟩
+def pathImage : D.Point ⥤q (D.image e E hE).Point :=
+  pathPushforwardOfEq (D.pushforward_ofCoordinateChange e E hE)
 
 /-- All-order allowed points move by the spatial affine equivalence. -/
 @[simp]
 theorem pathImage_obj_val (x : D.Point) :
-    ((D.pathImage e E hE).obj x).val = e x.val := (rfl)
+    ((D.pathImage e E hE).obj x).val = e x.val :=
+  (pathPushforwardOfEq_obj_val _ x).trans (e.toContinuousAffineEquiv_apply x.val)
 
 /-- All-order affine path transport preserves reversal. -/
 instance : (D.pathImage e E hE).MapReverse where
@@ -212,7 +195,6 @@ theorem pathProduct_image {x y : D.Point} (p : Quiver.Path x y) :
     (D.image e E hE).pathProduct ((D.pathImage e E hE).mapPath p) =
       E.completedEquiv (D.pathProduct p) := by
   rw [E.completedEquiv_apply]
-  exact pathProduct_of_pushforward_eq (D.pushforward_ofCoordinateChange e E hE) _
-    (fun x => (e.toContinuousAffineEquiv_apply x.val).symm) p
+  exact pathProduct_pathPushforwardOfEq _ p
 
 end Mei.DirectedDiagram
