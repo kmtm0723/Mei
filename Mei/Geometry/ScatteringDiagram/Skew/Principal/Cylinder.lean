@@ -7,7 +7,7 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.Skew.Initial
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Cylinder.Scat
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Hyperplane
+public import Mei.Geometry.ScatteringDiagram.Skew.Hyperplane
 
 /-!
 # Projected principal diagrams and principal cylinders
@@ -24,20 +24,20 @@ refinements, equivalence and outgoing completions.
 On a wall of degree `r(n)`, the projected spatial velocity is `-p₁*(n)` and the cylinder
 velocity is `-r(n)`, and `r(n) ∈ rec(𝔡 × (N_uf)_ℝ) ↔ p₁*(n) ∈ rec(𝔡)`. The adapted
 polynomial input on the principal lattice is exactly the cylinder of its projected
-counterpart, the full hyperplanes `ker κ(eᵢ)⟨eᵢ,-⟩` in `M°_ℝ`. Hence the outgoing
-scattering class of the principal input is the cylinder of the projected scattering class.
+counterpart, whose wall at the unfrozen index `k` is the full hyperplane
+`ker κ(e_k)⟨e_k,-⟩` in `M°_ℝ`. Hence the outgoing scattering class of the principal input
+is the cylinder of the projected scattering class.
 
 For the zero form, `p₁* = 0`, so `ρ(r(n)) = 0` and every projected principal wall has
-zero spatial velocity and is incoming. The skew Lie algebra is then abelian, so every
-diagram of full hyperplanes over it is consistent; in particular both adapted
-polynomial inputs are consistent.
+zero spatial velocity and is incoming. By `SkewLatticeDatum.consistent_of_form_eq_zero`,
+both adapted polynomial inputs are then consistent.
 
 The principal realization follows Gross–Hacking–Keel–Kontsevich, *Canonical bases for
 cluster algebras*, §1 and Appendix B, arXiv:1411.1394v2. We use
 `SkewLatticeDatum.projectedPrincipalGraphWallSpaces`, `DirectedWall.cylinder`,
 `DirectedDiagram.cylinder`, `DirectedDiagram.cylinder_scat`,
 `SkewLatticeDatum.AdaptedBasis.adaptedPolynomialInput` and
-`DirectedDiagram.consistent_of_isLieAbelian_of_full`.
+`SkewLatticeDatum.consistent_of_form_eq_zero`.
 -/
 
 public section
@@ -112,36 +112,6 @@ theorem incoming_of_form_eq_zero (hform : D.form = 0) :
 
 end Wall
 
-section ZeroForm
-
-variable {Γ Λ ι : Type*} [AddCommGroup Γ] [AddCommGroup Λ] [DecidableEq Γ]
-  {d : PositiveDegrees D.unfrozen} {e : PositiveDegrees Γ}
-  {ℒ : Γ → Submodule R
-    (SkewLieAlgebra.positiveLieAlgebra (D.coefficientForm R) (D.isAlt_coefficientForm R) d)}
-  [GradedLieAlgebra ℒ] [IsPositiveGrading e ℒ] {ρ : Γ →+ Λ} {H : DirectedWallSpaces ρ ℒ}
-  {i : Λ →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
-
-/-- For the zero form, the positive skew Lie algebra is abelian. -/
-theorem isLieAbelian_positiveLieAlgebra_of_form_eq_zero (hform : D.form = 0) :
-    IsLieAbelian
-      (SkewLieAlgebra.positiveLieAlgebra (D.coefficientForm R) (D.isAlt_coefficientForm R) d) := by
-  have hβ : D.coefficientForm R = 0 := by
-    ext n m
-    simp [hform]
-  exact ⟨fun x y => Subtype.ext (SkewLieAlgebra.lie_eq_zero_of_eq_zero _ _ hβ x.1 y.1)⟩
-
-/-- For the zero form, every diagram of full affine hyperplanes with skew labels is
-consistent, for any regrading and spatial map of the skew Lie algebra. This covers the
-original, principal, projected principal and principal cylinder wall spaces. -/
-theorem consistent_of_form_eq_zero (hform : D.form = 0) (F : DirectedDiagram (d := e) h H ι)
-    (hfull : ∀ a, ∃ b : ℝ,
-      (F.wall a).support = {v | h.realCharacter (F.wall a).normal v = b}) :
-    F.Consistent :=
-  have := D.isLieAbelian_positiveLieAlgebra_of_form_eq_zero (R := R) (d := d) hform
-  F.consistent_of_isLieAbelian_of_full hfull
-
-end ZeroForm
-
 namespace AdaptedBasis
 
 variable [Module.Free ℤ N] {D} {ι : Type*} (B : D.AdaptedBasis ι)
@@ -152,9 +122,10 @@ variable [Module.Free ℤ N] {D} {ι : Type*} (B : D.AdaptedBasis ι)
 local notation "𝒅" => B.unfrozenBasis.positiveDegrees
 local notation "𝓟" => D.projectedPrincipalGraphWallSpaces (R := R) 𝒅
 
-/-- The adapted polynomial input on the character lattice `M°`: at each unfrozen index the
-full hyperplane `ker κ(eᵢ)⟨eᵢ,-⟩` with the normalized polynomial label, on the projected
-principal wall spaces. Its walls have spatial velocity `-p₁*(eᵢ)`, possibly zero. -/
+/-- The adapted polynomial input on the character lattice `M°`: at each unfrozen index `k`
+the full hyperplane `ker κ(e_k)⟨e_k,-⟩` with the normalized polynomial label, on the
+projected principal wall spaces. Its wall at `k` has spatial velocity `-p₁*(e_k)`, possibly
+zero. -/
 def projectedAdaptedPolynomialInput :
     DirectedDiagram (V := V) (d := D.principalPositiveDegrees 𝒅) h (𝓟) B.unfrozenIndex :=
   DirectedDiagram.ofFinite (h := h) (H := 𝓟) fun k =>
@@ -177,14 +148,14 @@ def projectedAdaptedPolynomialInput :
         rw [DirectedWallSpaces.project_wallGroup, D.projectedPrincipalNormal_comp_fst]
         exact (B.polynomialWallLabel ℓ a k).property⟩
 
-/-- The coorientation is the projected principal normal `κ(eᵢ)⟨eᵢ,-⟩`. -/
+/-- The coorientation at `k` is the projected principal normal `κ(e_k)⟨e_k,-⟩`. -/
 @[simp]
 theorem projectedAdaptedPolynomialInput_normal (k : B.unfrozenIndex) :
     ((B.projectedAdaptedPolynomialInput (V := V) ℓ a h).wall k).normal =
       (D.projectedPrincipalNormal (B.unfrozenBasis k)).toAddMonoidHom := by
   simp [projectedAdaptedPolynomialInput]
 
-/-- The degree ray is the principal ray through `r(eᵢ)`. -/
+/-- The degree ray at `k` is the principal ray through `r(e_k)`. -/
 @[simp]
 theorem projectedAdaptedPolynomialInput_ray (k : B.unfrozenIndex) :
     ((B.projectedAdaptedPolynomialInput (V := V) ℓ a h).wall k).ray =
@@ -205,7 +176,7 @@ theorem projectedAdaptedPolynomialInput_label (k : B.unfrozenIndex) :
       B.polynomialWallLabel ℓ a k := by
   simp [projectedAdaptedPolynomialInput]
 
-/-- The projected wall at `i` moves with spatial velocity `-p₁*(eᵢ)`. -/
+/-- The projected wall at `k` moves with spatial velocity `-p₁*(e_k)`. -/
 theorem projectedAdaptedPolynomialInput_direction (k : B.unfrozenIndex) :
     ((B.projectedAdaptedPolynomialInput (V := V) ℓ a h).wall k).direction =
       -i (D.principalCharacter (B.unfrozenBasis k)) :=
@@ -223,14 +194,15 @@ theorem projectedAdaptedPolynomialInput_full (k : B.unfrozenIndex) :
       {x | h.realCharacter ((B.projectedAdaptedPolynomialInput (V := V) ℓ a h).wall k).normal x
         = c} := by
   refine ⟨0, ?_⟩
-  simp only [B.projectedAdaptedPolynomialInput_support, B.projectedAdaptedPolynomialInput_normal]
-  rfl
+  rw [B.projectedAdaptedPolynomialInput_support, B.projectedAdaptedPolynomialInput_normal]
+  exact Set.ext fun _ => LinearMap.mem_ker
 
 variable {j : D.unfrozen →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
 
 /-- The adapted polynomial input on the principal lattice `M° × N_uf` is the principal
-cylinder of the projected adapted polynomial input on `M°`: the hyperplane of `κ(eᵢ)νᵢ`
-is the cylinder over the hyperplane of `κ(eᵢ)⟨eᵢ,-⟩`, with the same ray and label. -/
+cylinder of the projected adapted polynomial input on `M°`: at each `k` the hyperplane of
+`κ(e_k)ν_k` is the cylinder over the hyperplane of `κ(e_k)⟨e_k,-⟩`, with the same ray and
+label. -/
 theorem cylinder_projectedAdaptedPolynomialInput :
     (B.projectedAdaptedPolynomialInput ℓ a h).cylinder h' =
       B.adaptedPolynomialInput ℓ a (h.prod h') := by
@@ -246,8 +218,8 @@ theorem cylinder_projectedAdaptedPolynomialInput :
   · simp
 
 /-- Projected and principal adapted polynomial inputs have the same outgoing scattering
-class after adjoining the unrestricted `(N_uf)_ℝ` coordinates: §3.4's completion of the
-principal input is the principal cylinder of the completion of the projected input. -/
+class after adjoining the unrestricted `(N_uf)_ℝ` coordinates: the outgoing completion of
+the principal input is the principal cylinder of the completion of the projected input. -/
 theorem cylinder_scat_projectedAdaptedPolynomialInput
     [Module.Free ℤ (Module.Dual ℤ D.sublattice × D.unfrozen)] :
     DirectedDiagram.Class.cylinder h'
