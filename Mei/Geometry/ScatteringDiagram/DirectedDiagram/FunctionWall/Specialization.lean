@@ -22,12 +22,11 @@ product of commuting projected labels is the product of their images.
 Let `Φ : A[Q]^ → A'[Q]^` be a map of completed coefficient algebras that intertwines the
 coefficient actions `σ` and `σ'` along `f`, fixes the monomials `z^p`, and such that the
 target action fixes the constants of `A'`. Then a wall function `u` of a group is sent to the
-wall function `Φ(u)` of the image group (`FunctionWallGrouping.IsWallFunction.map`). Since
-the normals of a fixed-degree map are unchanged, this is the case `S = id`, `r = 1` of the
-compatibility `S(ν) = rν'`, `f' = φ(f)^r`. For a positive specialization `φ` of the
-coefficient algebras with these compatibilities, positivity of wall functions is preserved
-by `PositiveSpecialization.map_isPositive`, so positive groupings and positive wall
-representatives are carried to the image diagram
+wall function `Φ(u)` of the image group (`FunctionWallGrouping.IsWallFunction.map`): a
+fixed-degree map preserves the normals, so the exponent `ν(ρ p)` is unchanged. For a positive
+specialization `φ` of the coefficient algebras with these compatibilities, positivity of wall
+functions is preserved by `PositiveSpecialization.map_isPositive`, so positive groupings and
+positive wall representatives are carried to the image diagram
 (`DirectedDiagram.IsPositiveWallRepresentative.map`).
 
 Coefficient maps preserve outgoing completions (`DirectedDiagram.IsOutgoingCompletion.map`)
@@ -40,8 +39,11 @@ which again has one (`DirectedDiagram.Class.HasPositiveWallRepresentative.scat_m
 
 The coefficient ring may change: the Lie algebras are taken over a common scalar ring `R`
 (for instance `ℚ`), while the coefficient algebras `A` and `A'` are arbitrary `R`-algebras.
-Coefficientwise specializations such as `a ↦ 1`, with the identity cutoff modulus, are of this
-kind (`LogarithmicVectorField.coefficientMonoidPositiveSpecialization` with trivial twist).
+The hypothesis `hconst` that the target action fixes the constants of `A'` is automatic only
+when `A' = R`, by `AlgFiltration.algEquiv_toCompletion_single_zero`. Applying these results to
+a coefficientwise specialization such as `a ↦ 1`
+(`LogarithmicVectorField.coefficientMonoidPositiveSpecialization` with trivial twist) also
+requires proving `hconst` for the target action, which is not done here.
 
 This is the fixed-degree case of the positive specialization statements of
 Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*, §8.1 and §9.2
@@ -150,8 +152,8 @@ theorem IsWallFunction.map (Φ : F.completion →+* F'.completion)
   · have hsingle : (single q c : AddMonoidAlgebra A' Q) = single q 1 * single 0 c := by
       rw [single_mul_single, add_zero, one_mul]
     rw [label_map, hsingle, map_mul, map_mul, hconst, ← hmono, ← hΦ, hact q 1, map_mul,
-      map_wall, DirectedWall.map_normal, ← map_zpow, Units.coe_map, mul_assoc]
-    rfl
+      map_wall, DirectedWall.map_normal, ← map_zpow, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+      MonoidHom.coe_ofClass, mul_assoc]
 
 variable {P : Subsemiring (AddMonoidAlgebra A Q)} {P' : Subsemiring (AddMonoidAlgebra A' Q)}
 
@@ -187,18 +189,6 @@ variable {A A' : Type*} [CommRing A] [CommRing A'] [Algebra R A] [Algebra R A']
   (hφ : ∀ p : Q, φ.toRingHom (single p 1) = single p 1)
   (hconst : ∀ g (c : A'),
     σ' g (F'.toCompletion (single 0 c)) = F'.toCompletion (single 0 c))
-
-omit [DecidableEq Γ] [Algebra ℚ R] in
-/-- An algebra automorphism of the completion of `R[Q]` over the coefficient ring `R` fixes
-the constants. This supplies the constant hypothesis of the specialization statements when
-the coefficient ring is the scalar ring of the Lie algebras. -/
-theorem _root_.Mei.AlgFiltration.algEquiv_toCompletion_single_zero
-    {F : AlgFiltration (AddMonoidAlgebra R Q)} (e : F.completion ≃ₐ[R] F.completion) (c : R) :
-    e (F.toCompletion (single 0 c)) = F.toCompletion (single 0 c) := by
-  have hc : F.toCompletion (single 0 c) = algebraMap R F.completion c := by
-    rw [← (F.toCompletionₐ (R := R)).commutes c, AlgFiltration.toCompletionₐ_apply]
-    rfl
-  rw [hc, AlgEquiv.commutes]
 
 include hφσ hφ hconst
 
