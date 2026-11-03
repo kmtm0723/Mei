@@ -115,6 +115,39 @@ theorem completionEquivOfModuli_eq (ρ' σ' : ℕ → ℕ) (hρ' : Monotone ρ')
   intro x
   exact AlgHom.congr_fun (F.mapCompletionₐ_eq G e.toAlgHom ρ hρ hf ρ' hρ' hf') x
 
+
+/-- Completing an identity equivalence gives the identity, for any valid cutoff moduli. -/
+@[simp]
+theorem completionEquivOfModuli_refl
+    (hf₀ : ∀ k, F.ideal (ρ k + 1) ≤ (F.ideal (k + 1)).comap
+      (AlgEquiv.refl : A ≃ₐ[R] A).toAlgHom)
+    (hi₀ : ∀ k, F.ideal (σ k + 1) ≤ (F.ideal (k + 1)).comap
+      (AlgEquiv.refl : A ≃ₐ[R] A).symm.toAlgHom) :
+    F.completionEquivOfModuli F (AlgEquiv.refl : A ≃ₐ[R] A) ρ σ hρ hσ hf₀ hi₀ =
+      AlgEquiv.refl := by
+  apply AlgEquiv.ext
+  intro x
+  exact AlgHom.congr_fun ((F.mapCompletionₐ_eq F (AlgHom.id R A) ρ hρ hf₀
+    id monotone_id (fun _ => by simp)).trans F.mapCompletionₐ_id) x
+
+/-- Completing successive equivalences composes the forward cutoffs as `ρ ∘ ρ'`
+and the inverse cutoffs in the reverse order `σ' ∘ σ`. -/
+theorem completionEquivOfModuli_trans {C : Type*} [Ring C] [Algebra R C]
+    (H : AlgFiltration C) (e' : B ≃ₐ[R] C) (ρ' σ' : ℕ → ℕ)
+    (hρ' : Monotone ρ') (hσ' : Monotone σ')
+    (hf' : ∀ k, G.ideal (ρ' k + 1) ≤ (H.ideal (k + 1)).comap e'.toAlgHom)
+    (hi' : ∀ k, H.ideal (σ' k + 1) ≤ (G.ideal (k + 1)).comap e'.symm.toAlgHom) :
+    F.completionEquivOfModuli H (e.trans e') (ρ ∘ ρ') (σ' ∘ σ)
+      (hρ.comp hρ') (hσ'.comp hσ)
+      (fun k _ ha => hf' k (hf (ρ' k) ha))
+      (fun k _ ha => hi k (hi' (σ k) ha)) =
+      (F.completionEquivOfModuli G e ρ σ hρ hσ hf hi).trans
+        (G.completionEquivOfModuli H e' ρ' σ' hρ' hσ' hf' hi') := by
+  apply AlgEquiv.ext
+  intro x
+  exact AlgHom.congr_fun (F.mapCompletionₐ_comp G e.toAlgHom ρ hρ hf
+    H e'.toAlgHom ρ' hρ' hf') x
+
 end Moduli
 
 include he
