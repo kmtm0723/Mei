@@ -208,7 +208,7 @@ theorem tensorProduct_ideal (k : ℕ) :
     (F.tensorProduct R G).ideal k = Ideal.tensorFiltration R F.ideal G.ideal k := (rfl)
 
 /-- The tensor of filtration-preserving algebra maps preserves the bundled filtration. -/
-theorem tensorProduct_le_comap_map {C D : Type*} [Ring C] [Ring D]
+theorem tensorProduct_le_comap_map {C D : Type*} [Semiring C] [Semiring D]
     [Algebra R C] [Algebra R D] (H : Mei.AlgFiltration C) (K : Mei.AlgFiltration D)
     (f : A →ₐ[R] C) (g : B →ₐ[R] D)
     (hf : ∀ k, F.ideal k ≤ (H.ideal k).comap f)
