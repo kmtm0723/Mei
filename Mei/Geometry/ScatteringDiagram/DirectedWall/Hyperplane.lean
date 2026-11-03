@@ -14,9 +14,10 @@ public import Mei.Geometry.Convex.Polyhedron.SignCell.Rational
 A nonzero integral normal `m`, a real offset `c`, a tangent supported ray and a label in its
 wall group determine an incoming wall on the entire affine hyperplane `{x | ℓ x = c}`, where
 `ℓ` is the real extension of `m` (`DirectedWall.ofAffineHyperplane`). The offset zero gives the
-walls on the kernel of the real normal (`DirectedWall.ofLinearHyperplane`). These walls provide
-full-hyperplane inputs, in particular the coefficient probe wall and the cylinders over the
-affine incoming lines of rank-two polynomial inputs.
+walls on the kernel of the real normal. These walls provide full-hyperplane inputs, in particular
+the coefficient probe wall and the cylinders over the affine incoming lines of rank-two
+polynomial inputs. Every level set of `ℓ` is nonempty, since `ℓ` is nonzero
+(`TauCeti.Toric.IsIntegralLattice.exists_realCharacter_eq`).
 
 We use `isRationalNormalPolyhedron_setOf_le` for the support and Mathlib's
 `AffineSubspace.mk'` for its affine direction.
@@ -24,6 +25,26 @@ We use `isRationalNormalPolyhedron_setOf_le` for the support and Mathlib's
 
 public section
 noncomputable section
+
+namespace TauCeti.Toric.IsIntegralLattice
+
+variable {Λ V : Type*} [AddCommGroup Λ] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  {i : Λ →+ V} (h : IsIntegralLattice i)
+
+/-- The real extension of a nonzero integral functional is nonzero at some point. -/
+theorem exists_realCharacter_ne_zero {m : Λ →+ ℤ} (hm : m ≠ 0) :
+    ∃ x, h.realCharacter m x ≠ 0 := by
+  by_contra! hx
+  exact hm (h.realCharacter_injective (by rw [map_zero]; exact LinearMap.ext hx))
+
+/-- Every level set `{ℓ = c}` of the real extension `ℓ` of a nonzero integral functional is
+nonempty. -/
+theorem exists_realCharacter_eq {m : Λ →+ ℤ} (hm : m ≠ 0) (c : ℝ) :
+    ∃ x, h.realCharacter m x = c := by
+  obtain ⟨x, hx⟩ := h.exists_realCharacter_ne_zero hm
+  exact ⟨(c / h.realCharacter m x) • x, by simp [hx]⟩
+
+end TauCeti.Toric.IsIntegralLattice
 
 namespace Mei.DirectedWall
 
@@ -45,11 +66,7 @@ def ofAffineHyperplane (m : Λ →+ ℤ) (hm : m ≠ 0) (c : ℝ) (w : Supported
   ray := w
   normal_direction := hw
   support := {x | h.realCharacter m x = c}
-  support_nonempty := by
-    obtain ⟨x, hx⟩ : ∃ x, h.realCharacter m x ≠ 0 := by
-      by_contra! hx
-      exact hm (h.realCharacter_injective (by rw [map_zero]; exact LinearMap.ext hx))
-    exact ⟨(c / h.realCharacter m x) • x, by simp [hx]⟩
+  support_nonempty := h.exists_realCharacter_eq hm c
   rational_support := by
     let := h.finiteDimensional
     let ℓ := (h.realCharacter m).toContinuousLinearMap
@@ -62,11 +79,7 @@ def ofAffineHyperplane (m : Λ →+ ℤ) (hm : m ≠ 0) (c : ℝ) (w : Supported
     exact (isRationalNormalPolyhedron_setOf_le ℓ hℓ c).inter
       (isRationalNormalPolyhedron_setOf_le (-ℓ) (by simpa using hℓ.neg) (-c))
   direction_support := by
-    obtain ⟨x, hx⟩ : ∃ x, h.realCharacter m x ≠ 0 := by
-      by_contra! hx
-      exact hm (h.realCharacter_injective (by rw [map_zero]; exact LinearMap.ext hx))
-    let p := (c / h.realCharacter m x) • x
-    have hp : h.realCharacter m p = c := by simp [p, hx]
+    obtain ⟨p, hp⟩ := h.exists_realCharacter_eq hm c
     have he : {x | h.realCharacter m x = c} =
         (AffineSubspace.mk' p (LinearMap.ker (h.realCharacter m)) : Set V) := by
       ext y
@@ -109,39 +122,5 @@ theorem ofAffineHyperplane_incoming (m : Λ →+ ℤ) (hm : m ≠ 0) (c : ℝ) (
   intro x hx t _
   simp only [ofAffineHyperplane_support, Set.mem_ofPred_eq] at hx ⊢
   simp [hx, hw]
-
-/-- The full linear hyperplane with a specified tangent ray and wall-group label: the affine
-hyperplane with offset zero. -/
-def ofLinearHyperplane (m : Λ →+ ℤ) (hm : m ≠ 0) (w : SupportedRay d)
-    (hw : m (ρ w.generator) = 0) (g : H.wallGroup w m) : DirectedWall (d := d) h H :=
-  ofAffineHyperplane h H m hm 0 w hw g
-
-@[simp]
-theorem ofLinearHyperplane_normal (m : Λ →+ ℤ) (hm : m ≠ 0) (w : SupportedRay d)
-    (hw : m (ρ w.generator) = 0) (g : H.wallGroup w m) :
-    (ofLinearHyperplane h H m hm w hw g).normal = m := (rfl)
-
-@[simp]
-theorem ofLinearHyperplane_ray (m : Λ →+ ℤ) (hm : m ≠ 0) (w : SupportedRay d)
-    (hw : m (ρ w.generator) = 0) (g : H.wallGroup w m) :
-    (ofLinearHyperplane h H m hm w hw g).ray = w := (rfl)
-
-@[simp]
-theorem ofLinearHyperplane_support (m : Λ →+ ℤ) (hm : m ≠ 0) (w : SupportedRay d)
-    (hw : m (ρ w.generator) = 0) (g : H.wallGroup w m) :
-    (ofLinearHyperplane h H m hm w hw g).support = (h.realCharacter m).ker :=
-  Set.ext fun _ => LinearMap.mem_ker.symm
-
-@[simp]
-theorem ofLinearHyperplane_label (m : Λ →+ ℤ) (hm : m ≠ 0) (w : SupportedRay d)
-    (hw : m (ρ w.generator) = 0) (g : H.wallGroup w m) :
-    (ofLinearHyperplane h H m hm w hw g).label = g := (rfl)
-
-/-- Full linear hyperplanes are incoming, including zero spatial directions. -/
-@[simp]
-theorem ofLinearHyperplane_incoming (m : Λ →+ ℤ) (hm : m ≠ 0) (w : SupportedRay d)
-    (hw : m (ρ w.generator) = 0) (g : H.wallGroup w m) :
-    (ofLinearHyperplane h H m hm w hw g).Incoming :=
-  ofAffineHyperplane_incoming h H m hm 0 w hw g
 
 end Mei.DirectedWall

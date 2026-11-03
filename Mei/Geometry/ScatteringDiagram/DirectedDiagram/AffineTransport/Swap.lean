@@ -93,14 +93,14 @@ theorem realCharacter_swapImage_normal_swap (v : ℝ × ℝ) :
 
 /-- The wall on the line `{x = 0}` with normal `e₁*`, a given ray and a given label is
 carried to the wall on `{y = 0}` with normal `e₂*`, the same ray and the same label. -/
-theorem swapImage_ofLinearHyperplane_fst (hm : AddMonoidHom.fst ℤ ℤ ≠ 0) (w : SupportedRay d)
+theorem swapImage_ofAffineHyperplane_fst (hm : AddMonoidHom.fst ℤ ℤ ≠ 0) (w : SupportedRay d)
     (hw : AddMonoidHom.fst ℤ ℤ (ρ w.generator) = 0) (g : H.wallGroup w (AddMonoidHom.fst ℤ ℤ)) :
-    (ofLinearHyperplane h H (AddMonoidHom.fst ℤ ℤ) hm w hw g).swapImage.normal =
+    (ofAffineHyperplane h H (AddMonoidHom.fst ℤ ℤ) hm 0 w hw g).swapImage.normal =
         AddMonoidHom.snd ℤ ℤ ∧
-      (ofLinearHyperplane h H (AddMonoidHom.fst ℤ ℤ) hm w hw g).swapImage.support =
+      (ofAffineHyperplane h H (AddMonoidHom.fst ℤ ℤ) hm 0 w hw g).swapImage.support =
         {x | x.2 = 0} ∧
-      (ofLinearHyperplane h H (AddMonoidHom.fst ℤ ℤ) hm w hw g).swapImage.ray = w ∧
-      (ofLinearHyperplane h H (AddMonoidHom.fst ℤ ℤ) hm w hw g).swapImage.label = g := by
+      (ofAffineHyperplane h H (AddMonoidHom.fst ℤ ℤ) hm 0 w hw g).swapImage.ray = w ∧
+      (ofAffineHyperplane h H (AddMonoidHom.fst ℤ ℤ) hm 0 w hw g).swapImage.label = g := by
   refine ⟨swapImage_normal_eq_snd _ (by simp), swapImage_support_eq _ ?_, by simp, by simp⟩
   ext x
   simp

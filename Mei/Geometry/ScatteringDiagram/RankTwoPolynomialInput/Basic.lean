@@ -7,7 +7,6 @@ module
 
 public import Mei.Algebra.PositiveDegrees.Basic
 public import TauCeti.Algebra.Module.Primitive
-public import Mathlib.Algebra.MonoidAlgebra.Defs
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.Basic.Real.Basic
 
@@ -28,8 +27,8 @@ positive degree data `(L, P, δ)` (`Mei.PositiveDegrees`):
 
 The coefficients `c_{j,n}` are independent variables over `ℚ`; we index them by
 `RankTwoPolynomialInput.Variable` and allow any coefficient family in a commutative ring, the
-independent variables being the generators of `MvPolynomial I.Variable ℚ`. Countably many lines
-are allowed, provided only finitely many have a term of degree at most `k`, for every `k`
+independent variables being the generators of `MvPolynomial I.Variable ℚ`. The index type of the
+lines is arbitrary; for every `k`, only finitely many lines have a term of degree at most `k`
 (`RankTwoPolynomialInput.finite_nontrivial`). The wall of line `j` is the cylinder over it in
 `L_ℝ`, cooriented by the primitive integral normal `ν_j ∘ π` (`RankTwoPolynomialInput.wallNormal`),
 and acts by `z^q ↦ z^q f_j^{⟨ν_j, π(q)⟩}`. Reversing `ν_j` and `c_j` presents the same line.
@@ -45,8 +44,6 @@ public section
 noncomputable section
 
 namespace Mei
-
-open _root_.AddMonoidAlgebra
 
 /-- A rank-two polynomial input (Burcroff–Lee–Mou, Theorem 9.9) on positive degree data
 `(L, P, δ)`: a surjection `π : L → M` onto a rank-two lattice and incoming affine lines

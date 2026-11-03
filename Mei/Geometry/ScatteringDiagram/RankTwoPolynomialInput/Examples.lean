@@ -26,9 +26,9 @@ own outgoing completion (`RankTwoPolynomialInput.Examples.isOutgoingCompletion`)
 independent variable `c` it is a positive wall representative
 (`RankTwoPolynomialInput.Examples.isPositiveWallRepresentative`).
 
-This is the first check of §7.4 of the scattering-diagram roadmap, for Burcroff–Lee–Mou,
-*Positivity of generalized cluster scattering diagrams*, Theorem 9.9 (arXiv:2503.03719v1). The
-consistency uses `DirectedDiagram.consistent_of_support_eq`.
+The input is an instance of Burcroff–Lee–Mou, *Positivity of generalized cluster scattering
+diagrams*, Theorem 9.9 (arXiv:2503.03719v1). The consistency uses
+`DirectedDiagram.consistent_of_support_eq`.
 -/
 
 public section
@@ -65,6 +65,15 @@ def horizontalInput : RankTwoPolynomialInput evenOrthant (ℤ × ℤ) Unit where
     subst hn
     exact ⟨2, two_pos, by simp⟩
   finite_nontrivial _ := Set.toFinite _
+
+/-- The projection of the horizontal input is the identity of `ℤ²`. -/
+@[simp]
+theorem horizontalInput_projection : horizontalInput.projection = AddMonoidHom.id (ℤ × ℤ) :=
+  (rfl)
+
+/-- The tangent of the horizontal line is `e₁`. -/
+@[simp]
+theorem horizontalInput_tangent (j : Unit) : horizontalInput.tangent j = (1, 0) := (rfl)
 
 /-- The cylinder normal of the horizontal line is the second coordinate. -/
 @[simp]
@@ -107,17 +116,14 @@ local notation "ℒ" => tropicalVertexGrading (R := R) evenOrthant ρ
 theorem exists_eq_of_logComponent_initialLabel_ne_zero {q : ℤ × ℤ}
     (hq : evenOrthant.logComponent ℒ (horizontalInput.initialLabel c ()) q ≠ 0) :
     ∃ a : ℤ, 0 < a ∧ q = (2 * a, 0) := by
-  obtain ⟨hqP, hq0⟩ := evenOrthant.mem_monoid_and_ne_zero_of_logComponent_ne_zero ℒ hq
-  obtain ⟨t, rfl⟩ : ∃ t : horizontalInput.initialMonoid (R := R) (), ((t : _) : ℤ × ℤ) = q := by
-    by_contra! h
-    exact hq (horizontalInput.logComponent_initialLabel_eq_zero c () h)
-  rcases horizontalInput.initialMonoid_property () t.property with ht | ⟨⟨k, hk, hkt⟩, -⟩
-  · exact (hq0 (by rw [ht]; rfl)).elim
-  · rw [evenOrthant_monoid] at hqP
-    obtain ⟨-, -, b, hb⟩ := mem_evenOrthantMonoid.mp hqP
-    change ((t : _) : ℤ × ℤ) = k • ((1, 0) : ℤ × ℤ) at hkt
-    simp only [hkt, Prod.smul_mk, nsmul_eq_mul, mul_one, smul_zero] at hb ⊢
-    exact ⟨b, by omega, by simp only [Prod.mk.injEq, and_true]; omega⟩
+  obtain ⟨hqP, -⟩ := evenOrthant.mem_monoid_and_ne_zero_of_logComponent_ne_zero ℒ hq
+  obtain ⟨k, hk, hkq⟩ :=
+    horizontalInput.exists_projection_eq_of_logComponent_initialLabel_ne_zero c () hq
+  simp only [horizontalInput_projection, horizontalInput_tangent, AddMonoidHom.id_apply] at hkq
+  rw [evenOrthant_monoid] at hqP
+  obtain ⟨-, -, b, hb⟩ := mem_evenOrthantMonoid.mp hqP
+  simp only [hkq, Prod.smul_mk, nsmul_eq_mul, mul_one, smul_zero] at hb ⊢
+  exact ⟨b, by omega, by simp only [Prod.mk.injEq, and_true]; omega⟩
 
 variable {latticeMap : ℤ × ℤ →+ ℝ × ℝ} (h : TauCeti.Toric.IsIntegralLattice latticeMap)
 
@@ -139,22 +145,27 @@ def completionDiagram :
     · exact ⟨j, hj, rfl⟩
     · exact j.elim
 
+/-- The walls of the completion diagram are the incoming walls. -/
+@[simp]
+theorem completionDiagram_wall_inl (j : horizontalInput.IncomingIndex) :
+    (completionDiagram c h).wall (Sum.inl j) = (horizontalInput.incomingDiagram h c).wall j :=
+  (rfl)
+
 /-- The single-wall incoming diagram of the horizontal input is its own outgoing completion:
 it is consistent, being a single full hyperplane, and has no further walls. -/
 theorem isOutgoingCompletion :
     DirectedDiagram.IsOutgoingCompletion (horizontalInput.incomingDiagram h c).wall
       (completionDiagram c h) where
-  wall_inl _ := rfl
+  wall_inl := completionDiagram_wall_inl c h
   outgoing_inr j := j.elim
   consistent := by
     let : Unique (horizontalInput.IncomingIndex ⊕ PEmpty) := (Equiv.sumEmpty _ _).unique
-    refine DirectedDiagram.consistent_of_support_eq (W := (horizontalInput.incomingDiagram h c).wall
-      default) ?_ 0 ?_
-    · rintro (j | j)
-      · exact congrArg _ (Subsingleton.elim j default)
-      · exact j.elim
-    · simp only [incomingDiagram_support, incomingDiagram_normal]
-      rfl
+    obtain ⟨a, ha⟩ := horizontalInput.incomingDiagram_full h c default
+    refine DirectedDiagram.consistent_of_support_eq
+      (W := (horizontalInput.incomingDiagram h c).wall default) ?_ a ha
+    rintro (j | j)
+    · rw [completionDiagram_wall_inl, Unique.eq_default j]
+    · exact j.elim
 
 open scoped Mei.TropicalVertexCoefficientAction
 

@@ -153,8 +153,8 @@ private def initialCoefficient (a : ℳ p) :
 /-- The full probe hyperplane, labelled by the exponential of the incoming coefficient. -/
 def probeWall (a : ℳ p) :
     DirectedWall (d := positiveDegrees d p) (h.prod h') (wallSpaces d ℳ p ℒ H) :=
-  DirectedWall.ofLinearHyperplane (h.prod h') (wallSpaces d ℳ p ℒ H)
-    probeNormal probeNormal_ne_zero (moduleRay d p p (by simp)) (by simp)
+  DirectedWall.ofAffineHyperplane (h.prod h') (wallSpaces d ℳ p ℒ H)
+    probeNormal probeNormal_ne_zero 0 (moduleRay d p p (by simp)) (by simp)
     (moduleWallGroupEquiv d ℳ p ℒ H p (by simp)
       (Multiplicative.ofAdd (initialCoefficient d ℳ p a)))
 
@@ -169,7 +169,9 @@ theorem probeWall_ray (a : ℳ p) :
 @[simp]
 theorem probeWall_support (a : ℳ p) :
     (probeWall d ℳ p ℒ H h h' a).support =
-      ((h.prod h').realCharacter probeNormal).ker := by simp [probeWall]
+      ((h.prod h').realCharacter probeNormal).ker := by
+  ext
+  simp [probeWall]
 
 /-- The label is the completed exponential of the original homogeneous coefficient
 included in the abelian ideal of the probe. -/
@@ -179,19 +181,19 @@ theorem probeWall_label (a : ℳ p) :
         (moduleInclusion d ℳ p ℒ ((moduleCoefficientsEquiv d ℳ p).symm
           ⟨a, le_shiftedSubmodule ℳ d.monoid p (n := 0) (zero_mem _)
             (by simp)⟩)) := by
-  simp only [probeWall, DirectedWall.ofLinearHyperplane_label, coe_moduleWallGroupEquiv,
+  simp only [probeWall, DirectedWall.ofAffineHyperplane_label, coe_moduleWallGroupEquiv,
     toAdd_ofAdd, initialCoefficient]
 
 /-- The probe wall is incoming, even when the original coefficient has zero velocity. -/
 @[simp]
 theorem probeWall_incoming (a : ℳ p) : (probeWall d ℳ p ℒ H h h' a).Incoming := by
-  exact DirectedWall.ofLinearHyperplane_incoming _ _ _ _ _ _ _
+  exact DirectedWall.ofAffineHyperplane_incoming _ _ _ _ _ _ _ _
 
 /-- A zero coefficient contributes exactly the identity label. -/
 @[simp↓]
 theorem probeWall_label_eq_one_iff (a : ℳ p) :
     (probeWall d ℳ p ℒ H h h' a).label = 1 ↔ a = 0 := by
-  rw [probeWall, DirectedWall.ofLinearHyperplane_label]
+  rw [probeWall, DirectedWall.ofAffineHyperplane_label]
   constructor
   · intro ha
     have he : moduleWallGroupEquiv d ℳ p ℒ H p (by simp)

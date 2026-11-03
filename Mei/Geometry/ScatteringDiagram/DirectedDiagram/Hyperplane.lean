@@ -185,26 +185,26 @@ theorem not_equivalent_of_isEmpty_of_support_eq {κ : Type*} [IsEmpty κ]
 
 end Hyperplane
 
-section LinearHyperplane
+section AffineHyperplane
 
-variable {D : DirectedDiagram (d := d) h H ι} [Unique ι] {m : Λ →+ ℤ} (hm : m ≠ 0)
+variable {D : DirectedDiagram (d := d) h H ι} [Unique ι] {m : Λ →+ ℤ} (hm : m ≠ 0) (c : ℝ)
   {w : SupportedRay d} (hw : m (ρ w.generator) = 0) (g : H.wallGroup w m)
-  (hD : ∀ j, D.wall j = DirectedWall.ofLinearHyperplane h H m hm w hw g)
+  (hD : ∀ j, D.wall j = DirectedWall.ofAffineHyperplane h H m hm c w hw g)
 
 include hD in
-/-- A diagram whose only wall is the linear hyperplane `DirectedWall.ofLinearHyperplane`
+/-- A diagram whose only wall is the full hyperplane `DirectedWall.ofAffineHyperplane`
 is consistent. -/
-theorem consistent_ofLinearHyperplane : D.Consistent :=
-  D.consistent_of_support_eq hD 0 (by ext; simp)
+theorem consistent_ofAffineHyperplane : D.Consistent :=
+  D.consistent_of_support_eq hD c (by simp)
 
 include hD in
-/-- A diagram whose only wall is `DirectedWall.ofLinearHyperplane` with a nonidentity label is
+/-- A diagram whose only wall is `DirectedWall.ofAffineHyperplane` with a nonidentity label is
 consistent but not equivalent to any diagram without walls. -/
-theorem not_equivalent_ofLinearHyperplane {κ : Type*} [IsEmpty κ]
+theorem not_equivalent_ofAffineHyperplane {κ : Type*} [IsEmpty κ]
     (E : DirectedDiagram (d := d) h H κ) (hg : (g : d.completedBCHGroup ℒ) ≠ 1) :
     ¬ D.Equivalent E :=
-  D.not_equivalent_of_isEmpty_of_support_eq hD 0 E (by ext; simp) (by simpa using hg)
+  D.not_equivalent_of_isEmpty_of_support_eq hD c E (by simp) (by simpa using hg)
 
-end LinearHyperplane
+end AffineHyperplane
 
 end Mei.DirectedDiagram
