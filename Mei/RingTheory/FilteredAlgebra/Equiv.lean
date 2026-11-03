@@ -44,10 +44,9 @@ private theorem mapCompletionₐ_equiv_leftInverse :
   have hbound : ∀ k, F.ideal ((ρ ∘ σ) k + 1) ≤
       (F.ideal (k + 1)).comap (AlgHom.id R A) := by
     intro k a ha
-    change a ∈ F.ideal (k + 1)
     have hb := hi k (hf (σ k) ha)
-    change e.symm (e a) ∈ F.ideal (k + 1) at hb
-    rw [e.symm_apply_apply] at hb
+    simp only [Ideal.mem_comap, AlgEquiv.toAlgHom_apply, AlgEquiv.symm_apply_apply] at hb
+    simp only [Ideal.mem_comap, AlgHom.id_apply]
     exact hb
   have h := F.mapCompletionₐ_comp G e.toAlgHom ρ hρ hf F e.symm.toAlgHom σ hσ hi
   simp only [AlgEquiv.symm_comp] at h
