@@ -36,6 +36,26 @@ variable (ρ σ : ℕ → ℕ) (hρ : Monotone ρ) (hσ : Monotone σ)
   (hf : ∀ k, F.ideal (ρ k + 1) ≤ (G.ideal (k + 1)).comap e.toAlgHom)
   (hi : ∀ k, G.ideal (σ k + 1) ≤ (F.ideal (k + 1)).comap e.symm.toAlgHom)
 
+/-- Completing the two directions of an algebra equivalence gives a left inverse,
+by composition and independence of the composite cutoff modulus. -/
+private theorem mapCompletionₐ_equiv_leftInverse :
+    Function.LeftInverse (G.mapCompletionₐ F e.symm.toAlgHom σ hσ hi)
+      (F.mapCompletionₐ G e.toAlgHom ρ hρ hf) := by
+  have hbound : ∀ k, F.ideal ((ρ ∘ σ) k + 1) ≤
+      (F.ideal (k + 1)).comap (AlgHom.id R A) := by
+    intro k a ha
+    change a ∈ F.ideal (k + 1)
+    have hb := hi k (hf (σ k) ha)
+    change e.symm (e a) ∈ F.ideal (k + 1) at hb
+    rw [e.symm_apply_apply] at hb
+    exact hb
+  have h := F.mapCompletionₐ_comp G e.toAlgHom ρ hρ hf F e.symm.toAlgHom σ hσ hi
+  simp only [AlgEquiv.symm_comp] at h
+  have hid := F.mapCompletionₐ_eq F (AlgHom.id R A) (ρ ∘ σ) (hρ.comp hσ)
+    hbound id monotone_id (fun _ => by simp)
+  rw [mapCompletionₐ_id] at hid
+  exact fun x => (AlgHom.congr_fun (hid.symm.trans h) x).symm
+
 /-- An algebra equivalence filtered in both directions extends to completions.
 The forward component at order `k` uses source order `ρ k`, and the inverse
 component uses `σ k`. The moduli may differ, so the filtrations need not agree
@@ -43,24 +63,8 @@ at equal orders; monotonicity ensures compatibility with the quotient towers. -/
 def completionEquivOfModuli : F.completion ≃ₐ[R] G.completion where
   __ := F.mapCompletionₐ G e.toAlgHom ρ hρ hf
   invFun := G.mapCompletionₐ F e.symm.toAlgHom σ hσ hi
-  left_inv x := by
-    have h := F.mapCompletionₐ_comp G e.toAlgHom ρ hρ hf F e.symm.toAlgHom σ hσ hi
-    simp only [AlgEquiv.symm_comp] at h
-    have hid := F.mapCompletionₐ_eq F (AlgHom.id R A) (ρ ∘ σ) (hρ.comp hσ)
-      (fun k => by
-        intro a ha
-        simpa using hi k (hf (σ k) ha)) id monotone_id (fun _ => by simp)
-    rw [mapCompletionₐ_id] at hid
-    exact (AlgHom.congr_fun (hid.symm.trans h) x).symm
-  right_inv x := by
-    have h := G.mapCompletionₐ_comp F e.symm.toAlgHom σ hσ hi G e.toAlgHom ρ hρ hf
-    simp only [AlgEquiv.comp_symm] at h
-    have hid := G.mapCompletionₐ_eq G (AlgHom.id R B) (σ ∘ ρ) (hσ.comp hρ)
-      (fun k => by
-        intro b hb
-        simpa using hf k (hi (ρ k) hb)) id monotone_id (fun _ => by simp)
-    rw [mapCompletionₐ_id] at hid
-    exact (AlgHom.congr_fun (hid.symm.trans h) x).symm
+  left_inv := F.mapCompletionₐ_equiv_leftInverse G e ρ σ hρ hσ hf hi
+  right_inv := G.mapCompletionₐ_equiv_leftInverse F e.symm σ ρ hσ hρ hi hf
 
 /-- Finite projections use the forward quotient map at the prescribed source cutoff. -/
 @[simp]
@@ -80,7 +84,10 @@ theorem completionEquivOfModuli_toCompletion (a : A) :
 theorem completionEquivOfModuli_symm :
     (F.completionEquivOfModuli G e ρ σ hρ hσ hf hi).symm =
       G.completionEquivOfModuli F e.symm σ ρ hσ hρ hi hf := by
-  ext x
+  apply AlgEquiv.ext
+  intro y
+  -- The specified invFun on the left and forward map on the right are both
+  -- exactly G.mapCompletionₐ F e.symm.toAlgHom σ hσ hi by construction.
   rfl
 
 /-- Finite projections of the inverse use the inverse modulus `σ`. -/
