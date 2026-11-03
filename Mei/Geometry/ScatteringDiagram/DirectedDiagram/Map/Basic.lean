@@ -6,9 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Geometry.ScatteringDiagram.DirectedWall.Map
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Uniqueness
-import Mei.Geometry.Convex.Polyhedron.Path.Restriction
-import Mei.Geometry.Convex.Polyhedron.Path.AffineTransport
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.Completion
 
 /-!
 # Coefficient maps of directed scattering diagrams
@@ -23,17 +21,10 @@ both at finite order and in the completed group. A coefficient endomorphism fixe
 the product of a path in a convex region if it fixes the labels of the walls
 meeting that region.
 
-The transport calculation combines `GradedLieHom.completedMap` with
-`Quiver.Path.map_wallPathProduct_restrict`,
-following the restriction-and-transport calculation in
-`DirectedDiagram.levelPathProduct_image`.
-The all-order path map and its completed product formula follow the projection
-argument in `DirectedDiagram.pathImage` and `DirectedDiagram.pathProduct_image`.
-The consistency proof uses `exists_loop_levelPathProduct_eq_of_vertices_eq` to
-move a loop off the original active supports while retaining its mapped product.
-The endpoint formulas use the existing path-product formulas and path independence.
-Together with outgoingness of mapped walls, this gives coefficient naturality
-of outgoing completions. No faithful action or injective coefficient map is needed.
+These are the special case `DirectedWall.Pushforward.ofFixedDegree` of
+`DirectedDiagram.pushforward`, with identity spatial map, rays and normals. Together with
+outgoingness of mapped walls, this gives coefficient naturality of outgoing completions.
+No faithful action or injective coefficient map is needed.
 -/
 
 public section
@@ -72,11 +63,25 @@ def map : DirectedDiagram (d := d) h H' ι where
 @[simp]
 theorem map_wall (j : ι) : (D.map f hf).wall j = (D.wall j).map f hf := (rfl)
 
+/-- Fixed-degree coefficient maps of diagrams are pushforwards. -/
+@[simp]
+theorem pushforward_ofFixedDegree :
+    D.pushforward (DirectedWall.Pushforward.ofFixedDegree f hf) = D.map f hf := by
+  apply DirectedDiagram.ext
+  funext j
+  simp
+
+/-- The identity pushforward fixes every directed diagram. -/
+@[simp]
+theorem pushforward_id : D.pushforward DirectedWall.Pushforward.id = D := by
+  apply DirectedDiagram.ext
+  funext j
+  simp
+
 /-- Coefficient maps can only remove active walls. -/
 theorem active_map_subset (k : ℕ) : (D.map f hf).active k ⊆ D.active k := by
-  simpa only [Set.subset_def, mem_active, Function.mem_mulSupport, map_wall,
-    DirectedWall.map_label] using
-    f.mulSupport_projection_completedMap_subset (fun j => (D.wall j).label) k (a := k) (by simp)
+  rw [← pushforward_ofFixedDegree]
+  exact D.active_pushforward_subset _ k (by simp)
 
 /-- The identity coefficient map fixes the indexed diagram. -/
 @[simp]
@@ -130,47 +135,9 @@ theorem levelPathProduct_mapPathPrefunctor (k : ℕ)
     {x y : WallComplement (fun j : D.active k => (D.wall j).support)}
     (p : AdmissiblePLPath x y) :
     (D.map f hf).levelPathProduct k ((D.mapPathPrefunctor f hf k).mapPath p) =
-      (f.truncatedMap (a := k) k (by simp)).bchGroupMap (D.levelPathProduct k p) := by
-  let a := Set.inclusion (D.active_map_subset f hf k)
-  let q := (WallComplement.restrictPrefunctor
-    (fun j : D.active k => (D.wall j).support) a).mapPath p
-  let F := (f.truncatedMap (a := k) k (by simp)).bchGroupMap
-  have hlabel (j : ι) : CompletedGroup.projection k ((D.map f hf).wall j).label =
-      F (CompletedGroup.projection k (D.wall j).label) := by
-    rw [map_wall, DirectedWall.map_label,
-      f.projection_completedMap_of_le k (a := k) (by simp)]
-  have hm := p.map_wallPathProduct_restrict (fun j => (D.wall j).support)
-    (fun j => h.realCharacter (D.wall j).normal)
-    (fun j => CompletedGroup.projection k (D.wall j).label)
-    (D.active k) ((D.map f hf).active k) (D.active_map_subset f hf k)
-    (D.activeLabels_commute k) F (by
-      intro j
-      rw [mem_active, hlabel]
-      -- Identify the tower identity with the concrete BCH-group identity.
-      rfl)
-  -- The identity affine map identifies the surviving supports without exposing wall bodies.
-  have hi := q.wallPathProduct_wallComplementMap (ContinuousAffineEquiv.refl ℝ V)
-    (Equiv.refl _)
-    (W' := fun j : (D.map f hf).active k => ((D.map f hf).wall j).support)
-    (by intro j; simp [a])
-    (fun j => h.realCharacter (D.wall (a j)).normal)
-    (fun j => h.realCharacter ((D.map f hf).wall j).normal)
-    (by intro j; ext v; simp [a])
-    (fun j => F (CompletedGroup.projection k (D.wall (a j)).label))
-    (fun j => CompletedGroup.projection k ((D.map f hf).wall j).label)
-    (fun j l hab => (D.activeLabels_commute k (a j) (a l) hab).map F)
-    ((D.map f hf).activeLabels_commute k) (MonoidHom.id _)
-    (fun j => hlabel j)
-  calc
-    _ = _ := (D.map f hf).levelPathProduct_eq_wallPathProduct k _
-      ((D.map f hf).activeLabels_commute k)
-    _ = _ := by
-      -- Identify the composed prefunctor with its two successive path maps.
-      convert hi.trans hm using 1
-      simp only [mapPathPrefunctor, Prefunctor.mapPath_comp_apply, q, a]
-      rfl
-    _ = _ := congrArg F (D.levelPathProduct_eq_wallPathProduct k p
-      (D.activeLabels_commute k)).symm
+      (f.truncatedMap (a := k) k (by simp)).bchGroupMap (D.levelPathProduct k p) :=
+  levelPathProduct_of_pushforward_eq (D.pushforward_ofFixedDegree f hf) k (by simp) _
+    (fun x => by simp) p
 
 /-- A group endomorphism fixes the finite-order product of a path whose vertices
 lie in a convex region, provided it fixes the order-`k` label of every active wall meeting that
@@ -228,53 +195,25 @@ theorem pathMap_obj_val (x : D.Point) :
 instance : (D.pathMap f hf).MapReverse where
   map_reverse' _ := PLift.ext (Subsingleton.elim _ _)
 
-/-- Projecting a mapped common path agrees with mapping its finite projection. -/
-theorem pathMap_comp_projection (k : ℕ) :
-    D.pathMap f hf ⋙q CommonWallComplement.projectionPrefunctor k =
-      CommonWallComplement.projectionPrefunctor k ⋙q D.mapPathPrefunctor f hf k := by
-  refine Prefunctor.ext (fun x => ?_) (fun _ _ _ => PLift.ext (Subsingleton.elim _ _))
-  apply WallComplement.ext
-  simp
-
 /-- Mapping coefficients carries the completed product along the same geometric
 path through the completed BCH group homomorphism. -/
 @[simp]
 theorem pathProduct_pathMap {x y : D.Point} (p : Quiver.Path x y) :
     (D.map f hf).pathProduct ((D.pathMap f hf).mapPath p) =
-      f.completedMap (D.pathProduct p) := by
-  apply CompletedGroup.ext
-  intro k
-  have hp := congrArg
-    (fun F : D.Point ⥤q WallComplement
-        (fun j : (D.map f hf).active k => ((D.map f hf).wall j).support) =>
-      (D.map f hf).levelPathProduct k (F.mapPath p))
-    (D.pathMap_comp_projection f hf k)
-  simp only [Prefunctor.mapPath_comp_apply] at hp
-  rw [projection_pathProduct, f.projection_completedMap_of_le k (a := k) (by simp),
-    projection_pathProduct]
-  exact hp.trans (D.levelPathProduct_mapPathPrefunctor f hf k
-    ((CommonWallComplement.projectionPrefunctor k).mapPath p))
+      f.completedMap (D.pathProduct p) :=
+  pathProduct_of_pushforward_eq (D.pushforward_ofFixedDegree f hf) _ (fun x => by simp) p
 
 /-- Coefficient maps preserve consistency even though paths may cross supports
 of labels killed by the map. -/
 theorem LevelConsistent.map {k : ℕ} (hD : D.LevelConsistent k) :
     (D.map f hf).LevelConsistent k := by
-  rw [(D.map f hf).levelConsistent_iff_loops]
-  intro x p
-  obtain ⟨z, q, hq⟩ := (D.map f hf).exists_loop_levelPathProduct_eq_of_vertices_eq k
-    (fun j : D.active k => (D.wall j).support)
-    (fun j => (D.wall j).isConvexPolyhedron)
-    (fun j => (D.wall j).finrank_direction_add_one) p
-  have he := hq ((D.mapPathPrefunctor f hf k).mapPath q)
-    (D.vertices_mapPathPrefunctor f hf k q)
-  rw [levelPathProduct_mapPathPrefunctor, (D.levelConsistent_iff_loops k).mp hD z q,
-    map_one] at he
-  exact he.symm
+  rw [← pushforward_ofFixedDegree]
+  exact hD.pushforward (by simp)
 
 /-- A consistent directed diagram remains consistent after changing coefficients. -/
 theorem Consistent.map (hD : D.Consistent) : (D.map f hf).Consistent := by
-  rw [consistent_iff] at hD ⊢
-  exact fun k => (hD k).map D f hf
+  rw [← pushforward_ofFixedDegree]
+  exact hD.pushforward
 
 /-- Finite-order endpoint transport commutes with coefficient change. Endpoints
 need only avoid the original active supports, which contain the mapped ones. -/
@@ -306,10 +245,9 @@ theorem IsOutgoingCompletion.map {ι₀ κ : Type*}
     {D₀ : ι₀ → DirectedWall (d := d) h H}
     {E : DirectedDiagram (d := d) h H (ι₀ ⊕ κ)}
     (hE : IsOutgoingCompletion D₀ E) :
-    IsOutgoingCompletion (fun j => (D₀ j).map f hf) (E.map f hf) where
-  wall_inl j := by rw [map_wall, hE.wall_inl]
-  outgoing_inr j := by simpa using hE.outgoing_inr j
-  consistent := hE.consistent.map E f hf
+    IsOutgoingCompletion (fun j => (D₀ j).map f hf) (E.map f hf) := by
+  simp_rw [← DirectedWall.pushforward_ofFixedDegree, ← pushforward_ofFixedDegree]
+  exact hE.pushforward
 
 omit D in
 /-- Every outgoing completion of the mapped input represents the coefficient

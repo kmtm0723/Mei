@@ -6,8 +6,8 @@ Authors: Claude Code
 module
 
 public import Mei.Geometry.ScatteringDiagram.DirectedWall.Pushforward
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.AffineTransport.Basic
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Map.Basic
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Completion
+public import Mei.Geometry.Convex.Polyhedron.Path.AffineTransport
 import Mei.Geometry.Convex.Polyhedron.Path.Restriction
 
 /-!
@@ -19,18 +19,13 @@ target order `k`, paths are pushed forward from any source cutoff `a` covering t
 modulus: first the walls whose labels die at order `k` are forgotten, then the path is
 moved by the spatial affine equivalence. The finite path product is carried by the
 truncated BCH homomorphism, and common all-order paths give naturality of completed
-path products.
+path products. These identities also hold for any diagram equal to the pushforward,
+along any path map moving vertices by the spatial map.
 
 Image normals are only positive rational multiples of the inverse-dual normals, as for
-tropical pairings of finite-index lattices. Positive rescaling of normals preserves all
-signed crossing events, so it does not change path products
-(`Quiver.Path.wallPathProduct_smul_normal`).
-
-The fixed-degree coefficient maps `DirectedDiagram.map` and the coordinate changes
-`DirectedDiagram.image` are special cases. The proofs follow
-`DirectedDiagram.levelPathProduct_image`, combining
-`Quiver.Path.wallPathProduct_restrict`, `Quiver.Path.wallPathProduct_wallComplementMap`
-and `Quiver.Path.signedCrossingEvents_smul`. The setting is Mandel, *Scattering
+tropical pairings of finite-index lattices; positive rescaling of normals does not change
+path products. The fixed-degree coefficient maps `DirectedDiagram.map` and the coordinate
+changes `DirectedDiagram.image` are special cases. The setting is Mandel, *Scattering
 diagrams, theta functions, and refined tropical curve counts*,
 [arXiv:1503.06183v5](https://arxiv.org/abs/1503.06183v5), Example 2.1(i).
 -/
@@ -40,21 +35,6 @@ public section
 noncomputable section
 
 open Set Mei.Convex
-
-namespace Quiver.Path
-
-variable {V ι G : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Finite ι] [Group G]
-  {W : ι → Set V} {x y : WallComplement W}
-
-/-- Positive rescaling of the coorientations does not change a wall product. -/
-theorem wallPathProduct_smul_normal (p : AdmissiblePLPath x y) (ν : ι → V →ₗ[ℝ] ℝ)
-    (r : ι → ℝ) (hr : ∀ j, 0 < r j) (label : ι → G)
-    (comm : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (label i) (label j)) :
-    p.wallPathProduct (fun j => r j • ν j) label comm = p.wallPathProduct ν label comm := by
-  rw [wallPathProduct_eq_prod_signedCrossingEvents,
-    wallPathProduct_eq_prod_signedCrossingEvents, signedCrossingEvents_smul ν r hr]
-
-end Quiver.Path
 
 namespace Mei.DirectedDiagram
 
@@ -92,12 +72,33 @@ def pushforward : DirectedDiagram (d := d') h' H' ι where
 theorem pushforward_wall (j : ι) : (D.pushforward P).wall j = (D.wall j).pushforward P :=
   (rfl)
 
+/-- The pushed support of an indexed wall is the spatial image of its support. -/
+theorem pushforward_wall_support (j : ι) :
+    ((D.pushforward P).wall j).support = P.spatialMap '' (D.wall j).support := by
+  rw [pushforward_wall, DirectedWall.pushforward_support]
+
 /-- A target-active label was active at any source order covering the modulus. -/
 theorem active_pushforward_subset (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a) :
     (D.pushforward P).active k ⊆ D.active a := by
   simpa only [Set.subset_def, mem_active, Function.mem_mulSupport, pushforward_wall,
     DirectedWall.pushforward_label] using
     P.lieHom.mulSupport_projection_completedMap_subset (fun j => (D.wall j).label) k ha
+
+/-- The order-`k` label of a pushed wall is the truncated image of its order-`a` label. -/
+theorem projection_pushforward_wall_label (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a)
+    (j : ι) : CompletedGroup.projection k ((D.pushforward P).wall j).label =
+      (P.lieHom.truncatedMap k ha).bchGroupMap (CompletedGroup.projection a (D.wall j).label) := by
+  rw [pushforward_wall, DirectedWall.pushforward_label]
+  exact P.lieHom.projection_completedMap_of_le k ha _
+
+/-- Move a path avoiding the source walls that survive at target order `k` by the spatial
+affine equivalence. -/
+def survivingPathPushforward (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a) :
+    WallComplement ((fun j : D.active a => (D.wall j).support) ∘
+      Set.inclusion (D.active_pushforward_subset P k ha)) ⥤q
+      WallComplement (fun j : (D.pushforward P).active k =>
+        ((D.pushforward P).wall j).support) :=
+  P.spatialMap.wallComplementMap (Equiv.refl _) (fun j => D.pushforward_wall_support P j)
 
 /-- Restrict a source path to the target-active indices and then apply the spatial
 affine equivalence. The source cutoff can be any bound for the prescribed modulus. -/
@@ -107,21 +108,86 @@ def levelPathPushforward (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a) 
         ((D.pushforward P).wall j).support) :=
   WallComplement.restrictPrefunctor (fun j : D.active a => (D.wall j).support)
       (Set.inclusion (D.active_pushforward_subset P k ha)) ⋙q
-    P.spatialMap.wallComplementMap (Equiv.refl _) (fun _ => by
-      rw [Equiv.refl_apply, pushforward_wall, DirectedWall.pushforward_support]
-      rfl)
+    D.survivingPathPushforward P k ha
 
 /-- The finite path map sends each vertex to its spatial image. -/
 @[simp]
 theorem levelPathPushforward_obj_val (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a)
     (x : WallComplement (fun j : D.active a => (D.wall j).support)) :
-    ((D.levelPathPushforward P k ha).obj x).val = P.spatialMap x.val := by
-  simp [levelPathPushforward]
+    ((D.levelPathPushforward P k ha).obj x).val = P.spatialMap x.val :=
+  ContinuousAffineEquiv.wallComplementMap_obj_val _ _ _ _
 
 /-- Finite path pushforward preserves reversal of segments and polygonal paths. -/
 instance (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a) :
     (D.levelPathPushforward P k ha).MapReverse where
   map_reverse' _ := PLift.ext (Subsingleton.elim _ _)
+
+/-- A finite path product along a pushed path is the product along the restricted path
+moved by the spatial map. -/
+theorem levelPathProduct_levelPathPushforward (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a)
+    {x y : WallComplement (fun j : D.active a => (D.wall j).support)}
+    (p : AdmissiblePLPath x y) :
+    (D.pushforward P).levelPathProduct k ((D.levelPathPushforward P k ha).mapPath p) =
+      (D.pushforward P).levelPathProduct k ((D.survivingPathPushforward P k ha).mapPath
+        ((WallComplement.restrictPrefunctor _
+          (Set.inclusion (D.active_pushforward_subset P k ha))).mapPath p)) := by
+  rw [levelPathPushforward, Prefunctor.mapPath_comp_apply]
+  -- The endpoints `(F ⋙q G).obj x` and `G.obj (F.obj x)` agree by definition.
+  rfl
+
+/-- Forgetting the walls whose truncated labels die does not change a source product with
+truncated labels. -/
+private theorem wallPathProduct_restrict_pushforward (k : ℕ) {a : ℕ}
+    (ha : P.degreeMap.modulus k ≤ a)
+    {x y : WallComplement (fun j : D.active a => (D.wall j).support)}
+    (p : AdmissiblePLPath x y) :
+    ((WallComplement.restrictPrefunctor _
+        (Set.inclusion (D.active_pushforward_subset P k ha))).mapPath p).wallPathProduct
+        (fun j : (D.pushforward P).active k => h.realCharacter (D.wall j).normal)
+        (fun j : (D.pushforward P).active k => (P.lieHom.truncatedMap k ha).bchGroupMap
+          (CompletedGroup.projection a (D.wall j).label))
+        (fun j l hjl => (D.activeLabels_commute a (Set.inclusion _ j) (Set.inclusion _ l)
+          hjl).map _) =
+      p.wallPathProduct (fun j : D.active a => h.realCharacter (D.wall j).normal)
+        (fun j : D.active a => (P.lieHom.truncatedMap k ha).bchGroupMap
+          (CompletedGroup.projection a (D.wall j).label))
+        (fun j l hjl => (D.activeLabels_commute a j l hjl).map _) := by
+  refine p.wallPathProduct_restrict (fun j : D.active a => h.realCharacter (D.wall j).normal)
+    (fun j : D.active a => (P.lieHom.truncatedMap k ha).bchGroupMap
+      (CompletedGroup.projection a (D.wall j).label))
+    (fun j l hjl => (D.activeLabels_commute a j l hjl).map _) _ (Set.inclusion_injective _)
+    fun j hj => ?_
+  rw [← projection_pushforward_wall_label]
+  by_contra hne
+  exact hj ⟨⟨j.val, ((D.pushforward P).mem_active k j.val).mpr hne⟩, rfl⟩
+
+/-- On the surviving walls, the spatial map carries the source product, taken with the
+source normals, to the target product. -/
+private theorem wallPathProduct_wallComplementMap_pushforward (k : ℕ) {a : ℕ}
+    (ha : P.degreeMap.modulus k ≤ a)
+    {x y : WallComplement ((fun j : D.active a => (D.wall j).support) ∘
+      Set.inclusion (D.active_pushforward_subset P k ha))}
+    (q : AdmissiblePLPath x y) :
+    ((D.survivingPathPushforward P k ha).mapPath q).wallPathProduct
+        (fun j : (D.pushforward P).active k => h'.realCharacter ((D.pushforward P).wall j).normal)
+        (fun j : (D.pushforward P).active k =>
+          CompletedGroup.projection k ((D.pushforward P).wall j).label)
+        ((D.pushforward P).activeLabels_commute k) =
+      (P.lieHom.truncatedMap k ha).bchGroupMap (q.wallPathProduct
+        (fun j : (D.pushforward P).active k => h.realCharacter (D.wall j).normal)
+        (fun j : (D.pushforward P).active k => CompletedGroup.projection a (D.wall j).label)
+        (fun j l hjl => D.activeLabels_commute a (Set.inclusion _ j) (Set.inclusion _ l) hjl)) := by
+  let r : (D.pushforward P).active k → ℝ :=
+    fun j => ((P.realCharacter_normalMap (D.wall j).normal).choose : ℝ)
+  have hs := q.wallPathProduct_smul_normal (fun j => h.realCharacter (D.wall j).normal) r
+    (fun j => Rat.cast_pos.mpr (P.realCharacter_normalMap (D.wall j).normal).choose_spec.1)
+    (fun j => CompletedGroup.projection a (D.wall j).label)
+    (fun j l hjl => D.activeLabels_commute a (Set.inclusion _ j) (Set.inclusion _ l) hjl)
+  refine (q.wallPathProduct_wallComplementMap P.spatialMap (Equiv.refl _) _
+    (fun j => r j • h.realCharacter (D.wall j).normal) _ (fun j => ?_) _ _ _ _ _
+    (fun j => D.projection_pushforward_wall_label P k ha j)).trans (congrArg _ hs)
+  rw [Equiv.refl_apply, pushforward_wall, DirectedWall.pushforward_normal]
+  exact (P.realCharacter_normalMap (D.wall j).normal).choose_spec.2
 
 /-- Finite directed transport is natural under pushforward, using the truncated BCH map
 at any source cutoff covering the target modulus. Walls whose labels die are forgotten,
@@ -132,82 +198,44 @@ theorem levelPathProduct_pushforward (k : ℕ) {a : ℕ} (ha : P.degreeMap.modul
     (p : AdmissiblePLPath x y) :
     (D.pushforward P).levelPathProduct k ((D.levelPathPushforward P k ha).mapPath p) =
       (P.lieHom.truncatedMap k ha).bchGroupMap (D.levelPathProduct a p) := by
-  let f := Set.inclusion (D.active_pushforward_subset P k ha)
-  let q := (WallComplement.restrictPrefunctor
-    (fun j : D.active a => (D.wall j).support) f).mapPath p
-  let F := (P.lieHom.truncatedMap k ha).bchGroupMap
-  let r : (D.pushforward P).active k → ℝ :=
-    fun j => ((P.realCharacter_normalMap (D.wall j).normal).choose : ℝ)
-  have hlabel (j : ι) : CompletedGroup.projection k ((D.pushforward P).wall j).label =
-      F (CompletedGroup.projection a (D.wall j).label) := by
-    simp only [pushforward_wall, DirectedWall.pushforward_label]
-    exact P.lieHom.projection_completedMap_of_le k ha _
-  -- First delete exactly the labels killed at the target cutoff.
-  have hzero (j : D.active a) (hj : j ∉ range f) :
-      F (CompletedGroup.projection a (D.wall j).label) = 1 := by
-    rw [← hlabel]
-    by_contra hne
-    exact hj ⟨⟨j.val, ((D.pushforward P).mem_active k j.val).mpr hne⟩, Subtype.ext rfl⟩
-  have hr := p.wallPathProduct_restrict
-    (fun j : D.active a => h.realCharacter (D.wall j).normal)
-    (fun j => F (CompletedGroup.projection a (D.wall j).label))
-    (fun j l h => (D.activeLabels_commute a j l h).map F) f (Set.inclusion_injective _) hzero
-  -- Affine covariance applies to the surviving family with rescaled source normals.
-  have hi := q.wallPathProduct_wallComplementMap P.spatialMap (Equiv.refl _)
-    (W' := fun j : (D.pushforward P).active k => ((D.pushforward P).wall j).support)
-    (fun _ => by
-      rw [Equiv.refl_apply, pushforward_wall, DirectedWall.pushforward_support]
-      rfl)
-    (fun j => r j • h.realCharacter (D.wall (f j)).normal)
-    (fun j => h'.realCharacter ((D.pushforward P).wall j).normal)
-    (fun j => by
-      rw [Equiv.refl_apply, pushforward_wall, DirectedWall.pushforward_normal]
-      exact (P.realCharacter_normalMap (D.wall j).normal).choose_spec.2)
-    (fun j => CompletedGroup.projection a (D.wall (f j)).label)
-    (fun j => CompletedGroup.projection k ((D.pushforward P).wall j).label)
-    (fun j l h => D.activeLabels_commute a (f j) (f l) h)
-    ((D.pushforward P).activeLabels_commute k) F (fun j => hlabel j)
-  have hs := q.wallPathProduct_smul_normal
-    (fun j => h.realCharacter (D.wall (f j)).normal) r
-    (fun j => Rat.cast_pos.mpr (P.realCharacter_normalMap (D.wall j).normal).choose_spec.1)
-    (fun j => CompletedGroup.projection a (D.wall (f j)).label)
-    (fun j l h => D.activeLabels_commute a (f j) (f l) h)
-  -- Move coefficient change through both products and recombine the comparisons.
-  have hm := q.map_wallPathProduct
-    (fun j => h.realCharacter (D.wall (f j)).normal)
-    (fun j => CompletedGroup.projection a (D.wall (f j)).label)
-    (fun j l h => D.activeLabels_commute a (f j) (f l) h) F
-  have he := hi.trans ((congrArg F hs).trans (hm.trans hr))
-  have hm' := p.map_wallPathProduct
-    (fun j : D.active a => h.realCharacter (D.wall j).normal)
-    (fun j => CompletedGroup.projection a (D.wall j).label)
-    (D.activeLabels_commute a) F
-  calc
-    _ = _ := (D.pushforward P).levelPathProduct_eq_wallPathProduct k _
-      ((D.pushforward P).activeLabels_commute k)
-    _ = _ := by
-      -- The prefunctor composition and its two successive path maps coincide.
-      convert he.trans hm'.symm using 1
-      simp only [levelPathPushforward, Prefunctor.mapPath_comp_apply, q, f]
-      rfl
-    _ = _ := congrArg F (D.levelPathProduct_eq_wallPathProduct a p
-      (D.activeLabels_commute a)).symm
+  rw [levelPathProduct_levelPathPushforward, levelPathProduct_eq_wallPathProduct _ k _
+      ((D.pushforward P).activeLabels_commute k),
+    D.levelPathProduct_eq_wallPathProduct a p (D.activeLabels_commute a),
+    wallPathProduct_wallComplementMap_pushforward]
+  exact (Quiver.Path.map_wallPathProduct _ _ _ _ _).trans
+    ((D.wallPathProduct_restrict_pushforward P k ha p).trans
+      (Quiver.Path.map_wallPathProduct _ _ _ _ p).symm)
+
+/-- Push an all-order allowed point forward by the spatial map. -/
+def pointPushforward (x : D.Point) : (D.pushforward P).Point :=
+  ⟨P.spatialMap x.val, fun k j => by
+    have hx := ((D.levelPathPushforward P k le_rfl).obj
+      (CommonWallComplement.projection (P.degreeMap.modulus k) x)).notMem j
+    simpa only [levelPathPushforward_obj_val, CommonWallComplement.projection_val] using hx⟩
+
+/-- A pushed point is the spatial image of the original point. -/
+@[simp]
+theorem pointPushforward_val (x : D.Point) :
+    (D.pointPushforward P x).val = P.spatialMap x.val := (rfl)
+
+/-- Projecting a pushed point agrees with pushing its projection from the source cutoff
+selected by the modulus. -/
+theorem projection_pointPushforward (k : ℕ) (x : D.Point) :
+    CommonWallComplement.projection k (D.pointPushforward P x) =
+      (D.levelPathPushforward P k le_rfl).obj
+        (CommonWallComplement.projection (P.degreeMap.modulus k) x) := by
+  apply WallComplement.ext
+  rw [levelPathPushforward_obj_val, CommonWallComplement.projection_val,
+    CommonWallComplement.projection_val, pointPushforward_val]
 
 /-- Push a common all-order path forward. Each target admissibility condition uses the
 source condition at its prescribed cutoff modulus. -/
 def pathPushforward : D.Point ⥤q (D.pushforward P).Point where
-  obj x := ⟨P.spatialMap x.val, fun k j => by
-    have hx := ((D.levelPathPushforward P k le_rfl).obj
-      (CommonWallComplement.projection (P.degreeMap.modulus k) x)).notMem j
-    simpa only [levelPathPushforward_obj_val, CommonWallComplement.projection_val] using hx⟩
+  obj := D.pointPushforward P
   map {x y} a := ⟨fun k => by
-    let b := (D.levelPathPushforward P k le_rfl).map
-      ((CommonWallComplement.projectionPrefunctor (P.degreeMap.modulus k)).map a)
-    have hb := b.down
-    -- The projected endpoints and the finite affine images have the same ambient values.
-    convert hb using 1 <;> apply WallComplement.ext <;>
-      simp only [levelPathPushforward_obj_val, CommonWallComplement.projection_val,
-        CommonWallComplement.projectionPrefunctor_obj]⟩
+    rw [projection_pointPushforward, projection_pointPushforward]
+    exact ((D.levelPathPushforward P k le_rfl).map
+      ((CommonWallComplement.projectionPrefunctor (P.degreeMap.modulus k)).map a)).down⟩
 
 /-- All-order allowed points move by the spatial affine equivalence. -/
 @[simp]
@@ -246,39 +274,36 @@ theorem pathProduct_pushforward {x y : D.Point} (p : Quiver.Path x y) :
   exact hp.trans (D.levelPathProduct_pushforward P k le_rfl
     ((CommonWallComplement.projectionPrefunctor (P.degreeMap.modulus k)).mapPath p))
 
-section SpecialCases
+variable {D P} in
+/-- Finite path products in any diagram equal to the pushforward are carried by the
+truncated BCH map, along any finite path map moving vertices by the spatial map. -/
+theorem levelPathProduct_of_pushforward_eq {D' : DirectedDiagram (d := d') h' H' ι}
+    (hD' : D.pushforward P = D') (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a)
+    (G : WallComplement (fun j : D.active a => (D.wall j).support) ⥤q
+      WallComplement (fun j : D'.active k => (D'.wall j).support))
+    (hG : ∀ x, (G.obj x).val = P.spatialMap x.val)
+    {x y : WallComplement (fun j : D.active a => (D.wall j).support)}
+    (p : AdmissiblePLPath x y) :
+    D'.levelPathProduct k (G.mapPath p) =
+      (P.lieHom.truncatedMap k ha).bchGroupMap (D.levelPathProduct a p) := by
+  subst hD'
+  obtain rfl : G = D.levelPathPushforward P k ha :=
+    Prefunctor.ext (fun x => WallComplement.ext (by rw [hG, levelPathPushforward_obj_val]))
+      (fun _ _ _ => PLift.ext (Subsingleton.elim _ _))
+  exact D.levelPathProduct_pushforward P k ha p
 
-variable {L'' : Type u} [LieRing L''] [LieAlgebra R L''] [LieAlgebra ℚ L'']
-  [IsScalarTower ℚ R L''] {ℋ : Γ → Submodule R L''} [GradedLieAlgebra ℋ]
-  [IsPositiveGrading d ℋ] {H'' : DirectedWallSpaces ρ ℋ}
-
-/-- Fixed-degree coefficient maps of diagrams are pushforwards. -/
-@[simp]
-theorem pushforward_ofFixedDegree (f : GradedLieHom (PositiveDegreeMap.id d) ℒ ℋ)
-    (hf : ∀ n m, ∀ x ∈ H.wall n m, f x ∈ H''.wall n m) :
-    D.pushforward (DirectedWall.Pushforward.ofFixedDegree f hf) = D.map f hf := by
-  apply DirectedDiagram.ext
-  funext j
-  simp
-
-/-- Coordinate changes of diagrams are pushforwards. -/
-@[simp]
-theorem pushforward_ofCoordinateChange (e : Toric.IntegralAffineEquiv h h')
-    (E : DirectedWallSpaces.CoordinateChange (d := d) (e := d') H H')
-    (hE : E.tangentEquiv = e.latticeEquiv) :
-    D.pushforward (DirectedWall.Pushforward.ofCoordinateChange e E hE) = D.image e E hE := by
-  apply DirectedDiagram.ext
-  funext j
-  simp
-
-end SpecialCases
-
-/-- The identity pushforward fixes every directed diagram. -/
-@[simp]
-theorem pushforward_id : D.pushforward DirectedWall.Pushforward.id = D := by
-  apply DirectedDiagram.ext
-  funext j
-  simp
+variable {D P} in
+/-- Completed path products in any diagram equal to the pushforward are carried by the
+completed BCH map, along any all-order path map moving vertices by the spatial map. -/
+theorem pathProduct_of_pushforward_eq {D' : DirectedDiagram (d := d') h' H' ι}
+    (hD' : D.pushforward P = D') (G : D.Point ⥤q D'.Point)
+    (hG : ∀ x, (G.obj x).val = P.spatialMap x.val) {x y : D.Point} (p : Quiver.Path x y) :
+    D'.pathProduct (G.mapPath p) = P.lieHom.completedMap (D.pathProduct p) := by
+  subst hD'
+  obtain rfl : G = D.pathPushforward P :=
+    Prefunctor.ext (fun x => CommonWallComplement.ext (by rw [hG, pathPushforward_obj_val]))
+      (fun _ _ _ => PLift.ext (Subsingleton.elim _ _))
+  exact D.pathProduct_pushforward P p
 
 section Composition
 

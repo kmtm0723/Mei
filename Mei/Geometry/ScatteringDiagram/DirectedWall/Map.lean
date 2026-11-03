@@ -5,8 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.DirectedWall.Basic
-public import Mei.Geometry.ScatteringDiagram.WallSpace.Hom
+public import Mei.Geometry.ScatteringDiagram.DirectedWall.Pushforward
 
 /-!
 # Fixed-degree coefficient maps of directed walls
@@ -14,6 +13,8 @@ public import Mei.Geometry.ScatteringDiagram.WallSpace.Hom
 A graded Lie homomorphism preserving homogeneous wall spaces maps directed wall
 labels while retaining the normal, supported ray and affine support. Incomingness
 and outgoingness are therefore preserved even when a label becomes trivial.
+Such a map is the pushforward along `DirectedWall.Pushforward.ofFixedDegree`, with
+identity spatial map, rays and normals.
 
 The construction uses `GradedLieHom.completedMap_mem_wallGroup` to restrict the
 existing completed coefficient map. No injectivity or surjectivity is required.
@@ -28,21 +29,62 @@ namespace Mei.DirectedWall
 universe u
 
 variable {Γ Λ R V : Type*} {L L' L'' : Type u}
-  [AddCommGroup Γ] [AddCommGroup Λ] [CommRing R] [Algebra ℚ R]
-  [LieRing L] [LieAlgebra R L] [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
-  [LieRing L'] [LieAlgebra R L'] [LieAlgebra ℚ L'] [IsScalarTower ℚ R L']
-  [LieRing L''] [LieAlgebra R L''] [LieAlgebra ℚ L''] [IsScalarTower ℚ R L'']
-  [DecidableEq Γ] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [AddCommGroup Γ] [AddCommGroup Λ] [CommRing R]
+  [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] [LieRing L''] [LieAlgebra R L'']
+  [NormedAddCommGroup V] [NormedSpace ℝ V]
   {ρ : Γ →+ Λ} {d : PositiveDegrees Γ}
   {ℒ : Γ → Submodule R L} {ℳ : Γ → Submodule R L'} {ℋ : Γ → Submodule R L''}
-  [GradedLieAlgebra ℒ] [GradedLieAlgebra ℳ] [GradedLieAlgebra ℋ]
-  [IsPositiveGrading d ℒ] [IsPositiveGrading d ℳ] [IsPositiveGrading d ℋ]
   {i : Λ →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
   {H : DirectedWallSpaces ρ ℒ} {H' : DirectedWallSpaces ρ ℳ}
   {H'' : DirectedWallSpaces ρ ℋ}
-  (W : DirectedWall (d := d) h H)
   (f : GradedLieHom (PositiveDegreeMap.id d) ℒ ℳ)
   (hf : ∀ n m, ∀ x ∈ H.wall n m, f x ∈ H'.wall n m)
+
+/-- A fixed-degree coefficient map, with identity spatial map, rays and normals. -/
+-- The data must compute when transport statements for `map` are read as pushforwards.
+@[expose]
+def Pushforward.ofFixedDegree : Pushforward d d h h H H' where
+  degreeMap := PositiveDegreeMap.id d
+  lieHom := f
+  rayMap := id
+  mem_rayDegrees_rayMap _ _ hn := by simpa using hn
+  normalMap := id
+  wall_mem n _ m x hx := by simpa using hf n m x hx
+  spatialMap := ContinuousAffineEquiv.refl ℝ V
+  map_direction _ _ := by simp
+  realCharacter_normalMap _ := ⟨1, one_pos, by ext; simp⟩
+
+/-- The degree map of a fixed-degree coefficient map is the identity. -/
+@[simp]
+theorem Pushforward.ofFixedDegree_degreeMap :
+    (Pushforward.ofFixedDegree (h := h) f hf).degreeMap = PositiveDegreeMap.id d := (rfl)
+
+/-- The ray map of a fixed-degree coefficient map is the identity. -/
+@[simp]
+theorem Pushforward.ofFixedDegree_rayMap (w : SupportedRay d) :
+    (Pushforward.ofFixedDegree (h := h) f hf).rayMap w = w := (rfl)
+
+/-- The normal map of a fixed-degree coefficient map is the identity. -/
+@[simp]
+theorem Pushforward.ofFixedDegree_normalMap (m : Λ →+ ℤ) :
+    (Pushforward.ofFixedDegree (h := h) f hf).normalMap m = m := (rfl)
+
+/-- The spatial map of a fixed-degree coefficient map is the identity. -/
+@[simp]
+theorem Pushforward.ofFixedDegree_spatialMap :
+    (Pushforward.ofFixedDegree (h := h) f hf).spatialMap = ContinuousAffineEquiv.refl ℝ V :=
+  (rfl)
+
+/-- The identity pushforward data: identity degree map, Lie map, spatial map, rays and
+normals. -/
+def Pushforward.id : Pushforward d d h h H H :=
+  Pushforward.ofFixedDegree (GradedLieHom.id ℒ) (fun _ _ _ hx => by simpa using hx)
+
+variable [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
+  [LieAlgebra ℚ L'] [IsScalarTower ℚ R L'] [LieAlgebra ℚ L''] [IsScalarTower ℚ R L'']
+  [DecidableEq Γ] [GradedLieAlgebra ℒ] [GradedLieAlgebra ℳ] [GradedLieAlgebra ℋ]
+  [IsPositiveGrading d ℒ] [IsPositiveGrading d ℳ] [IsPositiveGrading d ℋ]
+  (W : DirectedWall (d := d) h H)
 
 /-- Map the completed label of a directed wall, retaining all its geometric data. -/
 def map : DirectedWall (d := d) h H' where
@@ -83,6 +125,19 @@ theorem incoming_map_iff : (W.map f hf).Incoming ↔ W.Incoming := by
 theorem outgoing_map_iff : (W.map f hf).Outgoing ↔ W.Outgoing := by
   simp only [outgoing_iff, map_ray, map_support]
 
+/-- Fixed-degree coefficient maps are pushforwards. -/
+@[simp]
+theorem pushforward_ofFixedDegree :
+    W.pushforward (Pushforward.ofFixedDegree f hf) = W.map f hf := by
+  apply DirectedWall.ext
+  · rw [pushforward_normal, map_normal, Pushforward.ofFixedDegree_normalMap]
+  · rw [pushforward_ray, map_ray, Pushforward.ofFixedDegree_rayMap]
+  · rw [pushforward_support, map_support, Pushforward.ofFixedDegree_spatialMap,
+      ContinuousAffineEquiv.coe_refl, Set.image_id]
+  · rw [pushforward_label, map_label]
+    -- The Lie map of `ofFixedDegree f hf` is `f` by definition.
+    rfl
+
 /-- The identity coefficient map fixes every directed wall. -/
 @[simp]
 theorem map_id : W.map (GradedLieHom.id ℒ) (fun _ _ _ hx => by simpa using hx) = W := by
@@ -101,5 +156,10 @@ theorem map_map (g : GradedLieHom (PositiveDegreeMap.id d) ℳ ℋ)
   · rfl
   · rfl
   · simp only [map_label, GradedLieHom.completedMap_compId, MonoidHom.comp_apply]
+
+/-- The identity pushforward fixes every directed wall. -/
+@[simp]
+theorem pushforward_id : W.pushforward Pushforward.id = W := by
+  rw [Pushforward.id, pushforward_ofFixedDegree, map_id]
 
 end Mei.DirectedWall

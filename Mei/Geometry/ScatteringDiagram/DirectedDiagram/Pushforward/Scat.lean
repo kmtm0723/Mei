@@ -5,7 +5,7 @@ Authors: Claude Code
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.Consistency
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.Completion
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Scat
 
 /-!
@@ -16,11 +16,7 @@ spatial affine equivalence preserves equivalence, so it descends to completed di
 classes, and at finite order from any source cutoff covering the cutoff modulus. A full
 affine hyperplane support stays a full hyperplane cut out by the image normal, with offset
 rescaled and translated. Forming the canonical outgoing scattering class commutes with
-pushforward.
-
-This packages `DirectedDiagram.Equivalent.pushforward`,
-`DirectedDiagram.IsOutgoingCompletion.pushforward` and `DirectedDiagram.scat_eq_toClass`.
-The completion theorem is Mandel, *Scattering diagrams, theta functions, and refined
+pushforward. The completion theorem is Mandel, *Scattering diagrams, theta functions, and refined
 tropical curve counts*, [arXiv:1503.06183v5](https://arxiv.org/abs/1503.06183v5),
 Theorem 2.6.
 -/

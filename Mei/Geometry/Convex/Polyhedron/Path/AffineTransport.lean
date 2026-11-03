@@ -22,6 +22,8 @@ This combines `ContinuousAffineEquiv.wallComplementMap`, the signed events of
 `Mei.Convex.WallComplement`, and `Finset.noncommProd_map`. Commutation is required
 only for labels whose supports have the same affine span; labels at different
 crossing times need not commute. No polyhedrality or lattice is required.
+Positive rescaling of the coorientations does not change a polygonal product, so normals
+need only be pulled back up to positive multiples.
 -/
 
 public section
@@ -177,5 +179,21 @@ theorem wallPathProduct_wallComplementMap {G K : Type*} [Group G] [Group K]
   | cons p a ih =>
     simp only [Prefunctor.mapPath_cons, wallPathProduct_cons, ih, map_mul,
       e.segmentPathProduct_wallComplementMap r hW ν ν' hν label label' comm comm' f hlabel a]
+
+end Quiver.Path
+
+namespace Quiver.Path
+
+variable {V ι G : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Finite ι] [Group G]
+  {W : ι → Set V} {x y : WallComplement W}
+
+/-- Positive rescaling of the coorientations does not change a wall product. -/
+@[simp]
+theorem wallPathProduct_smul_normal (p : AdmissiblePLPath x y) (ν : ι → V →ₗ[ℝ] ℝ)
+    (r : ι → ℝ) (hr : ∀ j, 0 < r j) (label : ι → G)
+    (comm : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (label i) (label j)) :
+    p.wallPathProduct (fun j => r j • ν j) label comm = p.wallPathProduct ν label comm := by
+  rw [wallPathProduct_eq_prod_signedCrossingEvents,
+    wallPathProduct_eq_prod_signedCrossingEvents, signedCrossingEvents_smul ν r hr]
 
 end Quiver.Path

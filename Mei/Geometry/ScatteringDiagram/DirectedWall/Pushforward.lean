@@ -5,8 +5,10 @@ Authors: Claude Code
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.DirectedWall.AffineTransport
-public import Mei.Geometry.ScatteringDiagram.DirectedWall.Map
+public import Mei.Geometry.Affine.Span
+public import Mei.Geometry.ScatteringDiagram.DirectedWall.Basic
+public import Mei.Geometry.ScatteringDiagram.WallSpace.Hom
+public import Mei.Topology.Algebra.ContinuousAffineEquiv
 
 /-!
 # Pushing directed walls forward along degree-changing maps
@@ -40,9 +42,6 @@ coefficient maps `DirectedWall.map` and the coordinate changes `DirectedWall.ima
 special cases. The mathematical setting is Mandel, *Scattering diagrams, theta functions,
 and refined tropical curve counts*, [arXiv:1503.06183v5](https://arxiv.org/abs/1503.06183v5),
 Example 2.1(i) and Definition 2.2.
-
-The construction uses `GradedLieHom.completedMap_mem_wallGroup`,
-`RationalAffinePolyhedron.preimage` and `AffineEquiv.linear_mem_recessionCone_image`.
 -/
 
 public section
@@ -55,14 +54,17 @@ open Set
 
 universe u
 
-variable {Γ Γ' Λ Λ' R V V' : Type*} {L L' : Type u}
-  [AddCommGroup Γ] [AddCommGroup Γ'] [AddCommGroup Λ] [AddCommGroup Λ']
+variable {Γ Γ' Γ'' Λ Λ' Λ'' R V V' V'' : Type*} {L L' L'' : Type u}
+  [AddCommGroup Γ] [AddCommGroup Γ'] [AddCommGroup Γ'']
+  [AddCommGroup Λ] [AddCommGroup Λ'] [AddCommGroup Λ'']
   [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+  [LieRing L''] [LieAlgebra R L'']
   [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup V'] [NormedSpace ℝ V']
-  {ρ : Γ →+ Λ} {ρ' : Γ' →+ Λ'}
-  {ℒ : Γ → Submodule R L} {ℳ : Γ' → Submodule R L'}
-  {d : PositiveDegrees Γ} {d' : PositiveDegrees Γ'}
-  {i : Λ →+ V} {i' : Λ' →+ V'}
+  [NormedAddCommGroup V''] [NormedSpace ℝ V'']
+  {ρ : Γ →+ Λ} {ρ' : Γ' →+ Λ'} {ρ'' : Γ'' →+ Λ''}
+  {ℒ : Γ → Submodule R L} {ℳ : Γ' → Submodule R L'} {ℋ : Γ'' → Submodule R L''}
+  {d : PositiveDegrees Γ} {d' : PositiveDegrees Γ'} {d'' : PositiveDegrees Γ''}
+  {i : Λ →+ V} {i' : Λ' →+ V'} {i'' : Λ'' →+ V''}
 
 namespace DirectedWall
 
@@ -97,7 +99,8 @@ structure Pushforward where
     (h'.realCharacter (normalMap m)).comp spatialMap.toAffineEquiv.linear.toLinearMap =
       (r : ℝ) • h.realCharacter m
 
-variable {d d' h h' H H'}
+variable {d d' h h' H H'} {h'' : TauCeti.Toric.IsIntegralLattice i''}
+  {H'' : DirectedWallSpaces ρ'' ℋ}
 
 namespace Pushforward
 
@@ -156,11 +159,12 @@ theorem isRationalLinearMap_symm :
       LinearEquiv.apply_symm_apply]
   rw [hs] at hv
   have hr' : (r : ℝ) ≠ 0 := by exact_mod_cast hr.ne'
+  have hm : (P.normalMap m.toAddMonoidHom).toIntLinearMap.toAddMonoidHom =
+      P.normalMap m.toAddMonoidHom :=
+    AddMonoidHom.ext fun _ => by simp
   simp only [LinearMap.comp_apply, LinearMap.smul_apply, smul_eq_mul, Rat.cast_mul,
     Rat.cast_inv, ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap,
-    AffineEquiv.linear_toAffineMap, LinearEquiv.coe_coe]
-  change _ = _ * h'.realCharacter (P.normalMap m.toAddMonoidHom) v
-  rw [hv]
+    AffineEquiv.linear_toAffineMap, LinearEquiv.coe_coe, hm, hv]
   field_simp
 
 /-- Rational-normal polyhedra have rational-normal images. -/
@@ -195,12 +199,57 @@ theorem direction_affineSpan_image {S : Set V} {m : Λ →+ ℤ}
   rw [hv]
   simp [hr']
 
+/-- Compose pushforward data, applying `P` first. Degree maps, cutoff moduli, ray and
+normal maps compose, spatial maps compose and the normal scalars multiply. -/
+def comp (Q : Pushforward d' d'' h' h'' H' H'') (P : Pushforward d d' h h' H H') :
+    Pushforward d d'' h h'' H H'' where
+  degreeMap := Q.degreeMap.comp P.degreeMap
+  lieHom := Q.lieHom.comp P.lieHom
+  rayMap := Q.rayMap ∘ P.rayMap
+  mem_rayDegrees_rayMap w n hn := by
+    simpa only [PositiveDegreeMap.comp_apply, Function.comp_apply] using
+      Q.mem_rayDegrees_rayMap _ _ (P.mem_rayDegrees_rayMap w n hn)
+  normalMap := Q.normalMap ∘ P.normalMap
+  wall_mem n hn m x hx := by
+    simpa only [GradedLieHom.comp_apply, PositiveDegreeMap.comp_apply, Function.comp_apply] using
+      Q.wall_mem _ (P.degreeMap.map_mem hn) _ _ (P.wall_mem n hn m x hx)
+  spatialMap := P.spatialMap.trans Q.spatialMap
+  map_direction n hn := by
+    rw [PositiveDegreeMap.comp_apply, Q.map_direction _ (P.degreeMap.map_mem hn),
+      P.map_direction n hn, ContinuousAffineEquiv.linear_trans_apply]
+  realCharacter_normalMap m := by
+    obtain ⟨r, hr, hP⟩ := P.exists_realCharacter_normalMap_apply m
+    obtain ⟨s, hs, hQ⟩ := Q.exists_realCharacter_normalMap_apply (P.normalMap m)
+    refine ⟨s * r, mul_pos hs hr, ?_⟩
+    ext v
+    simp only [Function.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      ContinuousAffineEquiv.linear_trans_apply, LinearMap.smul_apply, smul_eq_mul, Rat.cast_mul,
+      hQ, hP]
+    ring
+
+/-- The ray map of composite data is the composite of the ray maps. -/
+@[simp]
+theorem comp_rayMap (Q : Pushforward d' d'' h' h'' H' H'') (P : Pushforward d d' h h' H H')
+    (w : SupportedRay d) : (Q.comp P).rayMap w = Q.rayMap (P.rayMap w) := (rfl)
+
+/-- The normal map of composite data is the composite of the normal maps. -/
+@[simp]
+theorem comp_normalMap (Q : Pushforward d' d'' h' h'' H' H'') (P : Pushforward d d' h h' H H')
+    (m : Λ →+ ℤ) : (Q.comp P).normalMap m = Q.normalMap (P.normalMap m) := (rfl)
+
+/-- The spatial map of composite data is the composite of the spatial maps. -/
+@[simp]
+theorem comp_spatialMap (Q : Pushforward d' d'' h' h'' H' H'') (P : Pushforward d d' h h' H H') :
+    (Q.comp P).spatialMap = P.spatialMap.trans Q.spatialMap := (rfl)
+
 end Pushforward
 
 variable [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
-  [LieAlgebra ℚ L'] [IsScalarTower ℚ R L'] [DecidableEq Γ] [DecidableEq Γ']
+  [LieAlgebra ℚ L'] [IsScalarTower ℚ R L'] [LieAlgebra ℚ L''] [IsScalarTower ℚ R L'']
+  [DecidableEq Γ] [DecidableEq Γ'] [DecidableEq Γ'']
   [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ]
   [GradedLieAlgebra ℳ] [IsPositiveGrading d' ℳ]
+  [GradedLieAlgebra ℋ] [IsPositiveGrading d'' ℋ]
 
 variable (W : DirectedWall (d := d) h H) (P : Pushforward d d' h h' H H')
 
@@ -302,165 +351,17 @@ theorem outgoing_pushforward_iff : (W.pushforward P).Outgoing ↔ W.Outgoing := 
   rw [outgoing_iff, outgoing_iff]
   exact not_congr hi
 
-section SpecialCases
-
-variable {L'' : Type u} [LieRing L''] [LieAlgebra R L''] [LieAlgebra ℚ L'']
-  [IsScalarTower ℚ R L''] {ℋ : Γ → Submodule R L''} [GradedLieAlgebra ℋ]
-  [IsPositiveGrading d ℋ] {H'' : DirectedWallSpaces ρ ℋ}
-
-/-- A fixed-degree coefficient map, with identity spatial map, rays and normals. -/
-def Pushforward.ofFixedDegree (f : GradedLieHom (PositiveDegreeMap.id d) ℒ ℋ)
-    (hf : ∀ n m, ∀ x ∈ H.wall n m, f x ∈ H''.wall n m) :
-    Pushforward d d h h H H'' where
-  degreeMap := PositiveDegreeMap.id d
-  lieHom := f
-  rayMap := id
-  mem_rayDegrees_rayMap _ _ hn := by simpa using hn
-  normalMap := id
-  wall_mem n _ m x hx := by simpa using hf n m x hx
-  spatialMap := ContinuousAffineEquiv.refl ℝ V
-  map_direction _ _ := by simp
-  realCharacter_normalMap _ := ⟨1, one_pos, by ext; simp⟩
-
-/-- Fixed-degree coefficient maps are pushforwards. -/
-@[simp]
-theorem pushforward_ofFixedDegree (f : GradedLieHom (PositiveDegreeMap.id d) ℒ ℋ)
-    (hf : ∀ n m, ∀ x ∈ H.wall n m, f x ∈ H''.wall n m) :
-    W.pushforward (Pushforward.ofFixedDegree f hf) = W.map f hf := by
-  apply DirectedWall.ext
-  · rw [pushforward_normal, map_normal]
-    rfl
-  · rw [pushforward_ray, map_ray]
-    rfl
-  · rw [pushforward_support, map_support]
-    simp [Pushforward.ofFixedDegree]
-  · rw [pushforward_label, map_label]
-    rfl
-
-variable (e : Toric.IntegralAffineEquiv h h')
-  (E : DirectedWallSpaces.CoordinateChange (d := d) (e := d') H H')
-  (hE : E.tangentEquiv = e.latticeEquiv)
-
-/-- Compatible spatial and algebraic coordinate changes, with inverse-dual normals. -/
-def Pushforward.ofCoordinateChange : Pushforward d d' h h' H H' where
-  degreeMap := E.degreeMap
-  lieHom := E.gradedLieHom
-  rayMap := E.rayEquiv
-  mem_rayDegrees_rayMap w n hn := by
-    rw [E.degreeMap_apply]
-    exact (E.mem_rayDegrees_rayEquiv w n).mpr hn
-  normalMap m := m.comp E.tangentEquiv.symm
-  wall_mem n _ m x hx := by
-    rw [E.gradedLieHom_apply, E.degreeMap_apply]
-    exact (E.wall_mem_iff n m x).mpr hx
-  spatialMap := e.toContinuousAffineEquiv
-  map_direction n _ := by
-    rw [Toric.IntegralAffineEquiv.toContinuousAffineEquiv_toAffineEquiv, E.degreeMap_apply,
-      ← E.map_direction, hE, e.map_lattice]
-  realCharacter_normalMap m := ⟨1, one_pos, by
-    rw [E.realCharacter_comp_tangentEquiv_symm e hE]
-    ext v
-    simp⟩
-
-/-- Coordinate changes of directed walls are pushforwards. -/
-@[simp]
-theorem pushforward_ofCoordinateChange :
-    W.pushforward (Pushforward.ofCoordinateChange e E hE) = W.image e E hE := by
-  apply DirectedWall.ext
-  · rw [pushforward_normal, image_normal]
-    rfl
-  · rw [pushforward_ray, image_ray]
-    rfl
-  · rw [pushforward_support, image_support]
-    ext
-    simp [Pushforward.ofCoordinateChange]
-  · rw [pushforward_label, image_label, E.completedEquiv_apply]
-    rfl
-
-end SpecialCases
-
-section Composition
-
-variable {Γ'' Λ'' V'' : Type*} {L'' : Type u} [AddCommGroup Γ''] [AddCommGroup Λ'']
-  [NormedAddCommGroup V''] [NormedSpace ℝ V'']
-  [LieRing L''] [LieAlgebra R L''] [LieAlgebra ℚ L''] [IsScalarTower ℚ R L'']
-  [DecidableEq Γ''] {ρ'' : Γ'' →+ Λ''} {ℋ : Γ'' → Submodule R L''}
-  {d'' : PositiveDegrees Γ''} [GradedLieAlgebra ℋ] [IsPositiveGrading d'' ℋ]
-  {i'' : Λ'' →+ V''} {h'' : TauCeti.Toric.IsIntegralLattice i''}
-  {H'' : DirectedWallSpaces ρ'' ℋ}
-
-omit [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L] [LieAlgebra ℚ L']
-  [IsScalarTower ℚ R L'] [DecidableEq Γ] [DecidableEq Γ'] [GradedLieAlgebra ℒ]
-  [IsPositiveGrading d ℒ] [GradedLieAlgebra ℳ] [IsPositiveGrading d' ℳ]
-  [LieAlgebra ℚ L''] [IsScalarTower ℚ R L''] [DecidableEq Γ''] [GradedLieAlgebra ℋ]
-  [IsPositiveGrading d'' ℋ] in
-/-- The linear part of a composite continuous affine equivalence. -/
-private theorem linear_trans_apply (e : V ≃ᴬ[ℝ] V') (e' : V' ≃ᴬ[ℝ] V'') (v : V) :
-    (e.trans e').toAffineEquiv.linear v =
-      e'.toAffineEquiv.linear (e.toAffineEquiv.linear v) := by
-  have h₁ := (e.trans e').toAffineEquiv.toAffineMap.linear_apply_vsub v 0
-  have h₂ := e.toAffineEquiv.toAffineMap.linear_apply_vsub v 0
-  have h₃ := e'.toAffineEquiv.toAffineMap.linear_apply_vsub (e v) (e 0)
-  simp only [vsub_eq_sub, sub_zero, AffineEquiv.linear_toAffineMap,
-    AffineEquiv.coe_toAffineMap, ContinuousAffineEquiv.coe_coe,
-    ContinuousAffineEquiv.trans_apply, LinearEquiv.coe_coe] at h₁ h₂ h₃
-  rw [h₁, h₂, h₃]
-
-omit [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L] [LieAlgebra ℚ L']
-  [IsScalarTower ℚ R L'] [DecidableEq Γ] [DecidableEq Γ'] [GradedLieAlgebra ℒ]
-  [IsPositiveGrading d ℒ] [GradedLieAlgebra ℳ] [IsPositiveGrading d' ℳ]
-  [LieAlgebra ℚ L''] [IsScalarTower ℚ R L''] [DecidableEq Γ''] [GradedLieAlgebra ℋ]
-  [IsPositiveGrading d'' ℋ] in
-/-- Compose pushforward data, applying `P` first. Degree maps, cutoff moduli, ray and
-normal maps compose, spatial maps compose and the normal scalars multiply. -/
-def Pushforward.comp (Q : Pushforward d' d'' h' h'' H' H'')
-    (P : Pushforward d d' h h' H H') : Pushforward d d'' h h'' H H'' where
-  degreeMap := Q.degreeMap.comp P.degreeMap
-  lieHom := Q.lieHom.comp P.lieHom
-  rayMap := Q.rayMap ∘ P.rayMap
-  mem_rayDegrees_rayMap w n hn := by
-    simpa only [PositiveDegreeMap.comp_apply, Function.comp_apply] using
-      Q.mem_rayDegrees_rayMap _ _ (P.mem_rayDegrees_rayMap w n hn)
-  normalMap := Q.normalMap ∘ P.normalMap
-  wall_mem n hn m x hx := by
-    simpa only [GradedLieHom.comp_apply, PositiveDegreeMap.comp_apply, Function.comp_apply] using
-      Q.wall_mem _ (P.degreeMap.map_mem hn) _ _ (P.wall_mem n hn m x hx)
-  spatialMap := P.spatialMap.trans Q.spatialMap
-  map_direction n hn := by
-    rw [PositiveDegreeMap.comp_apply, Q.map_direction _ (P.degreeMap.map_mem hn),
-      P.map_direction n hn, linear_trans_apply]
-  realCharacter_normalMap m := by
-    obtain ⟨r, hr, hP⟩ := P.exists_realCharacter_normalMap_apply m
-    obtain ⟨s, hs, hQ⟩ := Q.exists_realCharacter_normalMap_apply (P.normalMap m)
-    refine ⟨s * r, mul_pos hs hr, ?_⟩
-    ext v
-    simp only [Function.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      linear_trans_apply, LinearMap.smul_apply, smul_eq_mul, Rat.cast_mul, hQ, hP]
-    ring
-
 /-- Successive pushforwards agree with the pushforward along the composite data. -/
 @[simp]
 theorem pushforward_pushforward (Q : Pushforward d' d'' h' h'' H' H'') :
     (W.pushforward P).pushforward Q = W.pushforward (Q.comp P) := by
   apply DirectedWall.ext
-  · rfl
-  · rfl
-  · simp only [pushforward_support, Set.image_image]
-    rfl
+  · simp only [pushforward_normal, Pushforward.comp_normalMap]
+  · simp only [pushforward_ray, Pushforward.comp_rayMap]
+  · simp only [pushforward_support, Set.image_image, Pushforward.comp_spatialMap,
+      ContinuousAffineEquiv.coe_trans, Function.comp_def]
   · simp only [pushforward_label]
     exact (DFunLike.congr_fun (GradedLieHom.completedMap_comp Q.lieHom P.lieHom) _).symm
-
-end Composition
-
-/-- The identity pushforward data: identity degree map, Lie map, spatial map, rays and
-normals. -/
-def Pushforward.id : Pushforward d d h h H H :=
-  Pushforward.ofFixedDegree (GradedLieHom.id ℒ) (fun _ _ _ hx => by simpa using hx)
-
-/-- The identity pushforward fixes every directed wall. -/
-@[simp]
-theorem pushforward_id : W.pushforward Pushforward.id = W := by
-  rw [Pushforward.id, pushforward_ofFixedDegree, map_id]
 
 end DirectedWall
 end Mei

@@ -8,29 +8,19 @@ module
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.Basic
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Equivalence.Basic
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Consistency
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Uniqueness
 
 /-!
-# Consistency and outgoing completions under pushforward
+# Consistency and equivalence under pushforward
 
 Pushing directed diagrams forward along a degree-changing graded Lie map with a
 compatible spatial affine equivalence preserves finite-order consistency and
 equivalence, with cutoffs related by the cutoff modulus: the property at a source
-cutoff covering the modulus of a target order `k` gives the property at `k`. Finite and
-completed endpoint transports are natural. Since pushforward also preserves
-outgoingness, the image of an outgoing completion is an outgoing completion of the pushed
-initial walls, and by uniqueness every outgoing completion of the pushed initial walls is
-equivalent to it.
-
-A target path at order `k` only avoids the walls active there, which may be fewer than the
-source walls active at the larger cutoff, since labels may die under the map. It is first
-moved into general position for all pushed source walls without changing its product, then
-pulled back by the inverse spatial map. Loop perturbation uses
-`DirectedDiagram.exists_loop_levelPathProduct_eq_of_vertices_eq`; equivalence uses
-`DirectedDiagram.exists_common_levelPathProduct_eq`. The argument follows the coordinate
-change case `DirectedDiagram.LevelConsistent.image`. The completions are those of Mandel,
-*Scattering diagrams, theta functions, and refined tropical curve counts*,
-[arXiv:1503.06183v5](https://arxiv.org/abs/1503.06183v5), Theorem 2.6.
+cutoff covering the modulus of a target order `k` gives the property at `k`. Hence it
+preserves consistency and equivalence at all orders. Finite and completed endpoint
+transports are natural under pushforward. Labels may die under the map, so the walls
+active at a target order may be fewer than the source walls active at the larger cutoff.
+The setting is Mandel, *Scattering diagrams, theta functions, and refined tropical curve
+counts*, [arXiv:1503.06183v5](https://arxiv.org/abs/1503.06183v5), Example 2.1(i).
 -/
 
 public section
@@ -68,9 +58,7 @@ private def levelPathPreimage (a : ℕ) :
     WallComplement (fun j : D.active a => ((D.pushforward P).wall j).support) ⥤q
       WallComplement (fun j : D.active a => (D.wall j).support) :=
   P.spatialMap.symm.wallComplementMap (Equiv.refl _)
-    (fun j => by
-      rw [Equiv.refl_apply, pushforward_wall, DirectedWall.pushforward_support]
-      exact (P.spatialMap.symm_image_image (D.wall j).support).symm)
+    (fun j => by rw [Equiv.refl_apply, pushforward_wall_support, P.spatialMap.symm_image_image])
 
 /-- The pulled-back path visits the inverse spatial images of the vertices. -/
 private theorem levelPathPreimage_obj_val (a : ℕ)
@@ -212,32 +200,5 @@ theorem transport_pushforward (hD : D.Consistent) (x y : D.Point) :
   obtain ⟨p⟩ := D.exists_path x y
   rw [(D.pushforward P).transport_eq_pathProduct _ ((D.pathPushforward P).mapPath p),
     D.pathProduct_pushforward, D.transport_eq_pathProduct hD p]
-
-section Completion
-
-variable {ι₀ ι' κ' : Type*} {D₀ : ι₀ → DirectedWall (d := d) h H}
-
-/-- The pushforward of an outgoing completion is an outgoing completion of the pushed
-initial walls, even when some initial or outgoing labels die. -/
-theorem IsOutgoingCompletion.pushforward {D : DirectedDiagram (d := d) h H (ι₀ ⊕ ι')}
-    (hD : IsOutgoingCompletion D₀ D) :
-    IsOutgoingCompletion (fun j => (D₀ j).pushforward P) (D.pushforward P) where
-  wall_inl j := by rw [pushforward_wall, hD.wall_inl]
-  outgoing_inr j := by
-    rw [pushforward_wall, DirectedWall.outgoing_pushforward_iff]
-    exact hD.outgoing_inr j
-  consistent := hD.consistent.pushforward
-
-/-- Outgoing completion commutes with pushforward: every outgoing completion of the pushed
-initial walls is equivalent to the pushforward of any outgoing completion of the original
-initial walls. -/
-theorem IsOutgoingCompletion.equivalent_pushforward
-    {D : DirectedDiagram (d := d) h H (ι₀ ⊕ ι')}
-    {D' : DirectedDiagram (d := d') h' H' (ι₀ ⊕ κ')} (hD : IsOutgoingCompletion D₀ D)
-    (hD' : IsOutgoingCompletion (fun j => (D₀ j).pushforward P) D') :
-    D'.Equivalent (D.pushforward P) :=
-  outgoingCompletion_unique hD' hD.pushforward
-
-end Completion
 
 end Mei.DirectedDiagram

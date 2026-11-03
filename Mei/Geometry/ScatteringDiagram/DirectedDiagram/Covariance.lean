@@ -5,7 +5,7 @@ Authors: Claude Code
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Uniqueness
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.Completion
 
 /-!
 # Consistency and outgoing completions under coordinate changes
@@ -16,7 +16,9 @@ initial family is an outgoing completion of the transported initial family.
 By uniqueness, every outgoing completion of the transported family is equivalent
 to that image: forming the consistent outgoing completion commutes with coordinate
 changes. Finite-order consistency and equivalence are treated in
-`Mei.Geometry.ScatteringDiagram.DirectedDiagram.Covariance.Basic`.
+`Mei.Geometry.ScatteringDiagram.DirectedDiagram.Covariance.Basic`. These are the special
+case `DirectedWall.Pushforward.ofCoordinateChange` of
+`DirectedDiagram.IsOutgoingCompletion.pushforward`.
 
 The completions are those of Travis Mandel, *Scattering diagrams, theta functions, and
 refined tropical curve counts*, [arXiv:1503.06183v5](https://arxiv.org/abs/1503.06183v5),
@@ -66,12 +68,9 @@ variable {ι₀ ι' κ' : Type*} {D₀ : ι₀ → DirectedWall (d := d) h H}
 initial walls. -/
 theorem IsOutgoingCompletion.image {D : DirectedDiagram (d := d) h H (ι₀ ⊕ ι')}
     (hD : IsOutgoingCompletion D₀ D) :
-    IsOutgoingCompletion (fun j => (D₀ j).image e E hE) (D.image e E hE) where
-  wall_inl j := by rw [image_wall, hD.wall_inl]
-  outgoing_inr j := by
-    rw [image_wall, DirectedWall.outgoing_image_iff]
-    exact hD.outgoing_inr j
-  consistent := hD.consistent.image
+    IsOutgoingCompletion (fun j => (D₀ j).image e E hE) (D.image e E hE) := by
+  simp_rw [← DirectedWall.pushforward_ofCoordinateChange, ← pushforward_ofCoordinateChange]
+  exact hD.pushforward
 
 variable (e E hE) in
 /-- A diagram is an outgoing completion exactly when its image is an outgoing completion

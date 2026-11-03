@@ -5,10 +5,8 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Completion
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.Basic
 public import Mei.Geometry.ScatteringDiagram.DirectedWall.AffineTransport
-public import Mei.Geometry.Convex.Polyhedron.Path.AffineTransport
-import Mei.Geometry.Convex.Polyhedron.Path.Restriction
 
 /-!
 # Affine transport of directed diagrams
@@ -20,10 +18,9 @@ covering the coordinate change's modulus. The finite path product is carried by
 the corresponding truncated BCH homomorphism, even when some source walls vanish.
 Common all-order paths then give naturality of the completed path product.
 
-This combines `DirectedWall.image`, `GradedLieHom.hasFiniteSupport_completedMap`,
-and the affine covariance and identity-wall deletion theorems for
-`Quiver.Path.wallPathProduct`. Repeated and coincident walls retain their indices;
-translations and orientation-reversing affine equivalences are allowed.
+Diagram transport is the pushforward along `DirectedWall.Pushforward.ofCoordinateChange`.
+Repeated and coincident walls retain their indices; translations and
+orientation-reversing affine equivalences are allowed.
 -/
 
 public section
@@ -74,6 +71,14 @@ def image : DirectedDiagram (d := d') h' H' ι where
 /-- Diagram transport applies the existing affine transport to every wall. -/
 @[simp]
 theorem image_wall (j : ι) : (D.image e E hE).wall j = (D.wall j).image e E hE := (rfl)
+
+/-- Coordinate changes of diagrams are pushforwards. -/
+@[simp]
+theorem pushforward_ofCoordinateChange :
+    D.pushforward (DirectedWall.Pushforward.ofCoordinateChange e E hE) = D.image e E hE := by
+  apply DirectedDiagram.ext
+  funext j
+  simp
 
 /-- Integral affine transport preserves full-hyperplane inputs, with translated offsets. -/
 theorem image_fullHyperplane
@@ -133,16 +138,8 @@ theorem imageEquiv_symm_apply (D' : DirectedDiagram (d := d') h' H' ι) :
 /-- A target-active label was active at any source order covering the modulus. -/
 theorem active_image_subset (k : ℕ) {a : ℕ} (ha : E.degreeMap.modulus k ≤ a) :
     (D.image e E hE).active k ⊆ D.active a := by
-  intro j hj
-  simp only [mem_active, image_wall, DirectedWall.image_label, E.completedEquiv_apply,
-    E.gradedLieHom.projection_completedMap_of_le k ha] at hj
-  rw [mem_active]
-  intro he
-  apply hj
-  rw [he]
-  -- The tower object carries the concrete BCH group operations.
-  convert (E.gradedLieHom.truncatedMap k ha).bchGroupMap.map_one using 1
-  rfl
+  rw [← pushforward_ofCoordinateChange]
+  exact D.active_pushforward_subset _ k ha
 
 /-- Restrict a source path to the target-active indices and then apply the spatial
 affine map. The source cutoff can be any bound for the prescribed modulus. -/
@@ -178,66 +175,10 @@ theorem levelPathProduct_image (k : ℕ) {a : ℕ} (ha : E.degreeMap.modulus k �
     {x y : WallComplement (fun j : D.active a => (D.wall j).support)}
     (p : AdmissiblePLPath x y) :
     (D.image e E hE).levelPathProduct k ((D.levelPathImage e E hE k ha).mapPath p) =
-      (E.gradedLieHom.truncatedMap k ha).bchGroupMap (D.levelPathProduct a p) := by
-  let f := Set.inclusion (D.active_image_subset e E hE k ha)
-  let q := (WallComplement.restrictPrefunctor
-    (fun j : D.active a => (D.wall j).support) f).mapPath p
-  let F := (E.gradedLieHom.truncatedMap k ha).bchGroupMap
-  have hlabel (j : ι) : CompletedGroup.projection k ((D.image e E hE).wall j).label =
-      F (CompletedGroup.projection a (D.wall j).label) := by
-    simp only [image_wall, DirectedWall.image_label, E.completedEquiv_apply]
-    exact E.gradedLieHom.projection_completedMap_of_le k ha _
-  -- First delete exactly the labels killed at the target cutoff.
-  have hzero (j : D.active a) (hj : j ∉ range f) :
-      F (CompletedGroup.projection a (D.wall j).label) = 1 := by
-    rw [← hlabel]
-    by_contra hne
-    exact hj ⟨⟨j.val, ((D.image e E hE).mem_active k j.val).mpr hne⟩, Subtype.ext rfl⟩
-  have hr := p.wallPathProduct_restrict
-    (fun j : D.active a => h.realCharacter (D.wall j).normal)
-    (fun j => F (CompletedGroup.projection a (D.wall j).label))
-    (fun j l h => (D.activeLabels_commute a j l h).map F) f (Set.inclusion_injective _) hzero
-  -- Affine covariance now applies to the surviving indexed family.
-  have hi := q.wallPathProduct_wallComplementMap e.toContinuousAffineEquiv (Equiv.refl _)
-    (W' := fun j : (D.image e E hE).active k => ((D.image e E hE).wall j).support)
-    (by
-      intro j
-      simp only [Equiv.refl_apply, image_wall, DirectedWall.image_support]
-      ext v
-      simp [f])
-    (fun j => h.realCharacter (D.wall (f j)).normal)
-    (fun j => h'.realCharacter ((D.image e E hE).wall j).normal)
-    (by
-      intro j
-      ext v
-      simpa only [Equiv.refl_apply, image_wall, LinearMap.comp_apply,
-        Toric.IntegralAffineEquiv.toContinuousAffineEquiv_toAffineEquiv,
-        f, Set.coe_inclusion, LinearEquiv.coe_coe] using
-        (D.wall j).realCharacter_image_normal e E hE v)
-    (fun j => CompletedGroup.projection a (D.wall (f j)).label)
-    (fun j => CompletedGroup.projection k ((D.image e E hE).wall j).label)
-    (fun j l h => D.activeLabels_commute a (f j) (f l) h)
-    ((D.image e E hE).activeLabels_commute k) F (fun j => hlabel j)
-  -- Move coefficient change through both products and recombine the comparisons.
-  have hm := q.map_wallPathProduct
-    (fun j => h.realCharacter (D.wall (f j)).normal)
-    (fun j => CompletedGroup.projection a (D.wall (f j)).label)
-    (fun j l h => D.activeLabels_commute a (f j) (f l) h) F
-  have he := hi.trans (hm.trans hr)
-  have hm' := p.map_wallPathProduct
-    (fun j : D.active a => h.realCharacter (D.wall j).normal)
-    (fun j => CompletedGroup.projection a (D.wall j).label)
-    (D.activeLabels_commute a) F
-  calc
-    _ = _ := (D.image e E hE).levelPathProduct_eq_wallPathProduct k _
-      ((D.image e E hE).activeLabels_commute k)
-    _ = _ := by
-      -- The prefunctor composition and its two successive path maps coincide.
-      convert he.trans hm'.symm using 1
-      simp only [levelPathImage, Prefunctor.mapPath_comp_apply, q, f]
-      rfl
-    _ = _ := congrArg F (D.levelPathProduct_eq_wallPathProduct a p
-      (D.activeLabels_commute a)).symm
+      (E.gradedLieHom.truncatedMap k ha).bchGroupMap (D.levelPathProduct a p) :=
+  levelPathProduct_of_pushforward_eq (D.pushforward_ofCoordinateChange e E hE) k ha _
+    (fun x => (D.levelPathImage_obj_val e E hE k ha x).trans
+      (e.toContinuousAffineEquiv_apply x.val).symm) p
 
 /-- Transport a common all-order path. Each target admissibility condition uses
 the source condition at its prescribed cutoff modulus. -/
@@ -264,33 +205,14 @@ theorem pathImage_obj_val (x : D.Point) :
 instance : (D.pathImage e E hE).MapReverse where
   map_reverse' _ := PLift.ext (Subsingleton.elim _ _)
 
-/-- Projecting a transported common path agrees with transporting its projection
-from the source cutoff selected by the modulus. -/
-theorem pathImage_comp_projection (k : ℕ) :
-    D.pathImage e E hE ⋙q CommonWallComplement.projectionPrefunctor k =
-      CommonWallComplement.projectionPrefunctor (E.degreeMap.modulus k) ⋙q
-        D.levelPathImage e E hE k le_rfl := by
-  refine Prefunctor.ext (fun x => ?_) (fun _ _ _ => PLift.ext (Subsingleton.elim _ _))
-  apply WallComplement.ext
-  simp
-
 /-- Affine coordinate changes carry completed directed path products through the
 completed BCH group isomorphism, even when the degree functions differ. -/
 @[simp]
 theorem pathProduct_image {x y : D.Point} (p : Quiver.Path x y) :
     (D.image e E hE).pathProduct ((D.pathImage e E hE).mapPath p) =
       E.completedEquiv (D.pathProduct p) := by
-  apply CompletedGroup.ext
-  intro k
-  have hp := congrArg
-    (fun F : D.Point ⥤q WallComplement
-        (fun j : (D.image e E hE).active k => ((D.image e E hE).wall j).support) =>
-      (D.image e E hE).levelPathProduct k (F.mapPath p))
-    (D.pathImage_comp_projection e E hE k)
-  simp only [Prefunctor.mapPath_comp_apply] at hp
-  rw [projection_pathProduct, E.completedEquiv_apply,
-    E.gradedLieHom.projection_completedMap, projection_pathProduct]
-  exact hp.trans (D.levelPathProduct_image e E hE k le_rfl
-    ((CommonWallComplement.projectionPrefunctor (E.degreeMap.modulus k)).mapPath p))
+  rw [E.completedEquiv_apply]
+  exact pathProduct_of_pushforward_eq (D.pushforward_ofCoordinateChange e E hE) _
+    (fun x => (e.toContinuousAffineEquiv_apply x.val).symm) p
 
 end Mei.DirectedDiagram

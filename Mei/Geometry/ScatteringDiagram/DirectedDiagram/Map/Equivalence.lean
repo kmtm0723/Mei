@@ -15,10 +15,8 @@ directed diagrams. In particular, changing coefficients of a completion is
 independent of its wall presentation. Labels may vanish under the map, so a path
 admissible for the image need not be admissible for the original diagram.
 
-The comparison combines `DirectedDiagram.exists_common_levelPathProduct_eq` with
-`DirectedDiagram.levelPathProduct_mapPathPrefunctor`. It follows the coefficient
-naturality of `CompletedDiagram.Equivalent.mapDiagram`, while allowing the active
-supports to disappear.
+These are the special case `DirectedWall.Pushforward.ofFixedDegree` of
+`DirectedDiagram.LevelEquivalent.pushforward`, allowing the active supports to disappear.
 -/
 
 public section
@@ -50,47 +48,8 @@ variable {Γ Λ R V ι κ : Type*} {L L' : Type u}
 supports of labels that the map kills. Neither diagram need be consistent. -/
 theorem LevelEquivalent.map {k : ℕ} (hDE : D.LevelEquivalent E k) :
     (D.map f hf).LevelEquivalent (E.map f hf) k := by
-  apply (levelEquivalent_def _ _ _).mpr
-  intro x y x' y' p q hpq
-  let W : Unit → D.active k ⊕ E.active k → Set V := fun _ =>
-    Sum.elim (fun j => (D.wall j).support) (fun j => (E.wall j).support)
-  have hpoly : ∀ j a, TauCeti.IsConvexPolyhedron (W j a) := by
-    rintro _ (a | a)
-    · exact (D.wall a).isConvexPolyhedron
-    · exact (E.wall a).isConvexPolyhedron
-  have hdim : ∀ j a, Module.finrank ℝ (affineSpan ℝ (W j a)).direction + 1 =
-      Module.finrank ℝ V := by
-    rintro _ (a | a)
-    · exact (D.wall a).finrank_direction_add_one
-    · exact (E.wall a).finrank_direction_add_one
-  obtain ⟨a, b, r, hP, hQ⟩ := (D.map f hf).exists_common_levelPathProduct_eq
-    (E.map f hf) k k hpoly hdim p q hpq
-  let r₀ := (CommonWallComplement.projectionPrefunctor ()).mapPath r
-  let pD : WallComplement (W ()) ⥤q
-      WallComplement (fun j : D.active k => (D.wall j).support) :=
-    restrictPrefunctor (W ()) Sum.inl
-  let pE : WallComplement (W ()) ⥤q
-      WallComplement (fun j : E.active k => (E.wall j).support) :=
-    restrictPrefunctor (W ()) Sum.inr
-  let rD := pD.mapPath r₀
-  let rE := pE.mapPath r₀
-  have hvD : rD.vertices.map WallComplement.val =
-      r.vertices.map CommonWallComplement.val :=
-    (vertices_restrictPrefunctor (W ()) Sum.inl r₀).trans
-      (CommonWallComplement.vertices_projection () r)
-  have hvE : rE.vertices.map WallComplement.val =
-      r.vertices.map CommonWallComplement.val :=
-    (vertices_restrictPrefunctor (W ()) Sum.inr r₀).trans
-      (CommonWallComplement.vertices_projection () r)
-  have hvMapD : ((D.mapPathPrefunctor f hf k).mapPath rD).vertices.map
-      WallComplement.val = r.vertices.map CommonWallComplement.val := by
-    exact (D.vertices_mapPathPrefunctor f hf k rD).trans hvD
-  have hvMapE : ((E.mapPathPrefunctor f hf k).mapPath rE).vertices.map
-      WallComplement.val = r.vertices.map CommonWallComplement.val := by
-    exact (E.vertices_mapPathPrefunctor f hf k rE).trans hvE
-  rw [← hP _ hvMapD, ← hQ _ hvMapE, levelPathProduct_mapPathPrefunctor,
-    levelPathProduct_mapPathPrefunctor,
-    (levelEquivalent_def _ _ _).mp hDE rD rE (hvD.trans hvE.symm)]
+  rw [← pushforward_ofFixedDegree, ← pushforward_ofFixedDegree]
+  exact hDE.pushforward (by simp)
 
 /-- A coefficient map injective at the cutoff preserves and reflects finite-order
 equivalence, including for inconsistent diagrams. -/
@@ -111,7 +70,7 @@ theorem levelEquivalent_map_iff_of_injective (k : ℕ)
 even if they have different index types and different active supports. -/
 theorem Equivalent.map (hDE : D.Equivalent E) :
     (D.map f hf).Equivalent (E.map f hf) := by
-  rw [equivalent_iff] at hDE ⊢
-  exact fun k => (hDE k).map f hf
+  rw [← pushforward_ofFixedDegree, ← pushforward_ofFixedDegree]
+  exact hDE.pushforward
 
 end Mei.DirectedDiagram
