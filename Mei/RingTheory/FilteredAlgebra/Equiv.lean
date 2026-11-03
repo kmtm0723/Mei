@@ -167,4 +167,31 @@ theorem completionEquiv_symm_toCompletion (b : B) :
     (F.completionEquiv G e he).symm (G.toCompletion b) = F.toCompletion (e.symm b) := by
   rw [completionEquiv_symm, completionEquiv_toCompletion]
 
+/-- A completed algebra equivalence preserves and reflects every induced filtration ideal. -/
+@[simp]
+theorem completionEquiv_mem_completionIdeal_iff (k : ℕ) (x : F.completion) :
+    F.completionEquiv G e he x ∈ G.completionIdeal k ↔ x ∈ F.completionIdeal k := by
+  cases k with
+  | zero => simp
+  | succ k =>
+    simp only [completionIdeal_succ, RingHom.mem_ker, projection_completionEquiv]
+    exact map_eq_zero_iff
+      (Ideal.quotientMapₐ (G.ideal (k + 1)) e.toAlgHom (by rw [he]))
+      (Ideal.quotientMap_injective' (H := (he (k + 1)).ge) (he (k + 1)).le)
+
+/-- The inverse completed equivalence also preserves and reflects filtration order. -/
+@[simp]
+theorem completionEquiv_symm_mem_completionIdeal_iff (k : ℕ) (y : G.completion) :
+    (F.completionEquiv G e he).symm y ∈ F.completionIdeal k ↔
+      y ∈ G.completionIdeal k := by
+  rw [completionEquiv_symm, completionEquiv_mem_completionIdeal_iff]
+
+/-- The completed equivalence identifies the completed filtration ideals by comap. -/
+@[simp]
+theorem completionIdeal_comap_completionEquiv (k : ℕ) :
+    (G.completionIdeal k).comap (F.completionEquiv G e he).toAlgHom =
+      F.completionIdeal k := by
+  ext x
+  simp only [Ideal.mem_comap, AlgEquiv.coe_toAlgHom, completionEquiv_mem_completionIdeal_iff]
+
 end Mei.AlgFiltration
