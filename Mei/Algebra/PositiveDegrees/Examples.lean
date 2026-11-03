@@ -1,18 +1,19 @@
 /-
 Copyright (c) 2026 Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Claude
 -/
 module
 
 public import Mei.Algebra.PositiveDegrees.Map
 public import Mei.Algebra.PositiveDegrees.Ray.Basic
+public import Mei.Algebra.PositiveDegrees.Scale
 public import Mathlib.Tactic.Linarith
 public import Mathlib.Algebra.Order.Ring.Abs
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 
 /-!
-# Counterexamples for positive degrees
+# Examples and counterexamples for positive degrees
 
 Three monoids in `ℤ × ℤ` distinguish the bounds used for degree truncations and
 supported primitive rays.
@@ -24,6 +25,17 @@ supported primitive rays.
 * `parabolicDegrees` has finite cutoffs but infinitely many supported primitive
   generators of degree one. Thus finite-order ray sets must be measured on actual
   allowed degrees, rather than on the degrees of ambient primitive generators.
+
+Two further examples compute the canonical cutoff moduli of changes of degree on a fixed
+monoid, `Mei.PositiveDegreeMap.changeDegree`, which also computes
+`Mei.PositiveDegrees.changeDegreeEquiv` on completed BCH groups.
+
+* On `ℕ`, the change from `δ(a) = a` to `2δ` has modulus `⌊k / 2⌋`, and the reverse change
+  has modulus `2k`.
+* On the quadratic wedge `P = {(a, b) | 0 ≤ b ≤ a ≤ b²}`, both coordinates are positive
+  degrees. The change from `δ(a, b) = a` to `δ'(a, b) = b` has modulus `k²`, attained at
+  `(k², k)`, and the reverse change has modulus `k`, attained at `(k, k)`. No linear bound
+  `a ≤ c b` holds on `P`, so `P` is not finitely generated.
 -/
 
 public section
@@ -281,5 +293,136 @@ theorem infinite_parabolic_generators_degree_one :
   apply Set.infinite_of_injective_forall_mem parabolicRay_injective
   intro b
   simp
+
+/-- On `ℕ`, the change of degree from `δ(a) = a` to `2δ` has modulus `⌊k / 2⌋`. -/
+theorem changeDegree_nonnegIntegers_scale_two_modulus (k : ℕ) :
+    (PositiveDegreeMap.changeDegree nonnegIntegers (nonnegIntegers.scale 2)
+      (nonnegIntegers.scale_monoid 2).symm).modulus k = k / 2 :=
+  PositiveDegreeMap.changeDegree_scale_modulus 2 (n := 1) (by simp) (by simp) k
+
+/-- On `ℕ`, the change of degree from `2δ` back to `δ(a) = a` has modulus `2k`. -/
+theorem changeDegree_nonnegIntegers_scale_two_symm_modulus (k : ℕ) :
+    (PositiveDegreeMap.changeDegree (nonnegIntegers.scale 2) nonnegIntegers
+      (nonnegIntegers.scale_monoid 2)).modulus k = 2 * k :=
+  PositiveDegreeMap.changeDegree_scale_symm_modulus 2 (n := 1) (by simp) (by simp) k
+
+/-- The quadratic wedge of integer points `0 ≤ b ≤ a ≤ b²`. -/
+def quadraticWedgeMonoid : AddSubmonoid (ℤ × ℤ) where
+  carrier := {n | 0 ≤ n.2 ∧ n.2 ≤ n.1 ∧ n.1 ≤ n.2 ^ 2}
+  zero_mem' := by simp
+  add_mem' := by
+    rintro x y ⟨hx0, hx1, hx2⟩ ⟨hy0, hy1, hy2⟩
+    refine ⟨by dsimp; omega, by dsimp; omega, ?_⟩
+    dsimp
+    nlinarith [mul_nonneg hx0 hy0]
+
+/-- Membership in the quadratic wedge. -/
+@[simp]
+theorem mem_quadraticWedgeMonoid {n : ℤ × ℤ} :
+    n ∈ quadraticWedgeMonoid ↔ 0 ≤ n.2 ∧ n.2 ≤ n.1 ∧ n.1 ≤ n.2 ^ 2 := Iff.rfl
+
+/-- A nonzero point of the quadratic wedge has second coordinate at least one. -/
+theorem one_le_snd_of_mem_quadraticWedgeMonoid {n : ℤ × ℤ} (hn : n ∈ quadraticWedgeMonoid)
+    (hne : n ≠ 0) : 1 ≤ n.2 := by
+  obtain ⟨h0, h1, h2⟩ := hn
+  by_contra h
+  have hb : n.2 = 0 := by omega
+  rw [hb] at h2
+  exact hne (Prod.ext (by simp only [Prod.fst_zero]; nlinarith) hb)
+
+/-- First-coordinate degree `δ(a, b) = a` on the quadratic wedge. -/
+def quadraticWedgeFst : PositiveDegrees (ℤ × ℤ) where
+  monoid := quadraticWedgeMonoid
+  degree := AddMonoidHom.fst ℤ ℤ
+  degree_pos hn hne := by
+    have := one_le_snd_of_mem_quadraticWedgeMonoid hn hne
+    have := (mem_quadraticWedgeMonoid.mp hn).2.1
+    dsimp
+    omega
+  finite_le k := by
+    apply ((Set.finite_Icc (a := (0 : ℤ)) (b := k)).prod
+      (Set.finite_Icc (a := (0 : ℤ)) (b := k))).subset
+    rintro ⟨a, b⟩ ⟨⟨h0, h1, _⟩, hk⟩
+    dsimp at h0 h1 hk
+    exact ⟨⟨by omega, hk⟩, ⟨h0, by omega⟩⟩
+
+/-- Second-coordinate degree `δ'(a, b) = b` on the quadratic wedge. -/
+def quadraticWedgeSnd : PositiveDegrees (ℤ × ℤ) where
+  monoid := quadraticWedgeMonoid
+  degree := AddMonoidHom.snd ℤ ℤ
+  degree_pos hn hne := by
+    have := one_le_snd_of_mem_quadraticWedgeMonoid hn hne
+    dsimp
+    omega
+  finite_le k := by
+    apply ((Set.finite_Icc (a := (0 : ℤ)) (b := (k : ℤ) ^ 2)).prod
+      (Set.finite_Icc (a := (0 : ℤ)) (b := k))).subset
+    rintro ⟨a, b⟩ ⟨⟨h0, h1, h2⟩, hk⟩
+    dsimp at h0 h1 h2 hk
+    exact ⟨⟨by omega, h2.trans (pow_le_pow_left₀ h0 hk 2)⟩, ⟨h0, hk⟩⟩
+
+/-- The allowed points of the first-coordinate degree. -/
+@[simp]
+theorem quadraticWedgeFst_monoid : quadraticWedgeFst.monoid = quadraticWedgeMonoid := (rfl)
+
+/-- The first-coordinate degree. -/
+@[simp]
+theorem quadraticWedgeFst_degree (n : ℤ × ℤ) : quadraticWedgeFst.degree n = n.1 := (rfl)
+
+/-- The allowed points of the second-coordinate degree. -/
+@[simp]
+theorem quadraticWedgeSnd_monoid : quadraticWedgeSnd.monoid = quadraticWedgeMonoid := (rfl)
+
+/-- The second-coordinate degree. -/
+@[simp]
+theorem quadraticWedgeSnd_degree (n : ℤ × ℤ) : quadraticWedgeSnd.degree n = n.2 := (rfl)
+
+/-- Both coordinate degrees live on the quadratic wedge. -/
+theorem quadraticWedgeFst_monoid_eq_snd :
+    quadraticWedgeFst.monoid = quadraticWedgeSnd.monoid := by simp
+
+/-- The change of degree from `δ(a, b) = a` to `δ'(a, b) = b` on the quadratic wedge has
+modulus `k²`, attained at `(k², k)`. -/
+theorem changeDegree_quadraticWedgeFst_snd_modulus (k : ℕ) :
+    (PositiveDegreeMap.changeDegree quadraticWedgeFst quadraticWedgeSnd
+      quadraticWedgeFst_monoid_eq_snd).modulus k = k ^ 2 := by
+  apply le_antisymm
+  · rw [PositiveDegreeMap.changeDegree_modulus_le_iff]
+    rintro n ⟨h0, -, h2⟩ hk
+    simp only [quadraticWedgeSnd_degree] at hk
+    simp only [quadraticWedgeFst_degree, Nat.cast_pow]
+    exact h2.trans (pow_le_pow_left₀ h0 hk 2)
+  · have h := (PositiveDegreeMap.changeDegree quadraticWedgeFst quadraticWedgeSnd
+      quadraticWedgeFst_monoid_eq_snd).degree_le k (n := ((k : ℤ) ^ 2, k))
+      ⟨by simp, by dsimp only; nlinarith, le_rfl⟩ (by simp)
+    simp only [quadraticWedgeFst_degree] at h
+    exact_mod_cast h
+
+/-- The change of degree from `δ'(a, b) = b` to `δ(a, b) = a` on the quadratic wedge has
+modulus `k`, attained at `(k, k)`. -/
+theorem changeDegree_quadraticWedgeSnd_fst_modulus (k : ℕ) :
+    (PositiveDegreeMap.changeDegree quadraticWedgeSnd quadraticWedgeFst
+      quadraticWedgeFst_monoid_eq_snd.symm).modulus k = k := by
+  apply le_antisymm
+  · rw [PositiveDegreeMap.changeDegree_modulus_le_iff]
+    rintro n ⟨-, h1, -⟩ hk
+    simp only [quadraticWedgeFst_degree] at hk
+    simpa only [quadraticWedgeSnd_degree] using h1.trans hk
+  · have h := (PositiveDegreeMap.changeDegree quadraticWedgeSnd quadraticWedgeFst
+      quadraticWedgeFst_monoid_eq_snd.symm).degree_le k (n := ((k : ℤ), k))
+      ⟨by simp, le_rfl, by dsimp only; nlinarith⟩ (by simp)
+    simp only [quadraticWedgeSnd_degree] at h
+    exact_mod_cast h
+
+/-- The quadratic wedge is not finitely generated: on a finitely generated monoid the first
+coordinate would be bounded by a multiple of the second. -/
+theorem not_fg_quadraticWedgeMonoid : ¬ quadraticWedgeMonoid.FG := by
+  intro hfg
+  obtain ⟨c, hc⟩ := hfg.exists_degree_le_mul quadraticWedgeFst.degree quadraticWedgeSnd.degree
+    fun _ hn hne => quadraticWedgeSnd.degree_pos hn hne
+  have h := hc (((c : ℤ) + 1) ^ 2, (c : ℤ) + 1)
+    ⟨by dsimp only; omega, by dsimp only; nlinarith, le_rfl⟩
+  simp only [quadraticWedgeFst_degree, quadraticWedgeSnd_degree] at h
+  nlinarith
 
 end Mei.PositiveDegrees.Examples
