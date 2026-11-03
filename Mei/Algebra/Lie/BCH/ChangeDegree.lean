@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Claude
 -/
 module
 
 public import Mei.Algebra.Lie.BCH.Completion
+public import Mei.Algebra.PositiveDegrees.Scale
 
 /-!
 # Independence of the positive degree function
@@ -19,6 +20,11 @@ The equivalence preserves exponentials of original Lie elements and convergent
 ordered products, and is natural for graded Lie homomorphisms, even when their
 cutoff moduli differ. Reflexivity, symmetry and transitivity make successive
 changes of degree coherent.
+
+For the multiple `c δ` of a positive degree `δ`, the order-`k` truncation for `c δ` is the
+order-`⌊k / c⌋` truncation for `δ`. The order-`k` projection of the change from `δ` to `c δ`
+is the identity of Lie algebras applied at order `⌊k / c⌋`, an isomorphism of truncations,
+and the reverse change is computed at order `c k`.
 
 The construction uses `Mei.GradedLieHom.completedMap`, its composition law and
 its independence from the degree map and modulus. In particular, the two cutoff
@@ -148,6 +154,54 @@ theorem changeDegreeEquiv_orderedProd [LinearOrder ι] (hP : d.monoid = e.monoid
       CompletedGroup.orderedProd (fun i => d.changeDegreeEquiv e ℒ hP (x i))
         ((d.hasFiniteSupport_changeDegreeEquiv_iff e ℒ hP x).mpr hx) :=
   GradedLieHom.completedMap_orderedProd _ x hx
+
+section Scale
+
+variable (c : ℕ) [NeZero c]
+
+omit [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L] in
+/-- The ideal of terms of `c δ`-degree above `k` is that of `δ`-degree above `⌊k / c⌋`, so the
+order-`k` truncation for `c δ` is the order-`⌊k / c⌋` truncation for `δ`. -/
+theorem degreeIdeal_scale (k : ℕ) : (d.scale c).degreeIdeal ℒ k = d.degreeIdeal ℒ (k / c) :=
+  LieSubmodule.toSubmodule_injective <| by
+    rw [degreeIdeal_toSubmodule, degreeIdeal_toSubmodule, degreeSubmodule_scale]
+
+omit [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L] in
+/-- The identity of Lie algebras from the order-`⌊k / c⌋` truncation for `δ` to the order-`k`
+truncation for `c δ` is bijective. -/
+theorem bijective_truncatedMap_changeDegree_scale (k : ℕ) :
+    Function.Bijective
+      ((GradedLieHom.changeDegree d (d.scale c) (d.scale_monoid c).symm ℒ).truncatedMap k
+        (PositiveDegreeMap.changeDegree_scale_modulus_le d c k)) := by
+  refine ⟨fun x y hxy => ?_, fun y => ?_⟩
+  · induction x using Submodule.Quotient.induction_on
+    induction y using Submodule.Quotient.induction_on
+    rw [GradedLieHom.truncatedMap_mk, GradedLieHom.truncatedMap_mk,
+      Submodule.Quotient.eq] at hxy
+    rw [Submodule.Quotient.eq]
+    simpa only [degreeIdeal_scale, GradedLieHom.changeDegree_apply] using hxy
+  · induction y using Submodule.Quotient.induction_on with
+    | H y => exact ⟨Submodule.Quotient.mk y, by simp⟩
+
+/-- At order `k`, the change of degree from `δ` to `c δ` is computed from the order-`⌊k / c⌋`
+projection. -/
+theorem projection_changeDegreeEquiv_scale (k : ℕ) (x : d.completedBCHGroup ℒ) :
+    CompletedGroup.projection k (d.changeDegreeEquiv (d.scale c) ℒ (d.scale_monoid c).symm x) =
+      ((GradedLieHom.changeDegree d (d.scale c) (d.scale_monoid c).symm ℒ).truncatedMap k
+        (PositiveDegreeMap.changeDegree_scale_modulus_le d c k)).bchGroupMap
+          (CompletedGroup.projection (k / c) x) :=
+  GradedLieHom.projection_completedMap_of_le _ k _ x
+
+/-- At order `k`, the change of degree from `c δ` back to `δ` is computed from the order-`c k`
+projection. -/
+theorem projection_changeDegreeEquiv_scale_symm (k : ℕ) (x : (d.scale c).completedBCHGroup ℒ) :
+    CompletedGroup.projection k ((d.scale c).changeDegreeEquiv d ℒ (d.scale_monoid c) x) =
+      ((GradedLieHom.changeDegree (d.scale c) d (d.scale_monoid c) ℒ).truncatedMap k
+        (PositiveDegreeMap.changeDegree_scale_symm_modulus_le d c k)).bchGroupMap
+          (CompletedGroup.projection (c * k) x) :=
+  GradedLieHom.projection_completedMap_of_le _ k _ x
+
+end Scale
 
 end PositiveDegrees
 
