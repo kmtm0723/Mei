@@ -12,15 +12,17 @@ public import Mei.Geometry.ScatteringDiagram.ModuleProbe.PathTransport
 
 At an endpoint generic for every finite-order probe arrangement, the extracted
 coefficients form an element of the existing completed shifted module. Its
-projections characterize it, and equivalent consistent probe diagrams give the
-same element on their common generic locus.
+projections characterize it, and equivalent probe diagrams give the same element
+on their common generic locus. The completed field, its characterization and its
+invariance under equivalence need no consistency.
 
-The completed field obeys transport by the completed base path product. For
-outgoing completions of a base input and its probe input, this gives transport
-between all-order allowed endpoints, independently of a choice of path. No
-consistency for the field itself, stabilization of the wall supports, or separatedness
-of the original coefficient module is required. Identification with sums of
-broken lines is a separate result.
+For a consistent probe diagram whose charge-zero part is equivalent to a base
+cylinder, the completed field obeys transport by the completed base path product.
+For outgoing completions of a base input and its probe input, which are consistent,
+this gives transport between all-order allowed endpoints, independently of a choice
+of path. Neither stabilization of the wall supports nor separatedness of the
+original coefficient module is required. Identification with sums of broken lines
+is a separate result.
 
 We assemble `ModuleProbe.transition_coefficientField` using
 `ModuleFiltration.completionSubmodule`, and use

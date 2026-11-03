@@ -36,6 +36,13 @@ def spatialMap (ρ : Γ →+ Λ) : (Γ × ℤ) →+ (Λ × ℤ) :=
 theorem spatialMap_apply (ρ : Γ →+ Λ) (q : Γ) (c : ℤ) :
     spatialMap ρ (q, c) = (ρ q, 0) := (rfl)
 
+/-- An extended direction vanishes exactly when its original spatial direction does,
+whatever the module charge. In particular charge-one directions can vanish.
+This is not a simp lemma: `spatialMap_apply` and `Prod.mk_eq_zero` already prove it. -/
+theorem spatialMap_eq_zero_iff (ρ : Γ →+ Λ) (q : Γ) (c : ℤ) :
+    spatialMap ρ (q, c) = 0 ↔ ρ q = 0 := by
+  simp [Prod.ext_iff]
+
 /-- A base wall normal ignores the probe coordinate. -/
 def baseNormal (m : Λ →+ ℤ) : (Λ × ℤ) →+ ℤ :=
   m.comp (AddMonoidHom.fst Λ ℤ)

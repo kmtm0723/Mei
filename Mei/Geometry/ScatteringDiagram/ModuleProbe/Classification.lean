@@ -140,6 +140,18 @@ theorem realCharacter_probeNormal_eq_of_ne_zero (hne : W.label ≠ 1)
     rw [hm, map_zsmul, LinearMap.smul_apply, LinearMap.smul_apply] at hn
     exact (smul_right_injective _ hc) hn
 
+include hw in
+/-- A wall on the module ray of a degree with zero spatial direction is incoming:
+its geometric direction vanishes. Hence an outgoing wall never carries such a degree. -/
+theorem incoming_of_spatial_eq_zero (hq0 : ρ q = 0) : W.Incoming := by
+  have hd : spatialMap ρ W.ray.generator = 0 := by
+    rw [hw, moduleRay_generator, spatialMap_eq_zero_iff]
+    exact hq0
+  rw [DirectedWall.incoming_iff]
+  intro x hx t _
+  have h0 : Prod.map i j (0 : Λ × ℤ) = 0 := Prod.ext (map_zero i) (map_zero j)
+  simpa [hd, h0] using hx
+
 variable [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
 
 /-- Every wall whose normal is not a lifted base normal disappears under base
