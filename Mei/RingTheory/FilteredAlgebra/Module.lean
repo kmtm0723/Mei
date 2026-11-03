@@ -8,6 +8,7 @@ module
 public import Mei.LinearAlgebra.ModuleFiltration.RestrictScalars
 public import Mei.LinearAlgebra.ModuleFiltration.Bilinear
 public import Mei.RingTheory.FilteredAlgebra.AlgHom
+public import Mei.RingTheory.Ideal.Quotient
 public import Mathlib.RingTheory.Ideal.Quotient.PowTransition
 
 /-!
@@ -170,12 +171,8 @@ theorem moduleCompletionEquiv_completionMap {B : Type*} [Ring B] [Algebra R B]
   intro k
   rw [projection_moduleCompletionEquiv, ModuleFiltration.projection_completionMap,
     projection_mapCompletionₐ, projection_moduleCompletionEquiv]
-  obtain ⟨a, ha⟩ := ((F.toModuleFiltration R).submodule (ρ k + 1)).mkQ_surjective
-    ((F.toModuleFiltration R).projection (ρ k) x)
-  rw [← ha]
-  simp only [Submodule.mapQ_apply, Submodule.mkQ_apply,
-    Submodule.Quotient.restrictScalarsEquiv_mk, Ideal.Quotient.mk_eq_mk,
-    Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, AlgHom.toLinearMap_apply]
+  exact (Ideal.quotientMapₐ_restrictScalarsEquiv (F.ideal (ρ k + 1))
+    (G.ideal (k + 1)) f (hf k) ((F.toModuleFiltration R).projection (ρ k) x)).symm
 
 /-- The inverse comparison also intertwines algebra and linear completion maps. -/
 @[simp]
