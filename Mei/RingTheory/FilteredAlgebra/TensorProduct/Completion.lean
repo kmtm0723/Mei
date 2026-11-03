@@ -298,7 +298,13 @@ theorem mapCompletionₐ_completedTensor {C D : Type*} [Ring C] [Ring D]
   exact Algebra.TensorProduct.map_tmul f g a b
 
 
-/-- Completed tensor naturality allows independent monotone cutoffs for the factors. -/
+/-- The completion of `Algebra.TensorProduct.map f g` sends `completedTensor x y`
+to the completed tensor of the images of `x` and `y` under the two factor
+completion maps. Here `ρ` is the source cutoff for `f`, so
+`F.ideal (ρ k + 1)` maps into `H.ideal (k + 1)`, and `σ` is the source cutoff for
+`g`, so `G.ideal (σ k + 1)` maps into `K.ideal (k + 1)`. The tensor map uses the
+cutoff `fun k => ρ k + σ k`. Monotonicity of `ρ` and `σ` makes all three
+completion maps compatible with the quotient-tower transitions. -/
 theorem mapCompletionₐ_completedTensor_of_moduli {C D : Type*} [Ring C] [Ring D]
     [Algebra R C] [Algebra R D] (H : Mei.AlgFiltration C) (K : Mei.AlgFiltration D)
     (f : A →ₐ[R] C) (g : B →ₐ[R] D) (ρ σ : ℕ → ℕ)
