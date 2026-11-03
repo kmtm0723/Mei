@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.Skew.Principal
+public import Mei.Geometry.ScatteringDiagram.Skew.Principal.Basic
 public import Mei.Algebra.Lie.Logarithmic.Grading
 
 /-!

@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.Skew.Principal
+public import Mei.Geometry.ScatteringDiagram.Skew.Principal.Basic
 public import Mei.Geometry.Convex.Cone.LatticePoints
 public import TauCeti.Geometry.Toric.Algebraic.Cone.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Lattice

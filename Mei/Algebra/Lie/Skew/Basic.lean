@@ -178,6 +178,17 @@ instance {S : Type*} [CommRing S] [Algebra S R] :
     simpa only [IsScalarTower.algebraMap_smul] using
       lie_smul (algebraMap S R s) x y
 
+/-- The zero form gives an abelian skew Lie algebra: every bracket vanishes. -/
+theorem lie_eq_zero_of_eq_zero (hβ0 : β = 0) (x y : SkewLieAlgebra β hβ) : ⁅x, y⁆ = 0 := by
+  induction x using induction_on β hβ with
+  | h0 => exact zero_lie y
+  | hs n r =>
+    induction y using induction_on β hβ with
+    | h0 => exact lie_zero _
+    | hs m s => simp [hβ0]
+    | ha y z hy hz => rw [lie_add, hy, hz, add_zero]
+  | ha x z hx hz => rw [add_lie, hx, hz, add_zero]
+
 /-- Generators on the same integer ray commute, without any nondegeneracy assumption. -/
 theorem single_zsmul_bracket_single_zsmul (w : Γ) (a b : ℤ) (r s : R) :
     ⁅single β hβ (a • w) r, single β hβ (b • w) s⁆ = 0 := by
