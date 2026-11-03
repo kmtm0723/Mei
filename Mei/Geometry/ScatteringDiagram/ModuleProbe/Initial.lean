@@ -22,8 +22,8 @@ full-hyperplane input gives a full-hyperplane input for the probe and admits a
 consistent outgoing completion. This does not yet identify the charge-zero
 part of that completion with a prescribed completed base diagram.
 
-The auxiliary real space may be any integral lattice model of `ℤ × ℤ`; the
-probe hyperplane is the kernel of the real extension of the last coordinate.
+The auxiliary real space may be any integral lattice model of `ℤ`, the probe
+coordinate; the probe hyperplane is the kernel of its real extension.
 We use `DirectedWall.cylinder`, `GradedLieHom.completedMap_mem_wallGroup` and
 `ModuleProbe.moduleWallGroupEquiv`. The construction follows Mandel,
 *Scattering diagrams, theta functions, and refined tropical curve counts*,
@@ -48,18 +48,18 @@ variable {R Γ Λ V E : Type*} {M L : Type u} [CommRing R] [Algebra ℚ R]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
 
 omit [AddCommGroup M] [Module R M] [AddCommGroup Γ] [DecidableEq Γ] in
 /-- The real probe normal reads the probe coordinate of the auxiliary factor; in
-particular it vanishes on the base factor and on the height direction. -/
+particular it vanishes on the base factor. -/
 @[simp]
 theorem realCharacter_probeNormal :
     (h.prod h').realCharacter (probeNormal (Λ := Λ)) =
-      (h'.realCharacter (AddMonoidHom.snd ℤ ℤ)).comp (LinearMap.snd ℝ V E) := by
+      (h'.realCharacter (AddMonoidHom.id ℤ)).comp (LinearMap.snd ℝ V E) := by
   symm
   apply (h.prod h').eq_realCharacter
-  rintro ⟨a, b, c⟩
+  rintro ⟨a, b⟩
   simp
 
 section Base
@@ -68,7 +68,7 @@ variable [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
 
 private def baseProjectedWall (W : DirectedWall (d := d) h H) :
     DirectedWall (d := positiveDegrees d p) h
-      ((wallSpaces d ℳ p ℒ H).project (AddMonoidHom.fst Λ (ℤ × ℤ))) where
+      ((wallSpaces d ℳ p ℒ H).project (AddMonoidHom.fst Λ ℤ)) where
   normal := W.normal
   normal_ne_zero := W.normal_ne_zero
   ray := baseRay d p W.ray
@@ -79,7 +79,7 @@ private def baseProjectedWall (W : DirectedWall (d := d) h H) :
   direction_support := W.direction_support
   label := (baseGradedLieHom d ℳ p ℒ).completedMap W.label
   label_mem := (baseGradedLieHom d ℳ p ℒ).completedMap_mem_wallGroup
-    (H := H) (H' := (wallSpaces d ℳ p ℒ H).project (AddMonoidHom.fst Λ (ℤ × ℤ)))
+    (H := H) (H' := (wallSpaces d ℳ p ℒ H).project (AddMonoidHom.fst Λ ℤ))
     (w := W.ray) (v := baseRay d p W.ray) (m := W.normal) (m' := W.normal)
     (fun n hn => by simpa using hn)
     (fun n _ x hx => by

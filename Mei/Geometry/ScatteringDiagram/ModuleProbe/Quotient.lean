@@ -216,20 +216,20 @@ def baseWallSpaces : DirectedWallSpaces (spatialMap ρ) (baseGrading ℒ) :=
 
 /-- The wall spaces of the base quotient are the images of the probe wall spaces. -/
 @[simp]
-theorem baseWallSpaces_wall (a : Γ × ℤ) (m : (Λ × ℤ × ℤ) →+ ℤ) :
+theorem baseWallSpaces_wall (a : Γ × ℤ) (m : (Λ × ℤ) →+ ℤ) :
     (baseWallSpaces d ℳ p ℒ H).wall a m =
       ((wallSpaces d ℳ p ℒ H).wall a m).map (baseProjection d ℳ p ℒ).toLieHom.toLinearMap := by
   simp only [baseWallSpaces, DirectedWallSpaces.map_wall]
 
 /-- Projection carries probe wall elements to wall elements of the base quotient. -/
-theorem baseProjection_mem_baseWallSpaces {a : Γ × ℤ} {m : (Λ × ℤ × ℤ) →+ ℤ}
+theorem baseProjection_mem_baseWallSpaces {a : Γ × ℤ} {m : (Λ × ℤ) →+ ℤ}
     {x : ProbeLie d ℳ p ℒ} (hx : x ∈ (wallSpaces d ℳ p ℒ H).wall a m) :
     baseProjection d ℳ p ℒ x ∈ (baseWallSpaces d ℳ p ℒ H).wall a m := by
   rw [baseWallSpaces_wall]
   exact Submodule.mem_map_of_mem hx
 
 /-- The section carries wall elements of the base quotient to probe wall elements. -/
-theorem baseSection_mem_wallSpaces {a : Γ × ℤ} {m : (Λ × ℤ × ℤ) →+ ℤ} {y : L}
+theorem baseSection_mem_wallSpaces {a : Γ × ℤ} {m : (Λ × ℤ) →+ ℤ} {y : L}
     (hy : y ∈ (baseWallSpaces d ℳ p ℒ H).wall a m) :
     baseSection d ℳ p ℒ y ∈ (wallSpaces d ℳ p ℒ H).wall a m := by
   rw [baseWallSpaces_wall] at hy

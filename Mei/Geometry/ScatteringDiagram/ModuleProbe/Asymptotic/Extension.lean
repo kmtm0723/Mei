@@ -54,7 +54,7 @@ variable {R Γ Λ V E ι κ κ' : Type*} {M L : Type u} [CommRing R] [Algebra �
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
   (D₀ : DirectedDiagram (d := d) h H ι) (a : ℳ p)
   (D : DirectedDiagram (d := positiveDegrees d p) (h.prod h')
     (wallSpaces d ℳ p ℒ H) ((ι ⊕ Unit) ⊕ κ))
@@ -94,7 +94,7 @@ theorem eventually_shiftedQuotientComponent_extendedCoefficientField_eq
     (coefficientArrangement d ℳ p ℒ H h h' D k).dense_isGeneric.preimage
       hopen.isOpenMap_subtype_val
   filter_upwards [eventually_shiftedQuotientComponent_coefficientField_eq
-    d ℳ p ℒ H h h' D₀ a D hinitial k hD q hk hout (hK.cthickening (r := 1))]
+    d ℳ p ℒ H h h' D₀ a D hinitial k q hk hout (hK.cthickening (r := 1))]
     with t ht Q hQK hQ
   let x : {x : V // ∀ c : B.active k, x ∉ (B.wall c).support} :=
     ⟨Q + t • i (ρ q), hQ⟩

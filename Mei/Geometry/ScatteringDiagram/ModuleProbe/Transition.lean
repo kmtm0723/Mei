@@ -141,7 +141,7 @@ theorem value_coefficientLocalTransition {U : Opens (B.adaptedComplex l).regular
       d ℳ p ℒ H h B hkl νk hνk νl hνl U (by simpa using hU) x y hx hy a) s x hx
 
 variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
   [IsWallAnnihilating H ℳ]
   (D : DirectedDiagram (d := positiveDegrees d p) (h.prod h') (wallSpaces d ℳ p ℒ H) ι)
   (hD : D.LevelConsistent (l + 1))

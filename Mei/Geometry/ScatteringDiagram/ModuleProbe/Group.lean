@@ -49,7 +49,7 @@ variable [DirectSum.Decomposition ℒ]
 /-- Only the generator piece can contribute to a charge-one ray wall sum. -/
 @[simp]
 theorem raySubmodule_moduleRay (q : Γ) (hq : q - p ∈ d.monoid)
-    (m : (Λ × ℤ × ℤ) →+ ℤ) :
+    (m : (Λ × ℤ) →+ ℤ) :
     (wallSpaces d ℳ p ℒ H).raySubmodule (moduleRay d p q hq) m =
       (wallSpaces d ℳ p ℒ H).wall (q, 1) m := by
   apply le_antisymm
@@ -69,7 +69,7 @@ variable [GradedLieAlgebra ℒ] [DirectSum.Decomposition ℳ] [Algebra ℚ R]
 /-- A nonidentity probe wall label is supported either on a lifted base ray with
 base normal or on an allowed charge-one ray with a nonzero probe normal. -/
 theorem wallGroup_cases_of_ne_one {w : SupportedRay (positiveDegrees d p)}
-    {m : (Λ × ℤ × ℤ) →+ ℤ}
+    {m : (Λ × ℤ) →+ ℤ}
     {g : (positiveDegrees d p).completedBCHGroup (grading d ℳ p ℒ)}
     (hg : g ∈ (wallSpaces d ℳ p ℒ H).wallGroup w m) (hne : g ≠ 1) :
     (∃ (v : SupportedRay d) (m₀ : Λ →+ ℤ),
@@ -101,8 +101,8 @@ theorem wallGroup_moduleRay (q : Γ) (hq : q - p ∈ d.monoid) :
 
 /-- Every other normal has trivial charge-one wall group. -/
 theorem wallGroup_moduleRay_eq_bot_of_notMem_range (q : Γ) (hq : q - p ∈ d.monoid)
-    (m : (Λ × ℤ × ℤ) →+ ℤ)
-    (hm : m ∉ Set.range (fun c : ℤ => c • (probeNormal : (Λ × ℤ × ℤ) →+ ℤ))) :
+    (m : (Λ × ℤ) →+ ℤ)
+    (hm : m ∉ Set.range (fun c : ℤ => c • (probeNormal : (Λ × ℤ) →+ ℤ))) :
     (wallSpaces d ℳ p ℒ H).wallGroup (moduleRay d p q hq) m = ⊥ := by
   apply DirectedWallSpaces.wallGroup_eq_bot_of_raySubmodule_eq_bot
   rw [raySubmodule_moduleRay, wallSpaces_wall]
@@ -111,7 +111,7 @@ theorem wallGroup_moduleRay_eq_bot_of_notMem_range (q : Γ) (hq : q - p ∈ d.mo
 /-- A charge-one ray outside the shifted support has no wall labels at any normal. -/
 theorem wallGroup_eq_bot_of_notMem (w : SupportedRay (positiveDegrees d p))
     {q : Γ} (hw : w.generator = (q, 1)) (hq : q - p ∉ d.monoid)
-    (m : (Λ × ℤ × ℤ) →+ ℤ) :
+    (m : (Λ × ℤ) →+ ℤ) :
     (wallSpaces d ℳ p ℒ H).wallGroup w m = ⊥ := by
   apply le_antisymm _ bot_le
   exact ((wallSpaces d ℳ p ℒ H).wallGroup_le_completedRaySubgroup w m).trans

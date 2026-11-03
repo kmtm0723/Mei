@@ -17,25 +17,20 @@ without choosing a basis or extending scalars to a field. Kernel containment
 also gives proportionality when the second character can vanish. For two
 characters, contracting against a vector outside their common kernel detects
 every character annihilating both that kernel and the vector. Characters on a
-product with two integer factors are determined by their coordinate restrictions.
+product with an integer factor are determined by their coordinate restrictions.
 -/
 
 public section
 
 namespace AddMonoidHom
 
-/-- An integer character on a product with two integer factors is determined
-by its restriction to the first factor and its values on the two coordinate vectors. -/
-theorem apply_prod_int_int {Λ : Type*} [AddMonoid Λ]
-    (m : (Λ × ℤ × ℤ) →+ ℤ) (v : Λ) (c l : ℤ) :
-    m (v, c, l) = m (v, 0, 0) + c * m (0, 1, 0) + l * m (0, 0, 1) := by
-  have hc := ((m.comp (AddMonoidHom.inr Λ (ℤ × ℤ))).comp
-    (AddMonoidHom.inl ℤ ℤ)).map_zsmul c (1 : ℤ)
-  have hl := ((m.comp (AddMonoidHom.inr Λ (ℤ × ℤ))).comp
-    (AddMonoidHom.inr ℤ ℤ)).map_zsmul l (1 : ℤ)
-  have hc' : m (0, c, 0) = c * m (0, 1, 0) := by simpa using hc
-  have hl' : m (0, 0, l) = l * m (0, 0, 1) := by simpa using hl
-  rw [← hc', ← hl', ← map_add, ← map_add]
+/-- An integer character on a product with an integer factor is determined
+by its restriction to the first factor and its value on the integer generator. -/
+theorem apply_prod_int {Λ : Type*} [AddMonoid Λ] (m : (Λ × ℤ) →+ ℤ) (v : Λ) (c : ℤ) :
+    m (v, c) = m (v, 0) + c * m (0, 1) := by
+  have hc := (m.comp (AddMonoidHom.inr Λ ℤ)).map_zsmul c (1 : ℤ)
+  have hc' : m (0, c) = c * m (0, 1) := by simpa using hc
+  rw [← hc', ← map_add]
   simp
 
 variable {A : Type*} [AddGroup A]

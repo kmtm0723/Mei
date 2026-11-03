@@ -44,7 +44,7 @@ variable {R Γ Λ V E : Type*} {M L : Type u} [CommRing R] [Algebra ℚ R]
 variable [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
   (W : DirectedWall (d := positiveDegrees d p) (h.prod h') (wallSpaces d ℳ p ℒ H))
   (q : Γ) (hq : q - p ∈ d.monoid) (hw : W.ray = moduleRay d p q hq)
 
@@ -125,19 +125,11 @@ theorem coe_wallCoefficient_probeWall (a : ℳ p) :
     exact probeWall_label d ℳ p ℒ H h h' a
   exact congrArg (fun b : shiftedGrading ℳ d.monoid p (p - p) => (b.val : M)) he
 
-/-- Every nonidentity probe wall is tangent to the height coordinate. This
-holds for both lifted base normals and all nonzero multiples of the probe normal. -/
-@[simp]
-theorem normal_height_eq_zero_of_label_ne_one (hne : W.label ≠ 1) :
-    W.normal (0, 1, 0) = 0 := by
-  rcases wallGroup_cases_of_ne_one d ℳ p ℒ H W.label_mem hne with
-    ⟨v, m, _, hm⟩ | ⟨q, hq, c, _, _, hm⟩ <;> simp [hm]
-
 /-- The probe coordinate is constant on the support of every nonidentity wall
 that is not tangent to the probe direction: such a wall has a nonzero multiple
 of the probe normal. -/
 theorem realCharacter_probeNormal_eq_of_ne_zero (hne : W.label ≠ 1)
-    (hv : (h.prod h').realCharacter W.normal (0, j (0, 1)) ≠ 0)
+    (hv : (h.prod h').realCharacter W.normal (0, j 1) ≠ 0)
     {w w' : V × E} (hw : w ∈ W.support) (hw' : w' ∈ W.support) :
     (h.prod h').realCharacter (probeNormal (Λ := Λ)) w =
       (h.prod h').realCharacter (probeNormal (Λ := Λ)) w' := by
@@ -147,6 +139,18 @@ theorem realCharacter_probeNormal_eq_of_ne_zero (hne : W.label ≠ 1)
   · have hn := W.normal_apply_eq hw hw'
     rw [hm, map_zsmul, LinearMap.smul_apply, LinearMap.smul_apply] at hn
     exact (smul_right_injective _ hc) hn
+
+include hw in
+/-- A wall on the module ray of a degree with zero spatial direction is incoming:
+its geometric direction vanishes. Hence an outgoing wall never carries such a degree. -/
+theorem incoming_of_spatial_eq_zero (hq0 : ρ q = 0) : W.Incoming := by
+  have hd : spatialMap ρ W.ray.generator = 0 := by
+    rw [hw, moduleRay_generator, spatialMap_eq_zero_iff]
+    exact hq0
+  rw [DirectedWall.incoming_iff]
+  intro x hx t _
+  have h0 : Prod.map i j (0 : Λ × ℤ) = 0 := Prod.ext (map_zero i) (map_zero j)
+  simpa [hd, h0] using hx
 
 variable [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
 

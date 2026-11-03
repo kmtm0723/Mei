@@ -16,7 +16,7 @@ a nonzero multiple of the probe normal. Displacements within the probe slice are
 therefore tangent to every incident wall. Near the point they preserve regularity,
 vertical transversality and the extracted coefficient. In particular the vertical
 coefficient is locally constant on the vertically transverse regular locus in
-each fixed auxiliary-coordinate slice. Consistency is not needed for these local statements.
+each fixed probe slice. Consistency is not needed for these local statements.
 The real probe normal is the probe coordinate of the auxiliary factor.
 
 We use the normal classification of `ModuleProbe.wallGroup_cases_of_ne_one`,
@@ -44,17 +44,17 @@ variable {R Γ Λ V E ι : Type*} {M L : Type u} [CommRing R] [Algebra ℚ R]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
   (D : DirectedDiagram (d := positiveDegrees d p) (h.prod h') (wallSpaces d ℳ p ℒ H) ι)
 
-local notation "v" => (0, j (0, 1))
+local notation "v" => (0, j 1)
 local notation "S" => LinearMap.ker
   (TauCeti.Toric.IsIntegralLattice.realCharacter
     (TauCeti.Toric.IsIntegralLattice.prod h h') (probeNormal (Λ := Λ)))
 
 /-- Near a vertically transverse regular germ, small displacements within the
 probe slice preserve regularity, vertical transversality and the coefficient.
-Both base coordinates and the auxiliary height may vary. -/
+Every base coordinate may vary. -/
 theorem eventually_verticalCoefficient_add_eq (k : ℕ) (θ : V × E)
     (hθ : θ ∉ singularSupport (fun a : D.active (k + 1) => (D.wall a).support))
     (hv : ∀ a : D.active (k + 1), θ ∈ (D.wall a).support →
