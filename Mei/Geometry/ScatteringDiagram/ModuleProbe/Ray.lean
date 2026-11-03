@@ -40,27 +40,27 @@ variable {R M Γ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- A piece on a module ray vanishes unless it is the charge-one generator piece. -/
 theorem grading_eq_bot_of_charge_one_ray (w : SupportedRay (positiveDegrees d p))
-    {q : Γ} (hw : w.generator = (q, 1, 0))
-    {a : Γ × ℤ × ℤ} (ha : a ∈ w.rayDegrees)
-    (hne : a ≠ (q, 1, 0)) : grading d ℳ p ℒ a = ⊥ := by
+    {q : Γ} (hw : w.generator = (q, 1))
+    {a : Γ × ℤ} (ha : a ∈ w.rayDegrees)
+    (hne : a ≠ (q, 1)) : grading d ℳ p ℒ a = ⊥ := by
   obtain ⟨_, c, hc, rfl⟩ := SupportedRay.mem_rayDegrees.mp ha
   rw [hw]
   rw [hw] at hne
   have hc₁ : c ≠ 1 := by
     rintro rfl
     exact hne (by simp)
-  simpa only [Prod.smul_mk, smul_zero, zsmul_eq_mul,
+  simpa only [Prod.smul_mk, zsmul_eq_mul,
     Int.cast_id, mul_one] using
-    grading_charge_eq_bot d ℳ p ℒ (c • q) c 0 (by omega) hc₁
+    grading_charge_eq_bot d ℳ p ℒ (c • q) c (by omega) hc₁
 
 variable [SetLike.GradedBracket ℒ ℒ]
 
 /-- The ray Lie algebra of a module ray is exactly its homogeneous coefficient piece. -/
 theorem moduleRayLieSubalgebra_toSubmodule (q : Γ) (hq : q - p ∈ d.monoid) :
     (rayLieSubalgebra (grading d ℳ p ℒ) (moduleRay d p q hq)).toSubmodule =
-      grading d ℳ p ℒ (q, 1, 0) :=
+      grading d ℳ p ℒ (q, 1) :=
   rayLieSubalgebra_eq_of_single_degree (grading d ℳ p ℒ)
-    (moduleRay d p q hq) (q, 1, 0) (by simp)
+    (moduleRay d p q hq) (q, 1) (by simp)
     (fun _ ha hne => grading_eq_bot_of_charge_one_ray d ℳ p ℒ (moduleRay d p q hq)
       (moduleRay_generator d p q hq) ha hne)
 
@@ -69,14 +69,14 @@ variable [DirectSum.Decomposition ℳ] [Algebra ℚ R]
 /-- If the charge-one generator is not allowed, its entire completed ray group
 is trivial, even if higher multiples belong to the positive monoid. -/
 theorem completedRaySubgroup_eq_bot_of_notMem (w : SupportedRay (positiveDegrees d p))
-    {q : Γ} (hw : w.generator = (q, 1, 0)) (hq : q - p ∉ d.monoid) :
+    {q : Γ} (hw : w.generator = (q, 1)) (hq : q - p ∉ d.monoid) :
     (positiveDegrees d p).completedRaySubgroup (grading d ℳ p ℒ) w = ⊥ := by
   apply (positiveDegrees d p).completedRaySubgroup_eq_bot_of_rayLieSubalgebra_eq_bot
   apply LieSubalgebra.toSubmodule_injective
   rw [rayLieSubalgebra_toSubmodule, LieSubalgebra.bot_toSubmodule]
   apply iSup_eq_bot.mpr
   intro a
-  by_cases ha : (a : Γ × ℤ × ℤ) = (q, 1, 0)
+  by_cases ha : (a : Γ × ℤ) = (q, 1)
   · rw [ha]
     exact IsPositiveGrading.eq_bot (d := positiveDegrees d p)
       (ℒ := grading d ℳ p ℒ) _ (Or.inl (by simpa using hq))
@@ -89,7 +89,7 @@ def moduleRayGroupEquiv (q : Γ) (hq : q - p ∈ d.monoid) :
       (positiveDegrees d p).completedRaySubgroup (grading d ℳ p ℒ) (moduleRay d p q hq) :=
   (moduleGradingEquiv d ℳ p ℒ q).toAddEquiv.toMultiplicative.trans
     ((positiveDegrees d p).completedRaySingleEquiv (grading d ℳ p ℒ)
-      (moduleRay d p q hq) (q, 1, 0) (by simp)
+      (moduleRay d p q hq) (q, 1) (by simp)
       (fun _ ha hne => grading_eq_bot_of_charge_one_ray d ℳ p ℒ (moduleRay d p q hq)
         (moduleRay_generator d p q hq) ha hne))
 
@@ -115,13 +115,13 @@ theorem coe_moduleRayGroupEquiv_symm (q : Γ) (hq : q - p ∈ d.monoid)
     (((moduleRayGroupEquiv d ℳ p ℒ q hq).symm g).toAdd :
       shiftedSubmodule ℳ d.monoid p) =
       moduleCoefficientsEquiv d ℳ p
-        ((positiveDegrees d p).logComponent (grading d ℳ p ℒ) g.val (q, 1, 0)).val.left := by
+        ((positiveDegrees d p).logComponent (grading d ℳ p ℒ) g.val (q, 1)).val.left := by
   simpa only [moduleRayGroupEquiv, MulEquiv.symm_trans_apply,
     PositiveDegrees.completedRaySingleEquiv_symm_apply,
     AddEquiv.toMultiplicative_apply_symm_apply, toAdd_ofAdd,
     ← LinearEquiv.coe_toAddEquiv_symm, LinearEquiv.coe_toAddEquiv,
     LinearEquiv.coe_addEquiv_apply] using
     coe_moduleGradingEquiv_symm d ℳ p ℒ q
-      ((positiveDegrees d p).logComponent (grading d ℳ p ℒ) g.val (q, 1, 0))
+      ((positiveDegrees d p).logComponent (grading d ℳ p ℒ) g.val (q, 1))
 
 end Mei.ModuleProbe

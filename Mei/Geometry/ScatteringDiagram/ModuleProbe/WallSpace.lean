@@ -40,28 +40,28 @@ variable {R M Γ Λ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 open Classical in
 /-- Base walls at charge zero and coefficient walls at charge one, with zero
 spaces for every other degree or normal. -/
-def wallSubmodule (a : Γ × ℤ × ℤ) (m : (Λ × ℤ × ℤ) →+ ℤ) :
+def wallSubmodule (a : Γ × ℤ) (m : (Λ × ℤ × ℤ) →+ ℤ) :
     Submodule R (ProbeLie d ℳ p ℒ) :=
-  if a.2 = (0, 0) then
+  if a.2 = 0 then
     if m ∈ Set.range (baseNormal (Λ := Λ)) then
       (H.wall a.1 (m.comp (AddMonoidHom.inl Λ (ℤ × ℤ)))).map
         (baseInclusion d ℳ p ℒ).toLinearMap
     else ⊥
-  else if a.2 = (1, 0) ∧ m ≠ 0 ∧
+  else if a.2 = 1 ∧ m ≠ 0 ∧
       m ∈ Set.range (fun c : ℤ => c • (probeNormal : (Λ × ℤ × ℤ) →+ ℤ)) then
     grading d ℳ p ℒ a
   else ⊥
 
 open Classical in
 /-- The complete degree and normal cases defining the probe wall spaces. -/
-theorem wallSubmodule_def (a : Γ × ℤ × ℤ) (m : (Λ × ℤ × ℤ) →+ ℤ) :
+theorem wallSubmodule_def (a : Γ × ℤ) (m : (Λ × ℤ × ℤ) →+ ℤ) :
     wallSubmodule d ℳ p ℒ H a m =
-      if a.2 = (0, 0) then
+      if a.2 = 0 then
         if m ∈ Set.range (baseNormal (Λ := Λ)) then
           (H.wall a.1 (m.comp (AddMonoidHom.inl Λ (ℤ × ℤ)))).map
             (baseInclusion d ℳ p ℒ).toLinearMap
         else ⊥
-      else if a.2 = (1, 0) ∧ m ≠ 0 ∧
+      else if a.2 = 1 ∧ m ≠ 0 ∧
           m ∈ Set.range (fun c : ℤ => c • (probeNormal : (Λ × ℤ × ℤ) →+ ℤ)) then
         grading d ℳ p ℒ a
       else ⊥ := (rfl)
@@ -69,7 +69,7 @@ theorem wallSubmodule_def (a : Γ × ℤ × ℤ) (m : (Λ × ℤ × ℤ) →+ �
 /-- Lifted base normals recover precisely the original wall spaces. -/
 @[simp]
 theorem wallSubmodule_base (n : Γ) (m : Λ →+ ℤ) :
-    wallSubmodule d ℳ p ℒ H (n, 0, 0) (baseNormal m) =
+    wallSubmodule d ℳ p ℒ H (n, 0) (baseNormal m) =
       (H.wall n m).map (baseInclusion d ℳ p ℒ).toLinearMap := by
   classical
   have hm : (baseNormal m).comp (AddMonoidHom.inl Λ (ℤ × ℤ)) = m := by
@@ -80,8 +80,8 @@ theorem wallSubmodule_base (n : Γ) (m : Λ →+ ℤ) :
 /-- Every nonzero integral probe normal carries the whole charge-one piece. -/
 @[simp]
 theorem wallSubmodule_module (q : Γ) (c : ℤ) (hc : c ≠ 0) :
-    wallSubmodule d ℳ p ℒ H (q, 1, 0) (c • probeNormal) =
-      grading d ℳ p ℒ (q, 1, 0) := by
+    wallSubmodule d ℳ p ℒ H (q, 1) (c • probeNormal) =
+      grading d ℳ p ℒ (q, 1) := by
   classical
   have hn : c • (probeNormal : (Λ × ℤ × ℤ) →+ ℤ) ≠ 0 := by
     intro h
@@ -91,37 +91,35 @@ theorem wallSubmodule_module (q : Γ) (c : ℤ) (hc : c ≠ 0) :
 
 /-- The zero normal carries no probe wall elements. -/
 @[simp]
-theorem wallSubmodule_zero (a : Γ × ℤ × ℤ) :
+theorem wallSubmodule_zero (a : Γ × ℤ) :
     wallSubmodule d ℳ p ℒ H a 0 = ⊥ := by
   classical
   have h0 : (0 : (Λ × ℤ × ℤ) →+ ℤ).comp (AddMonoidHom.inl Λ (ℤ × ℤ)) = 0 := rfl
   simp only [wallSubmodule, h0, H.zero_normal, Submodule.map_bot, ne_eq,
     not_true_eq_false, false_and, and_false, ite_false, ite_self]
 
-private theorem wallSubmodule_le_grading (a : Γ × ℤ × ℤ) (m : (Λ × ℤ × ℤ) →+ ℤ) :
+private theorem wallSubmodule_le_grading (a : Γ × ℤ) (m : (Λ × ℤ × ℤ) →+ ℤ) :
     wallSubmodule d ℳ p ℒ H a m ≤ grading d ℳ p ℒ a := by
   classical
-  rcases a with ⟨n, c, l⟩
+  rcases a with ⟨n, c⟩
   simp only [wallSubmodule]
   split_ifs with h h' h''
-  · have hc : c = 0 := congrArg Prod.fst h
-    have hl : l = 0 := congrArg Prod.snd h
-    subst c; subst l
+  · subst h
     rw [grading_base]
     exact Submodule.map_mono (H.wall_le_piece _ _)
   · exact bot_le
   · exact le_rfl
   · exact bot_le
 
-private theorem mem_wallSubmodule_cases {a : Γ × ℤ × ℤ}
+private theorem mem_wallSubmodule_cases {a : Γ × ℤ}
     {m : (Λ × ℤ × ℤ) →+ ℤ} {x : ProbeLie d ℳ p ℒ}
     (hx : x ∈ wallSubmodule d ℳ p ℒ H a m) (hx0 : x ≠ 0) :
-    (∃ n m₀ y, a = (n, 0, 0) ∧ m = baseNormal m₀ ∧
+    (∃ n m₀ y, a = (n, 0) ∧ m = baseNormal m₀ ∧
       y ∈ H.wall n m₀ ∧ x = baseInclusion d ℳ p ℒ y) ∨
-    (∃ (q : Γ) (c : ℤ), a = (q, 1, 0) ∧ c ≠ 0 ∧ m = c • probeNormal ∧
-      x ∈ grading d ℳ p ℒ (q, 1, 0)) := by
+    (∃ (q : Γ) (c : ℤ), a = (q, 1) ∧ c ≠ 0 ∧ m = c • probeNormal ∧
+      x ∈ grading d ℳ p ℒ (q, 1)) := by
   classical
-  rcases a with ⟨n, c, l⟩
+  rcases a with ⟨n, c⟩
   simp only [wallSubmodule] at hx
   split_ifs at hx with h h' h''
   · obtain ⟨m₀, rfl⟩ := h'
@@ -134,21 +132,21 @@ private theorem mem_wallSubmodule_cases {a : Γ × ℤ × ℤ}
   · exact (hx0 (by simpa only [Submodule.mem_bot] using hx)).elim
   · obtain ⟨e, rfl⟩ := h''.2.2
     have he : e ≠ 0 := by intro he; exact h''.2.1 (by simp [he])
-    have ha : (n, c, l) = (n, 1, 0) := by simpa using h''.1
+    have ha : (n, c) = (n, 1) := by simpa using h''.1
     exact Or.inr ⟨n, e, ha, he, rfl, ha ▸ hx⟩
   · exact (hx0 (by simpa only [Submodule.mem_bot] using hx)).elim
 
 /-- A probe wall element is zero, a lifted base wall element, or an element of a
 charge-one piece with a nonzero integral probe normal. -/
 @[simp]
-theorem mem_wallSubmodule_iff (a : Γ × ℤ × ℤ) (m : (Λ × ℤ × ℤ) →+ ℤ)
+theorem mem_wallSubmodule_iff (a : Γ × ℤ) (m : (Λ × ℤ × ℤ) →+ ℤ)
     (x : ProbeLie d ℳ p ℒ) :
     x ∈ wallSubmodule d ℳ p ℒ H a m ↔
       x = 0 ∨
-      (∃ n m₀ y, a = (n, 0, 0) ∧ m = baseNormal m₀ ∧
+      (∃ n m₀ y, a = (n, 0) ∧ m = baseNormal m₀ ∧
         y ∈ H.wall n m₀ ∧ x = baseInclusion d ℳ p ℒ y) ∨
-      (∃ (q : Γ) (c : ℤ), a = (q, 1, 0) ∧ c ≠ 0 ∧ m = c • probeNormal ∧
-        x ∈ grading d ℳ p ℒ (q, 1, 0)) := by
+      (∃ (q : Γ) (c : ℤ), a = (q, 1) ∧ c ≠ 0 ∧ m = c • probeNormal ∧
+        x ∈ grading d ℳ p ℒ (q, 1)) := by
   constructor
   · intro hx
     by_cases hx0 : x = 0
@@ -160,7 +158,7 @@ theorem mem_wallSubmodule_iff (a : Γ × ℤ × ℤ) (m : (Λ × ℤ × ℤ) →
       exact Submodule.mem_map.mpr ⟨y, hy, rfl⟩
     · rwa [wallSubmodule_module d ℳ p ℒ H q c hc]
 
-private theorem wallSubmodule_rescale (a : Γ × ℤ × ℤ)
+private theorem wallSubmodule_rescale (a : Γ × ℤ)
     (m : (Λ × ℤ × ℤ) →+ ℤ) (c : ℤ) (hc : c ≠ 0) :
     wallSubmodule d ℳ p ℒ H a (c • m) = wallSubmodule d ℳ p ℒ H a m := by
   classical
@@ -181,9 +179,9 @@ variable [IsWallAnnihilating H ℳ]
 
 private theorem mixed_bracket_mem {n q : Γ} {m : Λ →+ ℤ} {c : ℤ}
     (hc : c ≠ 0) {x : L} (hx : x ∈ H.wall n m)
-    {y : ProbeLie d ℳ p ℒ} (hy : y ∈ grading d ℳ p ℒ (q, 1, 0)) :
+    {y : ProbeLie d ℳ p ℒ} (hy : y ∈ grading d ℳ p ℒ (q, 1)) :
     ⁅baseInclusion d ℳ p ℒ x, y⁆ ∈
-      wallSubmodule d ℳ p ℒ H (n + q, 1, 0)
+      wallSubmodule d ℳ p ℒ H (n + q, 1)
         ((m (ρ q) * c) • probeNormal) := by
   classical
   obtain ⟨hyR, hyL⟩ := (mem_grading_module d ℳ p ℒ q y).mp hy
@@ -245,10 +243,10 @@ def wallSpaces : DirectedWallSpaces (spatialMap ρ) (grading d ℳ p ℒ) where
     · obtain ⟨q, c, rfl, hc, rfl, hx⟩ := hxC
       obtain ⟨n, m₀, y, rfl, rfl, hy, rfl⟩ := hyC
       rw [← lie_skew]
-      have h := (wallSubmodule d ℳ p ℒ H (n + q, 1, 0)
+      have h := (wallSubmodule d ℳ p ℒ H (n + q, 1)
         ((m₀ (ρ q) * c) • probeNormal)).neg_mem
           (mixed_bracket_mem d ℳ p ℒ H hc hy hx)
-      have hs := wallSubmodule_rescale d ℳ p ℒ H (q + n, 1, 0)
+      have hs := wallSubmodule_rescale d ℳ p ℒ H (q + n, 1)
         ((m₀ (ρ q) * c) • probeNormal) (-1) (by norm_num)
       simp only [neg_one_smul] at hs
       simpa only [Prod.mk_add_mk, add_zero, zero_add, wallBracketNormal_probe_base,
@@ -268,12 +266,12 @@ end
 /-- The bundled wall spaces have the stated degree and normal cases. -/
 @[simp]
 theorem wallSpaces_wall [IsWallAnnihilating H ℳ]
-    (a : Γ × ℤ × ℤ) (m : (Λ × ℤ × ℤ) →+ ℤ) :
+    (a : Γ × ℤ) (m : (Λ × ℤ × ℤ) →+ ℤ) :
     (wallSpaces d ℳ p ℒ H).wall a m = wallSubmodule d ℳ p ℒ H a m := (rfl)
 
 /-- Forgetting charge one preserves all the directed probe wall spaces. -/
 theorem chargeZeroGradedLieHom_mem_wall [IsWallAnnihilating H ℳ]
-    (n : Γ × ℤ × ℤ) (m : (Λ × ℤ × ℤ) →+ ℤ)
+    (n : Γ × ℤ) (m : (Λ × ℤ × ℤ) →+ ℤ)
     (x : ProbeLie d ℳ p ℒ) (hx : x ∈ (wallSpaces d ℳ p ℒ H).wall n m) :
     chargeZeroGradedLieHom d ℳ p ℒ x ∈ (wallSpaces d ℳ p ℒ H).wall n m := by
   rw [wallSpaces_wall, mem_wallSubmodule_iff] at hx ⊢

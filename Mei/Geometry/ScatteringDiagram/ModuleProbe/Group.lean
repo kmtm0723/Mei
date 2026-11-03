@@ -51,11 +51,11 @@ variable [DirectSum.Decomposition ℒ]
 theorem raySubmodule_moduleRay (q : Γ) (hq : q - p ∈ d.monoid)
     (m : (Λ × ℤ × ℤ) →+ ℤ) :
     (wallSpaces d ℳ p ℒ H).raySubmodule (moduleRay d p q hq) m =
-      (wallSpaces d ℳ p ℒ H).wall (q, 1, 0) m := by
+      (wallSpaces d ℳ p ℒ H).wall (q, 1) m := by
   apply le_antisymm
   · rw [DirectedWallSpaces.raySubmodule_def]
     refine iSup_le fun a => ?_
-    by_cases ha : (a : Γ × ℤ × ℤ) = (q, 1, 0)
+    by_cases ha : (a : Γ × ℤ) = (q, 1)
     · simp only [ha, le_refl]
     · exact ((wallSpaces d ℳ p ℒ H).wall_le_piece a m).trans
         ((grading_eq_bot_of_charge_one_ray d ℳ p ℒ (moduleRay d p q hq)
@@ -110,7 +110,7 @@ theorem wallGroup_moduleRay_eq_bot_of_notMem_range (q : Γ) (hq : q - p ∈ d.mo
 
 /-- A charge-one ray outside the shifted support has no wall labels at any normal. -/
 theorem wallGroup_eq_bot_of_notMem (w : SupportedRay (positiveDegrees d p))
-    {q : Γ} (hw : w.generator = (q, 1, 0)) (hq : q - p ∉ d.monoid)
+    {q : Γ} (hw : w.generator = (q, 1)) (hq : q - p ∉ d.monoid)
     (m : (Λ × ℤ × ℤ) →+ ℤ) :
     (wallSpaces d ℳ p ℒ H).wallGroup w m = ⊥ := by
   apply le_antisymm _ bot_le
@@ -142,7 +142,7 @@ theorem coe_moduleWallGroupEquiv_symm (q : Γ) (hq : q - p ∈ d.monoid)
     (((moduleWallGroupEquiv d ℳ p ℒ H q hq).symm g).toAdd :
       shiftedSubmodule ℳ d.monoid p) =
       moduleCoefficientsEquiv d ℳ p
-        ((positiveDegrees d p).logComponent (grading d ℳ p ℒ) g.val (q, 1, 0)).val.left := by
+        ((positiveDegrees d p).logComponent (grading d ℳ p ℒ) g.val (q, 1)).val.left := by
   simp [moduleWallGroupEquiv]
 
 end Mei.ModuleProbe

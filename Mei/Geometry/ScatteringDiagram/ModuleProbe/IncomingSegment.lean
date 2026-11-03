@@ -70,7 +70,7 @@ theorem exists_incomingSegmentArrangement
       ∃ y : WallComplement (fun c : B.active k => (B.wall c).support),
         y.val = Q ∧ ∀ n : d.cutoff k,
           (∀ b, Sum.inr b ∈ D.active (k + 1) →
-            (p + n.val, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees →
+            (p + n.val, 1) ∈ (D.wall (.inr b)).ray.rayDegrees →
               (D.wall (.inr b)).Outgoing) →
           ∀ᶠ T : ℝ in atTop,
           (∀ s ≥ T, ∀ c : B.active k,

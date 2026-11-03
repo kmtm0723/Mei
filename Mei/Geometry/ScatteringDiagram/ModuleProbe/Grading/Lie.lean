@@ -41,7 +41,7 @@ private theorem bracket_base_module {n q : Γ} {x : L}
     (ha : a ∈ shiftedGrading ℳ d.monoid p (q - p)) :
     ⁅baseInclusion d ℳ p ℒ x,
       moduleInclusion d ℳ p ℒ ((moduleCoefficientsEquiv d ℳ p).symm a)⁆ ∈
-      grading d ℳ p ℒ (n + q, 1, 0) := by
+      grading d ℳ p ℒ (n + q, 1) := by
   rw [lie_baseInclusion_moduleInclusion, grading_module]
   refine Submodule.mem_map.mpr ⟨moduleCoefficientsEquiv d ℳ p
     (actionDerivationHom d ℳ p (ℒ := ℒ) x ((moduleCoefficientsEquiv d ℳ p).symm a)), ?_, ?_⟩
@@ -56,12 +56,12 @@ private theorem bracket_base_module {n q : Γ} {x : L}
 instance instGradedBracketGrading [SetLike.GradedBracket ℒ ℒ] :
     SetLike.GradedBracket (grading d ℳ p ℒ) (grading d ℳ p ℒ) where
   bracket_mem := by
-    rintro ⟨n, c, l⟩ ⟨q, e, k⟩ x y hx hy
-    by_cases h0 : c = 0 ∧ l = 0
-    · rcases h0 with ⟨rfl, rfl⟩
+    rintro ⟨n, c⟩ ⟨q, e⟩ x y hx hy
+    by_cases h0 : c = 0
+    · subst h0
       rw [grading_base] at hx
-      by_cases h0' : e = 0 ∧ k = 0
-      · rcases h0' with ⟨rfl, rfl⟩
+      by_cases h0' : e = 0
+      · subst h0'
         rw [grading_base] at hy
         let := (baseInclusion d ℳ p ℒ).gradedBracket_map ℒ
         simpa only [vadd_eq_add, Prod.mk_add_mk, zero_add, grading_base] using
@@ -69,8 +69,8 @@ instance instGradedBracketGrading [SetLike.GradedBracket ℒ ℒ] :
             (ℒ := fun i => (ℒ i).map (baseInclusion d ℳ p ℒ).toLinearMap)
             (ℳ := fun i => (ℒ i).map (baseInclusion d ℳ p ℒ).toLinearMap) hx hy
       · rcases hx with ⟨x, hx, rfl⟩
-        by_cases h1' : e = 1 ∧ k = 0
-        · rcases h1' with ⟨rfl, rfl⟩
+        by_cases h1' : e = 1
+        · subst h1'
           rw [grading_module] at hy
           rcases hy with ⟨a, ha, rfl⟩
           exact bracket_base_module d ℳ p ℒ hx ha
@@ -78,21 +78,21 @@ instance instGradedBracketGrading [SetLike.GradedBracket ℒ ℒ] :
             Submodule.mem_bot] using hy
           rw [hy0, lie_zero]
           exact Submodule.zero_mem _
-    · by_cases h1 : c = 1 ∧ l = 0
-      · rcases h1 with ⟨rfl, rfl⟩
+    · by_cases h1 : c = 1
+      · subst h1
         rw [grading_module] at hx
         rcases hx with ⟨a, ha, rfl⟩
-        by_cases h0' : e = 0 ∧ k = 0
-        · rcases h0' with ⟨rfl, rfl⟩
+        by_cases h0' : e = 0
+        · subst h0'
           rw [grading_base] at hy
           rcases hy with ⟨y, hy, rfl⟩
           rw [← lie_skew]
-          have h := (grading d ℳ p ℒ (q + n, 1, 0)).neg_mem
+          have h := (grading d ℳ p ℒ (q + n, 1)).neg_mem
             (bracket_base_module d ℳ p ℒ hy ha)
           simpa only [vadd_eq_add, Prod.mk_add_mk, add_zero, zero_add, add_comm,
             LinearMap.comp_apply, LieHom.coe_toLinearMap, LinearEquiv.coe_toLinearMap] using h
-        · by_cases h1' : e = 1 ∧ k = 0
-          · rcases h1' with ⟨rfl, rfl⟩
+        · by_cases h1' : e = 1
+          · subst h1'
             rw [grading_module] at hy
             rcases hy with ⟨b, hb, rfl⟩
             -- Reveal the two module inclusions hidden by the image linear maps.
@@ -129,15 +129,15 @@ def chargeZeroGradedLieHom :
       (grading d ℳ p ℒ) (grading d ℳ p ℒ) where
   toLieHom := (baseInclusion d ℳ p ℒ).comp (LieAlgebra.SemiDirectSum.projr _)
   map_mem := by
-    rintro ⟨q, c, l⟩ x hx
+    rintro ⟨q, c⟩ x hx
     simp only [PositiveDegreeMap.id_apply]
-    by_cases h₀ : c = 0 ∧ l = 0
-    · obtain ⟨rfl, rfl⟩ := h₀
+    by_cases h₀ : c = 0
+    · subst h₀
       obtain ⟨_, hr⟩ := (mem_grading_base d ℳ p ℒ q x).mp hx
       rw [grading_base]
       exact Submodule.mem_map.mpr ⟨x.right, hr, rfl⟩
-    · by_cases h₁ : c = 1 ∧ l = 0
-      · obtain ⟨rfl, rfl⟩ := h₁
+    · by_cases h₁ : c = 1
+      · subst h₁
         have hr := ((mem_grading_module d ℳ p ℒ q x).mp hx).1
         have he : (baseInclusion d ℳ p ℒ).comp (LieAlgebra.SemiDirectSum.projr _) x = 0 := by
           rw [LieHom.comp_apply, LieAlgebra.SemiDirectSum.projr_mk, hr, map_zero]
@@ -155,7 +155,7 @@ theorem chargeZeroGradedLieHom_apply (x : ProbeLie d ℳ p ℒ) :
 
 variable [DirectSum.Decomposition ℳ]
 
-/-- The module probe is graded by the ambient degree and two auxiliary coordinates. -/
+/-- The module probe is graded by the ambient degree and the module charge. -/
 instance instGradedLieAlgebraGrading [SetLike.GradedBracket ℒ ℒ] :
     GradedLieAlgebra (grading d ℳ p ℒ) where
   toDecomposition := inferInstance
@@ -165,13 +165,13 @@ instance instGradedLieAlgebraGrading [SetLike.GradedBracket ℒ ℒ] :
 instance instIsPositiveGradingGrading :
     IsPositiveGrading (positiveDegrees d p) (grading d ℳ p ℒ) where
   eq_bot := by
-    rintro ⟨q, c, l⟩ h
-    by_cases h0 : c = 0 ∧ l = 0
-    · rcases h0 with ⟨rfl, rfl⟩
+    rintro ⟨q, c⟩ h
+    by_cases h0 : c = 0
+    · subst h0
       rw [grading_base, IsPositiveGrading.eq_bot (d := d) (ℒ := ℒ) q, Submodule.map_bot]
       simpa using h
-    · by_cases h1 : c = 1 ∧ l = 0
-      · rcases h1 with ⟨rfl, rfl⟩
+    · by_cases h1 : c = 1
+      · subst h1
         rw [grading_module, shiftedGrading_eq_bot ℳ d.monoid p, Submodule.map_bot]
         simpa using h
       · simp only [grading_def, h0, h1, ↓reduceIte]

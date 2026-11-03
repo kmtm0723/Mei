@@ -38,7 +38,7 @@ theorem shiftedQuotientComponent_moduleQuotientProjection_decompose
     d.shiftedQuotientComponent ℳ p q k hk
         (moduleQuotientProjection d ℳ p ℒ k
           (DirectSum.decompose ((positiveDegrees d p).truncatedGrading
-            (grading d ℳ p ℒ) (k + 1)) x (q, 1, 0))) =
+            (grading d ℳ p ℒ) (k + 1)) x (q, 1))) =
       d.shiftedQuotientComponent ℳ p q k hk
         (moduleQuotientProjection d ℳ p ℒ k x) := by
   obtain ⟨x, rfl⟩ := ((positiveDegrees d p).degreeIdeal

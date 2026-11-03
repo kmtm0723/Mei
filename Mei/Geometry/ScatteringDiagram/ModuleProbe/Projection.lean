@@ -264,8 +264,8 @@ theorem completedMap_chargeZeroGradedLieHom_of_mem_completedRaySubgroup (w : Sup
     (hg : g ∈ (positiveDegrees d p).completedRaySubgroup (grading d ℳ p ℒ) (baseRay d p w)) :
     (chargeZeroGradedLieHom d ℳ p ℒ).completedMap g = g := by
   apply GradedLieHom.completedMap_eq_self_of_mem_completedRaySubgroup _ _ hg
-  rintro ⟨n, c, l⟩ hn x hx
-  obtain ⟨-, rfl, rfl⟩ := (mem_baseRay_rayDegrees d p w n c l).mp hn
+  rintro ⟨n, c⟩ hn x hx
+  obtain ⟨-, rfl⟩ := (mem_baseRay_rayDegrees d p w n c).mp hn
   obtain ⟨hl, -⟩ := (mem_grading_base d ℳ p ℒ n x).mp hx
   rw [chargeZeroGradedLieHom_apply]
   ext
