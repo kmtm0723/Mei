@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mei.LinearAlgebra.ModuleFiltration.Completion
-public import TauCeti.LinearAlgebra.Submodule.CompleteFiltration
 public import Mathlib.RingTheory.Nilpotent.Defs
 
 /-!
@@ -15,7 +14,9 @@ public import Mathlib.RingTheory.Nilpotent.Defs
 An endomorphism raising a module filtration by one induces an endomorphism on
 each finite quotient. Its `(k + 1)`st power vanishes on the order-`k` quotient.
 The original endomorphism need not be nilpotent. No separatedness, completeness,
-finiteness, or characteristic-zero hypothesis is used.
+finiteness, or characteristic-zero hypothesis is used. When the filtration
+itself vanishes at a finite order, the original endomorphism is globally
+nilpotent (`pow_eq_zero_of_submodule_eq_bot` in `ModuleFiltration/FiniteLength`).
 
 These compatible nilpotent endomorphisms turn power series into finite sums at
 each order, so evaluations can be assembled across the quotient tower. In particular,
@@ -65,10 +66,7 @@ theorem quotientRaisingEnd_pow_eq_zero (k : ℕ) :
   obtain ⟨x, rfl⟩ := (F.submodule (k + 1)).mkQ_surjective a
   rw [Submodule.mkQ_apply, quotientRaisingEnd_pow_mk, LinearMap.zero_apply,
     Submodule.Quotient.mk_eq_zero]
-  have h := Module.End.pow_apply_mem_of_map_le (T := f) (F := F.submodule)
-    (fun n => by rintro _ ⟨y, hy, rfl⟩; exact hf n hy)
-    (by simp : x ∈ F.submodule 0) (k + 1)
-  simpa only [Nat.zero_add] using h
+  exact F.pow_apply_mem f hf (k + 1) x
 
 /-- Every induced finite endomorphism is nilpotent. -/
 theorem isNilpotent_quotientRaisingEnd (k : ℕ) : IsNilpotent (F.quotientRaisingEnd f hf k) :=
