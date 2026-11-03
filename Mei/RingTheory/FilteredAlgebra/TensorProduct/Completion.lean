@@ -267,9 +267,8 @@ theorem completedTensorComm_completedTensor (x : F.completion) (y : G.completion
   rw [projection_completedTensorComm,
     F.projection_completedTensor_of_representatives G k x y a b ha hb,
     G.projection_completedTensor_of_representatives F k y x b a hb ha]
-  simp only [Ideal.quotient_map_mkₐ]
-  change Ideal.Quotient.mk _ (Algebra.TensorProduct.comm R A B (a ⊗ₜ[R] b)) = _
-  rw [Algebra.TensorProduct.comm_tmul]
+  simp only [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk,
+    AlgEquiv.coe_toAlgHom, Algebra.TensorProduct.comm_tmul]
 
 /-- The inverse completed exchange is the exchange in the opposite order. -/
 @[simp]
