@@ -14,7 +14,10 @@ public import Mei.Geometry.ScatteringDiagram.WallSpace.Graph
 
 The principal graph grading places skew degree `n` at `r(n) = (p₁*(n), n)`.
 We give it directed wall spaces with identity spatial map, and their projected
-version with spatial map the first projection. The integral normals and wall
+version with spatial map the first projection `pr₁ : M° × N_uf → M°`. The projected
+version is defined as the `DirectedWallSpaces.project` of the principal one along
+`pr₁`, so projected principal walls lift to principal cylinders with identity
+spatial map by `DirectedWall.cylinder`. The integral normals and wall
 coefficients are those of the original unfrozen-indexed wall spaces. Degrees
 outside the graph carry zero spaces, and radical degrees survive projection.
 
@@ -24,7 +27,8 @@ to act through the formal tropical vertex realization.
 
 The principal realization follows Gross–Hacking–Keel–Kontsevich, *Canonical bases
 for cluster algebras*, §1 and Appendix B, arXiv:1411.1394v2. We reuse
-`principalWallSpaces`, `principalGrading` and `DirectedWallSpaces.graph`.
+`principalWallSpaces`, `principalGrading`, `DirectedWallSpaces.graph` and
+`DirectedWallSpaces.project`.
 -/
 
 public section
@@ -81,28 +85,32 @@ theorem principalGraphGradedLieHom_mem_wall {p : Lpr} {m : Lpr →+ ℤ}
     rw [hz, Submodule.mem_bot] at hx
     simp [hx]
 
-/-- Projected principal wall spaces on the full principal degree lattice.
-The unfrozen coordinate is retained in degrees even when its spatial image is zero. -/
-def projectedPrincipalGraphWallSpaces :
-    DirectedWallSpaces (AddMonoidHom.fst M° D.unfrozen) (D.principalGrading (R := R) d) :=
-  (D.projectedPrincipalWallSpaces d).graph D.principalCharacter.toAddMonoidHom
-    (AddMonoidHom.fst M° D.unfrozen) (fun _ => rfl)
-
-/-- The projected wall family retains precisely the original projected wall
-coefficients on graph degrees, and is zero off the graph. -/
-@[simp]
-theorem projectedPrincipalGraphWallSpaces_wall (p : Lpr) (m : M° →+ ℤ) :
-    (D.projectedPrincipalGraphWallSpaces (R := R) d).wall p m =
-      graphGrading (fun n => (D.projectedPrincipalWallSpaces d).wall n m)
-        D.principalCharacter.toAddMonoidHom p := by
-  exact DirectedWallSpaces.graph_wall _ _ _ _ p m
+/-- Projected principal wall spaces on the full principal degree lattice: the
+principal graph wall spaces with spatial directions projected along
+`pr₁ : M° × N_uf → M°`, so that a normal `m` on `M°` selects the principal space for
+the cylinder normal `m ∘ pr₁`. The unfrozen coordinate is retained in degrees even when
+its spatial image is zero. This is reducibly a `DirectedWallSpaces.project`, so its
+walls and diagrams lift to principal cylinders by `DirectedWall.cylinder` and
+`DirectedDiagram.cylinder`. -/
+abbrev projectedPrincipalGraphWallSpaces :
+    DirectedWallSpaces ((AddMonoidHom.fst M° D.unfrozen).comp (AddMonoidHom.id Lpr))
+      (D.principalGrading (R := R) d) :=
+  (D.principalGraphWallSpaces d).project (AddMonoidHom.fst M° D.unfrozen)
 
 /-- Graph reindexing and spatial projection select the same wall submodules,
 including at off-graph indices and at radical degrees. -/
 theorem projectedPrincipalGraphWallSpaces_wall_eq (p : Lpr) (m : M° →+ ℤ) :
     (D.projectedPrincipalGraphWallSpaces (R := R) d).wall p m =
-      (D.principalGraphWallSpaces d).wall p (m.comp (AddMonoidHom.fst M° D.unfrozen)) := by
-  simp only [D.projectedPrincipalGraphWallSpaces_wall, D.principalGraphWallSpaces_wall,
+      (D.principalGraphWallSpaces d).wall p (m.comp (AddMonoidHom.fst M° D.unfrozen)) :=
+  DirectedWallSpaces.project_wall _ _ p m
+
+/-- The projected wall family retains precisely the original projected wall
+coefficients on graph degrees, and is zero off the graph. -/
+theorem projectedPrincipalGraphWallSpaces_wall (p : Lpr) (m : M° →+ ℤ) :
+    (D.projectedPrincipalGraphWallSpaces (R := R) d).wall p m =
+      graphGrading (fun n => (D.projectedPrincipalWallSpaces d).wall n m)
+        D.principalCharacter.toAddMonoidHom p := by
+  simp only [D.projectedPrincipalGraphWallSpaces_wall_eq, D.principalGraphWallSpaces_wall,
     D.projectedPrincipalWallSpaces_wall_eq]
 
 variable [DecidableEq D.unfrozen] [DecidableEq (Module.Dual ℤ D.sublattice)]
@@ -126,6 +134,7 @@ theorem map_projectedPrincipalGraphWallGroup (w : SupportedRay d) (m : M° →+ 
         (d.graphBCHGroupEquiv ℒ D.principalCharacter.toAddMonoidHom).toMonoidHom =
       (D.projectedPrincipalGraphWallSpaces d).wallGroup
         (w.graph D.principalCharacter.toAddMonoidHom) m := by
-  exact DirectedWallSpaces.map_graph_wallGroup _ _ _ _ w m
+  rw [DirectedWallSpaces.project_wallGroup, D.projectedPrincipalWallSpaces_wallGroup,
+    D.map_principalGraphWallGroup]
 
 end Mei.SkewLatticeDatum
