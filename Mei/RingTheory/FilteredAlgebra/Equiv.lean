@@ -100,12 +100,9 @@ theorem completionEquiv_mem_completionIdeal_iff (k : ℕ) (x : F.completion) :
   | zero => simp
   | succ k =>
     simp only [completionIdeal_succ, RingHom.mem_ker, projection_completionEquiv]
-    obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (F.projection k x)
-    rw [← ha]
-    simp only [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, AlgEquiv.coe_toAlgHom,
-      Ideal.Quotient.eq_zero_iff_mem]
-    rw [← he (k + 1)]
-    simp only [Ideal.mem_comap, AlgEquiv.coe_toAlgHom]
+    exact map_eq_zero_iff
+      (Ideal.quotientMapₐ (G.ideal (k + 1)) e.toAlgHom (by rw [he]))
+      (Ideal.quotientMap_injective' (H := (he (k + 1)).ge) (he (k + 1)).le)
 
 /-- The inverse completed equivalence also preserves and reflects filtration order. -/
 @[simp]
