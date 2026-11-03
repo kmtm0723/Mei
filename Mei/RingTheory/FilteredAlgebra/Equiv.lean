@@ -10,16 +10,16 @@ public import Mei.RingTheory.FilteredAlgebra.AlgHom
 /-!
 # Completion of filtered algebra equivalences
 
-An algebra equivalence identifying each filtration ideal induces an algebra
-equivalence of completions, with the corresponding quotient maps as its finite
-projections. This allows a coefficient algebra to be completed using a different
-presentation, without changing its filtration or requiring separatedness.
-The completed equivalence and its inverse identify every induced filtration
-ideal exactly, so a change of filtered presentation preserves and reflects
-filtration orders of arbitrary completed elements.
+An algebra equivalence filtered in both directions along independent monotone
+cutoff moduli induces an algebra equivalence of completions. Its finite
+projections use the corresponding quotient maps at the chosen source cutoffs.
+The result is independent of both moduli. Exact identification of filtration
+ideals is a specialization. Thus cofinal presentations of coefficient algebras
+can be completed without requiring separatedness.
 
 The construction follows `ModuleFiltration.completionEquiv`, using
-`AlgFiltration.mapCompletionₐ` in both directions and its composition law.
+`AlgFiltration.mapCompletionₐ` in both directions, its composition law, and
+independence of the cutoff modulus.
 -/
 
 public section
@@ -29,6 +29,93 @@ namespace Mei.AlgFiltration
 variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A]
   [Ring B] [Algebra R B] (F : AlgFiltration A) (G : AlgFiltration B)
   (e : A ≃ₐ[R] B) (he : ∀ k, (G.ideal k).comap e.toAlgHom = F.ideal k)
+
+section Moduli
+
+variable (ρ σ : ℕ → ℕ) (hρ : Monotone ρ) (hσ : Monotone σ)
+  (hf : ∀ k, F.ideal (ρ k + 1) ≤ (G.ideal (k + 1)).comap e.toAlgHom)
+  (hi : ∀ k, G.ideal (σ k + 1) ≤ (F.ideal (k + 1)).comap e.symm.toAlgHom)
+
+/-- Completing the two directions of an algebra equivalence gives a left inverse,
+by composition and independence of the composite cutoff modulus. -/
+private theorem mapCompletionₐ_equiv_leftInverse :
+    Function.LeftInverse (G.mapCompletionₐ F e.symm.toAlgHom σ hσ hi)
+      (F.mapCompletionₐ G e.toAlgHom ρ hρ hf) := by
+  have hbound : ∀ k, F.ideal ((ρ ∘ σ) k + 1) ≤
+      (F.ideal (k + 1)).comap (AlgHom.id R A) := by
+    intro k a ha
+    have hb := hi k (hf (σ k) ha)
+    simp only [Ideal.mem_comap, AlgEquiv.toAlgHom_apply, AlgEquiv.symm_apply_apply] at hb
+    simp only [Ideal.mem_comap, AlgHom.id_apply]
+    exact hb
+  have h := F.mapCompletionₐ_comp G e.toAlgHom ρ hρ hf F e.symm.toAlgHom σ hσ hi
+  simp only [AlgEquiv.symm_comp] at h
+  have hid := F.mapCompletionₐ_eq F (AlgHom.id R A) (ρ ∘ σ) (hρ.comp hσ)
+    hbound id monotone_id (fun _ => by simp)
+  rw [mapCompletionₐ_id] at hid
+  exact fun x => (AlgHom.congr_fun (hid.symm.trans h) x).symm
+
+/-- An algebra equivalence filtered in both directions extends to completions.
+The forward component at order `k` uses source order `ρ k`, and the inverse
+component uses `σ k`. The moduli may differ, so the filtrations need not agree
+at equal orders; monotonicity ensures compatibility with the quotient towers. -/
+def completionEquivOfModuli : F.completion ≃ₐ[R] G.completion where
+  __ := F.mapCompletionₐ G e.toAlgHom ρ hρ hf
+  invFun := G.mapCompletionₐ F e.symm.toAlgHom σ hσ hi
+  left_inv := F.mapCompletionₐ_equiv_leftInverse G e ρ σ hρ hσ hf hi
+  right_inv := G.mapCompletionₐ_equiv_leftInverse F e.symm σ ρ hσ hρ hi hf
+
+/-- Finite projections use the forward quotient map at the prescribed source cutoff. -/
+@[simp]
+theorem projection_completionEquivOfModuli (k : ℕ) (x : F.completion) :
+    G.projection k (F.completionEquivOfModuli G e ρ σ hρ hσ hf hi x) =
+      Ideal.quotientMapₐ (G.ideal (k + 1)) e.toAlgHom (hf k) (F.projection (ρ k) x) :=
+  F.projection_mapCompletionₐ G e.toAlgHom ρ hρ hf k x
+
+/-- The completed equivalence extends the original map on canonical elements. -/
+@[simp]
+theorem completionEquivOfModuli_toCompletion (a : A) :
+    F.completionEquivOfModuli G e ρ σ hρ hσ hf hi (F.toCompletion a) =
+      G.toCompletion (e a) :=
+  F.mapCompletionₐ_toCompletion G e.toAlgHom ρ hρ hf a
+
+/-- Inversion swaps the two cutoff moduli and the two filtration bounds. -/
+theorem completionEquivOfModuli_symm :
+    (F.completionEquivOfModuli G e ρ σ hρ hσ hf hi).symm =
+      G.completionEquivOfModuli F e.symm σ ρ hσ hρ hi hf := by
+  apply AlgEquiv.ext
+  intro y
+  -- The specified invFun on the left and forward map on the right are both
+  -- exactly G.mapCompletionₐ F e.symm.toAlgHom σ hσ hi by construction.
+  rfl
+
+/-- Finite projections of the inverse use the inverse modulus `σ`. -/
+@[simp]
+theorem projection_completionEquivOfModuli_symm (k : ℕ) (y : G.completion) :
+    F.projection k ((F.completionEquivOfModuli G e ρ σ hρ hσ hf hi).symm y) =
+      Ideal.quotientMapₐ (F.ideal (k + 1)) e.symm.toAlgHom (hi k)
+        (G.projection (σ k) y) :=
+  G.projection_mapCompletionₐ F e.symm.toAlgHom σ hσ hi k y
+
+/-- The inverse extension agrees with the original inverse on canonical elements. -/
+@[simp]
+theorem completionEquivOfModuli_symm_toCompletion (b : B) :
+    (F.completionEquivOfModuli G e ρ σ hρ hσ hf hi).symm (G.toCompletion b) =
+      F.toCompletion (e.symm b) :=
+  G.mapCompletionₐ_toCompletion F e.symm.toAlgHom σ hσ hi b
+
+/-- The completed equivalence is independent of both valid cutoff moduli. -/
+theorem completionEquivOfModuli_eq (ρ' σ' : ℕ → ℕ) (hρ' : Monotone ρ')
+    (hσ' : Monotone σ')
+    (hf' : ∀ k, F.ideal (ρ' k + 1) ≤ (G.ideal (k + 1)).comap e.toAlgHom)
+    (hi' : ∀ k, G.ideal (σ' k + 1) ≤ (F.ideal (k + 1)).comap e.symm.toAlgHom) :
+    F.completionEquivOfModuli G e ρ σ hρ hσ hf hi =
+      F.completionEquivOfModuli G e ρ' σ' hρ' hσ' hf' hi' := by
+  apply AlgEquiv.ext
+  intro x
+  exact AlgHom.congr_fun (F.mapCompletionₐ_eq G e.toAlgHom ρ hρ hf ρ' hρ' hf') x
+
+end Moduli
 
 include he
 
@@ -40,22 +127,10 @@ theorem comap_ideal_equiv_symm (k : ℕ) :
   simp
 
 /-- A filtration-preserving algebra equivalence extends to completed algebras. -/
-def completionEquiv : F.completion ≃ₐ[R] G.completion where
-  __ := F.mapCompletionₐ G e.toAlgHom id monotone_id (fun k => (he (k + 1)).ge)
-  invFun := G.mapCompletionₐ F e.symm.toAlgHom id monotone_id
+def completionEquiv : F.completion ≃ₐ[R] G.completion :=
+  F.completionEquivOfModuli G e id id monotone_id monotone_id
+    (fun k => (he (k + 1)).ge)
     (fun k => (F.comap_ideal_equiv_symm G e he (k + 1)).ge)
-  left_inv x := by
-    have h := F.mapCompletionₐ_comp G e.toAlgHom id monotone_id (fun k => (he (k + 1)).ge)
-      F e.symm.toAlgHom id monotone_id
-      (fun k => (F.comap_ideal_equiv_symm G e he (k + 1)).ge)
-    simp only [AlgEquiv.symm_comp, Function.id_comp, mapCompletionₐ_id] at h
-    exact (AlgHom.congr_fun h x).symm
-  right_inv x := by
-    have h := G.mapCompletionₐ_comp F e.symm.toAlgHom id monotone_id
-      (fun k => (F.comap_ideal_equiv_symm G e he (k + 1)).ge)
-      G e.toAlgHom id monotone_id (fun k => (he (k + 1)).ge)
-    simp only [AlgEquiv.comp_symm, Function.id_comp, mapCompletionₐ_id] at h
-    exact (AlgHom.congr_fun h x).symm
 
 /-- Finite projections of the completed equivalence are induced quotient maps. -/
 @[simp]
