@@ -22,6 +22,12 @@ the unordered product of its ray factors. For `u = log f`, these are the support
 walls `exp((log f)_w ∂_n)` presenting the function wall of `f`, whose action multiplies
 `z^p` by `f^{n(ρ p)}`
 (`Mei.completedBCHAction_completedBCHExp_completedTropicalTangentField_completedLog`).
+If `f` is a polynomial supported on a submonoid `S` of the tangent degrees, then so is every
+truncation of `log f`; hence the label has no logarithmic coefficient outside `S`
+(`Mei.logComponent_completedBCHExp_completedTropicalTangentField_completedLog_eq_zero`), and a
+ray factor surviving the cutoff `k` has a degree of `S` of order at most `k` on its ray
+(`Mei.exists_mem_rayDegrees_of_projection_rayFactor_ne_one`). These control the directions
+and the finite activity of the ray walls of polynomial function walls.
 
 No condition on the coefficient ring beyond being a `ℚ`-algebra is imposed, and degrees of
 zero spatial direction are allowed. The splitting of wall functions into supported-ray
@@ -130,6 +136,40 @@ theorem logComponent_completedBCHExp_completedTropicalTangentField_mem_wall
     (Int.self_le_toNat _)]
   exact decompose_tropicalTangentField_mem_wall d ρ n v q
 
+/-- If the completed coefficient is the completion of a polynomial `g` supported on a
+submonoid `S` of the tangent degrees, the label `exp(log(g) ∂_n)` has no logarithmic
+coefficient outside `S`: at every order the logarithm of `g` is a polynomial in `g - 1`. -/
+theorem logComponent_completedBCHExp_completedTropicalTangentField_completedLog_eq_zero
+    (S : AddSubmonoid T) {g : R[T]} (f : R[S]) (hfg : mapDomainRingHom R S.subtype f = g)
+    (hg : (G).toCompletion g - 1 ∈ (G).completionIdeal 1) {q : Γ}
+    (hq : ∀ t : S, ((t : T) : Γ) ≠ q) :
+    d.logComponent ℒ (d.completedBCHExp ℒ (completedTropicalTangentField d ρ χ
+      ((G).completedLog ⟨(G).toCompletion g, hg⟩))) q = 0 := by
+  classical
+  let inc := mapDomainRingHom R S.subtype
+  let k := (d.degree q).toNat
+  obtain ⟨m, hm⟩ := (G).isNilpotent_projection hg k
+  let v : R[S] := ∑ a ∈ Finset.range m, ((-1 : ℚ) ^ (a + 1) / a) • (f - 1) ^ a
+  have hv : (G).projection k ((G).completedLog ⟨(G).toCompletion g, hg⟩) =
+      Ideal.Quotient.mk _ (inc v) := by
+    rw [AlgFiltration.projection_completedLog, IsNilpotent.log_eq_sum (by
+      simpa only [map_sub, map_one] using hm)]
+    simp only [v, inc, map_sum, map_rat_smul, map_pow, map_sub, map_one, hfg,
+      AlgFiltration.projection_toCompletion]
+  rw [logComponent_completedBCHExp_completedTropicalTangentField_eq_decompose d ρ n _ hv
+    (Int.self_le_toNat _)]
+  have hzero (v : R[S]) :
+      (DirectSum.decompose ℒ (tropicalTangentField d ρ χ (inc v)) q :
+        tropicalVertexLieAlgebra (R := R) d ρ) = 0 := by
+    induction v using induction_linear with
+    | zero => simp
+    | add a b ha hb => simp [map_add, ha, hb]
+    | single t c =>
+      simp only [inc, mapDomainRingHom_apply, mapDomain_single, AddSubmonoid.subtype_apply]
+      exact DirectSum.decompose_of_mem_ne ℒ
+        ((H).wall_le_piece _ _ (tropicalTangentField_single_mem_wall d ρ n t.val c)) (hq t)
+  exact Subtype.ext (hzero v)
+
 end Monoid
 
 section Group
@@ -178,6 +218,40 @@ theorem projection_completedBCHExp_completedTropicalTangentField_eq_noncommProd_
   d.projection_eq_noncommProd_rayFactor (fun q q' => (H).lie_eq_zero_of_same_normal
     (logComponent_completedBCHExp_completedTropicalTangentField_mem_wall d ρ n u q)
     (logComponent_completedBCHExp_completedTropicalTangentField_mem_wall d ρ n u q')) k s hs
+
+/-- A completed label with a nontrivial order-`k` projection has a nonzero logarithmic
+coefficient in some degree of order at most `k`. -/
+private theorem exists_logComponent_ne_zero_of_projection_ne_one
+    {g : d.completedBCHGroup ℒ} {k : ℕ} (hg : CompletedGroup.projection k g ≠ 1) :
+    ∃ q, d.degree q ≤ k ∧ d.logComponent ℒ g q ≠ 0 := by
+  by_contra! h0
+  apply hg
+  rw [← BCHGroup.exp_log (L := d.truncatedLie ℒ k) (CompletedGroup.projection k g),
+    d.log_projection_eq_mkQ_sum ℒ g k, Finset.sum_eq_zero fun q hq => by
+      rw [h0 q (d.mem_cutoff.mp ((d.finite_cutoff k).mem_toFinset.mp hq)).2,
+        ZeroMemClass.coe_zero], map_zero]
+  exact BCHGroup.exp_zero
+
+/-- If the completed coefficient is the completion of a polynomial supported on a submonoid
+`S` of the tangent degrees, a ray factor of `exp(log(g) ∂_n)` that survives the cutoff `k`
+has a degree of `S` on its ray of order at most `k`. -/
+theorem exists_mem_rayDegrees_of_projection_rayFactor_ne_one
+    (S : AddSubmonoid T) {g : R[T]} (f : R[S]) (hfg : mapDomainRingHom R S.subtype f = g)
+    (hg : (G).toCompletion g - 1 ∈ (G).completionIdeal 1) {w : SupportedRay d} {k : ℕ}
+    (hw : CompletedGroup.projection k (d.rayFactor ℒ (d.completedBCHExp ℒ
+      (completedTropicalTangentField d ρ χ ((G).completedLog ⟨(G).toCompletion g, hg⟩))) w) ≠
+        1) :
+    ∃ t : S, ((t : T) : Γ) ∈ w.rayDegrees ∧ d.degree ((t : T) : Γ) ≤ k := by
+  obtain ⟨q, hqk, hq⟩ := exists_logComponent_ne_zero_of_projection_ne_one d ρ hw
+  have hqw : q ∈ w.rayDegrees := by
+    by_contra h
+    exact hq (d.logComponent_rayFactor_of_notMem ℒ _ h)
+  rw [d.logComponent_rayFactor_of_mem ℒ _ hqw] at hq
+  obtain ⟨t, rfl⟩ : ∃ t : S, ((t : T) : Γ) = q := by
+    by_contra! h
+    exact hq (logComponent_completedBCHExp_completedTropicalTangentField_completedLog_eq_zero
+      d ρ n S f hfg hg h)
+  exact ⟨t, hqw, hqk⟩
 
 end Group
 
