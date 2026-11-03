@@ -218,7 +218,11 @@ theorem tensorProduct_le_comap_map {C D : Type*} [Semiring C] [Semiring D]
   simp only [tensorProduct_ideal]
   exact Ideal.tensorFiltration_le_comap_map R F.ideal G.ideal H.ideal K.ideal f g hf hg k
 
-/-- Independent factor cutoffs give the sum cutoff for the tensor map. -/
+/-- If `f` sends `F.ideal (ρ k + 1)` into `H.ideal (k + 1)` and `g` sends
+`G.ideal (σ k + 1)` into `K.ideal (k + 1)`, then `Algebra.TensorProduct.map f g`
+sends the order `ρ k + σ k + 1` term of `F.tensorProduct R G` into the order
+`k + 1` term of `H.tensorProduct R K`. No monotonicity of the cutoffs is needed
+for this bound at a fixed order. -/
 theorem tensorProduct_le_comap_map_of_moduli {C D : Type*} [Semiring C] [Semiring D]
     [Algebra R C] [Algebra R D] (H : Mei.AlgFiltration C) (K : Mei.AlgFiltration D)
     (f : A →ₐ[R] C) (g : B →ₐ[R] D) (ρ σ : ℕ → ℕ)
