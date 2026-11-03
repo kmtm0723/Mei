@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.RingTheory.FilteredAlgebra.TensorProduct.Basic
-public import Mei.RingTheory.FilteredAlgebra.Map
+public import Mei.RingTheory.FilteredAlgebra.Equiv
 public import Mei.RingTheory.FilteredAlgebra.Module
 public import Mei.LinearAlgebra.ModuleFiltration.Bilinear
 
@@ -25,6 +25,9 @@ equivalences. It agrees pointwise with the product of the completed left and
 right inclusions (`completedTensor_apply`), from which multiplicativity and the
 unit formulas follow. Filtration orders of the two inputs add.
 The two algebras may be noncommutative; no flatness or separatedness is required.
+Exchanging the factors gives a canonical algebra equivalence of completed tensor
+products. At each finite cutoff it is the factor exchange on quotient classes,
+and it sends a completed pure tensor to the pure tensor with its factors reversed.
 -/
 
 public section
@@ -223,5 +226,54 @@ theorem completedTensor_one_right (x : F.completion) :
 theorem completedTensor_one_left (y : G.completion) :
     F.completedTensor (R := R) G 1 y = F.includeRightCompletion (R := R) G y := by
   simp [completedTensor_apply]
+
+/-- Exchanging the factors induces an algebra equivalence of completed tensor products. -/
+noncomputable def completedTensorComm :
+    (F.tensorProduct R G).completion ≃ₐ[R] (G.tensorProduct R F).completion :=
+  (F.tensorProduct R G).completionEquiv (G.tensorProduct R F)
+    (Algebra.TensorProduct.comm R A B)
+    (tensorProduct_comap_comm R F G)
+
+/-- The finite projections of factor exchange are the induced quotient maps. -/
+@[simp]
+theorem projection_completedTensorComm (k : ℕ) (x : (F.tensorProduct R G).completion) :
+    (G.tensorProduct R F).projection k (F.completedTensorComm (R := R) G x) =
+      Ideal.quotientMapₐ ((G.tensorProduct R F).ideal (k + 1))
+        (Algebra.TensorProduct.comm R A B).toAlgHom
+        (by rw [tensorProduct_comap_comm])
+        ((F.tensorProduct R G).projection k x) :=
+  (F.tensorProduct R G).projection_completionEquiv (G.tensorProduct R F)
+    (Algebra.TensorProduct.comm R A B)
+    (tensorProduct_comap_comm R F G) k x
+
+/-- On original tensors the completed exchange is the original factor exchange. -/
+@[simp]
+theorem completedTensorComm_toCompletion (t : A ⊗[R] B) :
+    F.completedTensorComm (R := R) G ((F.tensorProduct R G).toCompletion t) =
+      (G.tensorProduct R F).toCompletion (Algebra.TensorProduct.comm R A B t) :=
+  (F.tensorProduct R G).completionEquiv_toCompletion (G.tensorProduct R F)
+    (Algebra.TensorProduct.comm R A B)
+    (tensorProduct_comap_comm R F G) t
+
+/-- Factor exchange reverses arbitrary completed pure tensors. -/
+@[simp]
+theorem completedTensorComm_completedTensor (x : F.completion) (y : G.completion) :
+    F.completedTensorComm (R := R) G (F.completedTensor (R := R) G x y) =
+      G.completedTensor (R := R) F y x := by
+  apply (G.tensorProduct R F).completion_ext
+  intro k
+  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (F.projection k x)
+  obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective (G.projection k y)
+  rw [projection_completedTensorComm,
+    F.projection_completedTensor_of_representatives G k x y a b ha hb,
+    G.projection_completedTensor_of_representatives F k y x b a hb ha]
+  simp only [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk,
+    AlgEquiv.coe_toAlgHom, Algebra.TensorProduct.comm_tmul]
+
+/-- The inverse completed exchange is the exchange in the opposite order. -/
+@[simp]
+theorem completedTensorComm_symm :
+    (F.completedTensorComm (R := R) G).symm = G.completedTensorComm (R := R) F := by
+  simp only [completedTensorComm, completionEquiv_symm, Algebra.TensorProduct.comm_symm]
 
 end Mei.AlgFiltration
