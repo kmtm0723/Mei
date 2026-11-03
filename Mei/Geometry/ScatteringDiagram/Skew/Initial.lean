@@ -29,7 +29,7 @@ taking the coefficients to be the independent generators of a multivariable
 polynomial algebra gives the universal polynomial input. Zero coefficients and
 empty coefficient lists are allowed and give identity labels.
 
-We use `DirectedWall.ofLinearHyperplane`, the graph wall-group comparison,
+We use `DirectedWall.ofAffineHyperplane`, the graph wall-group comparison,
 `SkewLieAlgebra.rayExp`, and the principal ray-action formula. The polynomial
 inputs and normalization follow Gross–Hacking–Keel–Kontsevich, *Canonical bases
 for cluster algebras*, §1 and Appendix B (arXiv:1411.1394v2), and Burcroff–Lee–Mou,
@@ -198,12 +198,12 @@ variable [NormedAddCommGroup V] [NormedSpace ℝ V]
 hyperplane per unfrozen index, with its normalized polynomial ray label. -/
 def adaptedPolynomialInput : DirectedDiagram (V := V) (d := e) h (𝓗) B.unfrozenIndex :=
   DirectedDiagram.ofFinite (h := h) (H := 𝓗) fun i =>
-    DirectedWall.ofLinearHyperplane (V := V) h (𝓗)
+    DirectedWall.ofAffineHyperplane (V := V) h (𝓗)
       (D.principalNormal (B.unfrozenBasis i)).toAddMonoidHom
       (by
         intro hz
         exact (B.unfrozenBasis.ne_zero i) ((D.principalNormal_eq_zero_iff _).mp
-          (LinearMap.toAddMonoidHom_injective hz)))
+          (LinearMap.toAddMonoidHom_injective hz))) 0
       ((B.unfrozenBasis.positiveDegreesRay i).graph D.principalCharacter.toAddMonoidHom)
       (by
         apply Int.cast_injective (α := ℚ)
@@ -232,6 +232,7 @@ theorem adaptedPolynomialInput_ray (i : B.unfrozenIndex) :
 theorem adaptedPolynomialInput_support (i : B.unfrozenIndex) :
     ((B.adaptedPolynomialInput (V := V) ℓ a h).wall i).support =
       (h.realCharacter (D.principalNormal (B.unfrozenBasis i)).toAddMonoidHom).ker := by
+  ext
   simp [adaptedPolynomialInput]
 
 /-- The input wall carries the constructed normalized polynomial label. -/

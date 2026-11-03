@@ -129,12 +129,12 @@ zero. -/
 def projectedAdaptedPolynomialInput :
     DirectedDiagram (V := V) (d := D.principalPositiveDegrees 𝒅) h (𝓟) B.unfrozenIndex :=
   DirectedDiagram.ofFinite (h := h) (H := 𝓟) fun k =>
-    DirectedWall.ofLinearHyperplane (V := V) h (𝓟)
+    DirectedWall.ofAffineHyperplane (V := V) h (𝓟)
       (D.projectedPrincipalNormal (B.unfrozenBasis k)).toAddMonoidHom
       (by
         intro hz
         exact (B.unfrozenBasis.ne_zero k) ((D.projectedPrincipalNormal_eq_zero_iff _).mp
-          (LinearMap.toAddMonoidHom_injective hz)))
+          (LinearMap.toAddMonoidHom_injective hz))) 0
       ((B.unfrozenBasis.positiveDegreesRay k).graph D.principalCharacter.toAddMonoidHom)
       (by
         rw [AddMonoidHom.comp_apply, AddMonoidHom.id_apply, ← AddMonoidHom.comp_apply,
@@ -167,6 +167,7 @@ theorem projectedAdaptedPolynomialInput_ray (k : B.unfrozenIndex) :
 theorem projectedAdaptedPolynomialInput_support (k : B.unfrozenIndex) :
     ((B.projectedAdaptedPolynomialInput (V := V) ℓ a h).wall k).support =
       (h.realCharacter (D.projectedPrincipalNormal (B.unfrozenBasis k)).toAddMonoidHom).ker := by
+  ext
   simp [projectedAdaptedPolynomialInput]
 
 /-- The projected input carries the same normalized polynomial label. -/
