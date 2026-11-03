@@ -26,7 +26,9 @@ right inclusions (`completedTensor_apply`), from which multiplicativity and the
 unit formulas follow. Filtration orders of the two inputs add.
 Tensoring filtration-preserving algebra maps preserves the total-degree filtration.
 The induced completion map sends pure tensors of arbitrary completed elements to
-the pure tensor of their images under the two completion maps.
+the pure tensor of their images under the two completion maps. For independent
+monotone cutoff moduli `ρ` and `σ`, their pointwise sum is a cutoff for the tensor
+map and the same naturality identity holds.
 The two algebras may be noncommutative; no flatness or separatedness is required.
 Exchanging the factors gives a canonical algebra equivalence of completed tensor
 products. At each finite cutoff it is the factor exchange on quotient classes,
@@ -295,6 +297,34 @@ theorem mapCompletionₐ_completedTensor {C D : Type*} [Ring C] [Ring D]
   intro a b
   exact Algebra.TensorProduct.map_tmul f g a b
 
+
+/-- The completion of `Algebra.TensorProduct.map f g` sends `completedTensor x y`
+to the completed tensor of the images of `x` and `y` under the two factor
+completion maps. Here `ρ` is the source cutoff for `f`, so
+`F.ideal (ρ k + 1)` maps into `H.ideal (k + 1)`, and `σ` is the source cutoff for
+`g`, so `G.ideal (σ k + 1)` maps into `K.ideal (k + 1)`. The tensor map uses the
+cutoff `fun k => ρ k + σ k`. Monotonicity of `ρ` and `σ` makes all three
+completion maps compatible with the quotient-tower transitions. -/
+theorem mapCompletionₐ_completedTensor_of_moduli {C D : Type*} [Ring C] [Ring D]
+    [Algebra R C] [Algebra R D] (H : Mei.AlgFiltration C) (K : Mei.AlgFiltration D)
+    (f : A →ₐ[R] C) (g : B →ₐ[R] D) (ρ σ : ℕ → ℕ)
+    (hρ : Monotone ρ) (hσ : Monotone σ)
+    (hf : ∀ k, F.ideal (ρ k + 1) ≤ (H.ideal (k + 1)).comap f)
+    (hg : ∀ k, G.ideal (σ k + 1) ≤ (K.ideal (k + 1)).comap g)
+    (x : F.completion) (y : G.completion) :
+    (F.tensorProduct R G).mapCompletionₐ (H.tensorProduct R K)
+      (Algebra.TensorProduct.map f g) (fun k => ρ k + σ k) (hρ.add hσ)
+      (F.tensorProduct_le_comap_map_of_moduli R G H K f g ρ σ hf hg)
+      (F.completedTensor (R := R) G x y) =
+      H.completedTensor (R := R) K (F.mapCompletionₐ H f ρ hρ hf x)
+        (G.mapCompletionₐ K g σ hσ hg y) := by
+  simp only [completedTensor_apply_eq_completionBilinear,
+    moduleCompletionEquiv_symm_mapCompletionₐ]
+  rw [← moduleCompletionEquiv_completionMap]
+  congr 1
+  apply ModuleFiltration.completionMap_completionBilinear
+  intro a b
+  exact Algebra.TensorProduct.map_tmul f g a b
 
 /-- The inverse completed exchange is the exchange in the opposite order. -/
 @[simp]

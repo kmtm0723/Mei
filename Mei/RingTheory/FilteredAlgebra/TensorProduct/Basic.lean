@@ -218,6 +218,29 @@ theorem tensorProduct_le_comap_map {C D : Type*} [Semiring C] [Semiring D]
   simp only [tensorProduct_ideal]
   exact Ideal.tensorFiltration_le_comap_map R F.ideal G.ideal H.ideal K.ideal f g hf hg k
 
+/-- If `f` sends `F.ideal (ρ k + 1)` into `H.ideal (k + 1)` and `g` sends
+`G.ideal (σ k + 1)` into `K.ideal (k + 1)`, then `Algebra.TensorProduct.map f g`
+sends the order `ρ k + σ k + 1` term of `F.tensorProduct R G` into the order
+`k + 1` term of `H.tensorProduct R K`. No monotonicity of the cutoffs is needed
+for this bound at a fixed order. -/
+theorem tensorProduct_le_comap_map_of_moduli {C D : Type*} [Semiring C] [Semiring D]
+    [Algebra R C] [Algebra R D] (H : Mei.AlgFiltration C) (K : Mei.AlgFiltration D)
+    (f : A →ₐ[R] C) (g : B →ₐ[R] D) (ρ σ : ℕ → ℕ)
+    (hf : ∀ k, F.ideal (ρ k + 1) ≤ (H.ideal (k + 1)).comap f)
+    (hg : ∀ k, G.ideal (σ k + 1) ≤ (K.ideal (k + 1)).comap g) (k : ℕ) :
+    (F.tensorProduct R G).ideal (ρ k + σ k + 1) ≤
+      ((H.tensorProduct R K).ideal (k + 1)).comap (Algebra.TensorProduct.map f g) := by
+  simp only [tensorProduct_ideal]
+  apply (Ideal.tensorFiltration_le_iff R F.ideal G.ideal _ _).mpr
+  intro a b hab x hx y hy
+  rw [Ideal.mem_comap, Algebra.TensorProduct.map_tmul]
+  by_cases ha : ρ k + 1 ≤ a
+  · exact Ideal.tmul_mem_tensorFiltration R (a := k + 1) (b := 0) (by omega)
+      (hf k (F.antitone ha hx)) (by simp)
+  · have hb : σ k + 1 ≤ b := by omega
+    exact Ideal.tmul_mem_tensorFiltration R (a := 0) (b := k + 1) (by omega)
+      (by simp) (hg k (G.antitone hb hy))
+
 /-- Factor exchange identifies the ideals of the two bundled tensor filtrations. -/
 theorem tensorProduct_comap_comm (k : ℕ) :
     ((G.tensorProduct R F).ideal k).comap (Algebra.TensorProduct.comm R A B).toAlgHom =
