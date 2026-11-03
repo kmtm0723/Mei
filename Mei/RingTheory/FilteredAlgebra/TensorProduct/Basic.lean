@@ -88,6 +88,33 @@ theorem tensorFiltration_mono {I I' : ℕ → Ideal A} {J J' : ℕ → Ideal B}
   intro a b hab x hx y hy
   exact tmul_mem_tensorFiltration R hab (hI a hx) (hJ b hy)
 
+/-- Swapping the factors preserves total filtration order, even for arbitrary
+ideal families. -/
+theorem comm_mem_tensorFiltration (I : ℕ → Ideal A) (J : ℕ → Ideal B) (k : ℕ)
+    {x : A ⊗[R] B} (hx : x ∈ tensorFiltration R I J k) :
+    Algebra.TensorProduct.comm R A B x ∈ tensorFiltration R J I k := by
+  have h : tensorFiltration R I J k ≤
+      (tensorFiltration R J I k).comap (Algebra.TensorProduct.comm R A B).toAlgHom := by
+    apply (tensorFiltration_le_iff R I J k _).mpr
+    intro a b hab x hx y hy
+    change Algebra.TensorProduct.comm R A B (x ⊗ₜ[R] y) ∈ tensorFiltration R J I k
+    rw [Algebra.TensorProduct.comm_tmul]
+    exact tmul_mem_tensorFiltration R (by omega) hy hx
+  exact h hx
+
+/-- The factor exchange identifies each total-degree tensor ideal exactly. -/
+theorem tensorFiltration_comap_comm (I : ℕ → Ideal A) (J : ℕ → Ideal B) (k : ℕ) :
+    (tensorFiltration R J I k).comap (Algebra.TensorProduct.comm R A B).toAlgHom =
+      tensorFiltration R I J k := by
+  ext x
+  constructor
+  · intro hx
+    change Algebra.TensorProduct.comm R A B x ∈ tensorFiltration R J I k at hx
+    have h := comm_mem_tensorFiltration R J I k hx
+    rw [← Algebra.TensorProduct.comm_symm R A B] at h
+    simpa only [AlgEquiv.symm_apply_apply] using h
+  · exact comm_mem_tensorFiltration R I J k
+
 /-- If both factor families start at the whole algebra, the tensor filtration does too. -/
 @[simp]
 theorem tensorFiltration_zero (I : ℕ → Ideal A) (J : ℕ → Ideal B)
@@ -166,6 +193,12 @@ noncomputable def tensorProduct : Mei.AlgFiltration (A ⊗[R] B) where
 @[simp]
 theorem tensorProduct_ideal (k : ℕ) :
     (F.tensorProduct R G).ideal k = Ideal.tensorFiltration R F.ideal G.ideal k := (rfl)
+
+/-- Factor exchange identifies the ideals of the two bundled tensor filtrations. -/
+theorem tensorProduct_comap_comm (k : ℕ) :
+    ((G.tensorProduct R F).ideal k).comap (Algebra.TensorProduct.comm R A B).toAlgHom =
+      (F.tensorProduct R G).ideal k := by
+  simp only [tensorProduct_ideal, Ideal.tensorFiltration_comap_comm]
 
 /-- Pure tensors add the filtration orders of their two factors. -/
 theorem tmul_mem_tensorProduct (a b : ℕ) {x : A} {y : B}
