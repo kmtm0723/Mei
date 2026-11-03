@@ -247,6 +247,20 @@ theorem log_projection_eq_mkQ_sum (g : d.completedBCHGroup ℒ) (k : ℕ) :
     projection_completionEquivPi_symm]
   simp only [e, completionEquivPi_apply, LieIdeal.mkQ_apply, logComponent]
 
+/-- A completed label with a nontrivial order-`k` projection has a nonzero logarithmic
+coefficient in some degree of order at most `k`. This is the converse of
+`PositiveDegrees.logComponent_eq_zero_of_projection_eq_one`. -/
+theorem exists_logComponent_ne_zero_of_projection_ne_one {g : d.completedBCHGroup ℒ} {k : ℕ}
+    (hg : CompletedGroup.projection k g ≠ 1) :
+    ∃ n, d.degree n ≤ k ∧ d.logComponent ℒ g n ≠ 0 := by
+  by_contra! h0
+  apply hg
+  rw [← BCHGroup.exp_log (L := d.truncatedLie ℒ k) (CompletedGroup.projection k g),
+    d.log_projection_eq_mkQ_sum ℒ g k, Finset.sum_eq_zero fun n hn => by
+      rw [h0 n (d.mem_cutoff.mp ((d.finite_cutoff k).mem_toFinset.mp hn)).2,
+        ZeroMemClass.coe_zero], map_zero]
+  exact BCHGroup.exp_zero
+
 variable {ℒ} in
 /-- Completed labels commute when all their logarithmic coefficients do. -/
 theorem commute_of_lie_logComponent_eq_zero {g g' : d.completedBCHGroup ℒ}
