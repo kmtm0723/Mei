@@ -97,19 +97,19 @@ theorem comm_mem_tensorFiltration (I : ℕ → Ideal A) (J : ℕ → Ideal B) (k
       (tensorFiltration R J I k).comap (Algebra.TensorProduct.comm R A B).toAlgHom := by
     apply (tensorFiltration_le_iff R I J k _).mpr
     intro a b hab x hx y hy
-    change Algebra.TensorProduct.comm R A B (x ⊗ₜ[R] y) ∈ tensorFiltration R J I k
-    rw [Algebra.TensorProduct.comm_tmul]
+    rw [Ideal.mem_comap, AlgEquiv.coe_toAlgHom, Algebra.TensorProduct.comm_tmul]
     exact tmul_mem_tensorFiltration R (by omega) hy hx
   exact h hx
 
 /-- The factor exchange identifies each total-degree tensor ideal exactly. -/
+@[simp]
 theorem tensorFiltration_comap_comm (I : ℕ → Ideal A) (J : ℕ → Ideal B) (k : ℕ) :
     (tensorFiltration R J I k).comap (Algebra.TensorProduct.comm R A B).toAlgHom =
       tensorFiltration R I J k := by
   ext x
   constructor
   · intro hx
-    change Algebra.TensorProduct.comm R A B x ∈ tensorFiltration R J I k at hx
+    rw [Ideal.mem_comap, AlgEquiv.coe_toAlgHom] at hx
     have h := comm_mem_tensorFiltration R J I k hx
     rw [← Algebra.TensorProduct.comm_symm R A B] at h
     simpa only [AlgEquiv.symm_apply_apply] using h
