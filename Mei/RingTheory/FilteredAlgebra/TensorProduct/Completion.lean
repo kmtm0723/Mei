@@ -7,7 +7,6 @@ module
 
 public import Mei.RingTheory.FilteredAlgebra.TensorProduct.Basic
 public import Mei.RingTheory.FilteredAlgebra.Map
-public import Mei.RingTheory.FilteredAlgebra.Algebra
 public import Mei.RingTheory.FilteredAlgebra.Module
 public import Mei.LinearAlgebra.ModuleFiltration.Bilinear
 
