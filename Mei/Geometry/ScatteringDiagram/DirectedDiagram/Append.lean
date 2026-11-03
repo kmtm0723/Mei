@@ -8,6 +8,7 @@ module
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Restriction
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Refinement
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Germ
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Map.Basic
 
 /-!
 # Adjoining directed wall families
@@ -28,6 +29,10 @@ cutoff, and hence at all orders. At a regular germ of the union the combined
 label is the product of the two families' combined labels; this lets an initial
 presentation be replaced while retaining a fixed correction family.
 
+Adjoining the families in either order gives equivalent diagrams, so equivalent
+replacements of both families give equivalent unions. Mapping coefficients commutes
+with adjoining wall families.
+
 The comparison uses `DirectedDiagram.levelEquivalent_restrict` to discard
 invisible walls and `DirectedDiagram.Refinement.ofEquiv` to identify the retained
 indices. These are the same restriction and reindexing comparisons used in
@@ -44,7 +49,9 @@ open Set Mei.Convex
 
 namespace Mei.DirectedDiagram
 
-variable {Γ Λ R L V ι κ : Type*} [AddCommGroup Γ] [AddCommGroup Λ]
+universe w
+
+variable {Γ Λ R V ι κ : Type*} {L : Type w} [AddCommGroup Γ] [AddCommGroup Λ]
   [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
   [LieAlgebra ℚ L] [IsScalarTower ℚ R L] [DecidableEq Γ]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
@@ -237,5 +244,45 @@ theorem LevelEquivalent.append {k : ℕ} (hDE : D.LevelEquivalent E k)
 theorem Equivalent.append (hDE : D.Equivalent E)
     (F : DirectedDiagram (d := d) h H η) : (D.append F).Equivalent (E.append F) := by
   exact (equivalent_iff _ _).mpr fun k => ((equivalent_iff _ _).mp hDE k).append F
+
+/-- Adjoining two families in either order gives equivalent diagrams at every cutoff. -/
+theorem append_comm_levelEquivalent (D : DirectedDiagram (d := d) h H ι)
+    (E : DirectedDiagram (d := d) h H κ) (k : ℕ) :
+    (D.append E).LevelEquivalent (E.append D) k :=
+  (Refinement.ofEquiv (D := E.append D) (E := D.append E) (Equiv.sumComm ι κ)
+    (fun j => by cases j <;> rfl) |>.levelEquivalent k).symm
+
+/-- Changing both adjoined families to equivalent ones preserves finite-order equivalence. -/
+theorem LevelEquivalent.append_congr {ι' κ' : Type*} {k : ℕ}
+    {D : DirectedDiagram (d := d) h H ι} {D' : DirectedDiagram (d := d) h H ι'}
+    {E : DirectedDiagram (d := d) h H κ} {E' : DirectedDiagram (d := d) h H κ'}
+    (hD : D.LevelEquivalent D' k) (hE : E.LevelEquivalent E' k) :
+    (D.append E).LevelEquivalent (D'.append E') k :=
+  ((hD.append E).trans (D'.append_comm_levelEquivalent E k)).trans
+    ((hE.append D').trans (E'.append_comm_levelEquivalent D' k))
+
+/-- Changing both adjoined families to equivalent ones preserves equivalence. -/
+theorem Equivalent.append_congr {ι' κ' : Type*}
+    {D : DirectedDiagram (d := d) h H ι} {D' : DirectedDiagram (d := d) h H ι'}
+    {E : DirectedDiagram (d := d) h H κ} {E' : DirectedDiagram (d := d) h H κ'}
+    (hD : D.Equivalent D') (hE : E.Equivalent E') : (D.append E).Equivalent (D'.append E') :=
+  (equivalent_iff _ _).mpr fun k =>
+    ((equivalent_iff _ _).mp hD k).append_congr ((equivalent_iff _ _).mp hE k)
+
+section Map
+
+variable {L' : Type w} [LieRing L'] [LieAlgebra R L'] [LieAlgebra ℚ L'] [IsScalarTower ℚ R L']
+  {ℳ : Γ → Submodule R L'} [GradedLieAlgebra ℳ] [IsPositiveGrading d ℳ]
+  {H' : DirectedWallSpaces ρ ℳ}
+
+/-- Mapping coefficients commutes with adjoining wall families. -/
+theorem map_append (f : GradedLieHom (PositiveDegreeMap.id d) ℒ ℳ)
+    (hf : ∀ n m, ∀ x ∈ H.wall n m, f x ∈ H'.wall n m) :
+    (D.append E).map f hf = (D.map f hf).append (E.map f hf) := by
+  apply DirectedDiagram.ext
+  funext j
+  cases j <;> simp
+
+end Map
 
 end Mei.DirectedDiagram
