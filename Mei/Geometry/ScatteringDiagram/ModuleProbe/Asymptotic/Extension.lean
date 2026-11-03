@@ -77,7 +77,7 @@ theorem eventually_shiftedQuotientComponent_extendedCoefficientField_eq
       (cylinderDiagram d ℳ p ℒ H h h' B) k)
     (q : Γ) (hk : d.degree (q - p) ≤ k)
     (hout : ∀ b, Sum.inr b ∈ D.active (k + 1) →
-      (q, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
+      (q, 1) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
     {K : Set V} (hK : IsCompact K) :
     ∀ᶠ t : ℝ in atTop, ∀ Q ∈ K,
       ∀ hQ : ∀ c : B.active k, Q + t • i (ρ q) ∉ (B.wall c).support,
@@ -132,7 +132,7 @@ theorem shiftedQuotientComponent_extendedCoefficientField_eq_of_spatial_eq_zero
       (cylinderDiagram d ℳ p ℒ H h h' B) k)
     (q : Γ) (hk : d.degree (q - p) ≤ k) (hq : i (ρ q) = 0)
     (hout : ∀ b, Sum.inr b ∈ D.active (k + 1) →
-      (q, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
+      (q, 1) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
     (x : WallComplement (fun c : B.active k => (B.wall c).support)) :
     d.shiftedQuotientComponent ℳ p q k hk (field k hBc x) =
       DirectSum.decompose ℳ (a : M) q := by
@@ -153,7 +153,7 @@ theorem shiftedHomogeneousComponent_completedExtendedCoefficientField_eq_of_spat
       (cylinderDiagram d ℳ p ℒ H h h' B))
     (q : Γ) (hq : i (ρ q) = 0)
     (hout : ∀ k b, Sum.inr b ∈ D.active (k + 1) →
-      (q, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
+      (q, 1) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
     (x : B.Point) :
     d.shiftedHomogeneousComponent ℳ p q
         (completedExtendedCoefficientField d ℳ p ℒ H h h' D B hD hBc hB x) =
@@ -177,7 +177,7 @@ theorem shiftedQuotientComponent_extendedCoefficientField_self
       (chargeZeroGradedLieHom_mem_wall d ℳ p ℒ H)).LevelEquivalent
       (cylinderDiagram d ℳ p ℒ H h h' B) k)
     (hout : ∀ b, Sum.inr b ∈ D.active 1 →
-      (p, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees →
+      (p, 1) ∈ (D.wall (.inr b)).ray.rayDegrees →
         (D.wall (.inr b)).Outgoing)
     (x : WallComplement (fun c : B.active k => (B.wall c).support)) :
     d.shiftedQuotientComponent ℳ p p k (by simp) (field k hBc x) = a := by
@@ -222,7 +222,7 @@ theorem shiftedHomogeneousComponent_completedExtendedCoefficientField_self
       (chargeZeroGradedLieHom_mem_wall d ℳ p ℒ H)).Equivalent
       (cylinderDiagram d ℳ p ℒ H h h' B))
     (hout : ∀ b, Sum.inr b ∈ D.active 1 →
-      (p, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees →
+      (p, 1) ∈ (D.wall (.inr b)).ray.rayDegrees →
         (D.wall (.inr b)).Outgoing)
     (x : B.Point) :
     d.shiftedHomogeneousComponent ℳ p p

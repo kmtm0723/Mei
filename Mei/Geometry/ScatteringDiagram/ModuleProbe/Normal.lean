@@ -10,7 +10,8 @@ public import Mei.Geometry.ScatteringDiagram.WallSpace.Basic
 /-!
 # Directions and normals for module probes
 
-The module probe extends spatial directions by the charge and probe coordinates.
+The module probe extends spatial directions by the charge and probe coordinates;
+an extended degree `(q, c)` has direction `(ρ q, c, 0)`.
 Base normals ignore both coordinates; the probe normal reads the last one.
 Their mixed contracted bracket is again a probe normal, with coefficient given by
 the base normal evaluated on the coefficient's spatial degree. Two module normals
@@ -24,18 +25,18 @@ namespace Mei.ModuleProbe
 
 variable {Γ Λ : Type*} [AddCommMonoid Γ] [AddCommMonoid Λ]
 
-/-- Extend spatial directions by the module charge and probe coordinates. -/
-def spatialMap (ρ : Γ →+ Λ) : (Γ × ℤ × ℤ) →+ (Λ × ℤ × ℤ) :=
-  ρ.prodMap (AddMonoidHom.id (ℤ × ℤ))
+/-- Extend spatial directions by the module charge, with zero probe coordinate. -/
+def spatialMap (ρ : Γ →+ Λ) : (Γ × ℤ) →+ (Λ × ℤ × ℤ) :=
+  ρ.prodMap (AddMonoidHom.inl ℤ ℤ)
 
-/-- The extended spatial map preserves both extra coordinates. -/
+/-- The extended spatial map keeps the charge and has zero probe coordinate. -/
 @[simp]
-theorem spatialMap_apply (ρ : Γ →+ Λ) (q : Γ) (c l : ℤ) :
-    spatialMap ρ (q, c, l) = (ρ q, c, l) := (rfl)
+theorem spatialMap_apply (ρ : Γ →+ Λ) (q : Γ) (c : ℤ) :
+    spatialMap ρ (q, c) = (ρ q, c, 0) := (rfl)
 
 /-- A charge-one direction is nonzero even when its original spatial part vanishes. -/
 theorem spatialMap_chargeOne_ne_zero (ρ : Γ →+ Λ) (q : Γ) :
-    spatialMap ρ (q, 1, 0) ≠ 0 := by
+    spatialMap ρ (q, 1) ≠ 0 := by
   intro h
   have := congrArg (fun a : Λ × ℤ × ℤ => a.2.1) h
   norm_num at this
@@ -126,14 +127,14 @@ theorem smul_mem_range_smul_probeNormal (m : (Λ × ℤ × ℤ) →+ ℤ) {c : �
 
 /-- Contracting two base normals commutes with their lift. -/
 theorem wallBracketNormal_base_base (ρ : Γ →+ Λ) (n n' : Γ) (m m' : Λ →+ ℤ) :
-    wallBracketNormal (spatialMap ρ) (n, 0, 0) (n', 0, 0)
+    wallBracketNormal (spatialMap ρ) (n, 0) (n', 0)
       (baseNormal m) (baseNormal m') = baseNormal (wallBracketNormal ρ n n' m m') := by
   ext ⟨v, a, b⟩
   simp
 
 /-- A base wall and a charge-one wall have the expected contracted probe normal. -/
 theorem wallBracketNormal_base_probe (ρ : Γ →+ Λ) (n q : Γ) (m : Λ →+ ℤ) (c : ℤ) :
-    wallBracketNormal (spatialMap ρ) (n, 0, 0) (q, 1, 0)
+    wallBracketNormal (spatialMap ρ) (n, 0) (q, 1)
       (baseNormal m) (c • probeNormal) =
         (m (ρ q) * c) • (probeNormal : (Λ × ℤ × ℤ) →+ ℤ) := by
   ext v
@@ -141,7 +142,7 @@ theorem wallBracketNormal_base_probe (ρ : Γ →+ Λ) (n q : Γ) (m : Λ →+ �
 
 /-- Reversing a mixed bracket reverses its contracted normal. -/
 theorem wallBracketNormal_probe_base (ρ : Γ →+ Λ) (q n : Γ) (m : Λ →+ ℤ) (c : ℤ) :
-    wallBracketNormal (spatialMap ρ) (q, 1, 0) (n, 0, 0)
+    wallBracketNormal (spatialMap ρ) (q, 1) (n, 0)
       (c • probeNormal) (baseNormal m) =
         -(m (ρ q) * c) • (probeNormal : (Λ × ℤ × ℤ) →+ ℤ) := by
   ext v
@@ -149,7 +150,7 @@ theorem wallBracketNormal_probe_base (ρ : Γ →+ Λ) (q n : Γ) (m : Λ →+ �
 
 /-- Two charge-one probe normals have zero contracted bracket. -/
 theorem wallBracketNormal_probe_probe (ρ : Γ →+ Λ) (q q' : Γ) (c c' : ℤ) :
-    wallBracketNormal (spatialMap ρ) (q, 1, 0) (q', 1, 0)
+    wallBracketNormal (spatialMap ρ) (q, 1) (q', 1)
       (c • probeNormal) (c' • probeNormal) = 0 := by
   ext v
   simp

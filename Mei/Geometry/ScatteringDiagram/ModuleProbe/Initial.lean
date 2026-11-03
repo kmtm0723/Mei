@@ -223,7 +223,7 @@ theorem projection_probeWall_label_eq_one_iff (a : ℳ p) (k : ℕ) :
       exact Subtype.ext (congrArg (fun x : shiftedSubmodule ℳ d.monoid p => (x : M)) ha)
     · rintro rfl
       rfl
-  have hd : (positiveDegrees d p).degree (p, 1, 0) = 1 := by
+  have hd : (positiveDegrees d p).degree (p, 1) = 1 := by
     simp only [positiveDegrees_degree, mul_one]
     omega
   rw [hz, hd] at he

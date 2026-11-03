@@ -69,7 +69,7 @@ private theorem sum_incoming_coefficient
       (initialDiagram d ℳ p ℒ H h h' D₀ a).wall b)
     (k : ℕ) (q : Γ) (hk : d.degree (q - p) ≤ k)
     (hout : ∀ b, Sum.inr b ∈ D.active (k + 1) →
-      (q, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
+      (q, 1) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
     (θ : V × E) (hplane : (h.prod h').realCharacter probeNormal θ = 0) :
     let _ := Fintype.ofFinite (D.active (k + 1))
     let P := (d.shiftedQuotientComponent ℳ p q k hk).comp
@@ -86,10 +86,10 @@ private theorem sum_incoming_coefficient
     (d.shiftedQuotientComponent ℳ p q k hk).comp
       (moduleQuotientProjection d ℳ p ℒ k)
   have hP (x : G (k + 1)) :
-      P (DirectSum.decompose (ℋ (k + 1)) x (q, 1, 0)) = P x :=
+      P (DirectSum.decompose (ℋ (k + 1)) x (q, 1)) = P x :=
     shiftedQuotientComponent_moduleQuotientProjection_decompose d ℳ p ℒ q k hk x
   have hnot (b : κ) (hb : Sum.inr b ∈ D.active (k + 1))
-      (hn : (q, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees) :
+      (hn : (q, 1) ∈ (D.wall (.inr b)).ray.rayDegrees) :
       ¬ (D.wall (.inr b)).Incoming := by
     simpa only [DirectedWall.outgoing_iff, DirectedWall.incoming_iff, mem_recessionCone]
       using hout b hb hn
@@ -99,9 +99,9 @@ private theorem sum_incoming_coefficient
         (D.wall (.inl (.inl b))).label)) = 0 := by
     rw [← hP]
     have hz := (wallSpaces d ℳ p ℒ H).decompose_log_projection_eq_zero_of_notMem_rayDegrees
-      (D.wall (.inl (.inl b))).label_mem (k + 1) (n := (q, 1, 0)) (by
+      (D.wall (.inl (.inl b))).label_mem (k + 1) (n := (q, 1)) (by
         simp only [hinitial, initialDiagram_wall_inl, baseCylinder_ray,
-          mem_baseRay_rayDegrees, one_ne_zero, false_and, and_false, not_false_eq_true])
+          mem_baseRay_rayDegrees, one_ne_zero, and_false, not_false_eq_true])
     rw [hz, map_zero]
   have hprobe :
       P (BCHGroup.log (CompletedGroup.projection (k + 1)
@@ -118,7 +118,7 @@ private theorem sum_incoming_coefficient
     rcases b with ⟨((b | b) | b), hb'⟩
     · simp only [hbase, smul_zero, ite_self]
     · exact (hb (by cases b; rfl)).elim
-    · by_cases hn : (q, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees
+    · by_cases hn : (q, 1) ∈ (D.wall (.inr b)).ray.rayDegrees
       · simp only [hnot b hb' hn, false_and, ite_false]
       · have hz := (wallSpaces d ℳ p ℒ H).decompose_log_projection_eq_zero_of_notMem_rayDegrees
           (D.wall (.inr b)).label_mem (k + 1) hn
@@ -160,7 +160,7 @@ theorem eventually_shiftedQuotientComponent_verticalCoefficient_eq
       (initialDiagram d ℳ p ℒ H h h' D₀ a).wall b)
     (k : ℕ) (q : Γ) (hk : d.degree (q - p) ≤ k)
     (hout : ∀ b, Sum.inr b ∈ D.active (k + 1) →
-      (q, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
+      (q, 1) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
     {K : Set (V × E)} (hK : IsCompact K)
     (hplane : ∀ θ ∈ K, (h.prod h').realCharacter probeNormal θ = 0) :
     ∀ᶠ t : ℝ in atTop, ∀ θ ∈ K,
@@ -176,32 +176,32 @@ theorem eventually_shiftedQuotientComponent_verticalCoefficient_eq
     (d.shiftedQuotientComponent ℳ p q k hk).comp
       (moduleQuotientProjection d ℳ p ℒ k)
   have hP (x : G (k + 1)) :
-      P (DirectSum.decompose (ℋ (k + 1)) x (q, 1, 0)) = P x :=
+      P (DirectSum.decompose (ℋ (k + 1)) x (q, 1)) = P x :=
     shiftedQuotientComponent_moduleQuotientProjection_decompose d ℳ p ℒ q k hk x
   have hnot (b : κ) (hb : Sum.inr b ∈ D.active (k + 1))
-      (hn : (q, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees) :
+      (hn : (q, 1) ∈ (D.wall (.inr b)).ray.rayDegrees) :
       ¬ (D.wall (.inr b)).Incoming := by
     simpa only [DirectedWall.outgoing_iff, DirectedWall.incoming_iff, mem_recessionCone]
       using hout b hb hn
   -- Only the initial probe can be incoming on a charge-one ray.
   have hfull : ∀ b : D.active (k + 1), (D.wall b).Incoming →
-      (q, 1, 0) ∈ (D.wall b).ray.rayDegrees →
+      (q, 1) ∈ (D.wall b).ray.rayDegrees →
       ∃ c : ℝ, (D.wall b).support =
         {x | (h.prod h').realCharacter (D.wall b).normal x = c} := by
     rintro ⟨((b | b) | b), hb⟩ hin hn
     · simp only [hinitial, initialDiagram_wall_inl, baseCylinder_ray,
-        mem_baseRay_rayDegrees, one_ne_zero, false_and, and_false] at hn
+        mem_baseRay_rayDegrees, one_ne_zero, and_false] at hn
     · refine ⟨0, ?_⟩
       simp only [hinitial, initialDiagram_wall_inr, probeWall_support, probeWall_normal]
       ext x
       simp
     · exact (hnot b hb hn hin).elim
   have he := D.eventually_decompose_log_combinedLabel_eq_sum_incoming
-    (k + 1) (q, 1, 0) hfull hK
+    (k + 1) (q, 1) hfull hK
   -- Convert the spatial image of the extended degree to its product coordinates.
   simp only [spatialMap_apply, AddMonoidHom.coe_prodMap, Prod.map_apply] at he
   filter_upwards [he] with t ht θ hθK hθ
-  have hsum := congrArg (fun x : ℋ (k + 1) (q, 1, 0) => P x)
+  have hsum := congrArg (fun x : ℋ (k + 1) (q, 1) => P x)
     (ht θ hθK v hθ)
   simp only [Submodule.coe_sum, Submodule.coe_smul_of_tower, Submodule.coe_zero,
     apply_ite, map_zero, map_sum, map_zsmul, hP] at hsum
@@ -221,7 +221,7 @@ theorem eventually_shiftedQuotientComponent_coefficientField_eq
     (k : ℕ) (hD : D.LevelConsistent (k + 1))
     (q : Γ) (hk : d.degree (q - p) ≤ k)
     (hout : ∀ b, Sum.inr b ∈ D.active (k + 1) →
-      (q, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
+      (q, 1) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
     {K : Set V} (hK : IsCompact K) :
     ∀ᶠ t : ℝ in atTop, ∀ Q ∈ K,
       ∀ hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric
@@ -268,7 +268,7 @@ theorem shiftedQuotientComponent_coefficientField_eq_of_spatial_eq_zero
     (k : ℕ) (hD : D.LevelConsistent (k + 1))
     (q : Γ) (hk : d.degree (q - p) ≤ k) (hq : i (ρ q) = 0)
     (hout : ∀ b, Sum.inr b ∈ D.active (k + 1) →
-      (q, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
+      (q, 1) ∈ (D.wall (.inr b)).ray.rayDegrees → (D.wall (.inr b)).Outgoing)
     (Q : V) (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q) :
     d.shiftedQuotientComponent ℳ p q k hk
         (coefficientField d ℳ p ℒ H h h' D k Q hQ) =

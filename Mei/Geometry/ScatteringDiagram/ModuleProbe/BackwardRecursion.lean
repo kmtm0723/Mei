@@ -87,7 +87,7 @@ theorem exists_backwardRayRecursionArrangement
       (cylinderDiagram d ℳ p ℒ H h h' B) (k + 1))
     (hout : ∀ n : d.cutoff (k + 1), d.degree n.val = k + 1 →
       ∀ b, Sum.inr b ∈ D.active (k + 2) →
-        (p + n.val, 1, 0) ∈ (D.wall (.inr b)).ray.rayDegrees →
+        (p + n.val, 1) ∈ (D.wall (.inr b)).ray.rayDegrees →
           (D.wall (.inr b)).Outgoing)
     (F : ExceptionalArrangement V) {s : ℝ} (hs : 0 < s) :
     ∃ (E : ExceptionalArrangement V) (r : V), ‖r‖ < s ∧

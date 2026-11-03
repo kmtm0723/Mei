@@ -29,18 +29,18 @@ variable {R M Γ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [SetLike.GradedBracket ℒ ℳ]
 
 /-- The charge-zero and charge-one homogeneous pieces of the module probe. -/
-def grading (a : Γ × ℤ × ℤ) : Submodule R (ProbeLie d ℳ p ℒ) :=
-  if a.2.1 = 0 ∧ a.2.2 = 0 then (ℒ a.1).map (baseInclusion d ℳ p ℒ).toLinearMap
-  else if a.2.1 = 1 ∧ a.2.2 = 0 then
+def grading (a : Γ × ℤ) : Submodule R (ProbeLie d ℳ p ℒ) :=
+  if a.2 = 0 then (ℒ a.1).map (baseInclusion d ℳ p ℒ).toLinearMap
+  else if a.2 = 1 then
     (shiftedGrading ℳ d.monoid p (a.1 - p)).map
       ((moduleInclusion d ℳ p ℒ).toLinearMap.comp
         (moduleCoefficientsEquiv d ℳ p).symm.toLinearMap)
   else ⊥
 
 /-- The defining charge cases of the probe grading. -/
-theorem grading_def (a : Γ × ℤ × ℤ) : grading d ℳ p ℒ a =
-    if a.2.1 = 0 ∧ a.2.2 = 0 then (ℒ a.1).map (baseInclusion d ℳ p ℒ).toLinearMap
-    else if a.2.1 = 1 ∧ a.2.2 = 0 then
+theorem grading_def (a : Γ × ℤ) : grading d ℳ p ℒ a =
+    if a.2 = 0 then (ℒ a.1).map (baseInclusion d ℳ p ℒ).toLinearMap
+    else if a.2 = 1 then
       (shiftedGrading ℳ d.monoid p (a.1 - p)).map
         ((moduleInclusion d ℳ p ℒ).toLinearMap.comp
           (moduleCoefficientsEquiv d ℳ p).symm.toLinearMap)
@@ -48,22 +48,22 @@ theorem grading_def (a : Γ × ℤ × ℤ) : grading d ℳ p ℒ a =
 
 /-- Charge zero recovers the original homogeneous component. -/
 @[simp]
-theorem grading_base (q : Γ) : grading d ℳ p ℒ (q, 0, 0) =
+theorem grading_base (q : Γ) : grading d ℳ p ℒ (q, 0) =
     (ℒ q).map (baseInclusion d ℳ p ℒ).toLinearMap := by
-  simp only [grading, and_self, ↓reduceIte]
+  simp only [grading, ↓reduceIte]
 
 /-- Charge one carries the shifted component at its ambient degree. -/
 @[simp]
-theorem grading_module (q : Γ) : grading d ℳ p ℒ (q, 1, 0) =
+theorem grading_module (q : Γ) : grading d ℳ p ℒ (q, 1) =
     (shiftedGrading ℳ d.monoid p (q - p)).map
       ((moduleInclusion d ℳ p ℒ).toLinearMap.comp
         (moduleCoefficientsEquiv d ℳ p).symm.toLinearMap) := by
-  simp only [grading, one_ne_zero, false_and, ↓reduceIte, and_self]
+  simp only [grading, one_ne_zero, ↓reduceIte]
 
 /-- The coefficient inclusion identifies its homogeneous piece with the
 charge-one homogeneous piece of the probe. -/
 def moduleGradingEquiv (q : Γ) :
-    shiftedGrading ℳ d.monoid p (q - p) ≃ₗ[R] grading d ℳ p ℒ (q, 1, 0) :=
+    shiftedGrading ℳ d.monoid p (q - p) ≃ₗ[R] grading d ℳ p ℒ (q, 1) :=
   (Submodule.equivMapOfInjective
     ((moduleInclusion d ℳ p ℒ).toLinearMap.comp
       (moduleCoefficientsEquiv d ℳ p).symm.toLinearMap)
@@ -81,7 +81,7 @@ theorem coe_moduleGradingEquiv (q : Γ)
 
 /-- The inverse homogeneous equivalence recovers the shifted coefficient part. -/
 @[simp]
-theorem coe_moduleGradingEquiv_symm (q : Γ) (x : grading d ℳ p ℒ (q, 1, 0)) :
+theorem coe_moduleGradingEquiv_symm (q : Γ) (x : grading d ℳ p ℒ (q, 1)) :
     ((moduleGradingEquiv d ℳ p ℒ q).symm x : shiftedSubmodule ℳ d.monoid p) =
       moduleCoefficientsEquiv d ℳ p x.val.left := by
   have h := congrArg (fun y : ProbeLie d ℳ p ℒ =>
@@ -93,7 +93,7 @@ theorem coe_moduleGradingEquiv_symm (q : Γ) (x : grading d ℳ p ℒ (q, 1, 0))
 /-- A charge-zero element has no coefficient part and has homogeneous base part. -/
 @[simp↓]
 theorem mem_grading_base (q : Γ) (x : ProbeLie d ℳ p ℒ) :
-    x ∈ grading d ℳ p ℒ (q, 0, 0) ↔ x.left = 0 ∧ x.right ∈ ℒ q := by
+    x ∈ grading d ℳ p ℒ (q, 0) ↔ x.left = 0 ∧ x.right ∈ ℒ q := by
   rw [grading_base]
   constructor
   · rintro ⟨y, hy, rfl⟩
@@ -105,7 +105,7 @@ theorem mem_grading_base (q : Γ) (x : ProbeLie d ℳ p ℒ) :
 /-- A charge-one element has no base part and has homogeneous shifted coefficient part. -/
 @[simp↓]
 theorem mem_grading_module (q : Γ) (x : ProbeLie d ℳ p ℒ) :
-    x ∈ grading d ℳ p ℒ (q, 1, 0) ↔ x.right = 0 ∧
+    x ∈ grading d ℳ p ℒ (q, 1) ↔ x.right = 0 ∧
       moduleCoefficientsEquiv d ℳ p x.left ∈ shiftedGrading ℳ d.monoid p (q - p) := by
   rw [grading_module]
   constructor
@@ -117,24 +117,18 @@ theorem mem_grading_module (q : Γ) (x : ProbeLie d ℳ p ℒ) :
 
 /-- Only charges zero and one occur in the module probe. -/
 @[simp]
-theorem grading_charge_eq_bot (q : Γ) (c l : ℤ) (hc₀ : c ≠ 0) (hc₁ : c ≠ 1) :
-    grading d ℳ p ℒ (q, c, l) = ⊥ := by
-  simp only [grading, hc₀, hc₁, false_and, ↓reduceIte]
-
-/-- The module probe has zero degree in the final coordinate. -/
-@[simp]
-theorem grading_normal_eq_bot (q : Γ) (c l : ℤ) (hl : l ≠ 0) :
-    grading d ℳ p ℒ (q, c, l) = ⊥ := by
-  simp only [grading, hl, and_false, ↓reduceIte]
+theorem grading_charge_eq_bot (q : Γ) (c : ℤ) (hc₀ : c ≠ 0) (hc₁ : c ≠ 1) :
+    grading d ℳ p ℒ (q, c) = ⊥ := by
+  simp only [grading, hc₀, hc₁, ↓reduceIte]
 
 variable [DirectSum.Decomposition ℳ]
 
-private def baseToPiece (n : Γ) : ℒ n →ₗ[R] grading d ℳ p ℒ (n, 0, 0) :=
+private def baseToPiece (n : Γ) : ℒ n →ₗ[R] grading d ℳ p ℒ (n, 0) :=
   (LinearEquiv.ofEq _ _ (grading_base d ℳ p ℒ n).symm).toLinearMap.comp
     ((baseInclusion d ℳ p ℒ).toLinearMap.submoduleMap (ℒ n))
 
 private def moduleToPiece (n : Γ) :
-    shiftedGrading ℳ d.monoid p n →ₗ[R] grading d ℳ p ℒ (p + n, 1, 0) :=
+    shiftedGrading ℳ d.monoid p n →ₗ[R] grading d ℳ p ℒ (p + n, 1) :=
   (LinearEquiv.ofEq _ _ (by rw [grading_module, add_sub_cancel_left])).symm.toLinearMap.comp
     (((moduleInclusion d ℳ p ℒ).toLinearMap.comp
       (moduleCoefficientsEquiv d ℳ p).symm.toLinearMap).submoduleMap
@@ -142,11 +136,11 @@ private def moduleToPiece (n : Γ) :
 
 private def probeDecompose : ProbeLie d ℳ p ℒ →ₗ[R]
     ⨁ a, grading d ℳ p ℒ a :=
-  (DirectSum.toModule R Γ _ (fun n => (DirectSum.lof R _ _ (n, 0, 0)).comp
+  (DirectSum.toModule R Γ _ (fun n => (DirectSum.lof R _ _ (n, 0)).comp
     (baseToPiece d ℳ p ℒ n))).comp
       ((DirectSum.decomposeLinearEquiv ℒ).toLinearMap.comp
         (LieAlgebra.SemiDirectSum.projr _).toLinearMap) +
-  (DirectSum.toModule R Γ _ (fun n => (DirectSum.lof R _ _ (p + n, 1, 0)).comp
+  (DirectSum.toModule R Γ _ (fun n => (DirectSum.lof R _ _ (p + n, 1)).comp
     (moduleToPiece d ℳ p ℒ n))).comp
       ((DirectSum.decomposeLinearEquiv (shiftedGrading ℳ d.monoid p)).toLinearMap.comp
         ((moduleCoefficientsEquiv d ℳ p).toLinearMap.comp
@@ -154,29 +148,29 @@ private def probeDecompose : ProbeLie d ℳ p ℒ →ₗ[R]
 
 private theorem probeDecompose_base (n : Γ) (x : ℒ n) :
     probeDecompose d ℳ p ℒ (baseInclusion d ℳ p ℒ x) =
-      DirectSum.lof R _ _ (n, 0, 0) (baseToPiece d ℳ p ℒ n x) := by
+      DirectSum.lof R _ _ (n, 0) (baseToPiece d ℳ p ℒ n x) := by
   simp [probeDecompose, baseInclusion, DirectSum.decomposeLinearEquiv_apply_coe]
 
 private theorem probeDecompose_module (n : Γ)
     (x : shiftedGrading ℳ d.monoid p n) :
     probeDecompose d ℳ p ℒ
       (moduleInclusion d ℳ p ℒ ((moduleCoefficientsEquiv d ℳ p).symm x.val)) =
-      DirectSum.lof R _ _ (p + n, 1, 0) (moduleToPiece d ℳ p ℒ n x) := by
+      DirectSum.lof R _ _ (p + n, 1) (moduleToPiece d ℳ p ℒ n x) := by
   simp [probeDecompose, moduleInclusion, DirectSum.decomposeLinearEquiv_apply_coe]
 
-private theorem probeDecompose_of_mem (a : Γ × ℤ × ℤ)
+private theorem probeDecompose_of_mem (a : Γ × ℤ)
     (x : grading d ℳ p ℒ a) :
     probeDecompose d ℳ p ℒ x = DirectSum.lof R _ _ a x := by
-  rcases a with ⟨q, c, l⟩
+  rcases a with ⟨q, c⟩
   rcases x with ⟨x, hx⟩
-  by_cases h0 : c = 0 ∧ l = 0
-  · rcases h0 with ⟨rfl, rfl⟩
-    simp only [grading, and_self, ↓reduceIte] at hx
+  by_cases h0 : c = 0
+  · subst h0
+    simp only [grading, ↓reduceIte] at hx
     rcases hx with ⟨y, hy, rfl⟩
     exact probeDecompose_base d ℳ p ℒ q ⟨y, hy⟩
-  · by_cases h1 : c = 1 ∧ l = 0
-    · rcases h1 with ⟨rfl, rfl⟩
-      simp only [grading, one_ne_zero, false_and, ↓reduceIte, and_self] at hx
+  · by_cases h1 : c = 1
+    · subst h1
+      simp only [grading, one_ne_zero, ↓reduceIte] at hx
       rcases hx with ⟨y, hy, rfl⟩
       generalize hn : q - p = n at hy
       have hq : q = p + n := by rw [← hn]; abel
@@ -188,7 +182,7 @@ private theorem probeDecompose_of_mem (a : Γ × ℤ × ℤ)
     · simp only [grading, h0, h1, ↓reduceIte, Submodule.mem_bot] at hx
       subst x
       -- Both sides are linear maps evaluated at the zero element of the zero piece.
-      change probeDecompose d ℳ p ℒ 0 = DirectSum.lof R _ _ (q, c, l) 0
+      change probeDecompose d ℳ p ℒ 0 = DirectSum.lof R _ _ (q, c) 0
       simp only [map_zero]
 
 private theorem coe_comp_probeDecompose :
@@ -255,7 +249,7 @@ instance instDecompositionGrading : DirectSum.Decomposition (grading d ℳ p ℒ
 /-- The charge-zero component of any probe is the corresponding component of its base part. -/
 @[simp]
 theorem coe_decompose_grading_base (x : ProbeLie d ℳ p ℒ) (q : Γ) :
-    (DirectSum.decompose (grading d ℳ p ℒ) x (q, 0, 0) : ProbeLie d ℳ p ℒ) =
+    (DirectSum.decompose (grading d ℳ p ℒ) x (q, 0) : ProbeLie d ℳ p ℒ) =
       baseInclusion d ℳ p ℒ (DirectSum.decompose ℒ x.right q) := by
   induction x using DirectSum.Decomposition.inductionOn (grading d ℳ p ℒ) with
   | zero =>
@@ -267,9 +261,9 @@ theorem coe_decompose_grading_base (x : ProbeLie d ℳ p ℒ) (q : Γ) :
     simpa only [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add,
       hright, map_add] using congrArg₂ (· + ·) hx hy
   | @homogeneous a x =>
-    rcases a with ⟨r, c, l⟩
-    by_cases h0 : c = 0 ∧ l = 0
-    · rcases h0 with ⟨rfl, rfl⟩
+    rcases a with ⟨r, c⟩
+    by_cases h0 : c = 0
+    · subst h0
       obtain ⟨hl, hr⟩ := (mem_grading_base d ℳ p ℒ r x).mp x.property
       by_cases hq : r = q
       · subst r
@@ -278,8 +272,8 @@ theorem coe_decompose_grading_base (x : ProbeLie d ℳ p ℒ) (q : Γ) :
         apply LieAlgebra.SemiDirectSum.ext <;> simp [hl]
       · rw [DirectSum.decompose_of_mem_ne _ x.property (by simpa using hq),
           DirectSum.decompose_of_mem_ne _ hr hq, map_zero]
-    · by_cases h1 : c = 1 ∧ l = 0
-      · rcases h1 with ⟨rfl, rfl⟩
+    · by_cases h1 : c = 1
+      · subst h1
         obtain ⟨hr, -⟩ := (mem_grading_module d ℳ p ℒ r x).mp x.property
         rw [DirectSum.decompose_of_mem_ne _ x.property (by simp)]
         simp [hr]
@@ -292,7 +286,7 @@ theorem coe_decompose_grading_base (x : ProbeLie d ℳ p ℒ) (q : Γ) :
 /-- The charge-one component of any probe is its shifted coefficient component. -/
 @[simp]
 theorem coe_decompose_grading_module (x : ProbeLie d ℳ p ℒ) (q : Γ) :
-    (DirectSum.decompose (grading d ℳ p ℒ) x (q, 1, 0) : ProbeLie d ℳ p ℒ) =
+    (DirectSum.decompose (grading d ℳ p ℒ) x (q, 1) : ProbeLie d ℳ p ℒ) =
       moduleInclusion d ℳ p ℒ ((moduleCoefficientsEquiv d ℳ p).symm
         (DirectSum.decompose (shiftedGrading ℳ d.monoid p)
           (moduleCoefficientsEquiv d ℳ p x.left) (q - p))) := by
@@ -306,14 +300,14 @@ theorem coe_decompose_grading_module (x : ProbeLie d ℳ p ℒ) (q : Γ) :
     simpa only [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add,
       hleft, map_add] using congrArg₂ (· + ·) hx hy
   | @homogeneous a x =>
-    rcases a with ⟨r, c, l⟩
-    by_cases h0 : c = 0 ∧ l = 0
-    · rcases h0 with ⟨rfl, rfl⟩
+    rcases a with ⟨r, c⟩
+    by_cases h0 : c = 0
+    · subst h0
       obtain ⟨hl, -⟩ := (mem_grading_base d ℳ p ℒ r x).mp x.property
       rw [DirectSum.decompose_of_mem_ne _ x.property (by simp)]
       simp [hl]
-    · by_cases h1 : c = 1 ∧ l = 0
-      · rcases h1 with ⟨rfl, rfl⟩
+    · by_cases h1 : c = 1
+      · subst h1
         obtain ⟨hr, hl⟩ := (mem_grading_module d ℳ p ℒ r x).mp x.property
         by_cases hq : r = q
         · subst r
@@ -331,18 +325,10 @@ theorem coe_decompose_grading_module (x : ProbeLie d ℳ p ℒ) (q : Γ) :
 
 /-- All components with charge different from zero and one vanish. -/
 @[simp]
-theorem coe_decompose_grading_charge (x : ProbeLie d ℳ p ℒ) (q : Γ) (c l : ℤ)
+theorem coe_decompose_grading_charge (x : ProbeLie d ℳ p ℒ) (q : Γ) (c : ℤ)
     (hc₀ : c ≠ 0) (hc₁ : c ≠ 1) :
-    (DirectSum.decompose (grading d ℳ p ℒ) x (q, c, l) : ProbeLie d ℳ p ℒ) = 0 := by
-  have h := (DirectSum.decompose (grading d ℳ p ℒ) x (q, c, l)).property
-  simpa only [grading_charge_eq_bot d ℳ p ℒ q c l hc₀ hc₁, Submodule.mem_bot] using h
-
-/-- All components with nonzero final coordinate vanish. -/
-@[simp]
-theorem coe_decompose_grading_normal (x : ProbeLie d ℳ p ℒ) (q : Γ) (c l : ℤ)
-    (hl : l ≠ 0) :
-    (DirectSum.decompose (grading d ℳ p ℒ) x (q, c, l) : ProbeLie d ℳ p ℒ) = 0 := by
-  have h := (DirectSum.decompose (grading d ℳ p ℒ) x (q, c, l)).property
-  simpa only [grading_normal_eq_bot d ℳ p ℒ q c l hl, Submodule.mem_bot] using h
+    (DirectSum.decompose (grading d ℳ p ℒ) x (q, c) : ProbeLie d ℳ p ℒ) = 0 := by
+  have h := (DirectSum.decompose (grading d ℳ p ℒ) x (q, c)).property
+  simpa only [grading_charge_eq_bot d ℳ p ℒ q c hc₀ hc₁, Submodule.mem_bot] using h
 
 end Mei.ModuleProbe

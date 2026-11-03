@@ -49,26 +49,23 @@ theorem mem_degreeIdeal_succ (k : ℕ) (x : ProbeLie d ℳ p ℒ) :
   · intro hx
     constructor
     · intro q hq
-      have h := hx (q, 0, 0) (by simpa using hq)
+      have h := hx (q, 0) (by simpa using hq)
       rw [coe_decompose_grading_base] at h
       simpa using congrArg (LieAlgebra.SemiDirectSum.projr _) h
     · intro n hn
-      have h := hx (p + n, 1, 0) (by simp [map_add]; omega)
+      have h := hx (p + n, 1) (by simp [map_add]; omega)
       rw [coe_decompose_grading_module, add_sub_cancel_left] at h
       simpa using congrArg (fun y : ProbeLie d ℳ p ℒ =>
         moduleCoefficientsEquiv d ℳ p y.left) h
-  · rintro ⟨hb, hm⟩ ⟨q, c, l⟩ hq
-    by_cases hl : l = 0
-    · subst l
-      by_cases hc₀ : c = 0
+  · rintro ⟨hb, hm⟩ ⟨q, c⟩ hq
+    by_cases hc₀ : c = 0
+    · subst c
+      rw [coe_decompose_grading_base, hb q (by simpa using hq), map_zero]
+    · by_cases hc₁ : c = 1
       · subst c
-        rw [coe_decompose_grading_base, hb q (by simpa using hq), map_zero]
-      · by_cases hc₁ : c = 1
-        · subst c
-          rw [coe_decompose_grading_module, hm (q - p) (by simp [map_sub] at *; omega),
-            map_zero, map_zero]
-        · exact coe_decompose_grading_charge d ℳ p ℒ x q c 0 hc₀ hc₁
-    · exact coe_decompose_grading_normal d ℳ p ℒ x q c l hl
+        rw [coe_decompose_grading_module, hm (q - p) (by simp [map_sub] at *; omega),
+          map_zero, map_zero]
+      · exact coe_decompose_grading_charge d ℳ p ℒ x q c hc₀ hc₁
 
 /-- A coefficient disappears at extended order `k + 1` exactly when its relative
 order exceeds `k`. -/
@@ -131,12 +128,12 @@ theorem moduleQuotientInclusion_injective (k : ℕ) :
 charge-one homogeneous pieces of the truncated probe. -/
 theorem range_moduleQuotientInclusion (k : ℕ) :
     (moduleQuotientInclusion d ℳ p ℒ k).range =
-      ⨆ q, (positiveDegrees d p).truncatedGrading (grading d ℳ p ℒ) (k + 1) (q, 1, 0) := by
+      ⨆ q, (positiveDegrees d p).truncatedGrading (grading d ℳ p ℒ) (k + 1) (q, 1) := by
   have hs : Function.Surjective (fun q : Γ => q - p) :=
     fun n => ⟨p + n, add_sub_cancel_left p n⟩
   have hr : ((moduleInclusion d ℳ p ℒ).toLinearMap.comp
       (moduleCoefficientsEquiv d ℳ p).symm.toLinearMap).range =
-        ⨆ q, grading d ℳ p ℒ (q, 1, 0) := by
+        ⨆ q, grading d ℳ p ℒ (q, 1) := by
     simp only [grading_module, ← Submodule.map_iSup]
     rw [hs.iSup_comp (shiftedGrading ℳ d.monoid p),
       (DirectSum.Decomposition.isInternal (shiftedGrading ℳ d.monoid p)).submodule_iSup_eq_top,
@@ -146,7 +143,7 @@ theorem range_moduleQuotientInclusion (k : ℕ) :
 
 /-- Charge one at extended order `k + 1` is the order-`k` shifted coefficient module. -/
 def moduleQuotientEquiv (k : ℕ) : (d.shiftedFiltration ℳ p).quotient k ≃ₗ[R]
-    ↥(⨆ q, (positiveDegrees d p).truncatedGrading (grading d ℳ p ℒ) (k + 1) (q, 1, 0)) :=
+    ↥(⨆ q, (positiveDegrees d p).truncatedGrading (grading d ℳ p ℒ) (k + 1) (q, 1)) :=
   (LinearEquiv.ofLeftInverse (moduleQuotientProjection_inclusion d ℳ p ℒ k)).trans
     (LinearEquiv.ofEq _ _ (range_moduleQuotientInclusion d ℳ p ℒ k))
 
@@ -161,7 +158,7 @@ theorem coe_moduleQuotientEquiv (k : ℕ) (a : (d.shiftedFiltration ℳ p).quoti
 /-- The inverse charge-one equivalence is coefficient recovery. -/
 @[simp]
 theorem moduleQuotientEquiv_symm_apply (k : ℕ)
-    (x : ↥(⨆ q, (positiveDegrees d p).truncatedGrading (grading d ℳ p ℒ) (k + 1) (q, 1, 0))) :
+    (x : ↥(⨆ q, (positiveDegrees d p).truncatedGrading (grading d ℳ p ℒ) (k + 1) (q, 1))) :
     (moduleQuotientEquiv d ℳ p ℒ k).symm x =
       moduleQuotientProjection d ℳ p ℒ k x := by
   obtain ⟨a, rfl⟩ := (moduleQuotientEquiv d ℳ p ℒ k).surjective x
