@@ -21,7 +21,7 @@ For a consistent probe diagram the endpoint field of probe coefficients is then
 transported by the base action: for an admissible base path `γ` between generic
 endpoints `Q` and `Q'`, the coefficient at `Q'` is the order-`k` base path product
 along `γ` acting on the coefficient at `Q`. The path `γ` may cross arbitrary base
-walls. The comparison takes short upward crossings at one common regular height
+walls. The comparison takes short upward crossings at the two zero-slice points
 and joins their endpoints inside thin slabs just above and just below the probe
 hyperplane. Charge-one walls lie in level sets of the probe coordinate, so these
 slabs meet only walls with lifted base normals, whose labels have no module part.
@@ -54,11 +54,11 @@ variable {R Γ Λ V E ι κ : Type*} {M L : Type u} [CommRing R] [Algebra ℚ R]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
   (D : DirectedDiagram (d := positiveDegrees d p) (h.prod h') (wallSpaces d ℳ p ℒ H) ι)
   (B : DirectedDiagram (d := d) h H κ)
 
-local notation "v" => (0, j (0, 1))
+local notation "v" => (0, j 1)
 local notation "π" => baseQuotientProjection d ℳ p ℒ
 
 /-- If the charge-zero image of a probe diagram is consistent and equivalent at order `k`
@@ -137,8 +137,7 @@ private theorem exists_pos_forall_exists_levelPathProduct_eq (k : ℕ) :
   congr 1
   refine completedMap_chargeZeroGradedLieHom_label_of_normal_mem_range d ℳ p ℒ H h h'
     (D.wall a) ?_
-  refine (mem_range_baseNormal _).mpr ⟨normal_height_eq_zero_of_label_ne_one d ℳ p ℒ H h h'
-    (D.wall a) (D.label_ne_one_of_mem_active a.property), ?_⟩
+  refine (mem_range_baseNormal _).mpr ?_
   by_contra hz
   have he : ζ u = level a :=
     realCharacter_probeNormal_eq_of_ne_zero d ℳ p ℒ H h h' (D.wall a)
@@ -187,17 +186,11 @@ theorem coefficientField_eq_truncatedBCHAction_levelPathProduct (k : ℕ)
     coefficientField d ℳ p ℒ H h h' D k y.val hy =
       (d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ k (B.levelPathProduct k γ)
         (coefficientField d ℳ p ℒ H h h' D k x.val hx) := by
-  -- Choose one height regular above both endpoints.
-  obtain ⟨t, ht⟩ := ((finite_bad_heights d ℳ p ℒ H h h' D k x.val hx).union
-    (finite_bad_heights d ℳ p ℒ H h h' D k y.val hy)).infinite_compl.nonempty
-  have hθ : (x.val, t • j (1, 0)) ∉
-      singularSupport (fun a : D.active (k + 1) => (D.wall a).support) :=
-    fun hs => ht (Or.inl (Or.inl hs))
-  have hθ' : (y.val, t • j (1, 0)) ∉
-      singularSupport (fun a : D.active (k + 1) => (D.wall a).support) :=
-    fun hs => ht (Or.inr (Or.inl hs))
-  have hv := vertical_transverse_of_isGeneric d ℳ p ℒ H h h' D k x.val hx t
-  have hv' := vertical_transverse_of_isGeneric d ℳ p ℒ H h h' D k y.val hy t
+  -- Both zero-slice points are regular and vertically transverse.
+  have hθ := regular_of_isGeneric d ℳ p ℒ H h h' D k x.val hx
+  have hθ' := regular_of_isGeneric d ℳ p ℒ H h h' D k y.val hy
+  have hv := vertical_transverse_of_isGeneric d ℳ p ℒ H h h' D k x.val hx
+  have hv' := vertical_transverse_of_isGeneric d ℳ p ℒ H h h' D k y.val hy
   -- Short upward crossings at both endpoints, of a common length below the slab width.
   obtain ⟨s, hs, hslab⟩ := exists_pos_forall_exists_levelPathProduct_eq d ℳ p ℒ H h h' D (k + 1)
   have hsmall : ∀ᶠ ε : ℝ in 𝓝[>] 0, ε ∈ Ioo 0 (s / 2) := Ioo_mem_nhdsGT (half_pos hs)
@@ -206,8 +199,8 @@ theorem coefficientField_eq_truncatedBCHAction_levelPathProduct (k : ℕ)
       ((D.eventually_exists_levelPathProduct_eq_combinedLabel (k + 1) _ v hθ hv).and
         (D.eventually_exists_levelPathProduct_eq_combinedLabel (k + 1) _ v hθ' hv'))).exists
   have hζ (Q : V) (c : ℝ) :
-      (h.prod h').realCharacter (probeNormal (Λ := Λ)) ((Q, t • j (1, 0)) + c • v) = c ∧
-        (h.prod h').realCharacter (probeNormal (Λ := Λ)) ((Q, t • j (1, 0)) - c • v) = -c := by
+      (h.prod h').realCharacter (probeNormal (Λ := Λ)) ((Q, 0) + c • v) = c ∧
+        (h.prod h').realCharacter (probeNormal (Λ := Λ)) ((Q, 0) - c • v) = -c := by
     simp [realCharacter_probeNormal h h']
   -- Join the upper and the lower endpoints inside thin slabs.
   obtain ⟨r₁, hr₁⟩ := hslab (Ioo 0 (2 * ε)) isOpen_Ioo ordConnected_Ioo
@@ -225,8 +218,8 @@ theorem coefficientField_eq_truncatedBCHAction_levelPathProduct (k : ℕ)
     (hf ▸ baseBCHProjection_combinedLabel_vertical_eq_one d ℳ p ℒ H h h' D k _ hθ' hv') hr₀ hr₁
   have hmain := verticalCoefficient_eq_action_of_paths d ℳ p ℒ H h h' D k hD _ _ hθ hθ' hv hv'
     e.toPath f.toPath r₀ r₁ he hf hr
-  rw [← coefficientField_eq_verticalCoefficient d ℳ p ℒ H h h' D k hD y.val hy t hθ',
-    ← coefficientField_eq_verticalCoefficient d ℳ p ℒ H h h' D k hD x.val hx t hθ] at hmain
+  rw [← coefficientField_def d ℳ p ℒ H h h' D k y.val hy,
+    ← coefficientField_def d ℳ p ℒ H h h' D k x.val hx] at hmain
   rw [hmain]
   congr 2
   -- Truncate the lower slab transport and compare it with the base path product.

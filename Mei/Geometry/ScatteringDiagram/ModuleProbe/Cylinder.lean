@@ -13,8 +13,8 @@ import Mei.Geometry.Convex.Polyhedron.Path.AffineTransport
 /-!
 # Transport through the charge-zero cylinders of a module probe
 
-Including base labels in a module probe and adjoining the two unrestricted spatial
-coordinates preserves every finite-order signed path product. The base inclusion
+Including base labels in a module probe and adjoining the unrestricted probe
+coordinate preserves every finite-order signed path product. The base inclusion
 is split at the same cutoff, so the active indices are unchanged and consistency
 is both preserved and reflected. In particular, a cylinder over an outgoing base
 completion is an outgoing completion of the cylinder input.
@@ -48,7 +48,7 @@ variable {R Γ Λ V E ι : Type*} {M L : Type u} [CommRing R] [Algebra ℚ R]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
   (D : DirectedDiagram (d := d) h H ι)
 
 /-- Including charge-zero labels preserves precisely the active base walls. -/
@@ -73,7 +73,7 @@ def cylinderPathProjection (k : ℕ) :
       (by intro a; simp) ⋙q
     WallComplement.cylinderProjection (fun a : D.active k => (D.wall a).support)
 
-/-- Path projection forgets exactly the two auxiliary spatial coordinates. -/
+/-- Path projection forgets exactly the auxiliary probe coordinate. -/
 @[simp]
 theorem cylinderPathProjection_obj_val (k : ℕ)
     (x : WallComplement (fun a : (cylinderDiagram d ℳ p ℒ H h h' D).active k =>
@@ -118,7 +118,7 @@ theorem levelPathProduct_cylinderDiagram (k : ℕ)
     (by
       intro a
       simpa [C, baseNormal_def, ν, r, e] using
-        ((h.prod h').realCharacter_comp h (AddMonoidHom.fst Λ (ℤ × ℤ))
+        ((h.prod h').realCharacter_comp h (AddMonoidHom.fst Λ ℤ)
           (LinearMap.fst ℝ V E) (fun _ => rfl) (D.wall a).normal).symm)
     (fun a => CompletedGroup.projection k (C.wall a).label) label
     (C.activeLabels_commute k) comm (MonoidHom.id _)

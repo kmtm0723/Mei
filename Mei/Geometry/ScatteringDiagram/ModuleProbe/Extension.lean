@@ -39,7 +39,7 @@ variable {R Γ Λ V E ι κ : Type*} {M L : Type u} [CommRing R] [Algebra ℚ R]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
   (D : DirectedDiagram (d := positiveDegrees d p) (h.prod h') (wallSpaces d ℳ p ℒ H) ι)
   (B : DirectedDiagram (d := d) h H κ)
 
@@ -198,7 +198,7 @@ theorem transition_extendedCoefficientField {k l : ℕ} (hkl : k ≤ l)
       hBl' x z hzl,
     (A).transition_truncatedBCHAction d ℒ hkl,
     B.truncation_levelTransport hkl hBk hBl,
-    transition_coefficientField d ℳ p ℒ H h h' D hkl hD z.val hzk hzl,
+    transition_coefficientField d ℳ p ℒ H h h' D hkl z.val hzk hzl,
     extendedCoefficientField_eq_action d ℳ p ℒ H h h' D B k hBk
       (hD.mono (Nat.add_le_add_right hkl 1)) (hBl'.mono hkl) (r.obj x) (r.obj z) hzk]
   rfl
@@ -238,7 +238,7 @@ theorem completedExtendedCoefficientField_eq_completedCoefficientField
       (cylinderDiagram d ℳ p ℒ H h h' B)) (x : B.Point)
     (hx : ∀ k, (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric x.val) :
     completedExtendedCoefficientField d ℳ p ℒ H h h' D B hD hBc hB x =
-      completedCoefficientField d ℳ p ℒ H h h' D hD x.val hx := by
+      completedCoefficientField d ℳ p ℒ H h h' D x.val hx := by
   apply (F).completion_ext
   intro k
   rw [projection_completedExtendedCoefficientField, projection_completedCoefficientField]
@@ -247,7 +247,7 @@ theorem completedExtendedCoefficientField_eq_completedCoefficientField
     ((D.consistent_iff.mp hD) (k + 1)) ((DirectedDiagram.equivalent_iff _ _).mp hB k) _ (hx k)
 
 /-- Completed probe coefficients obey base transport between every pair of
-all-order allowed endpoints. Auxiliary genericity and height choices disappear. -/
+all-order allowed endpoints. Auxiliary genericity disappears. -/
 theorem completedExtendedCoefficientField_eq_transport
     (hD : D.Consistent) (hBc : B.Consistent)
     (hB : (D.map (chargeZeroGradedLieHom d ℳ p ℒ)

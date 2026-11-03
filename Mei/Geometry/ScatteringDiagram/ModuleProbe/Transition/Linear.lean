@@ -105,7 +105,7 @@ theorem coefficientTransitionIntertwiner_sections {k l : ℕ} (hkl : k ≤ l)
 
 
 variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
   [IsWallAnnihilating H ℳ]
   (D : DirectedDiagram (d := positiveDegrees d p) (h.prod h') (wallSpaces d ℳ p ℒ H) ι)
 

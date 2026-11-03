@@ -5,23 +5,22 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.ModuleProbe.Height
 public import Mei.Geometry.ScatteringDiagram.ModuleProbe.Regular
 
 /-!
 # The endpoint field of probe coefficients
 
-Outside a finite exceptional arrangement, a probe diagram has regular heights
-in every open interval and its active base-wall hyperplanes miss the entire
-height line. For a consistent diagram the vertical coefficient therefore
-specifies a field on generic base endpoints, independent of the chosen height.
-It is characterized by every regular vertical crossing, commutes with
-truncation, and agrees for equivalent diagrams on their common generic locus.
+Outside a finite exceptional arrangement of base endpoints `Q`, the point `(Q, 0)`
+of the probe slice is regular and every incident wall is transverse to the upward
+probe direction. The coefficient extracted from the short upward crossing at `(Q, 0)`
+is therefore a field on generic base endpoints. It is characterized by the upward
+crossing label `exp(-F(Q))`, independently of the length of the short crossing,
+commutes with truncation, and agrees for equivalent diagrams on their common
+generic locus. No consistency is involved.
 
-The construction assembles `DirectedDiagram.exists_finite_bad_vertical_heights`,
-`ModuleProbe.verticalCoefficient_eq_of_height` and the crossing coefficient API.
-The field is the coefficient extracted from the module probe in Mandel,
-*Scattering diagrams, theta functions, and refined tropical curve counts*,
+The construction uses `ModuleProbe.regular_of_isGeneric` and the crossing
+coefficient API. The field is the coefficient extracted from the module probe in
+Mandel, *Scattering diagrams, theta functions, and refined tropical curve counts*,
 §3.3.3 (arXiv:1503.06183v5).
 -/
 
@@ -44,117 +43,67 @@ variable {R Γ Λ V E ι : Type*} {M L : Type u} [CommRing R] [Algebra ℚ R]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
   (D : DirectedDiagram (d := positiveDegrees d p) (h.prod h') (wallSpaces d ℳ p ℒ H) ι)
 
-local notation "v" => (0, j (0, 1))
+local notation "v" => (0, j 1)
 local notation "F" => d.shiftedFiltration ℳ p
 
-private theorem exists_regular_height_univ (k : ℕ) (Q : V)
-    (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q) :
-    ∃ y : ℝ, (Q, y • j (1, 0)) ∉
-      singularSupport (fun a : D.active (k + 1) => (D.wall a).support) := by
-  obtain ⟨y, _, hy⟩ := exists_regular_height d ℳ p ℒ H h h' D k Q hQ isOpen_univ
-    Set.univ_nonempty
-  exact ⟨y, hy⟩
-
-/-- The relative order-`k` probe coefficient at a generic endpoint, computed at
-one regular height. For a consistent diagram every regular height gives this value. -/
+/-- The relative order-`k` probe coefficient at a generic endpoint `Q`, extracted
+from the upward crossing at the zero-slice point `(Q, 0)`. -/
 def coefficientField (k : ℕ) (Q : V)
     (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q) : (F).quotient k :=
-  verticalCoefficient d ℳ p ℒ H h h' D k
-    (Q, (exists_regular_height_univ d ℳ p ℒ H h h' D k Q hQ).choose • j (1, 0))
-    (exists_regular_height_univ d ℳ p ℒ H h h' D k Q hQ).choose_spec
+  verticalCoefficient d ℳ p ℒ H h h' D k (Q, 0)
+    (regular_of_isGeneric d ℳ p ℒ H h h' D k Q hQ)
 
-/-- At every regular height the extracted coefficient is the endpoint field.
-Only consistency through the current extended order is required. -/
-theorem coefficientField_eq_verticalCoefficient (k : ℕ) (hD : D.LevelConsistent (k + 1))
-    (Q : V) (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q)
-    (y : ℝ) (hy : (Q, y • j (1, 0)) ∉
-      singularSupport (fun a : D.active (k + 1) => (D.wall a).support)) :
+/-- The endpoint field is the vertical coefficient at the zero-slice point. -/
+theorem coefficientField_def (k : ℕ) (Q : V)
+    (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q) :
     coefficientField d ℳ p ℒ H h h' D k Q hQ =
-      verticalCoefficient d ℳ p ℒ H h h' D k (Q, y • j (1, 0)) hy := by
-  let s := exists_regular_height_univ d ℳ p ℒ H h h' D k Q hQ
-  have he := verticalCoefficient_eq_of_height d ℳ p ℒ H h h' D k hD
-    (Q, y • j (1, 0)) (s.choose - y) hy
-    (by simpa only [Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero,
-      ← add_smul, add_sub_cancel] using s.choose_spec)
-    (fun a ha => not_mem_base_affineSpan_of_isGeneric d ℳ p ℒ H h h' D k Q hQ y a ha)
-  simpa only [coefficientField, Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero,
-    ← add_smul, add_sub_cancel] using he
+      verticalCoefficient d ℳ p ℒ H h h' D k (Q, 0)
+        (regular_of_isGeneric d ℳ p ℒ H h h' D k Q hQ) := (rfl)
 
-/-- The negative exponential of the field is the upward crossing label at
-every regular height, including simultaneous module-wall crossings. -/
+/-- The negative exponential of the field is the upward crossing label at the
+zero-slice point, including simultaneous module-wall crossings. -/
 theorem moduleBCHInclusion_neg_coefficientField [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
-    (k : ℕ) (hD : D.LevelConsistent (k + 1))
-    (Q : V) (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q)
-    (y : ℝ) (hy : (Q, y • j (1, 0)) ∉
-      singularSupport (fun a : D.active (k + 1) => (D.wall a).support)) :
+    (k : ℕ) (Q : V) (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q) :
     moduleBCHInclusion d ℳ p ℒ k
         (Multiplicative.ofAdd (-coefficientField d ℳ p ℒ H h h' D k Q hQ)) =
-      D.combinedLabel (k + 1) (Q, y • j (1, 0)) v hy := by
-  rw [coefficientField_eq_verticalCoefficient d ℳ p ℒ H h h' D k hD Q hQ y hy]
-  exact moduleBCHInclusion_neg_verticalCoefficient d ℳ p ℒ H h h' D k _ hy
-    (vertical_transverse_of_isGeneric d ℳ p ℒ H h h' D k Q hQ y)
+      D.combinedLabel (k + 1) (Q, 0) v (regular_of_isGeneric d ℳ p ℒ H h h' D k Q hQ) :=
+  moduleBCHInclusion_neg_verticalCoefficient d ℳ p ℒ H h h' D k _ _
+    (vertical_transverse_of_isGeneric d ℳ p ℒ H h h' D k Q hQ)
 
-/-- A regular upward crossing uniquely characterizes the value of the field. -/
+/-- The upward crossing at the zero-slice point uniquely characterizes the field. -/
 theorem coefficientField_eq_iff [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
-    (k : ℕ) (hD : D.LevelConsistent (k + 1))
-    (Q : V) (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q)
-    (y : ℝ) (hy : (Q, y • j (1, 0)) ∉
-      singularSupport (fun a : D.active (k + 1) => (D.wall a).support))
+    (k : ℕ) (Q : V) (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q)
     (a : (F).quotient k) :
     coefficientField d ℳ p ℒ H h h' D k Q hQ = a ↔
       moduleBCHInclusion d ℳ p ℒ k (Multiplicative.ofAdd (-a)) =
-        D.combinedLabel (k + 1) (Q, y • j (1, 0)) v hy := by
-  rw [coefficientField_eq_verticalCoefficient d ℳ p ℒ H h h' D k hD Q hQ y hy]
-  exact verticalCoefficient_eq_iff d ℳ p ℒ H h h' D k _ hy
-    (vertical_transverse_of_isGeneric d ℳ p ℒ H h h' D k Q hQ y) a
+        D.combinedLabel (k + 1) (Q, 0) v (regular_of_isGeneric d ℳ p ℒ H h h' D k Q hQ) :=
+  verticalCoefficient_eq_iff d ℳ p ℒ H h h' D k _ _
+    (vertical_transverse_of_isGeneric d ℳ p ℒ H h h' D k Q hQ) a
 
 /-- Lowering the relative cutoff preserves the endpoint field on the common
 generic locus. The arrangements themselves need not be nested. -/
 @[simp]
 theorem transition_coefficientField {k l : ℕ} (hkl : k ≤ l)
-    (hl : D.LevelConsistent (l + 1))
     (Q : V) (hQk : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q)
     (hQl : (coefficientArrangement d ℳ p ℒ H h h' D l).IsGeneric Q) :
     (F).transition hkl (coefficientField d ℳ p ℒ H h h' D l Q hQl) =
-      coefficientField d ℳ p ℒ H h h' D k Q hQk := by
-  obtain ⟨y, hy⟩ := ((finite_bad_heights d ℳ p ℒ H h h' D k Q hQk).union
-    (finite_bad_heights d ℳ p ℒ H h h' D l Q hQl)).infinite_compl.nonempty
-  have hyk : (Q, y • j (1, 0)) ∉
-      singularSupport (fun a : D.active (k + 1) => (D.wall a).support) :=
-    fun hs => hy (Or.inl (Or.inl hs))
-  have hyl : (Q, y • j (1, 0)) ∉
-      singularSupport (fun a : D.active (l + 1) => (D.wall a).support) :=
-    fun hs => hy (Or.inr (Or.inl hs))
-  rw [coefficientField_eq_verticalCoefficient d ℳ p ℒ H h h' D l hl Q hQl y hyl,
-    coefficientField_eq_verticalCoefficient d ℳ p ℒ H h h' D k
-      (hl.mono (Nat.add_le_add_right hkl 1)) Q hQk y hyk,
-    transition_verticalCoefficient]
+      coefficientField d ℳ p ℒ H h h' D k Q hQk :=
+  transition_verticalCoefficient d ℳ p ℒ H h h' D hkl _ _ _
 
-/-- Equivalent consistent diagrams give the same endpoint field on their common
-generic locus. Their wall presentations and choices of regular height may differ. -/
+/-- Equivalent diagrams give the same endpoint field on their common generic locus,
+independently of their indexed wall presentations. -/
 theorem coefficientField_eq_of_levelEquivalent {κ : Type*}
     (D' : DirectedDiagram (d := positiveDegrees d p) (h.prod h')
       (wallSpaces d ℳ p ℒ H) κ) (k : ℕ) (hDD' : D.LevelEquivalent D' (k + 1))
-    (hD : D.LevelConsistent (k + 1))
     (Q : V) (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q)
     (hQ' : (coefficientArrangement d ℳ p ℒ H h h' D' k).IsGeneric Q) :
     coefficientField d ℳ p ℒ H h h' D k Q hQ =
-      coefficientField d ℳ p ℒ H h h' D' k Q hQ' := by
-  obtain ⟨y, hy⟩ := ((finite_bad_heights d ℳ p ℒ H h h' D k Q hQ).union
-    (finite_bad_heights d ℳ p ℒ H h h' D' k Q hQ')).infinite_compl.nonempty
-  have hyD : (Q, y • j (1, 0)) ∉
-      singularSupport (fun a : D.active (k + 1) => (D.wall a).support) :=
-    fun hs => hy (Or.inl (Or.inl hs))
-  have hyD' : (Q, y • j (1, 0)) ∉
-      singularSupport (fun a : D'.active (k + 1) => (D'.wall a).support) :=
-    fun hs => hy (Or.inr (Or.inl hs))
-  rw [coefficientField_eq_verticalCoefficient d ℳ p ℒ H h h' D k hD Q hQ y hyD,
-    coefficientField_eq_verticalCoefficient d ℳ p ℒ H h h' D' k (hDD'.consistent hD) Q hQ' y hyD']
-  exact verticalCoefficient_eq_of_levelEquivalent d ℳ p ℒ H h h' D D' hDD' _ hyD hyD'
-    (vertical_transverse_of_isGeneric d ℳ p ℒ H h h' D k Q hQ y)
-    (vertical_transverse_of_isGeneric d ℳ p ℒ H h h' D' k Q hQ' y)
+      coefficientField d ℳ p ℒ H h h' D' k Q hQ' :=
+  verticalCoefficient_eq_of_levelEquivalent d ℳ p ℒ H h h' D D' hDD' _ _ _
+    (vertical_transverse_of_isGeneric d ℳ p ℒ H h h' D k Q hQ)
+    (vertical_transverse_of_isGeneric d ℳ p ℒ H h h' D' k Q hQ')
 
 end Mei.ModuleProbe

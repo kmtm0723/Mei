@@ -12,13 +12,14 @@ public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Vertical
 # Generic endpoints admit probe coefficients
 
 At each relative cutoff there is a finite exceptional arrangement of base
-endpoints above which regular probe heights can be chosen in every nonempty
-open interval. At these heights arbitrarily short upward crossings compute the
-negative exponential of the extracted coefficient. This applies to every probe
-diagram, in particular to outgoing completions of the initial cylinders and
+endpoints `Q` such that `(Q, 0)` is a regular point of the probe slice, every
+incident wall is transverse to the upward probe direction, and no active base-wall
+hyperplane contains `(Q, 0)`. Arbitrarily short upward crossings at `(Q, 0)` then
+compute the negative exponential of the extracted coefficient. This applies to every
+probe diagram, in particular to outgoing completions of the initial cylinders and
 probe wall; consistency and purity of birth logarithms are unnecessary.
 
-We combine `DirectedDiagram.exists_finite_bad_vertical_heights` with
+We combine `DirectedDiagram.exists_regular_vertical_points` with
 `ModuleProbe.eventually_exists_levelPathProduct_eq_moduleBCHInclusion_neg_verticalCoefficient`.
 The construction follows Mandel, *Scattering diagrams, theta functions, and
 refined tropical curve counts*, §3.3.3 (arXiv:1503.06183v5).
@@ -43,106 +44,65 @@ variable {R Γ Λ V E ι : Type*} {M L : Type u} [CommRing R] [Algebra ℚ R]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
   (D : DirectedDiagram (d := positiveDegrees d p) (h.prod h') (wallSpaces d ℳ p ℒ H) ι)
 
-local notation "v" => (0, j (0, 1))
+local notation "v" => (0, j 1)
 
-/-- An endpoint arrangement outside which only finitely many heights are singular
-or lie in an active vertically tangent wall's affine span. -/
+/-- An endpoint arrangement outside which the zero-slice point is regular and every
+wall whose affine span contains it is transverse to the upward probe direction. -/
 def coefficientArrangement (k : ℕ) : ExceptionalArrangement V :=
-  (D.exists_finite_bad_vertical_heights h h' (k + 1)).choose
+  (D.exists_regular_vertical_points h h' (k + 1)).choose
 
-/-- The defining finiteness property of the coefficient endpoint arrangement. -/
-theorem finite_bad_heights (k : ℕ) (Q : V)
+/-- Over a generic endpoint the zero-slice point is regular. -/
+theorem regular_of_isGeneric (k : ℕ) (Q : V)
     (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q) :
-    {y : ℝ | (Q, y • j (1, 0)) ∈
-        singularSupport (fun a : D.active (k + 1) => (D.wall a).support) ∨
-      ∃ a : D.active (k + 1), (Q, y • j (1, 0)) ∈ affineSpan ℝ (D.wall a).support ∧
-        (h.prod h').realCharacter (D.wall a).normal v = 0}.Finite :=
-  (D.exists_finite_bad_vertical_heights h h' (k + 1)).choose_spec Q hQ
+    (Q, (0 : E)) ∉ singularSupport (fun a : D.active (k + 1) => (D.wall a).support) :=
+  ((D.exists_regular_vertical_points h h' (k + 1)).choose_spec Q hQ).1
 
-/-- Every nonempty open interval contains a regular height above a generic endpoint. -/
-theorem exists_regular_height (k : ℕ) (Q : V)
+/-- Over a generic endpoint every wall whose affine span contains the zero-slice
+point is transverse to the upward probe direction. -/
+theorem vertical_transverse_of_mem_affineSpan (k : ℕ) (Q : V)
     (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q)
-    {U : Set ℝ} (hU : IsOpen U) (hUne : U.Nonempty) :
-    ∃ y ∈ U, (Q, y • j (1, 0)) ∉
-      singularSupport (fun a : D.active (k + 1) => (D.wall a).support) := by
-  obtain ⟨y, hyU, hy⟩ :=
-    (dense_univ.sdiff_finite (finite_bad_heights d ℳ p ℒ H h h' D k Q hQ)).inter_open_nonempty
-      U hU hUne
-  exact ⟨y, hyU, fun hs => hy.2 (Or.inl hs)⟩
+    (a : D.active (k + 1)) (ha : (Q, (0 : E)) ∈ affineSpan ℝ (D.wall a).support) :
+    (h.prod h').realCharacter (D.wall a).normal v ≠ 0 :=
+  ((D.exists_regular_vertical_points h h' (k + 1)).choose_spec Q hQ).2 a ha
 
-/-- An active base-wall hyperplane misses the entire height line over a generic
-endpoint. This is stronger than transversality at a single regular height. -/
+/-- All incident active walls over a generic endpoint are vertically transverse. -/
+theorem vertical_transverse_of_isGeneric (k : ℕ) (Q : V)
+    (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q)
+    (a : D.active (k + 1)) (ha : (Q, (0 : E)) ∈ (D.wall a).support) :
+    (h.prod h').realCharacter (D.wall a).normal v ≠ 0 :=
+  vertical_transverse_of_mem_affineSpan d ℳ p ℒ H h h' D k Q hQ a
+    (subset_affineSpan ℝ _ ha)
+
+/-- An active base-wall hyperplane misses the zero-slice point over a generic
+endpoint, since lifted base normals vanish on the upward probe direction. -/
 theorem not_mem_base_affineSpan_of_isGeneric (k : ℕ) (Q : V)
     (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q)
-    (y : ℝ) (a : D.active (k + 1))
-    (ha : (D.wall a).normal ∈ Set.range (baseNormal (Λ := Λ))) :
-    (Q, y • j (1, 0)) ∉ affineSpan ℝ (D.wall a).support := by
-  rintro hy
+    (a : D.active (k + 1)) (ha : (D.wall a).normal ∈ Set.range (baseNormal (Λ := Λ))) :
+    (Q, (0 : E)) ∉ affineSpan ℝ (D.wall a).support := by
+  intro hy
   obtain ⟨m, hm⟩ := ha
-  have ht : (h.prod h').realCharacter (D.wall a).normal v = 0 := by
-    rw [← hm]
-    simp
-  have hd : (0, j (1, 0)) ∈ (affineSpan ℝ (D.wall a).support).direction := by
-    rw [(D.wall a).direction_support, LinearMap.mem_ker, ← hm]
-    simp
-  have hall (t : ℝ) : (Q, t • j (1, 0)) ∈ affineSpan ℝ (D.wall a).support := by
-    have hv := AffineSubspace.vadd_mem_of_mem_direction
-      ((affineSpan ℝ (D.wall a).support).direction.smul_mem (t - y) hd) hy
-    simpa only [vadd_eq_add, Prod.smul_mk, smul_zero, Prod.mk_add_mk, zero_add,
-      ← add_smul, sub_add_cancel] using hv
-  have hf := finite_bad_heights d ℳ p ℒ H h h' D k Q hQ
-  exact Set.infinite_univ (hf.subset fun t _ => Or.inr ⟨a, hall t, ht⟩)
-
-/-- All incident active walls above a generic endpoint are vertically transverse,
-even before regularity of the germ is imposed. -/
-theorem vertical_transverse_of_isGeneric (k : ℕ) (Q : V)
-    (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q) (y : ℝ)
-    (a : D.active (k + 1)) (ha : (Q, y • j (1, 0)) ∈ (D.wall a).support) :
-    (h.prod h').realCharacter (D.wall a).normal v ≠ 0 := by
-  intro hz
-  have hb : (D.wall a).normal ∈ Set.range (baseNormal (Λ := Λ)) := by
-    apply (mem_range_baseNormal _).mpr
-    refine ⟨normal_height_eq_zero_of_label_ne_one d ℳ p ℒ H h h' (D.wall a)
-      (D.label_ne_one_of_mem_active a.property), ?_⟩
-    simpa using hz
-  exact not_mem_base_affineSpan_of_isGeneric d ℳ p ℒ H h h' D k Q hQ y a hb
-    (subset_affineSpan ℝ _ ha)
+  apply vertical_transverse_of_mem_affineSpan d ℳ p ℒ H h h' D k Q hQ a hy
+  rw [← hm]
+  simp
 
 variable [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
 
-/-- Generic base endpoints admit a regular probe height in every nonempty open
-interval. All sufficiently short upward crossings at that height compute the
-negative exponential of the same relative order-`k` coefficient. -/
-theorem exists_verticalCoefficient_arrangement (k : ℕ) :
-    ∃ A : ExceptionalArrangement V, ∀ Q, A.IsGeneric Q →
-      ∀ U : Set ℝ, IsOpen U → U.Nonempty →
-        ∃ y ∈ U, ∃ (hθ : (Q, y • j (1, 0)) ∉
-            singularSupport (fun a : D.active (k + 1) => (D.wall a).support)),
-          (∀ a : D.active (k + 1), (Q, y • j (1, 0)) ∈ (D.wall a).support →
-            (h.prod h').realCharacter (D.wall a).normal v ≠ 0) ∧
-          ∀ᶠ t : ℝ in 𝓝[>] 0,
-            ∃ (x z : WallComplement (fun a : D.active (k + 1) => (D.wall a).support))
-              (e : x ⟶ z),
-              x.val = (Q, y • j (1, 0)) - t • v ∧
-              z.val = (Q, y • j (1, 0)) + t • v ∧
-              D.levelPathProduct (k + 1) e.toPath = moduleBCHInclusion d ℳ p ℒ k
-                (Multiplicative.ofAdd
-                  (-verticalCoefficient d ℳ p ℒ H h h' D k (Q, y • j (1, 0)) hθ)) := by
-  obtain ⟨A, hA⟩ := D.exists_finite_bad_vertical_heights h h' (k + 1)
-  refine ⟨A, fun Q hQ U hU hUne => ?_⟩
-  obtain ⟨y, hyU, hy⟩ := (dense_univ.sdiff_finite (hA Q hQ)).inter_open_nonempty U hU hUne
-  have hygood := hy.2
-  have hθ : (Q, y • j (1, 0)) ∉
-      singularSupport (fun a : D.active (k + 1) => (D.wall a).support) :=
-    fun hs => hygood (Or.inl hs)
-  have hv : ∀ a : D.active (k + 1), (Q, y • j (1, 0)) ∈ (D.wall a).support →
-      (h.prod h').realCharacter (D.wall a).normal v ≠ 0 :=
-    fun a ha hz => hygood (Or.inr ⟨a, subset_affineSpan ℝ _ ha, hz⟩)
-  exact ⟨y, hyU, hθ, hv,
-    eventually_exists_levelPathProduct_eq_moduleBCHInclusion_neg_verticalCoefficient
-      d ℳ p ℒ H h h' D k _ hθ hv⟩
+/-- Over generic base endpoints, all sufficiently short upward crossings at the
+zero-slice point compute the negative exponential of the same relative order-`k`
+coefficient. -/
+theorem eventually_exists_levelPathProduct_eq_of_isGeneric (k : ℕ) (Q : V)
+    (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q) :
+    ∀ᶠ t : ℝ in 𝓝[>] 0,
+      ∃ (x z : WallComplement (fun a : D.active (k + 1) => (D.wall a).support))
+        (e : x ⟶ z),
+        x.val = (Q, (0 : E)) - t • v ∧ z.val = (Q, (0 : E)) + t • v ∧
+        D.levelPathProduct (k + 1) e.toPath = moduleBCHInclusion d ℳ p ℒ k
+          (Multiplicative.ofAdd (-verticalCoefficient d ℳ p ℒ H h h' D k (Q, 0)
+            (regular_of_isGeneric d ℳ p ℒ H h h' D k Q hQ))) :=
+  eventually_exists_levelPathProduct_eq_moduleBCHInclusion_neg_verticalCoefficient
+    d ℳ p ℒ H h h' D k _ _ (vertical_transverse_of_isGeneric d ℳ p ℒ H h h' D k Q hQ)
 
 end Mei.ModuleProbe

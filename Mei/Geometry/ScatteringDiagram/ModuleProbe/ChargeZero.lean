@@ -49,7 +49,7 @@ variable [AddCommGroup Λ] {ρ : Γ →+ Λ} (H : DirectedWallSpaces ρ ℒ)
 variable [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
 
 /-- A charge-zero cylinder wall is fixed by forgetting the module summand. -/
 @[simp]

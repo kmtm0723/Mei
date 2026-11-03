@@ -45,10 +45,10 @@ variable {R Γ Λ V E ι : Type*} {M L : Type u} [CommRing R] [Algebra ℚ R]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
   (D : DirectedDiagram (d := positiveDegrees d p) (h.prod h') (wallSpaces d ℳ p ℒ H) ι)
 
-local notation "v" => (0, j (0, 1))
+local notation "v" => (0, j 1)
 local notation "F" => d.shiftedFiltration ℳ p
 local notation "π" => baseQuotientProjection d ℳ p ℒ
 local notation "ιM" => moduleBCHInclusion d ℳ p ℒ

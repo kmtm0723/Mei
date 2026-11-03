@@ -18,7 +18,7 @@ same element on their common generic locus.
 The completed field obeys transport by the completed base path product. For
 outgoing completions of a base input and its probe input, this gives transport
 between all-order allowed endpoints, independently of a choice of path. No
-single auxiliary height, stabilization of the wall supports, or separatedness
+consistency for the field itself, stabilization of the wall supports, or separatedness
 of the original coefficient module is required. Identification with sums of
 broken lines is a separate result.
 
@@ -49,60 +49,58 @@ variable {R Γ Λ V E ι : Type*} {M L : Type u} [CommRing R] [Algebra ℚ R]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
-  {j : (ℤ × ℤ) →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
+  {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
   (D : DirectedDiagram (d := positiveDegrees d p) (h.prod h') (wallSpaces d ℳ p ℒ H) ι)
 
 local notation "F" => d.shiftedFiltration ℳ p
 
 /-- The compatible finite probe coefficients at an endpoint generic at every
-cutoff, viewed in the completed shifted module. Each cutoff may use a different
-regular height. -/
-def completedCoefficientField (hD : D.Consistent) (Q : V)
+cutoff, viewed in the completed shifted module. No consistency is needed: the
+finite coefficients are extracted at the same zero-slice point at every cutoff. -/
+def completedCoefficientField (Q : V)
     (hQ : ∀ k, (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q) :
     (F).completion :=
   ⟨fun k => coefficientField d ℳ p ℒ H h h' D k.unop Q (hQ k.unop),
     ((F).mem_completionSubmodule_iff _).mpr fun k l hkl =>
-      transition_coefficientField d ℳ p ℒ H h h' D hkl
-        ((D.consistent_iff.mp hD) (l + 1)) Q (hQ k) (hQ l)⟩
+      transition_coefficientField d ℳ p ℒ H h h' D hkl Q (hQ k) (hQ l)⟩
 
 /-- Projecting the completed endpoint field recovers the actual finite-order
 coefficient extracted from vertical wall crossings. -/
 @[simp]
-theorem projection_completedCoefficientField (hD : D.Consistent) (Q : V)
+theorem projection_completedCoefficientField (Q : V)
     (hQ : ∀ k, (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q) (k : ℕ) :
-    (F).projection k (completedCoefficientField d ℳ p ℒ H h h' D hD Q hQ) =
+    (F).projection k (completedCoefficientField d ℳ p ℒ H h h' D Q hQ) =
       coefficientField d ℳ p ℒ H h h' D k Q (hQ k) := by
   rw [completedCoefficientField, ModuleFiltration.projection_mk]
 
 /-- The completed endpoint field is uniquely characterized by all its finite
 crossing coefficients. -/
-theorem completedCoefficientField_eq_iff (hD : D.Consistent) (Q : V)
+theorem completedCoefficientField_eq_iff (Q : V)
     (hQ : ∀ k, (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q)
     (a : (F).completion) :
-    completedCoefficientField d ℳ p ℒ H h h' D hD Q hQ = a ↔
+    completedCoefficientField d ℳ p ℒ H h h' D Q hQ = a ↔
       ∀ k, coefficientField d ℳ p ℒ H h h' D k Q (hQ k) = (F).projection k a := by
   constructor
   · rintro rfl k
-    exact (projection_completedCoefficientField d ℳ p ℒ H h h' D hD Q hQ k).symm
+    exact (projection_completedCoefficientField d ℳ p ℒ H h h' D Q hQ k).symm
   · intro ha
     exact (F).completion_ext fun k =>
-      (projection_completedCoefficientField d ℳ p ℒ H h h' D hD Q hQ k).trans (ha k)
+      (projection_completedCoefficientField d ℳ p ℒ H h h' D Q hQ k).trans (ha k)
 
-/-- Equivalent consistent probe diagrams define the same completed coefficient
-on their common all-order generic locus. -/
+/-- Equivalent probe diagrams define the same completed coefficient on their
+common all-order generic locus. -/
 theorem completedCoefficientField_eq_of_equivalent {κ : Type*}
     (D' : DirectedDiagram (d := positiveDegrees d p) (h.prod h')
-      (wallSpaces d ℳ p ℒ H) κ) (hDD' : D.Equivalent D') (hD : D.Consistent)
+      (wallSpaces d ℳ p ℒ H) κ) (hDD' : D.Equivalent D')
     (Q : V) (hQ : ∀ k, (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q)
     (hQ' : ∀ k, (coefficientArrangement d ℳ p ℒ H h h' D' k).IsGeneric Q) :
-    completedCoefficientField d ℳ p ℒ H h h' D hD Q hQ =
-      completedCoefficientField d ℳ p ℒ H h h' D' (hDD'.consistent hD) Q hQ' := by
+    completedCoefficientField d ℳ p ℒ H h h' D Q hQ =
+      completedCoefficientField d ℳ p ℒ H h h' D' Q hQ' := by
   apply (F).completion_ext
   intro k
   simp only [projection_completedCoefficientField]
   exact coefficientField_eq_of_levelEquivalent d ℳ p ℒ H h h' D D' k
-    ((DirectedDiagram.equivalent_iff _ _).mp hDD' (k + 1))
-    ((D.consistent_iff.mp hD) (k + 1)) Q (hQ k) (hQ' k)
+    ((DirectedDiagram.equivalent_iff _ _).mp hDD' (k + 1)) Q (hQ k) (hQ' k)
 
 variable [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
 
@@ -118,9 +116,9 @@ theorem completedCoefficientField_eq_completedBCHAction_pathProduct {κ : Type*}
     {x y : B.Point} (γ : Quiver.Path x y)
     (hx : ∀ k, (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric x.val)
     (hy : ∀ k, (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric y.val) :
-    completedCoefficientField d ℳ p ℒ H h h' D hD y.val hy =
+    completedCoefficientField d ℳ p ℒ H h h' D y.val hy =
       (d.shiftedLieFiltration ℒ ℳ p).completedBCHAction d ℒ (B.pathProduct γ)
-        (completedCoefficientField d ℳ p ℒ H h h' D hD x.val hx) := by
+        (completedCoefficientField d ℳ p ℒ H h h' D x.val hx) := by
   apply (F).completion_ext
   intro k
   rw [(d.shiftedLieFiltration ℒ ℳ p).projection_completedBCHAction,
@@ -132,8 +130,7 @@ theorem completedCoefficientField_eq_completedBCHAction_pathProduct {κ : Type*}
 
 /-- For outgoing completions of a base input and its probe input, the completed
 endpoint field is transported by the base completion's endpoint transport.
-All geometric paths and auxiliary crossing heights have been eliminated from
-the statement. -/
+All geometric paths have been eliminated from the statement. -/
 theorem completedCoefficientField_eq_completedBCHAction_transport_of_isOutgoingCompletion
     {ι₀ κ κ' : Type*} (D₀ : DirectedDiagram (d := d) h H ι₀)
     (C : DirectedDiagram (d := d) h H (ι₀ ⊕ κ)) (a : ℳ p)
@@ -144,9 +141,9 @@ theorem completedCoefficientField_eq_completedBCHAction_transport_of_isOutgoingC
     (x y : C.Point)
     (hx : ∀ k, (coefficientArrangement d ℳ p ℒ H h h' P k).IsGeneric x.val)
     (hy : ∀ k, (coefficientArrangement d ℳ p ℒ H h h' P k).IsGeneric y.val) :
-    completedCoefficientField d ℳ p ℒ H h h' P hP.consistent y.val hy =
+    completedCoefficientField d ℳ p ℒ H h h' P y.val hy =
       (d.shiftedLieFiltration ℒ ℳ p).completedBCHAction d ℒ (C.transport hC.consistent x y)
-        (completedCoefficientField d ℳ p ℒ H h h' P hP.consistent x.val hx) := by
+        (completedCoefficientField d ℳ p ℒ H h h' P x.val hx) := by
   obtain ⟨γ⟩ := C.exists_path x y
   rw [C.transport_eq_pathProduct hC.consistent γ]
   exact completedCoefficientField_eq_completedBCHAction_pathProduct d ℳ p ℒ H h h' P C
