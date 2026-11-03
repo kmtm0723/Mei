@@ -21,9 +21,15 @@ nonidentity element, whereas a diagram without walls has trivial transport. Henc
 not equivalent to any diagram without walls: consistency does not force a diagram to be
 equivalent to the empty one.
 
+More generally, any diagram of full affine hyperplanes whose labels commute pairwise is
+consistent, at each order where its active projected labels commute; in particular this holds
+for every diagram of full hyperplanes over an abelian Lie algebra. The coefficient Lie algebra
+of the zero skew form is such an algebra.
+
 The commutative hyperplane transport `Quiver.Path.wallPathProduct_eq_prod_of_hyperplanes` is
 applied to the abelian group of integer powers of the label, which is mapped into the truncated
-group by `zpowersHom`.
+group by `zpowersHom`. For commuting labels it is applied in the commutative subgroup generated
+by the active labels (`Subgroup.isMulCommutative_closure`).
 -/
 
 public section
@@ -184,6 +190,61 @@ theorem not_equivalent_of_isEmpty_of_support_eq {κ : Type*} [IsEmpty κ]
   exact hk (by simpa using hexp)
 
 end Hyperplane
+
+section Commuting
+
+variable (D : DirectedDiagram (d := d) h H ι)
+
+open scoped IsMulCommutative in
+/-- Full affine hyperplanes whose projected labels commute pairwise are consistent at that
+order. Hyperplanes may cross, coincide or repeat, and only the walls active at order `k` are
+constrained. The labels are moved into the commutative subgroup they generate, where the
+commutative hyperplane transport `Quiver.Path.wallPathProduct_loop_eq_one_of_hyperplanes`
+applies. -/
+theorem levelConsistent_of_commute_of_full (k : ℕ)
+    (hfull : ∀ j : D.active k, ∃ b : ℝ,
+      (D.wall j).support = {v | h.realCharacter (D.wall j).normal v = b})
+    (hcomm : ∀ a b : D.active k, Commute (CompletedGroup.projection k (D.wall a).label)
+      (CompletedGroup.projection k (D.wall b).label)) :
+    D.LevelConsistent k := by
+  choose b hb using hfull
+  let ℓ := fun j : D.active k => CompletedGroup.projection k (D.wall j).label
+  let G := Subgroup.closure (Set.range ℓ)
+  have : IsMulCommutative G := Subgroup.isMulCommutative_closure (by
+    rintro _ ⟨a, rfl⟩ _ ⟨c, rfl⟩ _
+    exact hcomm a c)
+  let F : D.active k → (V →ᵃ[ℝ] ℝ) := fun j =>
+    (h.realCharacter (D.wall j).normal).toAffineMap - AffineMap.const ℝ V (b j)
+  let lab : D.active k → G := fun j => ⟨ℓ j, Subgroup.subset_closure (Set.mem_range_self j)⟩
+  apply (D.levelConsistent_iff_loops k).mpr
+  intro x p
+  have hloop := p.wallPathProduct_loop_eq_one_of_hyperplanes F lab (fun j _ => by
+    ext z
+    simp [F, hb j, sub_eq_zero])
+  have hmap := p.map_wallPathProduct (fun j => (F j).linear) lab
+    (fun _ _ _ => Commute.all _ _) G.subtype
+  rw [hloop, map_one] at hmap
+  rw [D.levelPathProduct_eq_wallPathProduct k p (D.activeLabels_commute k)]
+  exact (p.wallPathProduct_congr (funext fun j => by ext z; simp [F]) rfl).trans hmap.symm
+
+/-- Full affine hyperplanes with pairwise commuting completed labels form a consistent
+diagram. -/
+theorem consistent_of_commute_of_full
+    (hfull : ∀ j, ∃ b : ℝ, (D.wall j).support = {v | h.realCharacter (D.wall j).normal v = b})
+    (hcomm : ∀ a b, Commute (D.wall a).label (D.wall b).label) :
+    D.Consistent :=
+  D.consistent_iff.mpr fun k => D.levelConsistent_of_commute_of_full k (fun j => hfull j)
+    (fun a c => (hcomm a c).map (CompletedGroup.projection k))
+
+/-- Over an abelian Lie algebra, every diagram of full affine hyperplanes is consistent:
+all completed labels commute, by `PositiveDegrees.commute_of_lie_logComponent_eq_zero`. -/
+theorem consistent_of_isLieAbelian_of_full [IsLieAbelian L]
+    (hfull : ∀ j, ∃ b : ℝ, (D.wall j).support = {v | h.realCharacter (D.wall j).normal v = b}) :
+    D.Consistent :=
+  D.consistent_of_commute_of_full hfull fun _ _ =>
+    d.commute_of_lie_logComponent_eq_zero fun _ _ => trivial_lie_zero _ _ _ _
+
+end Commuting
 
 section AffineHyperplane
 

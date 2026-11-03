@@ -121,6 +121,30 @@ theorem coe_toCompletionₐ :
 theorem toCompletionₐ_apply (x : A) :
     F.toCompletionₐ (R := R) x = F.toCompletion x := (rfl)
 
+/-- The canonical map sends scalars of the algebra to scalars of the completion. -/
+theorem toCompletion_algebraMap (r : R) :
+    F.toCompletion (algebraMap R A r) = algebraMap R F.completion r := by
+  rw [← toCompletionₐ_apply (R := R), AlgHom.commutes]
+
+/-- An algebra automorphism of the completion fixes the canonical images of scalars. -/
+theorem algEquiv_toCompletion_algebraMap (e : F.completion ≃ₐ[R] F.completion) (r : R) :
+    e (F.toCompletion (algebraMap R A r)) = F.toCompletion (algebraMap R A r) := by
+  rw [toCompletion_algebraMap, AlgEquiv.commutes]
+
+/-- An algebra automorphism of the completion of a monoid algebra `R[Q]` over its coefficient
+ring `R` fixes the constants `z^0 c`. -/
+theorem algEquiv_toCompletion_single_zero {Q : Type*} [AddMonoid Q]
+    {F : Mei.AlgFiltration (AddMonoidAlgebra R Q)} (e : F.completion ≃ₐ[R] F.completion)
+    (c : R) :
+    e (F.toCompletion (AddMonoidAlgebra.single 0 c)) =
+      F.toCompletion (AddMonoidAlgebra.single 0 c) := by
+  have hc : (AddMonoidAlgebra.single 0 c : AddMonoidAlgebra R Q) =
+      algebraMap R (AddMonoidAlgebra R Q) c := by
+    rw [AddMonoidAlgebra.coe_algebraMap, Function.comp_apply, Algebra.algebraMap_self,
+      RingHom.id_apply]
+  rw [hc]
+  exact F.algEquiv_toCompletion_algebraMap e c
+
 variable {B : Type*} [Semiring B] [Algebra R B]
 
 /-- Lift a compatible family of algebra homomorphisms into the quotient algebras. -/
