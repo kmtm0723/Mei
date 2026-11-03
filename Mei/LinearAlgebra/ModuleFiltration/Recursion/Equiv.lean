@@ -49,7 +49,6 @@ theorem completionRecursionEquiv_apply (a : F.completion) :
   rfl
 
 /-- The inverse recovers the incoming coefficient by subtracting its propagated value. -/
-@[simp]
 theorem completionRecursionEquiv_symm_apply (x : F.completion) :
     (F.completionRecursionEquiv f hf).symm x = x - F.completionMap F f id monotone_id
       (fun k _ hx => F.antitone (Nat.le_succ (k + 1)) (hf (k + 1) hx)) x := by
@@ -57,6 +56,7 @@ theorem completionRecursionEquiv_symm_apply (x : F.completion) :
   rfl
 
 /-- Recovering the incoming value also preserves and reflects filtration order. -/
+@[simp]
 theorem completionRecursionEquiv_symm_mem_completedFiltration_iff
     (k : ℕ) (x : F.completion) :
     (F.completionRecursionEquiv f hf).symm x ∈ F.completedFiltration.submodule k ↔
