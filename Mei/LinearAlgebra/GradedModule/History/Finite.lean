@@ -6,8 +6,6 @@ Authors: Codex
 module
 
 public import Mei.LinearAlgebra.GradedModule.History.Basic
-public import Mei.Algebra.DirectSum.Map
-public import Mathlib.Data.Fin.Tuple.Basic
 
 /-!
 # Finite support of homogeneous histories
@@ -19,70 +17,87 @@ regrading, each target history is the finite sum of its surviving source
 refinements; neither the degree map nor its fibers need be finite.
 
 This supplies finite coefficient-history sums for lattice-graded modules without
-replacing their grading by a finite type. It uses `homogeneousHistory`, Mathlib's
-finite homogeneous supports and `DirectSum.sum_support_decompose`, and the
-one-step regrading formula `DirectSum.decompose_map_eq_sum`. Selecting histories
-after regrading uses `Finset.sum_fiberwise_of_maps_to` to group the source
-histories with the same image, including groups whose total decoration vanishes.
+replacing their grading by a finite type. The sequence `T` is the path
+`Quiver.SingleObj.pathOfFn` through its positions in the one-object quiver on `Fin n`,
+the arrow `j` carrying `T j` (`homogeneousHistory_eq_pathOfFn`). All statements are
+transported from the expansion and regrading theorems for path histories in
+`Mei.LinearAlgebra.GradedModule.History.Path` along `Quiver.SingleObj.degreesPathOfFn`.
 -/
 
 public noncomputable section
+
+open Quiver
 
 namespace Mei
 
 variable {R M ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
   [DecidableEq ι] (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
 
-/-- Only finitely many degree histories have nonzero whole decorations for a
-fixed input and a finite sequence of linear maps. -/
-theorem finite_support_homogeneousHistory {n : ℕ}
-    (T : Fin n → Module.End R M) (a : M) :
-    (Function.support (fun p => homogeneousHistory ℳ T p a)).Finite := by
-  classical
-  induction n with
-  | zero => exact Set.toFinite _
-  | succ n ih =>
-    let T' := fun j : Fin n => T j.succ
-    let S := (ih T').toFinset
-    let B := fun p => (DirectSum.decompose ℳ (T 0 (homogeneousHistory ℳ T' p a))).support
-    have hfinite : (↑(S.biUnion fun p => (B p).image (fun i => (Fin.cons i p : Fin (n + 1) → ι))) :
-        Set (Fin (n + 1) → ι)).Finite := Finset.finite_toSet _
-    apply hfinite.subset
-    intro p hp
-    have ht : homogeneousHistory ℳ T' (fun j => p j.succ) a ≠ 0 :=
-      homogeneousHistory_tail_ne_zero ℳ T p hp
-    have hc : p 0 ∈ B (fun j => p j.succ) := by
-      apply DFinsupp.mem_support_iff.mpr
-      intro he
-      have hp' : homogeneousHistory ℳ T p a ≠ 0 := hp
-      apply hp'
-      rw [homogeneousHistory_succ_apply]
-      exact congrArg Subtype.val he
-    apply Finset.mem_biUnion.mpr
-    refine ⟨fun j => p j.succ, ?_, ?_⟩
-    · exact (Set.Finite.mem_toFinset _).mpr ht
-    · exact Finset.mem_image.mpr ⟨p 0, hc, Fin.cons_self_tail p⟩
+/-- A sequence of endomorphisms as a path through its positions. -/
+private abbrev positions (n : ℕ) : Path (SingleObj.star (Fin n)) (SingleObj.star (Fin n)) :=
+  SingleObj.pathOfFn fun j => j
 
-open Classical in
+/-- A history along `T` is the path history along the positions of `T`. -/
+private theorem homogeneousHistory_eq_positions {n : ℕ} (T : Fin n → Module.End R M)
+    (p : Fin n → ι) :
+    homogeneousHistory ℳ T p =
+      (positions n).homogeneousHistory (M := fun _ => M) (fun j => T j) (fun _ => ℳ)
+        (SingleObj.degreesPathOfFn ι (fun j : Fin n => j) p) :=
+  homogeneousHistory_eq_pathOfFn ℳ T (fun j => j) p
+
+/-- A path history along the positions of `T` is the history of the corresponding
+function of degrees. -/
+theorem homogeneousHistory_degreesPathOfFn_symm {n : ℕ} (T : Fin n → Module.End R M)
+    (d : (SingleObj.pathOfFn fun j : Fin n => j).Degrees fun _ => ι) :
+    homogeneousHistory ℳ T ((SingleObj.degreesPathOfFn ι (fun j : Fin n => j)).symm d) =
+      (SingleObj.pathOfFn fun j : Fin n => j).homogeneousHistory (M := fun _ => M)
+        (fun j => T j) (fun _ => ℳ) d := by
+  rw [homogeneousHistory_eq_positions, Equiv.apply_symm_apply]
+
 /-- The finite set of histories whose final whole decoration is nonzero.
 Linearity ensures that every intermediate decoration is nonzero as well. -/
 def homogeneousHistorySupport {n : ℕ} (T : Fin n → Module.End R M) (a : M) :
     Finset (Fin n → ι) :=
-  (finite_support_homogeneousHistory ℳ T a).toFinset
+  ((positions n).historySupport (M := fun _ => M) (fun j => T j) (fun _ => ℳ) a).map
+    (SingleObj.degreesPathOfFn ι (fun j : Fin n => j)).symm.toEmbedding
+
+/-- The contributing histories along `T` are the contributing path histories along its
+positions. -/
+theorem homogeneousHistorySupport_eq_map {n : ℕ} (T : Fin n → Module.End R M) (a : M) :
+    homogeneousHistorySupport ℳ T a =
+      ((SingleObj.pathOfFn fun j : Fin n => j).historySupport (M := fun _ => M)
+        (fun j => T j) (fun _ => ℳ) a).map
+          (SingleObj.degreesPathOfFn ι (fun j : Fin n => j)).symm.toEmbedding :=
+  (rfl)
+
+private theorem sum_homogeneousHistorySupport {X : Type*} [AddCommMonoid X] {n : ℕ}
+    (T : Fin n → Module.End R M) (a : M) (F : (Fin n → ι) → X) :
+    ∑ p ∈ homogeneousHistorySupport ℳ T a, F p =
+      ∑ d ∈ (positions n).historySupport (M := fun _ => M) (fun j => T j) (fun _ => ℳ) a,
+        F ((SingleObj.degreesPathOfFn ι (fun j : Fin n => j)).symm d) := by
+  rw [homogeneousHistorySupport_eq_map, Finset.sum_map]
+  rfl
 
 /-- Membership retains precisely the histories with nonzero decoration. -/
 @[simp]
 theorem mem_homogeneousHistorySupport {n : ℕ} (T : Fin n → Module.End R M)
     (a : M) (p : Fin n → ι) :
     p ∈ homogeneousHistorySupport ℳ T a ↔ homogeneousHistory ℳ T p a ≠ 0 := by
-  classical
-  exact Set.Finite.mem_toFinset _
+  rw [homogeneousHistorySupport, Finset.mem_map_equiv, Equiv.symm_symm,
+    Path.mem_historySupport, homogeneousHistory_eq_positions]
+
+/-- Only finitely many degree histories have nonzero whole decorations for a
+fixed input and a finite sequence of linear maps. -/
+theorem finite_support_homogeneousHistory {n : ℕ}
+    (T : Fin n → Module.End R M) (a : M) :
+    (Function.support (fun p => homogeneousHistory ℳ T p a)).Finite :=
+  (homogeneousHistorySupport ℳ T a).finite_toSet.subset fun p hp =>
+    (mem_homogeneousHistorySupport ℳ T a p).mpr hp
 
 /-- Zero input has no contributing histories. -/
 @[simp]
 theorem homogeneousHistorySupport_zero {n : ℕ} (T : Fin n → Module.End R M) :
     homogeneousHistorySupport ℳ T 0 = ∅ := by
-  classical
   ext p
   simp
 
@@ -96,36 +111,20 @@ theorem homogeneousHistorySupport_succ {n : ℕ}
         (DirectSum.decompose ℳ
           (T 0 (homogeneousHistory ℳ (fun j : Fin n => T j.succ) p a))).support.image
             (fun i => (Fin.cons i p : Fin (n + 1) → ι)) := by
-  classical
-  ext p
-  simp only [mem_homogeneousHistorySupport, Finset.mem_biUnion, Finset.mem_image]
+  ext q
+  rw [mem_homogeneousHistorySupport, Finset.mem_biUnion]
   constructor
-  · intro hp
-    refine ⟨fun j => p j.succ, homogeneousHistory_tail_ne_zero ℳ T p hp, p 0, ?_,
-      Fin.cons_self_tail p⟩
-    rw [homogeneousHistory_succ_apply] at hp
-    exact DFinsupp.mem_support_iff.mpr (fun he => hp (congrArg Subtype.val he))
-  · rintro ⟨q, _, i, hi, rfl⟩
+  · intro h
+    refine ⟨fun j => q j.succ, (mem_homogeneousHistorySupport ..).mpr
+      (homogeneousHistory_tail_ne_zero ℳ T q h), Finset.mem_image.mpr
+        ⟨q 0, DFinsupp.mem_support_iff.mpr fun hz => h ?_, Fin.cons_self_tail q⟩⟩
+    rw [homogeneousHistory_succ_apply, hz]
+    rfl
+  · rintro ⟨p, _, hy⟩
+    obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hy
     rw [homogeneousHistory_succ_apply]
-    intro hz
-    apply DFinsupp.mem_support_iff.mp hi
-    exact Subtype.val_injective hz
-
-open Classical in
-private theorem homogeneousHistorySupport_extensions_disjoint {n : ℕ}
-    (T : Fin (n + 1) → Module.End R M) (a : M) :
-    Set.PairwiseDisjoint
-      (↑(homogeneousHistorySupport ℳ (fun j : Fin n => T j.succ) a) : Set (Fin n → ι))
-      (fun p => (DirectSum.decompose ℳ
-        (T 0 (homogeneousHistory ℳ (fun j : Fin n => T j.succ) p a))).support.image
-          (fun i => (Fin.cons i p : Fin (n + 1) → ι))) := by
-  classical
-  intro p _ q _ hpq
-  apply Finset.disjoint_left.mpr
-  intro x hx hy
-  obtain ⟨i, _, rfl⟩ := Finset.mem_image.mp hx
-  obtain ⟨j, _, he⟩ := Finset.mem_image.mp hy
-  exact hpq (Fin.cons_inj.mp he).2.symm
+    simp only [Fin.cons_succ]
+    exact fun hz => DFinsupp.mem_support_iff.mp hi (Subtype.val_injective hz)
 
 /-- Summing exactly the nonzero histories recovers the composite, without a
 finite ambient degree type. -/
@@ -134,28 +133,8 @@ theorem sum_homogeneousHistory {n : ℕ}
     (T : Fin n → Module.End R M) (a : M) :
     ∑ p ∈ homogeneousHistorySupport ℳ T a, homogeneousHistory ℳ T p a =
       (List.ofFn T).prod a := by
-  classical
-  induction n with
-  | zero =>
-    by_cases ha : a = 0
-    · simp [ha]
-    · have hs : homogeneousHistorySupport ℳ T a = {fun j => Fin.elim0 j} := by
-        ext p
-        simp [ha, Subsingleton.elim p (fun j => Fin.elim0 j)]
-      simp [hs]
-  | succ n ih =>
-    rw [homogeneousHistorySupport_succ, Finset.sum_biUnion]
-    · trans ∑ p ∈ homogeneousHistorySupport ℳ (fun j : Fin n => T j.succ) a,
-          T 0 (homogeneousHistory ℳ (fun j : Fin n => T j.succ) p a)
-      · apply Finset.sum_congr rfl
-        intro p _
-        rw [Finset.sum_image]
-        · simp only [homogeneousHistory_succ_apply, Fin.cons_succ]
-          exact DirectSum.sum_support_decompose ℳ _
-        · intro i _ j _ hij
-          exact (Fin.cons_inj.mp hij).1
-      · rw [← map_sum, ih, List.ofFn_succ, List.prod_cons, Module.End.mul_apply]
-    · exact homogeneousHistorySupport_extensions_disjoint ℳ T a
+  simp only [sum_homogeneousHistorySupport, homogeneousHistory_degreesPathOfFn_symm,
+    Path.sum_homogeneousHistory, composeLinear_pathOfFn]
 
 section Regrading
 
@@ -163,6 +142,16 @@ variable {N κ : Type*} [AddCommMonoid N] [Module R N] [DecidableEq κ]
   (𝓝 : κ → Submodule R N) [DirectSum.Decomposition 𝓝]
   (r : M →ₗ[R] N) (σ : ι → κ)
   (hr : ∀ i x, x ∈ ℳ i → r x ∈ 𝓝 (σ i))
+
+omit [DecidableEq ι] [DecidableEq κ] in
+/-- Transported degree histories agree with a target history exactly when the degree
+map sends the source history to it at every position. -/
+private theorem map_degreesPathOfFn_eq_iff {n : ℕ} (p : Fin n → ι) (q : Fin n → κ) :
+    Path.Degrees.map (fun _ => σ) (positions n)
+        (SingleObj.degreesPathOfFn ι (fun j : Fin n => j) p) =
+      SingleObj.degreesPathOfFn κ (fun j : Fin n => j) q ↔ ∀ j, σ (p j) = q j := by
+  rw [SingleObj.map_degreesPathOfFn, Equiv.apply_eq_iff_eq, funext_iff]
+  simp only [Function.comp_apply]
 
 include hr
 
@@ -176,36 +165,14 @@ theorem homogeneousHistory_map_eq_sum {n : ℕ}
     homogeneousHistory 𝓝 U q (r a) =
       ∑ p ∈ homogeneousHistorySupport ℳ T a,
         if ∀ j, σ (p j) = q j then r (homogeneousHistory ℳ T p a) else 0 := by
-  classical
-  induction n with
-  | zero =>
-    simp only [Fin.forall_fin_zero, ↓reduceIte]
-    rw [← map_sum, sum_homogeneousHistory]
-    simp
-  | succ n ih =>
-    rw [homogeneousHistory_succ_apply,
-      ih (fun j : Fin n => T j.succ) (fun j => U j.succ) (fun j => hT j.succ)]
-    simp only [map_sum, DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
-    rw [homogeneousHistorySupport_succ, Finset.sum_biUnion]
-    · apply Finset.sum_congr rfl
-      intro p _
-      rw [Finset.sum_image]
-      · simp only [Fin.forall_fin_succ, Fin.cons_zero, Fin.cons_succ,
-          homogeneousHistory_succ_apply]
-        by_cases hp : ∀ j : Fin n, σ (p j) = q j.succ
-        · simp only [hp, implies_true, and_true, ↓reduceIte]
-          have hcomm := LinearMap.congr_fun (hT 0)
-            (homogeneousHistory ℳ (fun j : Fin n => T j.succ) p a)
-          simp only [LinearMap.comp_apply] at hcomm
-          rw [← hcomm]
-          have h := DirectSum.decompose_map_eq_sum ℳ 𝓝 r.toAddMonoidHom σ hr
-            (T 0 (homogeneousHistory ℳ (fun j : Fin n => T j.succ) p a)) (q 0)
-          rw [Finset.sum_filter] at h
-          exact h
-        · simp [hp]
-      · intro i _ j _ hij
-        exact (Fin.cons_inj.mp hij).1
-    · exact homogeneousHistorySupport_extensions_disjoint ℳ T a
+  rw [homogeneousHistory_eq_positions, Path.homogeneousHistory_map_eq_sum
+    (Q := SingleObj (Fin n)) (M := fun _ => M) (N := fun _ => N) (fun j => T j) (fun _ => ℳ)
+    (fun j => U j) (fun _ => 𝓝) (fun _ => r) (fun _ => σ) (fun _ => hr) (fun j => hT j),
+    sum_homogeneousHistorySupport]
+  refine Finset.sum_congr rfl fun d _ => ?_
+  obtain ⟨p, rfl⟩ := (SingleObj.degreesPathOfFn ι (fun j : Fin n => j)).surjective d
+  rw [Equiv.symm_apply_apply, ← homogeneousHistory_eq_positions]
+  exact if_congr (map_degreesPathOfFn_eq_iff σ p q) rfl rfl
 
 open Classical in
 /-- Refinements killed by specialization are omitted from the weighted sum.
@@ -219,9 +186,7 @@ theorem homogeneousHistory_map_eq_sum_surviving {n : ℕ}
       ∑ p ∈ (homogeneousHistorySupport ℳ T a).filter
           (fun p => (∀ j, σ (p j) = q j) ∧ r (homogeneousHistory ℳ T p a) ≠ 0),
         r (homogeneousHistory ℳ T p a) := by
-  classical
-  rw [homogeneousHistory_map_eq_sum ℳ 𝓝 r σ hr T U hT q a,
-    ← Finset.sum_filter]
+  rw [homogeneousHistory_map_eq_sum ℳ 𝓝 r σ hr T U hT q a, ← Finset.sum_filter]
   simpa only [Finset.filter_filter] using
     (Finset.sum_filter_ne_zero (f := fun p => r (homogeneousHistory ℳ T p a))
       ((homogeneousHistorySupport ℳ T a).filter fun p => ∀ j, σ (p j) = q j)).symm
@@ -254,43 +219,15 @@ theorem map_sum_ite_homogeneousHistory {n : ℕ}
       if E (σ ∘ p) then homogeneousHistory ℳ T p a else 0) =
       ∑ q ∈ homogeneousHistorySupport 𝓝 U (r a),
         if E q then homogeneousHistory 𝓝 U q (r a) else 0 := by
-  classical
-  let S := homogeneousHistorySupport ℳ T a
-  let Q := S.image (fun p => σ ∘ p)
-  have hsub : homogeneousHistorySupport 𝓝 U (r a) ⊆ Q := by
-    intro q hq
-    obtain ⟨p, hp, hn⟩ := exists_homogeneousHistory_ne_zero_of_map_ne_zero
-      ℳ 𝓝 r σ hr T U hT q ((mem_homogeneousHistorySupport ..).mp hq)
-    exact Finset.mem_image.mpr ⟨p,
-      (mem_homogeneousHistorySupport ..).mpr (fun hz => hn (by simp [hz])), funext hp⟩
-  rw [map_sum]
-  calc
-    _ = ∑ q ∈ Q, ∑ p ∈ S with σ ∘ p = q,
-        r (if E (σ ∘ p) then homogeneousHistory ℳ T p a else 0) :=
-      (Finset.sum_fiberwise_of_maps_to
-        (fun p hp => Finset.mem_image_of_mem (fun p => σ ∘ p) hp) _).symm
-    _ = ∑ q ∈ Q, if E q then homogeneousHistory 𝓝 U q (r a) else 0 := by
-      apply Finset.sum_congr rfl
-      intro q _
-      rw [homogeneousHistory_map_eq_sum ℳ 𝓝 r σ hr T U hT q a,
-        Finset.sum_filter]
-      by_cases hq : E q
-      · simp only [hq, ↓reduceIte]
-        apply Finset.sum_congr rfl
-        intro p _
-        by_cases hp : σ ∘ p = q
-        · have hp' : ∀ j, σ (p j) = q j := congrFun hp
-          simp [hp, hp', hq]
-        · have hp' : ¬ ∀ j, σ (p j) = q j := by simpa [funext_iff] using hp
-          simp [hp, hp']
-      · simp only [hq, ↓reduceIte]
-        apply Finset.sum_eq_zero
-        intro p _
-        by_cases hp : σ ∘ p = q <;> simp [hp, hq]
-    _ = _ := (Finset.sum_subset hsub fun q _ hq => by
-      have hz : homogeneousHistory 𝓝 U q (r a) = 0 := by
-        simpa only [mem_homogeneousHistorySupport, not_not] using hq
-      simp [hz]).symm
+  have h := Path.map_sum_ite_homogeneousHistory (Q := SingleObj (Fin n)) (M := fun _ => M)
+    (N := fun _ => N) (fun j => T j) (fun _ => ℳ) (fun j => U j) (fun _ => 𝓝) (fun _ => r)
+    (fun _ => σ) (fun _ => hr) (fun j => hT j) (positions n)
+    (fun d => E ((SingleObj.degreesPathOfFn κ (fun j : Fin n => j)).symm d)) a
+  rw [sum_homogeneousHistorySupport, sum_homogeneousHistorySupport]
+  simp only [homogeneousHistory_degreesPathOfFn_symm]
+  refine Eq.trans (congrArg r (Finset.sum_congr rfl fun d _ => ?_)) h
+  obtain ⟨p, rfl⟩ := (SingleObj.degreesPathOfFn ι (fun j : Fin n => j)).surjective d
+  rw [Equiv.symm_apply_apply, SingleObj.map_degreesPathOfFn, Equiv.symm_apply_apply]
 
 end Regrading
 

@@ -5,8 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Algebra.DirectSum.Component
-public import TauCeti.Algebra.DirectSum.Internal
+public import Mei.LinearAlgebra.GradedModule.History.Path
 import Mathlib.Data.List.OfFn
 
 /-!
@@ -21,7 +20,10 @@ decoration forces every intermediate decoration to be nonzero.
 propagation equations, for attachment to geometric realizations.
 
 The construction uses Mathlib's internal direct-sum decomposition and component
-maps. The finite-support expansion and its regrading comparison are developed in
+maps. A sequence `T` is a path in a one-object quiver, and its histories are the path
+histories of `Mei.LinearAlgebra.GradedModule.History.Path`
+(`homogeneousHistory_eq_pathOfFn`). The finite-support expansion and its regrading
+comparison specialize from there to the forms in
 `Mei.LinearAlgebra.GradedModule.History.Finite`.
 -/
 
@@ -285,6 +287,45 @@ theorem homogeneousHistory_rel_of_ne_zero {n : ℕ}
   rw [homogeneousHistoryStage_castSucc_apply]
   exact congrArg Subtype.val hz
 
+section Path
+
+open Quiver
+
+/-- A single-module history along arrow labels `P`, interpreted by `f`, is the path
+history of `SingleObj.pathOfFn P` in the one-object quiver on the labels. -/
+theorem homogeneousHistory_eq_pathOfFn {α : Type*} (f : α → Module.End R M) :
+    ∀ {n : ℕ} (P : Fin n → α) (p : Fin n → ι),
+      homogeneousHistory ℳ (fun j => f (P j)) p =
+        (SingleObj.pathOfFn P).homogeneousHistory (M := fun _ => M) (fun e => f e)
+          (fun _ => ℳ) (SingleObj.degreesPathOfFn ι P p)
+  | 0, _, p => by
+    rw [homogeneousHistory_zero]
+    exact (Path.homogeneousHistory_nil (M := fun _ => M) _ _ _).symm
+  | n + 1, P, p => by
+    ext a
+    rw [homogeneousHistory_succ_apply, homogeneousHistory_eq_pathOfFn f (fun j => P j.succ),
+      SingleObj.degreesPathOfFn_succ_apply]
+    exact (Path.homogeneousHistory_cons_apply (M := fun _ => M) (fun e => f e) (fun _ => ℳ)
+      (SingleObj.pathOfFn fun j => P j.succ) (P 0 : SingleObj.star α ⟶ SingleObj.star α) _
+      (p 0) a).symm
+
+omit [DecidableEq ι] in
+/-- The composite along `SingleObj.pathOfFn P` is the ordered product of the interpreted
+labels; index zero acts last. -/
+theorem composeLinear_pathOfFn {α : Type*} (f : α → Module.End R M) :
+    ∀ {n : ℕ} (P : Fin n → α),
+      (SingleObj.pathOfFn P).composeLinear (M := fun _ => M) (fun e => f e) =
+        (List.ofFn fun j => f (P j)).prod
+  | 0, _ => by
+    rw [SingleObj.pathOfFn_zero, Path.composeLinear_nil, List.ofFn_zero, List.prod_nil,
+      Module.End.one_eq_id]
+  | n + 1, P => by
+    rw [SingleObj.pathOfFn_succ, Path.composeLinear_cons,
+      composeLinear_pathOfFn f (fun j => P j.succ), List.ofFn_succ, List.prod_cons,
+      Module.End.mul_eq_comp]
+
+end Path
+
 section Regrading
 
 variable {N κ : Type*} [AddCommMonoid N] [Module R N] [DecidableEq κ]
@@ -300,21 +341,15 @@ theorem map_homogeneousHistory_of_injective (hσ : Function.Injective σ) {n : �
     (T : Fin n → Module.End R M) (U : Fin n → Module.End R N)
     (hT : ∀ j, r.comp (T j) = (U j).comp r) (p : Fin n → ι) (a : M) :
     r (homogeneousHistory ℳ T p a) = homogeneousHistory 𝓝 U (σ ∘ p) (r a) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    simp only [homogeneousHistory_succ_apply]
-    have hcomm := LinearMap.congr_fun (hT 0)
-      (homogeneousHistory ℳ (fun j : Fin n => T j.succ) (fun j => p j.succ) a)
-    simp only [LinearMap.comp_apply] at hcomm
-    calc
-      _ = (DirectSum.decompose 𝓝
-          (r (T 0 (homogeneousHistory ℳ (fun j : Fin n => T j.succ)
-            (fun j => p j.succ) a))) (σ (p 0)) : N) :=
-        DirectSum.map_decompose_shift ℳ 𝓝 r.toAddMonoidHom σ hσ hr _ _
-      _ = _ := by
-        rw [hcomm, ih (fun j => T j.succ) (fun j => U j.succ) (fun j => hT j.succ)]
-        rfl
+  have h := Quiver.Path.map_homogeneousHistory_of_injective (M := fun _ => M)
+    (N := fun _ => N) (T := fun j => T j) (ℳ := fun _ => ℳ) (U := fun j => U j)
+    (𝓝 := fun _ => 𝓝) (r := fun _ => r) (σ := fun _ => σ) (fun _ => hr) (fun j => hT j)
+    (fun _ => hσ) (Quiver.SingleObj.pathOfFn fun j : Fin n => j)
+    (Quiver.SingleObj.degreesPathOfFn ι (fun j : Fin n => j) p) a
+  rw [Quiver.SingleObj.map_degreesPathOfFn] at h
+  rw [homogeneousHistory_eq_pathOfFn ℳ T (fun j => j),
+    homogeneousHistory_eq_pathOfFn 𝓝 U (fun j => j)]
+  exact h
 
 end Regrading
 

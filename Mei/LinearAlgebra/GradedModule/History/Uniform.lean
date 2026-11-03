@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mei.LinearAlgebra.GradedModule.History.Finite
-public import Mathlib.RingTheory.Finiteness.Defs
 
 /-!
 # Uniform history expansions on an input submodule
@@ -25,12 +24,15 @@ Restricting the expansion to histories with a prescribed terminal degree
 isolates the final component of the composite along any linear input
 (`sum_homogeneousHistory_terminal_comp_eq`).
 
-These are the linear-map versions of the pointwise results
-`sum_homogeneousHistory` and `map_sum_ite_homogeneousHistory` in
-`History/Finite.lean`.
+The expansion and the existence of uniform supports are transported from the
+uniform theorems for path histories in `Mei.LinearAlgebra.GradedModule.History.Path`;
+the selection and regrading statements are the linear-map versions of
+`sum_homogeneousHistory` and `map_sum_ite_homogeneousHistory` in `History/Finite.lean`.
 -/
 
 public noncomputable section
+
+open Quiver
 
 namespace Mei
 
@@ -53,12 +55,18 @@ linear-map expansion. No global finiteness of homogeneous pieces is required. -/
 theorem sum_homogeneousHistory_comp_eq (S : Finset (Fin n → ι))
     (hS : ∀ p ∉ S, (homogeneousHistory ℳ T p).comp a = 0) :
     ∑ p ∈ S, (homogeneousHistory ℳ T p).comp a = ((List.ofFn T).prod).comp a := by
-  ext x
-  simp only [LinearMap.sum_apply, LinearMap.comp_apply]
-  rw [← sum_homogeneousHistory ℳ T (a x)]
-  exact (Finset.sum_subset
-    (homogeneousHistorySupport_subset_of_comp_eq_zero ℳ T a S hS x)
-    (fun p _ hp => by simpa using hp)).symm
+  let e := SingleObj.degreesPathOfFn ι fun j : Fin n => j
+  have hS' : ∀ d ∉ S.map e.toEmbedding,
+      ((SingleObj.pathOfFn fun j : Fin n => j).homogeneousHistory (M := fun _ => M)
+        (fun j => T j) (fun _ => ℳ) d).comp a = 0 := fun d hd => by
+    rw [← homogeneousHistory_degreesPathOfFn_symm]
+    exact hS _ fun h => hd (Finset.mem_map_equiv.mpr h)
+  rw [← composeLinear_pathOfFn T (fun j : Fin n => j), ← Path.sum_homogeneousHistory_comp_eq
+    (Q := SingleObj (Fin n)) (M := fun _ => M) (fun j => T j) (fun _ => ℳ)
+    (SingleObj.pathOfFn fun j : Fin n => j) a _ hS', Finset.sum_map]
+  exact Finset.sum_congr rfl fun p _ => by
+    rw [Equiv.coe_toEmbedding, ← homogeneousHistory_degreesPathOfFn_symm,
+      Equiv.symm_apply_apply]
 
 /-- Final projection (or any linear output map) commutes with the shared
 uniform expansion. The support bound is imposed before projection. -/
@@ -76,28 +84,19 @@ theorem sum_comp_homogeneousHistory_comp_eq
 on its entire span. This includes arbitrary scalar combinations of generators. -/
 theorem exists_uniform_homogeneousHistory_support_of_fg (P : Submodule R M) (hP : P.FG) :
     ∃ S : Finset (Fin n → ι), ∀ p ∉ S, ∀ x ∈ P, homogeneousHistory ℳ T p x = 0 := by
-  classical
-  obtain ⟨s, hs⟩ := hP
-  refine ⟨s.biUnion (homogeneousHistorySupport ℳ T), ?_⟩
-  intro p hp x hx
-  have hker : P ≤ LinearMap.ker (homogeneousHistory ℳ T p) := by
-    rw [← hs]
-    apply Submodule.span_le.mpr
-    intro y hy
-    apply LinearMap.mem_ker.mpr
-    by_contra hne
-    exact hp (Finset.mem_biUnion.mpr
-      ⟨y, hy, (mem_homogeneousHistorySupport ℳ T y p).mpr hne⟩)
-  exact hker hx
+  let e := SingleObj.degreesPathOfFn ι fun j : Fin n => j
+  obtain ⟨S, hS⟩ := Path.exists_uniform_historySupport_of_fg (M := fun _ => M)
+    (fun j => T j) (fun _ => ℳ) (SingleObj.pathOfFn fun j : Fin n => j) P hP
+  refine ⟨S.map e.symm.toEmbedding, fun p hp x hx => ?_⟩
+  rw [← e.symm_apply_apply p, homogeneousHistory_degreesPathOfFn_symm]
+  exact hS _ (fun h => hp (Finset.mem_map_equiv.mpr h)) x hx
 
 /-- Finite generation of the input range, not of the ambient graded module,
 ensures the uniform support needed for the linear-map expansion. -/
 theorem exists_uniform_homogeneousHistory_support (ha : (LinearMap.range a).FG) :
     ∃ S : Finset (Fin n → ι), ∀ p ∉ S, (homogeneousHistory ℳ T p).comp a = 0 := by
   obtain ⟨S, hS⟩ := exists_uniform_homogeneousHistory_support_of_fg ℳ T _ ha
-  refine ⟨S, fun p hp => ?_⟩
-  ext x
-  exact hS p hp (a x) (LinearMap.mem_range_self a x)
+  exact ⟨S, fun p hp => LinearMap.ext fun x => hS p hp (a x) (LinearMap.mem_range_self a x)⟩
 
 open Classical in
 /-- Selecting histories in a uniform support gives the same value as selecting
@@ -108,12 +107,9 @@ theorem sum_ite_homogeneousHistory_comp_apply (S : Finset (Fin n → ι))
     (∑ p ∈ S, if P p then (homogeneousHistory ℳ T p).comp a else 0) x =
       ∑ p ∈ homogeneousHistorySupport ℳ T (a x),
         if P p then homogeneousHistory ℳ T p (a x) else 0 := by
-  classical
   trans ∑ p ∈ S, if P p then homogeneousHistory ℳ T p (a x) else 0
   · simp only [LinearMap.sum_apply]
-    apply Finset.sum_congr rfl
-    intro p _
-    split_ifs <;> rfl
+    exact Finset.sum_congr rfl fun p _ => by split_ifs <;> rfl
   exact (Finset.sum_subset
     (homogeneousHistorySupport_subset_of_comp_eq_zero ℳ T a S hS x)
     (fun p _ hp => by
@@ -176,14 +172,13 @@ theorem homogeneousHistory_comp_eq_zero_of_notMem_image
     (homogeneousHistory 𝓝 U q).comp (r.comp a) = 0 := by
   ext x
   by_contra hx
-  obtain ⟨p, hp, hne⟩ := exists_homogeneousHistory_ne_zero_of_map_ne_zero
-    ℳ 𝓝 r σ hr T U hT q hx
-  have hmem : p ∈ S := by
-    by_contra h
-    have hz := LinearMap.congr_fun (hS p h) x
-    simp only [LinearMap.comp_apply, LinearMap.zero_apply] at hz
-    exact hne (by rw [hz, map_zero])
-  exact hq (Finset.mem_image.mpr ⟨p, hmem, funext hp⟩)
+  obtain ⟨p, hp, hne⟩ :=
+    exists_homogeneousHistory_ne_zero_of_map_ne_zero ℳ 𝓝 r σ hr T U hT q hx
+  refine hq (Finset.mem_image.mpr ⟨p, ?_, funext hp⟩)
+  by_contra h
+  have hz := LinearMap.congr_fun (hS p h) x
+  simp only [LinearMap.comp_apply, LinearMap.zero_apply] at hz
+  exact hne (by rw [hz, map_zero])
 
 open Classical in
 include hr hT in
@@ -198,11 +193,9 @@ theorem map_sum_ite_homogeneousHistory_comp
     r.comp (∑ p ∈ S, if P (σ ∘ p) then (homogeneousHistory ℳ T p).comp a else 0) =
       ∑ q ∈ S', if P q then (homogeneousHistory 𝓝 U q).comp (r.comp a) else 0 := by
   ext x
-  simp only [LinearMap.comp_apply]
-  rw [sum_ite_homogeneousHistory_comp_apply ℳ T a S hS,
+  rw [LinearMap.comp_apply, sum_ite_homogeneousHistory_comp_apply ℳ T a S hS,
     sum_ite_homogeneousHistory_comp_apply 𝓝 U (r.comp a) S' hS']
-  simpa only [LinearMap.comp_apply] using
-    map_sum_ite_homogeneousHistory ℳ 𝓝 r σ hr T U hT P (a x)
+  exact map_sum_ite_homogeneousHistory ℳ 𝓝 r σ hr T U hT P (a x)
 
 open Classical in
 include hr hT in

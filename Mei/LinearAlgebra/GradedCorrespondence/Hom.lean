@@ -24,7 +24,8 @@ naturality, in particular for comparisons preserving degrees such as truncations
 The component formulas use `DirectSum.decompose_map_eq_sum` and Tau Ceti's
 `DirectSum.map_decompose_shift` for arbitrary and injective regradings, respectively.
 Total lifts are natural precisely when target total lifts kill the images of
-inadmissible source pieces; reflecting admissibility is sufficient.
+inadmissible source pieces; reflecting admissibility is sufficient. The same condition
+makes total transfers natural.
 No additive structure on the degree types is needed for these linear constructions.
 -/
 
@@ -229,6 +230,32 @@ theorem middle_comp_liftLeftTotal_of_reflects_admissible (f : Hom C D σ τ)
   apply f.middle_comp_liftLeftTotal_iff.mpr
   intro i hi a
   exact D.liftLeftTotal_of_not_mem (fun h => hi (hI i h)) (f.left_mem i a a.property)
+
+/-- A morphism intertwines total transfers once target total transfers kill the images
+of inadmissible source pieces. The lifts of these images may be nonzero if they lie in the
+kernel of the right leg. -/
+theorem right_comp_totalTransfer (f : Hom C D σ τ)
+    (hzero : ∀ i, i ∉ I → ∀ a : 𝒰 i, D.totalTransfer (f.left a) = 0) :
+    f.right.comp C.totalTransfer = D.totalTransfer.comp f.left := by
+  apply DirectSum.decompose_lhom_ext 𝒰
+  intro i
+  apply LinearMap.ext
+  intro a
+  simp only [LinearMap.comp_apply, Submodule.subtype_apply]
+  by_cases hi : i ∈ I
+  · rw [totalTransfer_apply, C.liftLeftTotal_coe ⟨i, hi⟩ a, right_comm_apply,
+      f.middle_liftLeft ⟨i, hi⟩ a, totalTransfer_apply,
+      D.liftLeftTotal_coe ⟨σ i, f.admissible_left hi⟩ ⟨f.left a, f.left_mem i a a.property⟩]
+  · rw [totalTransfer_apply, C.liftLeftTotal_coe_of_not_mem a hi, map_zero, map_zero,
+      hzero i hi a]
+
+/-- Reflecting admissible degrees suffices for naturality of total transfers. -/
+theorem right_comp_totalTransfer_of_reflects_admissible (f : Hom C D σ τ)
+    (hI : ∀ i, σ i ∈ I' → i ∈ I) :
+    f.right.comp C.totalTransfer = D.totalTransfer.comp f.left :=
+  f.right_comp_totalTransfer fun i hi a => by
+    rw [totalTransfer_apply,
+      D.liftLeftTotal_of_not_mem (fun h => hi (hI i h)) (f.left_mem i a a.property), map_zero]
 
 end TotalLift
 
