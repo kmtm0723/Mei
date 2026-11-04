@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import Mei.Algebra.PositiveDegrees.Basis
-public import Mei.Geometry.ScatteringDiagram.HyperplaneTermInput.FiniteAlphabet
+public import Mei.Geometry.ScatteringDiagram.HyperplaneTermInput.Grouping
 
 /-!
 # The finite alphabet lift of `1 + c₀ x + c₁ x²`
@@ -22,7 +22,9 @@ quadrant `ℕ²` of `L = ℤ²` with identity projection to `M`, sending them to
 into the single ray of the ambient primitive generator `e₁`. The pushforward of the alphabet ray
 presentation is equivalent to the ray presentation of `1 + c₀ x + c₁ x²` in `ℕ²`
 (`axisInput_pushforward_equivalent`), and the scattering classes correspond
-(`axisInput_pushforward_scat`).
+(`axisInput_pushforward_scat`). Both exponents of the lift lie on the direction `e₁`, so for the
+independent variables `c₀, c₁` its ray presentation is a positive wall representative, with
+wall function `1 + c₀ x + c₁ x²` (`axisInput_liftFiniteAlphabet_isPositiveWallRepresentative`).
 
 This is the check `1 + p₁ x + p₂ x²` of the finite alphabet lift in Burcroff–Lee–Mou,
 *Positivity of generalized cluster scattering diagrams*, §9.2 (arXiv:2503.03719v1).
@@ -141,5 +143,31 @@ theorem axisInput_pushforward_scat :
         id_axisExponent).diagram h c).Scat
         (fun _ => ofHyperplaneRayFactors_full ..) :=
   axisInput.pushforward_scat_liftFiniteAlphabet _ _ _ h c
+
+section Positive
+
+open scoped Mei.TropicalVertexCoefficientAction
+
+local instance : Fact (ℕ².monoid ≤ (⊤ : AddSubmonoid (ℤ × ℤ))) := ⟨le_top⟩
+
+/-- For the independent variables `c₀, c₁` over `ℚ` and the full coefficient lattice `ℤ²`, the
+ray presentation of `1 + c₀ x + c₁ x²` on the horizontal axis of `ℕ²` is a positive wall
+representative: its grouped wall function has coefficients in `ℕ[c₀, c₁]`. -/
+theorem axisInput_liftFiniteAlphabet_isPositiveWallRepresentative :
+    ((axisInput.liftFiniteAlphabet axisExponent_mem axisExponent_ne_zero id_axisExponent).diagram
+        h (MvPolynomial.X : Fin 2 → MvPolynomial (Fin 2) ℚ)).IsPositiveWallRepresentative
+      ((TropicalVertexCoefficientAction.filtration (R := MvPolynomial (Fin 2) ℚ) ℕ²
+        ⊤).completedBCHAction ℕ²
+        (tropicalVertexGrading (R := MvPolynomial (Fin 2) ℚ) ℕ² (AddMonoidHom.id (ℤ × ℤ))))
+      (AddMonoidAlgebra.mapRingHom (⊤ : AddSubmonoid (ℤ × ℤ))
+        (MvPolynomial.map (σ := Fin 2) (Nat.castRingHom ℚ))).rangeS
+      (AddMonoidHom.id (ℤ × ℤ)) :=
+  axisInput.isPositiveWallRepresentative_liftFiniteAlphabet_diagram axisExponent_mem
+    axisExponent_ne_zero id_axisExponent h MvPolynomial.X (fun _ => (1, 0))
+    (fun α => ⟨α.val + 1, by omega, by fin_cases α <;> simp⟩) ⊤
+    (fun _ => ⟨(0, 1), trivial, trivial, by simp⟩) _
+    fun α => ⟨MvPolynomial.X α, MvPolynomial.map_X _ α⟩
+
+end Positive
 
 end Mei.HyperplaneTermInput.Examples

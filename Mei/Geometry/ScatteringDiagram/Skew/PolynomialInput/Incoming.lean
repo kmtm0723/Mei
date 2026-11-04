@@ -440,6 +440,16 @@ theorem incomingDiagram_label (j : I.IncomingIndex) :
       (𝒅).rayFactor ℒ (I.initialLabel (R := R) j.1) j.2.val := by
   simp [incomingDiagram]
 
+/-- The incoming diagram is the ray presentation of the unsplit initial labels on the
+cylinders over the `eᵢ⊥`. -/
+theorem isRayFactorPresentation_incomingDiagram :
+    (I.incomingDiagram (R := R) h).IsRayFactorPresentation (μ := I.alphabetNormal)
+      (fun i => (h.realCharacter (I.alphabetNormal i)).ker) I.initialLabel where
+  support := I.incomingDiagram_support h
+  normal := I.incomingDiagram_normal h
+  ray := I.incomingDiagram_ray h
+  label := I.incomingDiagram_label h
+
 /-- At every cutoff, the labels on the tangent rays of the actual incoming
 diagram reassemble the original polynomial label. The finite set may contain
 additional rays, whose surviving factors are retained automatically. -/
