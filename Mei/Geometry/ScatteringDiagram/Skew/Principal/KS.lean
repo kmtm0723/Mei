@@ -54,23 +54,6 @@ variable {N V U : Type*} [AddCommGroup N] [Module.Free ℤ N]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup U] [NormedSpace ℝ U]
   (D : SkewLatticeDatum N)
 
-/-- An additive real function on `N_uf` takes the value `κ(n)` times its value at `n` on the
-normalized vector `κ(n)n ∈ N_uf ∩ N°`. -/
-theorem map_rayVector_unfrozen (g : D.unfrozen →+ ℝ) (n : D.unfrozen) :
-    g ⟨D.sublattice.toAddSubgroup.rayVector n,
-        (D.rayVector_mem_unfrozen_inf_sublattice n.property).1⟩ =
-      (D.sublattice.toAddSubgroup.rayIndex (n : N) : ℝ) * g n := by
-  set κ := D.sublattice.toAddSubgroup.rayIndex (n : N)
-  have he : ((κ.den : ℤ) • (⟨D.sublattice.toAddSubgroup.rayVector n,
-      (D.rayVector_mem_unfrozen_inf_sublattice n.property).1⟩ : D.unfrozen)) = κ.num • n :=
-    Subtype.ext (by simpa using D.sublattice.toAddSubgroup.den_rayIndex_zsmul_rayVector n)
-  have hg := congrArg g he
-  simp only [map_zsmul, zsmul_eq_mul] at hg
-  have hden : (κ.den : ℝ) ≠ 0 := by exact_mod_cast κ.den_ne_zero
-  rw [show (κ : ℝ) = κ.num / κ.den from Rat.cast_def κ, div_mul_eq_mul_div, eq_div_iff hden,
-    mul_comm]
-  exact_mod_cast hg
-
 variable {i : Module.Dual ℤ D.sublattice →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
   {j : (D.unfrozen →+ ℤ) →+ U} {hj : TauCeti.Toric.IsIntegralLattice j} (s : KSSpace hj)
 
@@ -173,10 +156,8 @@ theorem direction_affineSpan_preimage {S : Set U} (hS : (0 : U) ∈ S) {n : D.un
     (hdir : (affineSpan ℝ S).direction = LinearMap.ker (s.normal n)) (hn : n ≠ 0) :
     (affineSpan ℝ (A.toLinearMap ⁻¹' S)).direction =
       LinearMap.ker (h.realCharacter (D.projectedPrincipalNormal n).toAddMonoidHom) := by
-  let := h.finiteDimensional
-  have hκ : (D.sublattice.toAddSubgroup.rayIndex (n : N) : ℝ) ≠ 0 := by
-    have hn' : (n : N) ≠ 0 := fun h0 => hn (Subtype.ext h0)
-    exact_mod_cast (D.sublattice.toAddSubgroup.rayIndex_pos hn').ne'
+  have hκ : (D.sublattice.toAddSubgroup.rayIndex (n : N) : ℝ) ≠ 0 :=
+    Rat.cast_ne_zero.mpr (D.rayIndex_unfrozen_pos hn).ne'
   rw [A.toLinearMap.direction_affineSpan_preimage A.surjective ⟨0, hS⟩, hdir,
     A.realCharacter_projectedPrincipalNormal, LinearMap.ker_smul _ _ hκ, LinearMap.ker_comp]
 
@@ -231,6 +212,14 @@ theorem projectedWall_support : (A.projectedWall W).support = A.toLinearMap ⁻�
 @[simp]
 theorem projectedWall_label :
     (A.projectedWall W).label = d.graphBCHGroupEquiv ℒ p₁ W.label := (rfl)
+
+/-- The real normal of the projected wall is `κ(n)` times the pullback of the KS normal
+of `n`. -/
+theorem realCharacter_projectedWall_normal :
+    h.realCharacter (A.projectedWall W).normal =
+      (D.sublattice.toAddSubgroup.rayIndex (W.ray.generator : N) : ℝ) •
+        (s.normal W.ray.generator).comp A.toLinearMap :=
+  A.realCharacter_projectedPrincipalNormal _
 
 /-- The degree of the projected wall is the principal exponent `r(n)` of the KS generator. -/
 theorem projectedWall_ray_generator :
@@ -352,12 +341,61 @@ def levelLift (k : ℕ) :
     -- Projected supports are preimages by definition, and reindexing retains each index.
     (Set.equivOfEq (A.projectedDiagram_active P k)) (fun _ => rfl)
 
+/-- The level lift of a point is a preimage of it under the restriction. -/
+@[simp]
+theorem apply_levelLift_obj_val (k : ℕ)
+    (x : WallComplement (fun a : P.active k => (P.wall a).support)) :
+    A.toLinearMap ((A.levelLift P k).obj x).val = x.val :=
+  let := h.finiteDimensional
+  WallComplement.apply_preimageLift_obj_val _ _ _ _ _ x
+
 /-- Projection is a retraction of the lift. -/
 @[simp]
 theorem levelLift_comp_levelProjection (k : ℕ) :
     A.levelLift P k ⋙q A.levelProjection P k = Prefunctor.id _ := by
   let := h.finiteDimensional
   exact WallComplement.preimageLift_comp_preimageProjection A.toLinearMap A.surjective _ _ _
+
+/-- On projected walls with a common affine span, the finite KS labels commute. -/
+theorem commute_projection_label (k : ℕ) (a b : (A.projectedDiagram P).active k)
+    (hab : affineSpan ℝ ((A.projectedDiagram P).wall a).support =
+      affineSpan ℝ ((A.projectedDiagram P).wall b).support) :
+    Commute (CompletedGroup.projection k (P.wall a).label)
+      (CompletedGroup.projection k (P.wall b).label) := by
+  refine Commute.of_map (d.graphTruncatedGroupEquiv ℒ p₁ k).injective ?_
+  have hF := (A.projectedDiagram P).activeLabels_commute k a b hab
+  rwa [projectedDiagram_wall, projectedDiagram_wall, projectedWall_label, projectedWall_label,
+    PositiveDegrees.projection_graphBCHGroupEquiv,
+    PositiveDegrees.projection_graphBCHGroupEquiv] at hF
+
+/-- The finite-order path products of the projected diagram are the wall products for the
+pulled-back KS normals and the finite graph images of the KS labels. -/
+theorem levelPathProduct_projectedDiagram_eq_wallPathProduct (k : ℕ)
+    {x y : WallComplement (fun a : (A.projectedDiagram P).active k =>
+      ((A.projectedDiagram P).wall a).support)} (p : AdmissiblePLPath x y) :
+    (A.projectedDiagram P).levelPathProduct k p =
+      p.wallPathProduct (fun a : (A.projectedDiagram P).active k =>
+          (s.normal (P.wall a).ray.generator).comp A.toLinearMap)
+        (fun a => d.graphTruncatedGroupEquiv ℒ p₁ k (CompletedGroup.projection k (P.wall a).label))
+        (fun a b hab => (A.commute_projection_label P k a b hab).map _) := by
+  let := h.finiteDimensional
+  have hν : (fun a : (A.projectedDiagram P).active k =>
+      h.realCharacter ((A.projectedDiagram P).wall a).normal) =
+        fun a : (A.projectedDiagram P).active k =>
+          (D.sublattice.toAddSubgroup.rayIndex ((P.wall a).ray.generator : N) : ℝ) •
+            (s.normal (P.wall a).ray.generator).comp A.toLinearMap :=
+    funext fun a => A.realCharacter_projectedWall_normal (P.wall a)
+  rw [(A.projectedDiagram P).levelPathProduct_eq_wallPathProduct k p
+    ((A.projectedDiagram P).activeLabels_commute k)]
+  -- Both products run over the same signed events, since `κ` rescales positively.
+  refine (Quiver.Path.wallPathProduct_eq_prod_signedCrossingEvents _ _ _ p).trans
+    (Eq.trans ?_ (Quiver.Path.wallPathProduct_eq_prod_signedCrossingEvents _ _ _ p).symm)
+  rw [hν, Quiver.Path.signedCrossingEvents_smul _ _ fun a : (A.projectedDiagram P).active k =>
+    Rat.cast_pos.mpr (D.rayIndex_unfrozen_pos (P.wall a).ray.generator_ne_zero)]
+  simp only [projectedDiagram_wall, projectedWall_label,
+    PositiveDegrees.projection_graphBCHGroupEquiv]
+  -- The two sides differ only in the group instance of the categorical tower.
+  rfl
 
 variable [Module.Free ℤ D.unfrozen]
 
@@ -371,55 +409,16 @@ theorem levelPathProduct_projectedDiagram (k : ℕ)
       d.graphTruncatedGroupEquiv ℒ p₁ k
         (P.levelPathProduct k ((A.levelProjection P k).mapPath p)) := by
   let := h.finiteDimensional
-  let F := A.projectedDiagram P
-  let φ := d.graphTruncatedGroupEquiv ℒ p₁ k
-  let κ := fun a : F.active k =>
-    (D.sublattice.toAddSubgroup.rayIndex ((P.wall a).ray.generator : N) : ℝ)
-  have hκ : ∀ a, 0 < κ a := fun a => by
-    have hn : ((P.wall a).ray.generator : N) ≠ 0 :=
-      fun h0 => (P.wall a).ray.generator_ne_zero (Subtype.ext h0)
-    exact Rat.cast_pos.mpr (D.sublattice.toAddSubgroup.rayIndex_pos hn)
-  have hν : (fun a : F.active k => h.realCharacter (F.wall a).normal) =
-      fun a => κ a • (s.normal (P.wall a).ray.generator).comp A.toLinearMap :=
-    funext fun a => A.realCharacter_projectedPrincipalNormal _
-  -- Name the labels with their concrete finite BCH group types.
-  let lab : F.active k → d.truncatedGroup ℒ k :=
-    fun a => CompletedGroup.projection k (P.wall a).label
-  let labF : F.active k → (d.graph p₁).truncatedGroup (graphGrading ℒ p₁) k :=
-    fun a => CompletedGroup.projection k (F.wall a).label
-  have hlabel : labF = fun a => φ (lab a) :=
-    funext fun a => PositiveDegrees.projection_graphBCHGroupEquiv _ _ _ _ _
-  have comm' : ∀ a b : F.active k,
-      affineSpan ℝ (F.wall a).support = affineSpan ℝ (F.wall b).support →
-        Commute (lab a) (lab b) := fun a b hab => by
-    have hc : Commute (φ (lab a)) (φ (lab b)) := by
-      have hF : Commute (labF a) (labF b) := F.activeLabels_commute k a b hab
-      rwa [hlabel] at hF
-    have hs := hc.map φ.symm.toMonoidHom
-    rwa [MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply, MulEquiv.symm_apply_apply] at hs
-  let ν : F.active k → V →ₗ[ℝ] ℝ :=
-    fun a => (s.normal (P.wall a).ray.generator).comp A.toLinearMap
-  calc
-    F.levelPathProduct k p = p.wallPathProduct (fun a : F.active k =>
-        h.realCharacter (F.wall a).normal) labF (F.activeLabels_commute k) :=
-      F.levelPathProduct_eq_wallPathProduct k p _
-    _ = p.wallPathProduct ν (fun a => φ (lab a))
-          (fun a b hab => (comm' a b hab).map φ.toMonoidHom) := by
-      -- The left product uses the group instance of the categorical tower; both sides are
-      -- products over the same signed events, once normals are rescaled by `κ`.
-      refine (Quiver.Path.wallPathProduct_eq_prod_signedCrossingEvents _ _ _ p).trans
-        (Eq.trans ?_ (Quiver.Path.wallPathProduct_eq_prod_signedCrossingEvents _ _ _ p).symm)
-      rw [hν, Quiver.Path.signedCrossingEvents_smul _ κ hκ, hlabel]
-    _ = φ (p.wallPathProduct ν lab comm') :=
-      (Quiver.Path.map_wallPathProduct _ _ _ φ.toMonoidHom p).symm
-    _ = _ := by
-      rw [P.levelPathProduct_eq_wallPathProduct k _ (P.activeLabels_commute k)]
-      -- The level projection is the preimage projection for the active reindexing.
-      exact congrArg φ (Quiver.Path.wallPathProduct_preimageProjection A.toLinearMap A.surjective
-        (Set.equivOfEq (A.projectedDiagram_active P k)) (fun _ => rfl)
-        (fun a : P.active k => s.normal (P.wall a).ray.generator)
-        (fun a : P.active k => CompletedGroup.projection k (P.wall a).label)
-        (P.activeLabels_commute k) comm' p).symm
+  rw [levelPathProduct_projectedDiagram_eq_wallPathProduct,
+    P.levelPathProduct_eq_wallPathProduct k _ (P.activeLabels_commute k)]
+  -- The level projection is the preimage projection for the active reindexing.
+  refine Eq.trans ?_ (congrArg _ (Quiver.Path.wallPathProduct_preimageProjection A.toLinearMap
+    A.surjective (Set.equivOfEq (A.projectedDiagram_active P k)) (fun _ => rfl)
+    (fun a : P.active k => s.normal (P.wall a).ray.generator)
+    (fun a : P.active k => CompletedGroup.projection k (P.wall a).label)
+    (P.activeLabels_commute k) (A.commute_projection_label P k) p).symm)
+  exact (Quiver.Path.map_wallPathProduct _ _ _ (d.graphTruncatedGroupEquiv ℒ p₁ k).toMonoidHom
+    p).symm
 
 /-- A lifted KS path has the graph image of the KS path product. -/
 theorem levelPathProduct_levelLift (k : ℕ)
