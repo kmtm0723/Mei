@@ -200,9 +200,7 @@ private local instance : Module U (a.ShiftedDirectLimit (grade q'' β'')) := inf
 /-- Scalar and exponent transport compose on all global coefficients. -/
 theorem mapShiftedDirectLimit_comp (x : d.ShiftedDirectLimit (grade q β)) :
     mapShiftedDirectLimit (q' := q'') (β' := β'') d a (T'.comp T) (ψ.comp φ)
-      (by
-        simpa only [PositiveDegreeMap.comp_apply, AddMonoidHom.comp_apply] using
-          map_comp_compat φ ψ T.toAddMonoidHom T'.toAddMonoidHom h h') x =
+      (mapPositiveCompletion_comp_compat d e T φ h a T' ψ h') x =
       mapShiftedDirectLimit e a T' ψ h' (mapShiftedDirectLimit d e T φ h x) := by
   refine (d.exists_toShiftedDirectLimit (grade q β) x).elim fun s hs => ?_
   refine hs.elim fun z hz => ?_
@@ -211,9 +209,8 @@ theorem mapShiftedDirectLimit_comp (x : d.ShiftedDirectLimit (grade q β)) :
   have hr : T' (T (d.coefficientOrigin s)) - a.coefficientOrigin r ∈ a.monoid := by
     simpa only [PositiveDegreeMap.comp_apply] using hrc
   let hc : ∀ u v, Units.map (ψ.comp φ).toMonoidHom (q ^ β u v) =
-      q'' ^ β'' ((T'.comp T) u) ((T'.comp T) v) := by
-    simpa only [PositiveDegreeMap.comp_apply, AddMonoidHom.comp_apply] using
-      map_comp_compat φ ψ T.toAddMonoidHom T'.toAddMonoidHom h h'
+      q'' ^ β'' ((T'.comp T) u) ((T'.comp T) v) :=
+    mapPositiveCompletion_comp_compat d e T φ h a T' ψ h'
   have h₁ := mapShiftedDirectLimit_toShiftedDirectLimit d a (T'.comp T) (ψ.comp φ) hc
     s r hrc z
   have h₂ := mapShiftedCompletion_comp d e T φ h (d.coefficientOrigin s) a T' ψ h' z
