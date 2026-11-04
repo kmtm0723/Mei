@@ -34,7 +34,7 @@ noncomputable section
 
 namespace Mei.HyperplaneTermInput.Examples
 
-open PositiveDegrees DirectedWall
+open PositiveDegrees DirectedWall DirectedDiagram
 
 /-- The positive quadrant `ℕ²` of `ℤ²`, with coordinate-sum degree. -/
 local notation "ℕ²" => Module.Basis.positiveDegrees (Module.Basis.finTwoProd ℤ)
@@ -135,11 +135,10 @@ theorem axisInput_pushforward_equivalent :
 `1 + c₀ x + c₁ x²` on the horizontal axis. -/
 theorem axisInput_pushforward_scat :
     DirectedDiagram.Class.pushforward (Pτ)
-        ((axisInput.diagram h c).Scat (axisInput.diagram_full h c)) =
+        ((axisInput.diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..)) =
       ((axisInput.liftFiniteAlphabet axisExponent_mem axisExponent_ne_zero
         id_axisExponent).diagram h c).Scat
-        ((axisInput.liftFiniteAlphabet axisExponent_mem axisExponent_ne_zero
-          id_axisExponent).diagram_full h c) :=
+        (fun _ => ofHyperplaneRayFactors_full ..) :=
   axisInput.pushforward_scat_liftFiniteAlphabet _ _ _ h c
 
 end Mei.HyperplaneTermInput.Examples

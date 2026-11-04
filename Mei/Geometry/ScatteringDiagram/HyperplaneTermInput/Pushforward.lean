@@ -45,7 +45,7 @@ noncomputable section
 
 namespace Mei.HyperplaneTermInput
 
-open DirectedWall
+open DirectedWall DirectedDiagram
 
 universe u
 
@@ -161,18 +161,18 @@ theorem diagram_pushforward_equivalent :
   · simp
   · refine (DirectedDiagram.familyLog_pushforward (D := I.diagram h c) (a := Sigma.fst) P k
       i).trans ?_
-    refine (congrArg _ (I.familyLog_diagram h c _ i)).trans ?_
+    refine (congrArg _ (familyLog_ofHyperplaneRayFactors _ _ _ _ _ _ _ _ i)).trans ?_
     refine (LieHom.log_bchGroupMap _ _).symm.trans ?_
     refine (congrArg BCHGroup.log ((P.lieHom.projection_completedMap k _).symm.trans
       (congrArg _ (I.completedMap_label P hP hPT c i)))).trans ?_
-    exact ((I.map P.degreeMap hPT).familyLog_diagram h c k i).symm
+    exact (familyLog_ofHyperplaneRayFactors _ _ _ _ _ _ _ k i).symm
 
 include hP hν hA in
 /-- Under the same hypotheses, pushing forward the scattering class of the input gives the
 scattering class of the image input. -/
 theorem pushforward_scat_diagram :
-    DirectedDiagram.Class.pushforward P ((I.diagram h c).Scat (I.diagram_full h c)) =
-      ((I.map P.degreeMap hPT).diagram h c).Scat ((I.map P.degreeMap hPT).diagram_full h c) :=
+    Class.pushforward P ((I.diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..)) =
+      ((I.map P.degreeMap hPT).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..) :=
   ((I.diagram h c).pushforward_scat _ _).trans
     (DirectedDiagram.scat_eq_of_equivalent _ _ (I.diagram_pushforward_equivalent P hP hPT c hν hA))
 

@@ -45,7 +45,7 @@ noncomputable section
 
 namespace Mei.HyperplaneTermInput
 
-open DirectedWall PositiveDegrees
+open DirectedWall PositiveDegrees DirectedDiagram
 
 universe u
 
@@ -174,9 +174,9 @@ theorem diagram_pushforward_ofFiniteAlphabetLift_equivalent :
 /-- Pushing forward the scattering class of an input on the finite alphabet along the finite
 alphabet lift gives the scattering class of the lifted input. -/
 theorem pushforward_scat_liftFiniteAlphabet :
-    DirectedDiagram.Class.pushforward (Pτ) ((I.diagram g c).Scat (I.diagram_full g c)) =
+    Class.pushforward (Pτ) ((I.diagram g c).Scat (fun _ => ofHyperplaneRayFactors_full ..)) =
       ((I.liftFiniteAlphabet hτ hτ0 hπ).diagram g c).Scat
-        ((I.liftFiniteAlphabet hτ hτ0 hπ).diagram_full g c) :=
+        (fun _ => ofHyperplaneRayFactors_full ..) :=
   ((I.diagram g c).pushforward_scat _ _).trans (DirectedDiagram.scat_eq_of_equivalent _ _
     (I.diagram_pushforward_ofFiniteAlphabetLift_equivalent hτ hτ0 hπ g c))
 
