@@ -255,4 +255,12 @@ theorem pathOfFn_zero (T : Fin 0 → α) : pathOfFn T = Path.nil := (rfl)
 theorem pathOfFn_succ {n : ℕ} (T : Fin (n + 1) → α) :
     pathOfFn T = (pathOfFn fun j => T j.succ).cons (T 0) := (rfl)
 
+/-- Unit arrow weights count the steps of the one-object path of a sequence. -/
+@[simp]
+theorem addWeight_one_pathOfFn {n : ℕ} (T : Fin n → α) :
+    Path.addWeight (fun {_ _ : SingleObj α} _ => (1 : ℕ)) (pathOfFn T) = n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pathOfFn_succ, Path.addWeight_cons, ih]
+
 end Quiver.SingleObj
