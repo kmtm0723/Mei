@@ -46,7 +46,7 @@ def componentPath (β : DecoratedAdmissibleRay ℳ T p₀ a v f c ε P W S C Q) 
     (SingleObj.degreesPathOfFn Γ (fun j : Fin n => j) β.1.val)
 
 /-- The lifted path is determined by the ray's complete degree history. -/
-theorem componentPath_eq_liftPath
+theorem componentPath_def
     (β : DecoratedAdmissibleRay ℳ T p₀ a v f c ε P W S C Q) :
     β.componentPath = Path.Degrees.liftPath p₀ (SingleObj.pathOfFn (fun j : Fin n => j))
       (SingleObj.degreesPathOfFn Γ (fun j : Fin n => j) β.1.val) := (rfl)
@@ -54,7 +54,7 @@ theorem componentPath_eq_liftPath
 /-- No original encounter, including an unchanged-degree encounter, is removed. -/
 theorem componentPath_length (β : DecoratedAdmissibleRay ℳ T p₀ a v f c ε P W S C Q) :
     β.componentPath.length = n := by
-  rw [componentPath_eq_liftPath, Path.Degrees.length_liftPath]
+  rw [componentPath_def, Path.Degrees.length_liftPath]
   exact SingleObj.length_pathOfFn _
 
 /-- Forgetting component degrees recovers every original encounter label. -/
@@ -62,7 +62,7 @@ theorem componentPath_length (β : DecoratedAdmissibleRay ℳ T p₀ a v f c ε 
 theorem mapPath_componentPath (β : DecoratedAdmissibleRay ℳ T p₀ a v f c ε P W S C Q) :
     (GradedVertex.forget (ι := fun _ : SingleObj (Fin n) => Γ)).mapPath β.componentPath =
       SingleObj.pathOfFn (fun j : Fin n => j) := by
-  rw [componentPath_eq_liftPath, Path.Degrees.mapPath_liftPath]
+  rw [componentPath_def, Path.Degrees.mapPath_liftPath]
 
 /-- The source vertex records exactly the prescribed incoming degree. -/
 theorem componentPath_source_degree
@@ -98,9 +98,9 @@ theorem filtrationEncounterBound (β : DecoratedAdmissibleRay ℳ T p₀ a v f c
     (SingleObj.pathOfFn (fun j : Fin n => j)) hraise p₀ a.property hr hnonzero
   have hlength := Path.length_add_one_le_of_homogeneousHistory_ne_zero
     (SingleObj.pathOfFn (fun j : Fin n => j)) hraise p₀ a.property hr hnonzero
-      (by simpa only [componentPath_eq_liftPath] using hp)
+      (by simpa only [componentPath_def] using hp)
   rw [SingleObj.length_pathOfFn, Nat.mul_add, Nat.mul_one] at hlength
-  exact ⟨by simpa only [componentPath_eq_liftPath] using hweight, by omega⟩
+  exact ⟨by simpa only [componentPath_def] using hweight, by omega⟩
 
 /-- A component degree order supplies the encounter bound directly. Every
 nonidentity degree transition is marked, even if it lies in the kernel of the
