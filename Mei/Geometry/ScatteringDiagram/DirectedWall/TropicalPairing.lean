@@ -155,6 +155,13 @@ theorem coe_ofTropicalDegreeMap_lieHom_of_homogeneous {n : Γ}
     TropicalPairing.coe_tropicalVertexGradedLieHom_of_homogeneous _ x m hm,
     TropicalPairing.ofDegreeMap_degreeMap, TropicalPairing.ofDegreeMap_characterMap]
 
+/-- Supported rays are reindexed along the positive degree map. -/
+@[simp]
+theorem ofTropicalDegreeMap_rayMap (w : SupportedRay d) :
+    (ofTropicalDegreeMap (R := R) (h := h) T hT).rayMap w =
+      w.map T.toAddMonoidHom (fun _ hn => T.map_mem hn) (fun _ hn h0 => T.map_ne_zero hn h0) := by
+  simp only [ofTropicalDegreeMap, ofTropicalPairing_rayMap, TropicalPairing.ofDegreeMap_degreeMap]
+
 /-- Normals are unchanged. -/
 @[simp]
 theorem ofTropicalDegreeMap_normalMap (m : Λ →+ ℤ) :
@@ -201,6 +208,13 @@ theorem ofFiniteIndex_degreeMap :
     (ofFiniteIndex (R := R) (h := h) (h' := h') T t ht hρ ν q hq hν).degreeMap = T := by
   rw [ofFiniteIndex, ofTropicalPairing_degreeMap, TropicalPairing.ofFiniteIndex_degreeMap]
 
+/-- Supported rays are reindexed along the positive degree map. -/
+@[simp]
+theorem ofFiniteIndex_rayMap (w : SupportedRay d) :
+    (ofFiniteIndex (R := R) (h := h) (h' := h') T t ht hρ ν q hq hν).rayMap w =
+      w.map T.toAddMonoidHom (fun _ hn => T.map_mem hn) (fun _ hn h0 => T.map_ne_zero hn h0) := by
+  simp only [ofFiniteIndex, ofTropicalPairing_rayMap, TropicalPairing.ofFiniteIndex_degreeMap]
+
 /-- The normal map is the given map of integral normals. -/
 @[simp]
 theorem ofFiniteIndex_normalMap (m : Λ →+ ℤ) :
@@ -212,6 +226,16 @@ theorem ofFiniteIndex_spatialMap :
     (ofFiniteIndex (R := R) (h := h) (h' := h') T t ht hρ ν q hq hν).spatialMap =
       h.extendContinuousAffineEquivOfFiniteIndex h' t ht := (rfl)
 
+/-- On a homogeneous field `z^n ∂_m`, the Lie map gives `z^{T n} ∂_{m'}`, where `m'` is the
+rational inverse dual of `m`. -/
+theorem coe_ofFiniteIndex_lieHom_of_homogeneous {n : Γ}
+    (x : tropicalVertexLieAlgebra (R := R) d ρ) (m : Λ →+ R) (hm : single ρ n m = x.val) :
+    ((ofFiniteIndex (h := h) (h' := h') T t ht hρ ν q hq hν).lieHom x).val =
+      single ρ' (T n) (t.rationalDualEquiv ht m) := by
+  rw [ofFiniteIndex, ofTropicalPairing_lieHom_apply,
+    TropicalPairing.coe_tropicalVertexGradedLieHom_of_homogeneous _ x m hm,
+    TropicalPairing.ofFiniteIndex_characterMap, TropicalPairing.ofFiniteIndex_degreeMap]
+
 /-- The field `z^n ∂_m` of an integral normal is sent to `q⁻¹ • z^{T n} ∂_{ν m}`: the
 integral normal `ν m` is kept and the denominator goes into the label. -/
 theorem coe_ofFiniteIndex_lieHom_single {n : Γ} (hn : n ∈ d.monoid) (hne : n ≠ 0)
@@ -220,9 +244,7 @@ theorem coe_ofFiniteIndex_lieHom_single {n : Γ} (hn : n ∈ d.monoid) (hne : n 
         ⟨single ρ n ((Int.castAddHom R).comp m),
           single_mem_tropicalVertexLieAlgebra d ρ hn hne _ (by simp [hm])⟩).val =
       algebraMap ℚ R (q m)⁻¹ • single ρ' (T n) ((Int.castAddHom R).comp (ν m)) := by
-  rw [ofFiniteIndex, ofTropicalPairing_lieHom_apply,
-    TropicalPairing.coe_tropicalVertexGradedLieHom_of_homogeneous _ _ _ rfl,
-    TropicalPairing.ofFiniteIndex_characterMap, TropicalPairing.ofFiniteIndex_degreeMap,
+  rw [coe_ofFiniteIndex_lieHom_of_homogeneous T t ht hρ ν q hq hν _ _ rfl,
     t.rationalDualEquiv_intCast_comp ht (hq m).ne' (hν m), ← algebraMap_smul R, map_smul]
 
 end OfFiniteIndex
@@ -255,6 +277,15 @@ theorem ofFiniteAlphabetLift_degreeMap :
     (ofFiniteAlphabetLift (R := R) (g := g) hτ hτ0 hπ).degreeMap =
       PositiveDegrees.finiteAlphabetLift m hτ hτ0 := by
   rw [ofFiniteAlphabetLift, ofTropicalDegreeMap_degreeMap]
+
+/-- Supported rays are reindexed along the finite alphabet lift. -/
+@[simp]
+theorem ofFiniteAlphabetLift_rayMap (w : SupportedRay (PositiveDegrees.finiteAlphabet m)) :
+    (ofFiniteAlphabetLift (R := R) (g := g) hτ hτ0 hπ).rayMap w =
+      w.map (PositiveDegrees.finiteAlphabetLift m hτ hτ0).toAddMonoidHom
+        (fun _ hn => (PositiveDegrees.finiteAlphabetLift m hτ hτ0).map_mem hn)
+        (fun _ hn h0 => (PositiveDegrees.finiteAlphabetLift m hτ hτ0).map_ne_zero hn h0) := by
+  rw [ofFiniteAlphabetLift, ofTropicalDegreeMap_rayMap]
 
 /-- Normals are unchanged. -/
 @[simp]
