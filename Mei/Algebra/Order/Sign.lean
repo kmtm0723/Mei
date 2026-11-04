@@ -53,8 +53,7 @@ section Field
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] {a b p q : K}
 
-/-- On the line `a q = b p` with `a ≠ 0`, the sign of `a p + b q` is `sign a * sign p`, since
-`a (a p + b q) = (a² + b²) p`. -/
+/-- On the line `a q = b p` with `a ≠ 0`, the sign of `a p + b q` is `sign a * sign p`. -/
 theorem sign_mul_add_mul_of_mul_sub_mul_eq_zero (ha : a ≠ 0) (h : a * q - b * p = 0) :
     SignType.sign (a * p + b * q) = SignType.sign a * SignType.sign p := by
   have hk : a * (a * p + b * q) = (a ^ 2 + b ^ 2) * p := by linear_combination b * h

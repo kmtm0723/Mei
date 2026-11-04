@@ -12,8 +12,7 @@ public import Mathlib.Topology.Algebra.Order.Field
 # Local constancy of signs
 
 Near a point where a continuous function to a linear order does not vanish, its sign is
-constant (`ContinuousAt.eventually_sign_eq`). This uses the continuity of `SignType.sign` away
-from zero, `continuousAt_sign_of_ne_zero`, and the discreteness of `SignType`.
+constant (`ContinuousAt.eventually_sign_eq`).
 
 In a linearly ordered field with the order topology, for `x ≠ 0` and any `y`, small
 multiples `σ * y` have absolute value smaller than `|x|` (`eventually_abs_mul_lt`), so that

@@ -15,9 +15,9 @@ element multiply additively: `exp (m • x) * exp (n • x) = exp ((m + n) • x
 `⁅x, ⁅x, y⁆⁆ = 0`, conjugation by `exp x` adds the commutator:
 `exp x * exp y * exp (-x) = exp (y + ⁅x, y⁆)`.
 
-The first identity is `BCHGroup.exp_zsmul` and the law of integer powers. The second
-specializes `BCHGroup.exp_expAd` with the two-term expansion
-`TauCeti.expAd_apply_of_lie_lie_eq_zero`.
+These are the group identities used to compute products of wall-crossing automorphisms whose
+logarithms span a Lie algebra of nilpotency class two, such as the Heisenberg-type labels of
+two crossing walls and their commutator wall.
 -/
 
 public section

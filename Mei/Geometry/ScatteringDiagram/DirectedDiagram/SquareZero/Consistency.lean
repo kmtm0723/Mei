@@ -30,10 +30,10 @@ labels. As `t₀² = t₁² = 0`, `c` commutes with `a` and `b`. The transport i
 potential: with `s` and `r` the sides of the two hyperplanes and `u` the signed indicator of
 an open sector bounded by the correction ray and half of the first hyperplane, every path
 from `x` to `y` has transport `F y * (F x)⁻¹` for
-`F = exp (-r • b) * exp (-s • a) * exp (-u • c)`. By
-`DirectedDiagram.levelConsistent_of_local`, this reduces to the jumps of `F` at regular wall
-germs, which are identities between integer-valued functions of the signs of the coordinates
-and of the crossing velocity.
+`F = exp (-r • b) * exp (-s • a) * exp (-u • c)`. At a regular wall germ, the jump of `F` is
+the combined label of the walls through the point; the exponents of `F` are integer-valued
+functions of the signs of the coordinates, and the jump identities are identities between
+such functions of the signs of the coordinates and of the crossing velocity.
 
 This is the first-order scattering of two lines in Gross–Pandharipande–Siebert, *Quivers,
 curves, and the tropical vertex*, [arXiv:0902.1260](https://arxiv.org/abs/0902.1260), §1,
@@ -122,9 +122,9 @@ Write `Q = α P1 - β P0` and `e = α b - β a` for the values of the bracket no
 correction ray is `{Q = 0, α P0 + β P1 ≤ 0}`. `cornerJump` is the change of the correction
 exponent across the perturbation, together with the commutator `side (P1 + b) • (jump of s)`
 produced by moving `exp (s • a)` past `exp (r • b)`. It equals `rayJump`, the exponent of the
-correction label crossed at the point. Each case below rewrites both sides as functions of the
-signs of the coordinates, which are unchanged by the perturbation where they are nonzero, and
-checks the finitely many sign patterns. -/
+correction label crossed at the point. Both sides are functions of the signs of the
+coordinates and of the perturbation, and a small perturbation does not change the signs of the
+nonzero coordinates. -/
 
 /-- The jump of the correction exponent, corrected by the commutator of the hyperplane
 labels. -/
@@ -477,8 +477,10 @@ theorem coord_ne_zero_of_coord_eq_zero (h0 : P.coord h θ₀ 0 θ = 0) : P.coord
 /-! ### The local potential -/
 
 variable (k) in
-/-- The potential `exp (-r • b) * exp (-s • a) * exp (-u • c)` of the completed diagram at
-order `k`. -/
+/-- The potential of the completed diagram at order `k`: the transport of every path from `x`
+to `y` is `F y * (F x)⁻¹` for `F = exp (-r • t₁ x₁) * exp (-s • t₀ x₀) *
+exp (-u • t₀ t₁ ⁅x₀, x₁⁆)`, where `s` and `r` are the sides of the two hyperplanes and `u` is
+the signed indicator of a sector bounded by the correction ray. -/
 private def localPotential (z : V) : d.truncatedGroup ℒ k :=
   potential (P.labelLog k 0) (P.labelLog k 1) (P.commutatorLog k) (side (P.coord h θ₀ 0 z))
     (side (P.coord h θ₀ 1 z)) (corner (P.rayCoeff 0) (P.coord h θ₀ 0 z)
@@ -616,10 +618,7 @@ private theorem eventually_localPotential_mul_inv :
     ← hp₀_def, ← hp₁_def]
 
 variable (k) in
-/-- The completed diagram is consistent at every finite order: every path from `x` to `y` has
-transport `F y * (F x)⁻¹`, where `F = exp (-r • t₁ x₁) * exp (-s • t₀ x₀) *
-exp (-u • t₀ t₁ ⁅x₀, x₁⁆)` for the sides `s` and `r` of the two hyperplanes and the signed
-indicator `u` of a sector bounded by the correction ray. -/
+/-- The completed diagram is consistent at order `k`. -/
 theorem levelConsistent_completion : (P.completion h θ₀ hw hμ).LevelConsistent k := by
   by_cases hC : BCHGroup.exp (P.commutatorLog k) = 1
   · exact P.levelConsistent_completion_of_exp_commutatorLog_eq_one h θ₀ k hw hμ hC
@@ -661,8 +660,8 @@ end Completion
 
 section Trivial
 
-/-- If the bracket normal vanishes, the two hyperplanes are consistent with no further walls:
-their labels commute, since the bracket lies in a wall space with zero normal. -/
+/-- If the bracket normal vanishes, the two hyperplanes form a consistent diagram with no
+further walls. -/
 theorem isOutgoingCompletion_inputWithoutCorrection (hμ : P.bracketNormal = 0) :
     IsOutgoingCompletion (P.input h θ₀).wall (P.inputWithoutCorrection h θ₀) where
   wall_inl j := by rw [inputWithoutCorrection_wall_inl, input_wall]
@@ -691,8 +690,8 @@ theorem scat_input_eq_toClass_of_bracketNormal_eq_zero [Module.Free ℤ Γ]
     (P.input h θ₀).Scat (P.input_full h θ₀) = (P.inputWithoutCorrection h θ₀).toClass :=
   scat_eq_toClass _ _ (P.isOutgoingCompletion_inputWithoutCorrection h θ₀ hμ)
 
-/-- If the total degree has zero geometric direction, the bracket normal vanishes, and the
-scattering class of the two hyperplanes is that of the hyperplanes alone. -/
+/-- If the total degree has zero geometric direction, the scattering class of the two
+hyperplanes is that of the hyperplanes alone. -/
 theorem scat_input_eq_toClass_of_direction_eq_zero [Module.Free ℤ Γ]
     (hρ : ρ (P.degree 0 + P.degree 1) = 0) :
     (P.input h θ₀).Scat (P.input_full h θ₀) = (P.inputWithoutCorrection h θ₀).toClass :=

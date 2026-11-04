@@ -19,6 +19,11 @@ of these insertions. Their crossing parameters rescale to the original parameter
 These formulas retain the wall indices, including simultaneous crossings in an
 arbitrary wall family, and allow ordered crossing lists to be compared after subdivision.
 
+A function that is locally constant off the walls takes the value at the start of a segment
+at every point before the first crossing, and the value at the end at every point after the
+last crossing. On a segment whose crossings all occur at one time `t`, the crossings are the
+walls through the point at time `t`.
+
 The affine parameter calculations use Mathlib's `AffineMap.lineMap_lineMap_right`
 and `AffineMap.lineMap_lineMap_left`.
 -/
@@ -149,6 +154,72 @@ theorem crossings_subdivide (hz : z.val = AffineMap.lineMap x.val y.val t)
       exact ((mem_crossings_subdivide_left hz ⟨ht.1, ht.2.le⟩ j r).mp hr).1
     · obtain ⟨rfl, rfl⟩ := Prod.mk.inj he
       exact ((mem_crossings_subdivide_right hz ⟨ht.1.le, ht.2⟩ j r).mp hr).1
+
+section Constant
+
+variable {Y : Type*} {F : V → Y} (hF : ∀ θ, (∀ i, θ ∉ W i) → ∀ᶠ φ in nhds θ, F φ = F θ)
+  {a : WallComplement W} {r : ℝ}
+
+include hF in
+/-- A function locally constant off the walls agrees at the start of a segment and at a point
+of it before all crossings. -/
+theorem apply_eq_of_lt_crossings (hr : r ∈ Icc (0 : ℝ) 1)
+    (ha : a.val = AffineMap.lineMap x.val y.val r)
+    (hcr : ∀ i t, (i, t) ∈ crossings x y → r < t) : F x.val = F a.val := by
+  refine apply_eq_of_crossings_eq_empty hF (eq_empty_iff_forall_notMem.mpr fun ⟨i, t⟩ ht => ?_)
+  obtain ⟨⟨-, ht₁⟩, hit⟩ := (mem_crossings_subsegment ⟨le_rfl, zero_le_one⟩ hr
+    (AffineMap.lineMap_apply_zero _ _).symm ha i t).mp ht
+  have hlt := hcr _ _ hit
+  have hle : t * r ≤ r := mul_le_of_le_one_left hr.1 ht₁
+  rw [zero_add, sub_zero] at hlt
+  linarith
+
+include hF in
+/-- A function locally constant off the walls agrees at a point of a segment after all
+crossings and at its end. -/
+theorem apply_eq_of_crossings_lt (hr : r ∈ Icc (0 : ℝ) 1)
+    (ha : a.val = AffineMap.lineMap x.val y.val r)
+    (hcr : ∀ i t, (i, t) ∈ crossings x y → t < r) : F a.val = F y.val := by
+  refine apply_eq_of_crossings_eq_empty hF (eq_empty_iff_forall_notMem.mpr fun ⟨i, t⟩ ht => ?_)
+  obtain ⟨⟨ht₀, -⟩, hit⟩ := (mem_crossings_subsegment hr ⟨zero_le_one, le_rfl⟩ ha
+    (AffineMap.lineMap_apply_one _ _).symm i t).mp ht
+  have hlt := hcr _ _ hit
+  have hle : 0 ≤ t * (1 - r) := mul_nonneg ht₀ (sub_nonneg.mpr hr.2)
+  linarith
+
+omit hF in
+/-- On a segment whose crossings all occur at one time `t`, the crossings are exactly the walls
+through the point at time `t`. -/
+theorem mem_crossings_iff_of_subsingleton (he : (Prod.snd '' crossings x y).Subsingleton)
+    {i₀ : ι} {t : ℝ} (ht : (i₀, t) ∈ crossings x y) (i : ι) (s : ℝ) :
+    (i, s) ∈ crossings x y ↔ AffineMap.lineMap x.val y.val t ∈ W i ∧ s = t := by
+  constructor
+  · intro hs
+    obtain rfl : s = t := he ⟨_, hs, rfl⟩ ⟨_, ht, rfl⟩
+    exact ⟨((mem_crossings _ _ _ _).mp hs).2, rfl⟩
+  · rintro ⟨hi, rfl⟩
+    exact (mem_crossings _ _ _ _).mpr ⟨((mem_crossings _ _ _ _).mp ht).1, hi⟩
+
+include hF in
+/-- On a segment whose crossings all occur at one time `t`, a function locally constant off the
+walls takes its endpoint values at the points of times `t - s` and `t + s` for `0 < s` with
+`t ± s ∈ [0, 1]`. -/
+theorem apply_eq_lineMap_of_subsingleton (he : (Prod.snd '' crossings x y).Subsingleton)
+    {i₀ : ι} {t : ℝ} (ht : (i₀, t) ∈ crossings x y) {s : ℝ} (hs : 0 < s) (hst : s ≤ t)
+    (hst' : s ≤ 1 - t) :
+    F x.val = F (AffineMap.lineMap x.val y.val (t - s)) ∧
+      F (AffineMap.lineMap x.val y.val (t + s)) = F y.val := by
+  have htime {i : ι} {r : ℝ} (hr : (i, r) ∈ crossings x y) : r = t :=
+    he ⟨_, hr, rfl⟩ ⟨_, ht, rfl⟩
+  have hoff {r : ℝ} (hr : r ∈ Icc (0 : ℝ) 1) (hrt : r ≠ t) (i : ι) :
+      AffineMap.lineMap x.val y.val r ∉ W i := fun hi =>
+    hrt (htime ((mem_crossings _ _ _ _).mpr ⟨hr, hi⟩))
+  exact ⟨apply_eq_of_lt_crossings (a := ⟨_, hoff ⟨by linarith, by linarith⟩ (by linarith)⟩) hF
+      ⟨by linarith, by linarith⟩ rfl fun _ _ hr => by linarith [htime hr],
+    apply_eq_of_crossings_lt (a := ⟨_, hoff ⟨by linarith, by linarith⟩ (by linarith)⟩) hF
+      ⟨by linarith, by linarith⟩ rfl fun _ _ hr => by linarith [htime hr]⟩
+
+end Constant
 
 end Mei.Convex.WallComplement
 
