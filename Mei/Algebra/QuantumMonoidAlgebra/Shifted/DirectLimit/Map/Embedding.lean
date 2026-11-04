@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.DirectLimit.Map
+public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.DirectLimit.Map.Basic
 public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.Embedding
 
 /-!
