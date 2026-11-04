@@ -43,27 +43,15 @@ theorem mul_mem_range_toShiftedDirectLimitOfChart (p q : Γ)
     x * y ∈ LinearMap.range (d.toShiftedDirectLimitOfChart 𝒜 (p + q) v hpqv) := by
   obtain ⟨a, rfl⟩ := hx
   obtain ⟨b, rfl⟩ := hy
-  have hsum : p + q - d.coefficientOrigin (s + t) ∈ d.monoid := by
-    rw [coefficientOrigin_add]
-    have he : p + q - (d.coefficientOrigin s + d.coefficientOrigin t) =
-        (p - d.coefficientOrigin s) + (q - d.coefficientOrigin t) := by abel
-    rw [he]
-    exact d.monoid.add_mem hps hqt
   refine ⟨d.shiftedCompletionMul 𝒜 p q a b, ?_⟩
-  have hmul := d.shiftedDirectLimitMul_toShiftedDirectLimitOfChart 𝒜 p q s t hps hqt a b
-  have hchart := d.toShiftedDirectLimitOfChart_eq 𝒜 (p + q) (s + t) v hsum hpqv
-    (d.shiftedCompletionMul 𝒜 p q a b)
-  exact hchart.symm.trans (hmul.symm.trans (d.shiftedDirectLimitMul_eq_mul 𝒜 _ _))
+  rw [toShiftedDirectLimitOfChart_mul]
+  simpa only [shiftedCompletedInclusion_refl] using
+    d.toShiftedDirectLimitOfChart_inclusion 𝒜 (p + q) (p + q) (by simp) (s + t) v
+      (d.add_sub_coefficientOrigin_mem hps hqt) hpqv (d.shiftedCompletionMul 𝒜 p q a b)
 
 end Multiplication
 
 variable [SetLike.GradedMonoid 𝒜]
-
-omit [DecidableEq Γ] in
-private theorem zero_coefficientOrigin_mem :
-    (0 : Γ) - d.coefficientOrigin (0 : Multiset d.monoid) ∈ d.monoid := by
-  rw [coefficientOrigin_eq_neg_sum]
-  simp
 
 private theorem one_mem_zero_chart :
     (1 : d.ShiftedDirectLimit 𝒜) ∈ LinearMap.range
@@ -99,13 +87,15 @@ def positiveCoefficientSubalgebra : Subalgebra R (d.ShiftedDirectLimit 𝒜) :=
 @[simp]
 theorem positiveCoefficientSubalgebra_toSubmodule :
     (d.positiveCoefficientSubalgebra 𝒜).toSubmodule =
-      LinearMap.range (d.toShiftedDirectLimitOfChart 𝒜 0 0
-        (by rw [coefficientOrigin_eq_neg_sum]; simp)) := (rfl)
+      LinearMap.range (d.toShiftedDirectLimitOfChart 𝒜 0 0 d.zero_coefficientOrigin_mem) := by
+  -- `Submodule.toSubalgebra` retains the supplied submodule as its underlying carrier.
+  rfl
 
 /-- Positive global coefficients are characterized by vanishing outside the positive monoid. -/
 theorem mem_positiveCoefficientSubalgebra_iff (x : d.ShiftedDirectLimit 𝒜) :
     x ∈ d.positiveCoefficientSubalgebra 𝒜 ↔
       ∀ u, u ∉ d.monoid → d.shiftedDirectLimitComponents 𝒜 x u = 0 := by
+  -- A subalgebra and its underlying submodule have the same membership predicate.
   change x ∈ (d.positiveCoefficientSubalgebra 𝒜).toSubmodule ↔ _
   rw [positiveCoefficientSubalgebra_toSubmodule, mem_range_toShiftedDirectLimitOfChart_iff]
   simp only [sub_zero]

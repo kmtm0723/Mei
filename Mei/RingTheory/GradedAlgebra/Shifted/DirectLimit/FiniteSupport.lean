@@ -11,13 +11,10 @@ public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.FiniteSupport
 /-!
 # Finite coefficients inside the global algebra
 
-The original graded algebra is exactly the part of the global coefficient
-algebra whose ambient homogeneous components have finite support. A finite
-family is reconstructed using Mathlib's direct sum and its decomposition
-isomorphism. Thus genuine infinite coefficient families cannot come from an
-ordinary graded coefficient.
-
-Roadmap: [quantum coefficients](https://github.com/yuma-mizuno/TauCetiRoadmap/blob/mei/TauCetiRoadmap/ScatteringDiagrams/README.md#43-quantum-coefficients).
+When positive differences span the ambient group, the original graded algebra
+is exactly the part of the global coefficient algebra whose ambient homogeneous
+components have finite support. Thus genuine infinite coefficient families cannot
+come from an ordinary graded coefficient.
 -/
 
 public section
@@ -46,9 +43,8 @@ theorem mem_range_toShiftedDirectLimitAlgHom_iff (x : d.ShiftedDirectLimit 𝒜)
       Set.Finite {u | d.shiftedDirectLimitComponents 𝒜 x u ≠ 0} := by
   constructor
   · rintro ⟨a, rfl⟩
-    change Set.Finite {u | d.shiftedDirectLimitComponents 𝒜
-      (d.toShiftedDirectLimitAlgHom 𝒜 hspan a) u ≠ 0}
-    simpa only [shiftedDirectLimitComponents_toShiftedDirectLimitAlgHom] using
+    simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+      shiftedDirectLimitComponents_toShiftedDirectLimitAlgHom] using
       (DirectSum.decompose 𝒜 a).finite_support
   · intro hx
     exact ⟨d.finiteCoefficientOfShiftedDirectLimit 𝒜 x hx,

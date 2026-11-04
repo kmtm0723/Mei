@@ -11,10 +11,9 @@ public import Mathlib.RingTheory.GradedAlgebra.Basic
 /-!
 # Embedding finite graded coefficients in the global algebra
 
-If every lattice degree is a difference of positive degrees, each homogeneous
-piece has a containing coefficient chart. Mathlib's direct-sum algebra universal
-property assembles these inclusions into an algebra map from the original graded
-algebra. All ambient components are preserved, so the map is injective and agrees
+If every lattice degree is a difference of positive degrees, the original graded
+algebra embeds in the global coefficient algebra. All ambient components are
+preserved, and the algebra map agrees
 with every supported ordinary coefficient embedding. No completion or support
 finiteness assumption is imposed on global coefficients.
 -/
@@ -51,8 +50,7 @@ private theorem components_mul_of (p q : Γ) (s t : Multiset d.monoid)
         (d.toShiftedDirectLimitOfChart 𝒜 p s hp ((d.shiftedFiltration 𝒜 p).of a) *
           d.toShiftedDirectLimitOfChart 𝒜 q t hq ((d.shiftedFiltration 𝒜 q).of b)) u =
       DirectSum.decompose 𝒜 ((a : A) * b) u := by
-  rw [← d.shiftedDirectLimitMul_eq_mul 𝒜,
-    shiftedDirectLimitMul_toShiftedDirectLimitOfChart, shiftedCompletionMul_of,
+  rw [toShiftedDirectLimitOfChart_mul, shiftedCompletionMul_of,
     shiftedDirectLimitComponents_toShiftedDirectLimitOfChart, shiftedHomogeneousComponent_of,
     coe_shiftedMul]
 
@@ -60,8 +58,7 @@ private theorem homogeneousGlobalMap_one :
     d.homogeneousGlobalMap 𝒜 hspan 0 (GradedMonoid.GOne.one (A := fun p => 𝒜 p)) = 1 := by
   apply d.shiftedDirectLimitComponents_injective 𝒜
   funext u
-  rw [homogeneousGlobalMap_component, shiftedDirectLimitComponents_one]
-  rfl
+  rw [homogeneousGlobalMap_component, shiftedDirectLimitComponents_one, SetLike.coe_gOne]
 
 private theorem homogeneousGlobalMap_mul {p q : Γ} (a : 𝒜 p) (b : 𝒜 q) :
     d.homogeneousGlobalMap 𝒜 hspan (p + q) (GradedMonoid.GMul.mul (A := fun p => 𝒜 p) a b) =
@@ -70,8 +67,7 @@ private theorem homogeneousGlobalMap_mul {p q : Γ} (a : 𝒜 p) (b : 𝒜 q) :
   funext u
   rw [homogeneousGlobalMap_component]
   simp only [homogeneousGlobalMap, LinearMap.comp_apply, components_mul_of,
-    Submodule.coe_inclusion]
-  rfl
+    Submodule.coe_inclusion, SetLike.coe_gMul]
 
 /-- Include the original graded algebra in global coefficients when positive differences span. -/
 def toShiftedDirectLimitAlgHom : A →ₐ[R] d.ShiftedDirectLimit 𝒜 :=
