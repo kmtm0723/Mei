@@ -18,22 +18,17 @@ public import Mei.Topology.Order.Sign
 
 The two incoming hyperplanes of a `SquareZeroPair`, labelled `exp (t₀ x₀)` and
 `exp (t₁ x₁)` with `t₀² = t₁² = 0`, together with the outgoing correction wall
-`exp (t₀ t₁ ⁅x₀, x₁⁆)` with normal `μ ≠ 0`, form a consistent diagram
-(`SquareZeroPair.consistent_completion`). It is therefore an outgoing completion of the two
-hyperplanes and represents their scattering class
-(`SquareZeroPair.scat_input_eq_toClass_completion`). If `μ = 0`, in particular if the total
-degree has zero geometric direction, the labels commute and the two hyperplanes alone
-represent the scattering class (`SquareZeroPair.scat_input_eq_toClass_of_bracketNormal_eq_zero`).
+`exp (t₀ t₁ ⁅x₀, x₁⁆)` with normal `μ ≠ 0`, form a diagram that is consistent at every finite
+order `k` (`SquareZeroPair.levelConsistent_completion`), hence consistent
+(`SquareZeroPair.consistent_completion`). It is an outgoing completion of the two hyperplanes
+(`SquareZeroPair.isOutgoingCompletion_completion`) and represents their scattering class
+(`SquareZeroPair.scat_input_eq_toClass_completion`).
 
-At a finite order, write `a`, `b` and `c = ⁅a, b⁆` for the truncated logarithms of the three
-labels. As `t₀² = t₁² = 0`, `c` commutes with `a` and `b`. The transport is then given by a
-potential: with `s` and `r` the sides of the two hyperplanes and `u` the signed indicator of
-an open sector bounded by the correction ray and half of the first hyperplane, every path
-from `x` to `y` has transport `F y * (F x)⁻¹` for
-`F = exp (-r • b) * exp (-s • a) * exp (-u • c)`. At a regular wall germ, the jump of `F` is
-the combined label of the walls through the point; the exponents of `F` are integer-valued
-functions of the signs of the coordinates, and the jump identities are identities between
-such functions of the signs of the coordinates and of the crossing velocity.
+If `μ = 0`, in particular if the total degree has zero geometric direction, the two
+hyperplanes alone form an outgoing completion of themselves
+(`SquareZeroPair.isOutgoingCompletion_inputWithoutCorrection`) and represent their scattering
+class (`SquareZeroPair.scat_input_eq_toClass_of_bracketNormal_eq_zero` and
+`SquareZeroPair.scat_input_eq_toClass_of_direction_eq_zero`).
 
 This is the first-order scattering of two lines in Gross–Pandharipande–Siebert, *Quivers,
 curves, and the tropical vertex*, [arXiv:0902.1260](https://arxiv.org/abs/0902.1260), §1,
@@ -57,13 +52,7 @@ variable {Γ Λ R L V : Type*} [AddCommGroup Γ] [AddCommGroup Λ]
 
 section LocalPotential
 
-/-! ### Local potentials
-
-The transport of the completed diagram is the quotient of values of the product
-`exp (-r • b) * exp (-s • a) * exp (-u • c)` (`potential`), where `s` and `r` are the sides of
-the two hyperplanes (`side`) and `u` is the signed indicator of an open sector bounded by the
-correction ray (`corner`). These integers are determined by the signs of the coordinates at a
-point and at its small perturbations. -/
+/-! ### Integer exponents and normal forms -/
 
 open SignType
 
@@ -74,7 +63,9 @@ private def side (x : ℝ) : ℤ := if 0 < x then 1 else 0
 private def crossSign (x : ℝ) : ℤ := if 0 < x then -1 else 1
 
 /-- The correction exponent of the local potential at a point with coordinates `p` (first
-hyperplane) and `q` (bracket normal), for the ray direction with first coordinate `α`. -/
+hyperplane) and `q` (bracket normal), for the ray direction with first coordinate `α`: the
+signed indicator of an open sector bounded by the correction ray and half of the first
+hyperplane. Like `side`, it depends only on the signs of its arguments. -/
 private def corner (α p q : ℝ) : ℤ :=
   if 0 ≤ α then side (-p) * side q else -(side p * side (-q))
 
@@ -115,19 +106,16 @@ private theorem side_add_eq_side_sub_or {P0 P1 a b : ℝ} (hreg : P0 = 0 → P1 
   · left
     rw [side_eq, side_eq, sign_add_of_abs_lt (h0 hP0), sign_sub_of_abs_lt (h0 hP0)]
 
-/-! #### The jump of the correction exponent
-
-Consider a point with coordinates `(P0, P1)` and a small transverse perturbation `(a, b)`.
-Write `Q = α P1 - β P0` and `e = α b - β a` for the values of the bracket normal; the
-correction ray is `{Q = 0, α P0 + β P1 ≤ 0}`. `cornerJump` is the change of the correction
-exponent across the perturbation, together with the commutator `side (P1 + b) • (jump of s)`
-produced by moving `exp (s • a)` past `exp (r • b)`. It equals `rayJump`, the exponent of the
-correction label crossed at the point. Both sides are functions of the signs of the
-coordinates and of the perturbation, and a small perturbation does not change the signs of the
-nonzero coordinates. -/
+/-! #### The jump of the correction exponent -/
 
 /-- The jump of the correction exponent, corrected by the commutator of the hyperplane
-labels. -/
+labels. At a point with coordinates `(P0, P1)` and a small transverse perturbation `(a, b)`,
+write `Q = α P1 - β P0` and `e = α b - β a` for the values of the bracket normal; the
+correction ray is `{Q = 0, α P0 + β P1 ≤ 0}`. This is the change of the correction exponent
+across the perturbation, together with the commutator `side (P1 + b) • (jump of s)` produced by
+moving `exp (s • a)` past `exp (r • b)`; it equals `rayJump`. Both are functions of the signs
+of the coordinates and of the perturbation, and a small perturbation does not change the signs
+of the nonzero coordinates. -/
 private def cornerJump (α P0 P1 Q a b e : ℝ) : ℤ :=
   side (P1 + b) * (side (P0 - a) - side (P0 + a)) +
     (corner α (P0 - a) (Q - e) - corner α (P0 + a) (Q + e))
@@ -267,7 +255,9 @@ private theorem corner_eq_of_sign_eq {α β P0 P1 P0' Q' : ℝ} (hαβ : α ≠ 
 
 variable {M : Type*} [LieRing M] [LieAlgebra ℚ M] [LieRing.IsNilpotent M]
 
-/-- The normal form `exp (-r • b) * exp (-s • a) * exp (-u • c)`. -/
+/-- The normal form `exp (-r • b) * exp (-s • a) * exp (-u • c)`. For the truncated label
+logarithms `a`, `b` and `c = ⁅a, b⁆`, with `s`, `r` the sides of the two hyperplanes and `u` the
+correction exponent, its quotients give the transport of the completed diagram. -/
 private def potential (a b c : M) (s r u : ℤ) : BCHGroup M :=
   BCHGroup.exp ((-r) • b) * BCHGroup.exp ((-s) • a) * BCHGroup.exp ((-u) • c)
 
@@ -474,7 +464,7 @@ theorem coord_ne_zero_of_coord_eq_zero (h0 : P.coord h θ₀ 0 θ = 0) : P.coord
   exacts [hα (P.rayCoeff_eq_zero_of_mem h θ₀ hw hμ hC hθ 0 h0 h2),
     hβ (P.rayCoeff_eq_zero_of_mem h θ₀ hw hμ hC hθ 1 h1 h2)]
 
-/-! ### The local potential -/
+/-! ### Wall germs at a regular point -/
 
 variable (k) in
 /-- The potential of the completed diagram at order `k`: the transport of every path from `x`
