@@ -11,17 +11,17 @@ public import Mei.Algebra.PositiveDegrees.Ray.Basic
 # Commensurable degrees on supported rays
 
 Two allowed degrees `n`, `n'` are commensurable when `p • n' = q • n` for some nonzero natural
-numbers `p`, `q`. In a free integer module, an allowed degree commensurable with an actual degree
-of a supported ray is itself an actual degree of that ray. Thus nonprimitive indices of walls
-that are commensurable share one supported primitive ray.
+numbers `p`, `q`. In a free integer module, commensurable nonzero allowed degrees lie on a common
+supported ray: an allowed degree commensurable with an actual degree of a supported ray is an
+actual degree of that ray. In particular, for `m ≠ 0` and nonzero `p`, `q` with `p • m` and
+`q • m` allowed, both lie on one supported ray, and `m` is a positive multiple of its generator.
 
-For instance, if `2 • m` and `3 • m` are allowed while `m` is not, both lie on a common supported
-ray whose generator divides `m` positively, and `m` is not an actual degree of this ray. This is
-the setting of reindexing walls by supported rays in Gross–Hacking–Keel–Kontsevich, *Canonical
-bases for cluster algebras*, §1.1 (arXiv:1411.1394v2).
+For instance, if `2 • m` and `3 • m` are allowed while `m` is not, then `2 • m` and `3 • m` lie on
+a common supported ray of which `m` is not an actual degree.
 
-Ray uniqueness is `Mei.SupportedRay.eq_of_mem_rayDegrees`, and existence of the supported ray of a
-nonzero allowed degree is `Mei.PositiveDegrees.exists_supportedRay`.
+As background, supported rays index the walls of the abelian-ray description of scattering
+diagrams in Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*, §1.1
+(arXiv:1411.1394v2). This file concerns only degrees and rays.
 -/
 
 public section
@@ -52,11 +52,41 @@ theorem mem_rayDegrees_of_nsmul_eq_nsmul [Module.Free ℤ N] {w : SupportedRay d
     eq_of_mem_rayDegrees (nsmul_mem_rayDegrees hv hp) (h ▸ nsmul_mem_rayDegrees hn hq)
   exact hv
 
+/-- In a free integer module, if a nonzero natural multiple of `m` is an actual degree of a
+supported ray, then `m` is a positive integer multiple of the generator of that ray. -/
+theorem exists_pos_zsmul_generator_of_nsmul_mem_rayDegrees [Module.Free ℤ N]
+    {w : SupportedRay d} {m : N} {p : ℕ} (hp : p ≠ 0) (h : p • m ∈ w.rayDegrees) :
+    ∃ a : ℤ, 0 < a ∧ m = a • w.generator := by
+  let : HasUniqueDiv N := .of_isTorsionFree ℤ N
+  have hm0 : m ≠ 0 := by
+    rintro rfl
+    exact ne_zero_of_mem_rayDegrees h (smul_zero p)
+  obtain ⟨c, v, hc, hv, rfl⟩ := TauCeti.exists_eq_zsmul_isPrimitive hm0
+  obtain ⟨-, b, hb, hpb⟩ := mem_rayDegrees.mp h
+  have hpc : (0 : ℤ) < p * c := mul_pos (by omega) hc
+  refine ⟨c, hc, ?_⟩
+  rw [hv.eq_of_pos_zsmul_eq w.isPrimitive hpc hb (by rw [mul_smul, natCast_zsmul, hpb])]
+
+/-- A vector that is not an allowed degree is not an actual degree of any supported ray. -/
+theorem notMem_rayDegrees_of_notMem (w : SupportedRay d) {m : N} (hm : m ∉ d.monoid) :
+    m ∉ w.rayDegrees :=
+  fun h => hm (w.rayDegrees_subset h)
+
 end SupportedRay
 
 namespace PositiveDegrees
 
 variable (d)
+
+/-- In a free integer module, for `m ≠ 0` and nonzero `p`, `q`, if `p • m` and `q • m` are
+allowed degrees then both are actual degrees of one supported ray. -/
+theorem exists_supportedRay_nsmul_mem_rayDegrees [Module.Free ℤ N] {m : N} (hm0 : m ≠ 0)
+    {p q : ℕ} (hp : p ≠ 0) (hq : q ≠ 0) (hpm : p • m ∈ d.monoid) (hqm : q • m ∈ d.monoid) :
+    ∃ w : SupportedRay d, p • m ∈ w.rayDegrees ∧ q • m ∈ w.rayDegrees := by
+  let : HasUniqueDiv N := .of_isTorsionFree ℤ N
+  obtain ⟨w, hw⟩ := d.exists_supportedRay hpm (smul_ne_zero hp hm0)
+  exact ⟨w, hw, SupportedRay.mem_rayDegrees_of_nsmul_eq_nsmul hw hqm hp hq
+    (by rw [smul_smul, smul_smul, mul_comm])⟩
 
 /-- In a free integer module, if `2 • m` and `3 • m` are allowed degrees but `m` is not, then
 `2 • m` and `3 • m` are actual degrees of one supported ray, `m` is a positive multiple of its
@@ -65,23 +95,10 @@ theorem exists_supportedRay_two_nsmul_three_nsmul [Module.Free ℤ N] {m : N}
     (h2 : 2 • m ∈ d.monoid) (h3 : 3 • m ∈ d.monoid) (hm : m ∉ d.monoid) :
     ∃ w : SupportedRay d, 2 • m ∈ w.rayDegrees ∧ 3 • m ∈ w.rayDegrees ∧
       m ∉ w.rayDegrees ∧ ∃ a : ℤ, 0 < a ∧ m = a • w.generator := by
-  let : HasUniqueDiv N := .of_isTorsionFree ℤ N
-  have hm0 : 2 • m ≠ 0 := fun h0 =>
-    hm (nsmul_right_injective two_ne_zero (h0.trans (smul_zero 2).symm) ▸ d.monoid.zero_mem)
-  obtain ⟨w, hw⟩ := d.exists_supportedRay h2 hm0
-  have hw3 : 3 • m ∈ w.rayDegrees :=
-    SupportedRay.mem_rayDegrees_of_nsmul_eq_nsmul hw h3 two_ne_zero three_ne_zero
-      (by rw [smul_smul, smul_smul, mul_comm])
-  obtain ⟨-, a, ha, hma⟩ := SupportedRay.mem_rayDegrees.mp hw
-  obtain ⟨-, b, -, hmb⟩ := SupportedRay.mem_rayDegrees.mp hw3
-  -- Comparing `6 • m` computed from `2 • m` and from `3 • m` gives `3 * a = 2 * b`.
-  have hab : 3 * a = 2 * b := w.isPrimitive.zsmul_left_injective (by
-    dsimp only
-    rw [mul_smul, mul_smul, ← hma, ← hmb]
-    abel)
-  refine ⟨w, hw, hw3, fun h => hm (w.rayDegrees_subset h), b - a, by omega, ?_⟩
-  rw [sub_smul, ← hma, ← hmb]
-  abel
+  obtain ⟨w, hw2, hw3⟩ := d.exists_supportedRay_nsmul_mem_rayDegrees
+    (by rintro rfl; exact hm d.monoid.zero_mem) two_ne_zero three_ne_zero h2 h3
+  exact ⟨w, hw2, hw3, w.notMem_rayDegrees_of_notMem hm,
+    SupportedRay.exists_pos_zsmul_generator_of_nsmul_mem_rayDegrees two_ne_zero hw2⟩
 
 end PositiveDegrees
 

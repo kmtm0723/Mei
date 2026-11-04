@@ -8,7 +8,7 @@ module
 public import Mei.Algebra.Lie.BCH.Ray.Commensurable
 
 /-!
-# Labels indexed by `2` and `3` in the numerical semigroup `⟨2, 3⟩`
+# Labels on multiples of `2` and `3` in the numerical semigroup `⟨2, 3⟩`
 
 The numerical semigroup `⟨2, 3⟩ = {0, 2, 3, 4, …}` in `ℤ`, with the identity degree, is positive
 degree data in which `2 • 1` and `3 • 1` are allowed and `1` is not. Thus the hypotheses of
