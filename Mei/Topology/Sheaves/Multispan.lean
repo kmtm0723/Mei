@@ -181,23 +181,22 @@ theorem existsUnique_sections_lift_of_local_on_generators
         have hP : P ≤ (LinearMap.range (f.prod g)).comap ((δ (J.fst b)).prod (δ (J.snd b))) :=
           (Submodule.span_singleton_le_iff_mem _ _).mpr ⟨t, Prod.ext hf hg⟩
         obtain ⟨z, hz⟩ := hP p.property
-        refine ⟨N, hNU, z, hxN, ?_, ?_⟩
-        · simpa only [f, g, δ, β, LinearMap.prod_apply, LinearMap.comp_apply,
-            SemimoduleCat.hom_ofHom, Submodule.subtype_apply, Function.prod_apply,
-            LinearMap.coe_comp, Function.comp_apply] using congrArg _root_.Prod.fst hz
-        · simpa only [f, g, δ, β, LinearMap.prod_apply, LinearMap.comp_apply,
-            SemimoduleCat.hom_ofHom, Submodule.subtype_apply, Function.prod_apply,
-            LinearMap.coe_comp, Function.comp_apply] using congrArg _root_.Prod.snd hz)
+        refine ⟨N, hNU, z, hxN, ?_⟩
+        simpa only [f, g, δ, β, LinearMap.prod_apply, LinearMap.comp_apply,
+          SemimoduleCat.hom_ofHom, Submodule.subtype_apply, Function.prod_apply,
+          LinearMap.coe_comp, Function.comp_apply, Prod.mk.injEq] using hz)
     let aP : P := ⟨a, Submodule.mem_span_singleton_self a⟩
     have hright (j : J.R) : (ℓ aP).val (.right j) = (α j).hom a := by
       simpa only [β, SemimoduleCat.hom_ofHom, LinearMap.comp_apply,
         Submodule.subtype_apply] using hℓ aP j
     have hmem := ((I.sectionsIndex U).restrictSections (ℓ aP)).property
-    change (fun j => (α j).hom a) ∈ (I.sectionsIndex U).compatibleFamilies
+    apply (Submodule.mem_comap (f := LinearMap.pi fun j => (α j).hom)
+      (p := (I.sectionsIndex U).compatibleFamilies) (x := a)).mpr
     apply (I.sectionsIndex U).mem_compatibleFamilies.mpr
-    simpa only [mem_compatibleFamilies, restrictSections_apply, hright] using hmem
+    simpa only [mem_compatibleFamilies, restrictSections_apply, hright,
+      LinearMap.pi_apply] using hmem
   intro a
   exact (I.sectionsIndex U).mem_compatibleFamilies_iff_forall_mem_range.mp
-    (hspan (hs.symm ▸ Submodule.mem_top))
+    (hspan (hs.ge Submodule.mem_top))
 
 end CategoryTheory.Limits.MultispanIndex
