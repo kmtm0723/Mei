@@ -20,6 +20,12 @@ naturality. No finite ambient grading or assumed encounter bound is used.
 The comparison retains the complete path, incoming tail, encounter parameters
 and every whole-component segment decoration. Weighted cutoff evaluations commute
 with the coefficient map, even when some source decorations vanish.
+
+The whole-component decoration and encounter comparison follow
+Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*,
+Definitions 3.1–3.3 (arXiv:1411.1394v2), and Mandel, *Scattering diagrams, theta
+functions, and refined tropical curve counts*, Definition 2.10 and
+Proposition 2.13 (arXiv:1503.06183v5).
 -/
 
 public noncomputable section
@@ -45,8 +51,20 @@ variable {R M N Γ Δ V J K : Type*}
   (k l : ℕ) (hcut : ∀ p, p ∈ d.cutoff k ↔ σ p ∈ e.cutoff l)
   (hpos : ∀ p, p ∈ d.monoid ↔ σ p ∈ e.monoid) (Q : V)
 
-local notation "a'" => (Subtype.mk (r a)
-  (Eq.mp (congrArg (fun q => r a ∈ 𝓝 q) (map_zero σ)) (hr 0 a a.property)) : 𝓝 0)
+/-- The regraded incoming coefficient, placed in degree zero using `map_zero`.
+Exposing this subtype constructor keeps the degree-identity specialization's
+existing incoming-base type definitionally unchanged in downstream modules. -/
+@[expose]
+def regradeBase : 𝓝 0 :=
+  ⟨r a, by simpa only [map_zero] using hr 0 a a.property⟩
+
+omit [DecidableEq Γ] [DecidableEq Δ]
+  [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] in
+/-- Regrading the incoming coefficient does not change its underlying value. -/
+@[simp]
+theorem coe_regradeBase : (regradeBase ℳ 𝓝 r σ hr a : N) = r a := (rfl)
+
+local notation "a'" => regradeBase ℳ 𝓝 r σ hr a
 local notation "Source" => CutoffDecoratedRay d ℳ T a v f c ε P W S C k Q
 local notation "Target" => CutoffDecoratedRay e 𝓝 U a' w f c ε P W S C l Q
 
@@ -58,10 +76,12 @@ private def wordIncomingEquiv (word : List J) (p q : Δ) (b : 𝓝 p) (b' : 𝓝
     DecoratedAdmissibleRay 𝓝 (fun j => U (word.get j)) q b' w
       (fun j => f (word.get j)) (fun j => c (word.get j))
       (fun j => ε (word.get j)) (fun j => P (word.get j)) W S C Q := by
-  subst q
-  have he : b = b' := Subtype.ext hb
-  subst b'
-  exact Equiv.refl _
+  -- Only the incoming degree and its subtype witness change; all ray data stay fixed.
+  refine Equiv.cast ?_
+  cases h
+  exact congrArg (fun b => DecoratedAdmissibleRay 𝓝 (fun j => U (word.get j)) p b w
+    (fun j => f (word.get j)) (fun j => c (word.get j))
+    (fun j => ε (word.get j)) (fun j => P (word.get j)) W S C Q) (Subtype.ext hb)
 
 omit [AddCommGroup Δ] in
 private theorem wordIncomingEquiv_properties (word : List J) (p q : Δ)
@@ -69,9 +89,8 @@ private theorem wordIncomingEquiv_properties (word : List J) (p q : Δ)
     let γ := wordIncomingEquiv 𝓝 U w f c ε P W S C Q word p q b b' h hb β
     γ.1.val = β.1.val ∧ γ.2.ray = β.2.ray ∧ γ.2.parameter = β.2.parameter ∧
       γ.decoration = β.decoration := by
-  subst q
-  have he : b = b' := Subtype.ext hb
-  subst b'
+  cases h
+  cases Subtype.ext hb
   exact ⟨rfl, rfl, rfl, rfl⟩
 
 include hσ hT hv in
@@ -88,7 +107,7 @@ private def wordCoefficientEquiv (word : List J) :
     (fun j => f (word.get j)) (fun j => c (word.get j))
     (fun j => ε (word.get j)) (fun j => P (word.get j)) W S C Q).trans
       (wordIncomingEquiv 𝓝 U w f c ε P W S C Q word (σ 0) 0
-        ⟨r a, hr 0 a a.property⟩ a' σ.map_zero rfl)
+        ⟨r a, hr 0 a a.property⟩ a' σ.map_zero (coe_regradeBase ℳ 𝓝 r σ hr a).symm)
 
 private theorem wordCoefficientEquiv_history (word : List J) (β) :
     (wordCoefficientEquiv ℳ 𝓝 r σ hσ hr T U hT a v w hv f c ε P W S C Q word β).1.val =
@@ -119,20 +138,19 @@ private theorem wordCoefficientEquiv_decoration (word : List J) (β) (j) :
   exact decoratedRayCoefficientEquiv_decoration ..
 
 /-- Regrade a surviving cutoff ray, keeping its encounter word and complete geometry. -/
-def cutoffDecoratedRayRegradingMap (β : {β : Source // r β.decoration ≠ 0}) : Target := by
-  let E := wordCoefficientEquiv ℳ 𝓝 r σ hσ hr T U hT a v w hv f c ε P W S C Q
-    β.val.itinerary
-  let γ := E ⟨β.val.realization, by
-    simpa only [CutoffDecoratedRay.decoration_eq, DecoratedAdmissibleRay.decoration_zero]
-      using β.property⟩
-  have hh : γ.1.val = σ ∘ β.val.realization.1.val := by
-    exact wordCoefficientEquiv_history ..
-  exact ⟨β.val.itinerary, γ,
-    fun j => by rw [hh]; exact (hcut _).mp (β.val.degree_mem j),
-    fun i j hij => by
-      rw [hh]
-      simpa only [Function.comp_apply, ← map_sub] using
-        (hpos _).mp (β.val.degree_sub_mem i j hij)⟩
+def cutoffDecoratedRayRegradingMap (β : {β : Source // r β.decoration ≠ 0}) : Target where
+  itinerary := β.val.itinerary
+  realization := wordCoefficientEquiv ℳ 𝓝 r σ hσ hr T U hT a v w hv
+    f c ε P W S C Q β.val.itinerary ⟨β.val.realization, by
+      simpa only [CutoffDecoratedRay.decoration_eq, DecoratedAdmissibleRay.decoration_zero]
+        using β.property⟩
+  degree_mem j := by
+    rw [wordCoefficientEquiv_history]
+    exact (hcut _).mp (β.val.degree_mem j)
+  degree_sub_mem i j hij := by
+    rw [wordCoefficientEquiv_history]
+    simpa only [Function.comp_apply, ← map_sub] using
+      (hpos _).mp (β.val.degree_sub_mem i j hij)
 
 /-- Every recorded encounter, including unchanged-degree encounters, is retained. -/
 @[simp]
@@ -159,6 +177,7 @@ theorem cutoffDecoratedRayRegradingMap_degreeItinerary
   simp only [CutoffDecoratedRay.degreeItinerary_eq, List.map_ofFn]
   rw [eq_of_heq (cutoffDecoratedRayRegradingMap_history d e ℳ 𝓝 r σ hσ hr
     T U hT a v w hv f c ε P W S C k l hcut hpos Q β)]
+  -- The explicit `itinerary` field is unchanged; both functions form `(σ (p j), word[j])`.
   rfl
 
 /-- Regrading preserves the entire affine path, including the incoming tail. -/
@@ -208,6 +227,7 @@ theorem cutoffDecoratedRayRegradingMap_bijective : Function.Bijective
   · rintro ⟨⟨word, β, hβ, hmβ⟩, hb⟩ ⟨⟨word', γ, hγ, hmγ⟩, hc⟩ h
     have hw := congrArg CutoffDecoratedRay.itinerary h
     simp only [cutoffDecoratedRayRegradingMap_itinerary] at hw
+    -- Unfold the itinerary projection of the two explicit cutoff-ray constructors.
     change word = word' at hw
     subst word'
     apply Subtype.ext
@@ -246,6 +266,7 @@ theorem cutoffDecoratedRayRegradingMap_bijective : Function.Bijective
     apply CutoffDecoratedRay.degreeItinerary_injective
     rw [cutoffDecoratedRayRegradingMap_degreeItinerary]
     simp only [CutoffDecoratedRay.degreeItinerary_eq, List.map_ofFn]
+    -- `γ` has exactly `β.itinerary`; unfold its realization and `Prod.map` on each pair.
     change List.ofFn (fun j => (σ (α.val.1.val j), β.itinerary.get j)) =
       List.ofFn (fun j => (β.realization.1.val j, β.itinerary.get j))
     exact congrArg List.ofFn (funext fun j => Prod.ext (congrFun hh j) rfl)
@@ -347,6 +368,34 @@ def cutoffDecoratedRayRegradingEmbeddingEquiv (hinj : Function.Injective r) : So
     (hinj (by simpa only [map_zero] using hz))).symm.trans
       (cutoffDecoratedRayRegradingEquiv d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
         f c ε P W S C k l hcut hpos Q)
+
+/-- Injective coefficient transport retains every recorded encounter. -/
+@[simp]
+theorem cutoffDecoratedRayRegradingEmbeddingEquiv_itinerary
+    (hinj : Function.Injective r) (β : Source) :
+    (cutoffDecoratedRayRegradingEmbeddingEquiv d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q hinj β).itinerary = β.itinerary := by
+  simp only [cutoffDecoratedRayRegradingEmbeddingEquiv, Equiv.trans_apply,
+    Equiv.subtypeUnivEquiv_symm_apply, cutoffDecoratedRayRegradingEquiv_itinerary]
+
+/-- Injective coefficient transport regrades the complete segment history. -/
+@[simp]
+theorem cutoffDecoratedRayRegradingEmbeddingEquiv_history
+    (hinj : Function.Injective r) (β : Source) :
+    HEq (cutoffDecoratedRayRegradingEmbeddingEquiv d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q hinj β).realization.1.val
+      (σ ∘ β.realization.1.val) :=
+  cutoffDecoratedRayRegradingEquiv_history d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+    f c ε P W S C k l hcut hpos Q _
+
+/-- Injective coefficient transport maps the final whole decoration. -/
+@[simp↓]
+theorem cutoffDecoratedRayRegradingEmbeddingEquiv_decoration
+    (hinj : Function.Injective r) (β : Source) :
+    (cutoffDecoratedRayRegradingEmbeddingEquiv d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q hinj β).decoration = r β.decoration := by
+  simp only [cutoffDecoratedRayRegradingEmbeddingEquiv, Equiv.trans_apply,
+    Equiv.subtypeUnivEquiv_symm_apply, cutoffDecoratedRayRegradingEquiv_decoration]
 
 /-- With injective coefficients the full degree-labelled encounter word is retained. -/
 @[simp]

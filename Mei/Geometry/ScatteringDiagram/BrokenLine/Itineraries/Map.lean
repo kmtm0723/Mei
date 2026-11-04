@@ -52,11 +52,15 @@ local notation "a'" => (Subtype.mk (r a) (hr 0 a a.property) : 𝓝 0)
 local notation "Source" => CutoffDecoratedRay d ℳ T a v f c ε P W S C k Q
 local notation "Target" => CutoffDecoratedRay d 𝓝 U a' v f c ε P W S C k Q
 
+-- Fix the identity degree data once; the wrappers consume regrading projection laws.
+local notation "idRegrading" =>
+  cutoffDecoratedRayRegradingEquiv d d ℳ 𝓝 r (AddMonoidHom.id Γ) Function.injective_id
+    hr T U hT a v v (fun _ => rfl) f c ε P W S C k k (fun _ => Iff.rfl) (fun _ => Iff.rfl) Q
+
 /-- Specialization identifies precisely the source rays whose whole final
 coefficient survives with the target rays, over every encounter itinerary. -/
 def cutoffDecoratedRayCoefficientEquiv : {β : Source // r β.decoration ≠ 0} ≃ Target :=
-  cutoffDecoratedRayRegradingEquiv d d ℳ 𝓝 r (AddMonoidHom.id Γ) Function.injective_id
-    hr T U hT a v v (fun _ => rfl) f c ε P W S C k k (fun _ => Iff.rfl) (fun _ => Iff.rfl) Q
+  idRegrading
 
 /-- Specialization retains every recorded encounter, including identity
 components and nonzero degree changes with zero spatial projection. -/
@@ -65,9 +69,7 @@ theorem cutoffDecoratedRayCoefficientEquiv_itinerary
     (β : {β : Source // r β.decoration ≠ 0}) :
     (cutoffDecoratedRayCoefficientEquiv d ℳ 𝓝 r hr T U hT a v f c ε P W S C k Q β).itinerary =
       β.val.itinerary :=
-  cutoffDecoratedRayRegradingEquiv_itinerary d d ℳ 𝓝 r (AddMonoidHom.id Γ)
-    Function.injective_id hr T U hT a v v (fun _ => rfl) f c ε P W S C
-    k k (fun _ => Iff.rfl) (fun _ => Iff.rfl) Q β
+  cutoffDecoratedRayRegradingEquiv_itinerary ..
 
 /-- The selected degrees of every segment are unchanged by specialization. -/
 @[simp]
@@ -76,10 +78,10 @@ theorem cutoffDecoratedRayCoefficientEquiv_history
     HEq (cutoffDecoratedRayCoefficientEquiv d ℳ 𝓝 r hr T U hT a
       v f c ε P W S C k Q β).realization.1.val
       β.val.realization.1.val := by
-  simpa only [cutoffDecoratedRayCoefficientEquiv, AddMonoidHom.coe_id, Function.id_comp] using
-    cutoffDecoratedRayRegradingEquiv_history d d ℳ 𝓝 r (AddMonoidHom.id Γ)
-      Function.injective_id hr T U hT a v v (fun _ => rfl) f c ε P W S C
-      k k (fun _ => Iff.rfl) (fun _ => Iff.rfl) Q β
+  have hh : HEq (idRegrading β).realization.1.val
+      ((AddMonoidHom.id Γ) ∘ β.val.realization.1.val) :=
+    cutoffDecoratedRayRegradingEquiv_history ..
+  exact hh
 
 /-- Specialization preserves the entire geometric ray, including its incoming tail. -/
 @[simp]
@@ -88,9 +90,7 @@ theorem cutoffDecoratedRayCoefficientEquiv_ray
     (cutoffDecoratedRayCoefficientEquiv d ℳ 𝓝 r hr T U hT a
       v f c ε P W S C k Q β).realization.2.ray =
       β.val.realization.2.ray :=
-  cutoffDecoratedRayRegradingEquiv_ray d d ℳ 𝓝 r (AddMonoidHom.id Γ)
-    Function.injective_id hr T U hT a v v (fun _ => rfl) f c ε P W S C
-    k k (fun _ => Iff.rfl) (fun _ => Iff.rfl) Q β
+  cutoffDecoratedRayRegradingEquiv_ray ..
 
 /-- All encounter times are preserved, including unchanged-direction encounters. -/
 @[simp]
@@ -99,9 +99,7 @@ theorem cutoffDecoratedRayCoefficientEquiv_parameter
     HEq (cutoffDecoratedRayCoefficientEquiv d ℳ 𝓝 r hr T U hT a
       v f c ε P W S C k Q β).realization.2.parameter
       β.val.realization.2.parameter :=
-  cutoffDecoratedRayRegradingEquiv_parameter d d ℳ 𝓝 r (AddMonoidHom.id Γ)
-    Function.injective_id hr T U hT a v v (fun _ => rfl) f c ε P W S C
-    k k (fun _ => Iff.rfl) (fun _ => Iff.rfl) Q β
+  cutoffDecoratedRayRegradingEquiv_parameter ..
 
 /-- The final whole decoration specializes by the given coefficient map. -/
 @[simp↓]
@@ -109,9 +107,7 @@ theorem cutoffDecoratedRayCoefficientEquiv_decoration
     (β : {β : Source // r β.decoration ≠ 0}) :
     (cutoffDecoratedRayCoefficientEquiv d ℳ 𝓝 r hr T U hT a v f c ε P W S C k Q β).decoration =
       r β.val.decoration :=
-  cutoffDecoratedRayRegradingEquiv_decoration d d ℳ 𝓝 r (AddMonoidHom.id Γ)
-    Function.injective_id hr T U hT a v v (fun _ => rfl) f c ε P W S C
-    k k (fun _ => Iff.rfl) (fun _ => Iff.rfl) Q β
+  cutoffDecoratedRayRegradingEquiv_decoration ..
 
 include hT
 
