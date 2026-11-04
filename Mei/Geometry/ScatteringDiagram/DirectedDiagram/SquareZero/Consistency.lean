@@ -499,15 +499,6 @@ private theorem eventually_localPotential_eq (h₀ : P.coord h θ₀ 0 θ ≠ 0)
     side_eq (P.coord h θ₀ 1 φ), side_eq (P.coord h θ₀ 1 θ), hφ₁,
     corner_eq_of_sign_eq (P.rayCoeff_ne_zero_or_ne_zero hμ) h₀ h₂ hφ₀ hφq]
 
-omit [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L] [DecidableEq Γ]
-  [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ] in
-/-- Small multiples `σ * y`, `σ > 0`, have absolute value below `|x|` when `x ≠ 0`. -/
-private theorem eventually_abs_mul_lt_of_ne (x y : ℝ) :
-    ∀ᶠ σ in 𝓝[>] (0 : ℝ), x ≠ 0 → |σ * y| < |x| := by
-  by_cases hx : x = 0
-  · exact Eventually.of_forall fun _ hne => absurd hx hne
-  · exact Eventually.mono (nhdsWithin_le_nhds (eventually_abs_mul_lt hx y)) fun _ hσ _ => hσ
-
 include hC in
 /-- The logarithm of a combined label of the completed diagram at a regular point is the signed
 sum of the logarithms of the walls through the point. -/
@@ -581,9 +572,10 @@ private theorem eventually_localPotential_mul_inv :
   have hreg := P.coord_ne_zero_of_coord_eq_zero h θ₀ hw hμ hC hθ
   have ht := P.realCharacter_normal_ne_zero_of_coord_eq_zero h θ₀ hw hμ hC v hv
   have ht₂ := P.rayCoeff_mul_sub_ne_zero_of_mem h θ₀ hw hμ hC v hv
-  filter_upwards [self_mem_nhdsWithin, eventually_abs_mul_lt_of_ne p₀ (ℓ₀ v),
-    eventually_abs_mul_lt_of_ne p₁ (ℓ₁ v),
-    eventually_abs_mul_lt_of_ne (α * p₁ - β * p₀) (α * ℓ₁ v - β * ℓ₀ v)] with σ hσ hs₀ hs₁ hsq
+  filter_upwards [self_mem_nhdsWithin, eventually_nhdsGT_imp_abs_mul_lt p₀ (ℓ₀ v),
+    eventually_nhdsGT_imp_abs_mul_lt p₁ (ℓ₁ v),
+    eventually_nhdsGT_imp_abs_mul_lt (α * p₁ - β * p₀) (α * ℓ₁ v - β * ℓ₀ v)]
+    with σ hσ hs₀ hs₁ hsq
   have hσ : 0 < σ := hσ
   have hne {x : ℝ} (hx : x ≠ 0) : σ * x ≠ 0 := mul_ne_zero hσ.ne' hx
   rw [localPotential, localPotential, P.coord_add_smul, P.coord_sub_smul, P.coord_add_smul,

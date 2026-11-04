@@ -16,7 +16,8 @@ constant (`ContinuousAt.eventually_sign_eq`).
 
 In a linearly ordered field with the order topology, for `x ≠ 0` and any `y`, small
 multiples `σ * y` have absolute value smaller than `|x|` (`eventually_abs_mul_lt`), so that
-`x + σ * y` has the sign of `x`.
+`x + σ * y` has the sign of `x`. The same holds for small positive `σ`, with `x ≠ 0` as a
+hypothesis inside the filter (`eventually_nhdsGT_imp_abs_mul_lt`).
 -/
 
 public section
@@ -49,5 +50,12 @@ theorem eventually_abs_mul_lt {x : K} (hx : x ≠ 0) (y : K) :
     simpa using ((continuous_id.mul continuous_const).abs.tendsto (0 : K) :
       Tendsto (fun σ : K => |σ * y|) (𝓝 0) (𝓝 |0 * y|))
   exact hlim.eventually_lt_const (abs_pos.mpr hx)
+
+/-- For small positive `σ`, if `x ≠ 0`, then `σ * y` has absolute value smaller than `|x|`. -/
+theorem eventually_nhdsGT_imp_abs_mul_lt (x y : K) :
+    ∀ᶠ σ in 𝓝[>] (0 : K), x ≠ 0 → |σ * y| < |x| := by
+  by_cases hx : x = 0
+  · exact Eventually.of_forall fun _ hne => absurd hx hne
+  · exact Eventually.mono (nhdsWithin_le_nhds (eventually_abs_mul_lt hx y)) fun _ hσ _ => hσ
 
 end Mei
