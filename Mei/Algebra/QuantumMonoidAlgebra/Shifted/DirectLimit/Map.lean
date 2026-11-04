@@ -157,8 +157,15 @@ private theorem toShiftedDirectLimitOfChart_cast {p r : Γ} (hpr : p = r)
     d.toShiftedDirectLimitOfChart (grade q β) r s hr
         (cast (congrArg (d.ShiftedCoefficients (grade q β)) hpr) x) =
       d.toShiftedDirectLimitOfChart (grade q β) p s (by rwa [hpr]) x := by
-  subst r
-  rfl
+  have hij : (⟨p, by rwa [hpr]⟩ : {u : Γ // u - d.coefficientOrigin s ∈ d.monoid}) =
+      ⟨r, hr⟩ := Subtype.ext hpr
+  simpa only [cast_eq] using
+    (Function.cast_apply
+      (A := fun u : {u : Γ // u - d.coefficientOrigin s ∈ d.monoid} =>
+        d.ShiftedCoefficients (grade q β) u.val)
+      (B := fun _ => d.ShiftedDirectLimit (grade q β))
+      (fun u => (d.toShiftedDirectLimitOfChart (grade q β) u.val s u.property :
+        d.ShiftedCoefficients (grade q β) u.val → d.ShiftedDirectLimit (grade q β))) hij x).symm
 
 /-- Identity scalar and degree transport fixes every global coefficient. -/
 @[simp]
