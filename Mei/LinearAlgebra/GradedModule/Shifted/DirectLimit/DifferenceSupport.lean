@@ -37,20 +37,12 @@ theorem shiftedDirectLimitComponents_eq_zero_of_not_difference
   intro h
   apply hu
   refine ⟨⟨u - d.coefficientOrigin s, h⟩, s.sum, ?_⟩
-  change u = (u - d.coefficientOrigin s) - (s.sum : Γ)
-  rw [d.coefficientOrigin_eq_neg_sum]
-  abel
-
-/-- Every nonzero global component has a degree that is a difference of positive degrees. -/
-theorem exists_difference_of_shiftedDirectLimitComponents_ne_zero
-    (x : d.ShiftedDirectLimit ℳ) {u : Γ}
-    (hu : d.shiftedDirectLimitComponents ℳ x u ≠ 0) :
-    ∃ a b : d.monoid, u = (a : Γ) - b := by
-  by_contra h
-  exact hu (d.shiftedDirectLimitComponents_eq_zero_of_not_difference ℳ x h)
+  -- Simplification reads the value of the supported subtype witness above.
+  simp only [coefficientOrigin_eq_neg_sum, sub_neg_eq_add,
+    add_sub_cancel_right]
 
 /-- A family with a nonzero component outside positive differences is not global. -/
-theorem not_mem_range_shiftedDirectLimitComponents_of_not_difference
+theorem notMem_range_shiftedDirectLimitComponents_of_not_difference
     (a : ∀ u, ℳ u) {u : Γ} (hau : a u ≠ 0)
     (hu : ¬ ∃ p q : d.monoid, u = (p : Γ) - q) :
     a ∉ LinearMap.range (d.shiftedDirectLimitComponents ℳ) := by

@@ -11,8 +11,7 @@ public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.Component
 # Support inclusions in direct-limit coefficients
 
 An inclusion between translated supports does not change the represented global
-coefficient, even when different containing multiset charts are chosen. The
-injective ambient-component realization proves this without index transports.
+coefficient, even when different containing multiset charts are chosen.
 -/
 
 public section
@@ -23,12 +22,6 @@ namespace Mei.PositiveDegrees
 variable {Γ R M : Type*} [AddCommGroup Γ] [Ring R] [AddCommGroup M] [Module R M]
   [DecidableEq Γ] (d : PositiveDegrees Γ) (ℳ : Γ → Submodule R M)
   [DirectSum.Decomposition ℳ]
-
-omit [DecidableEq Γ] in
-/-- Adding chart indices adds their origins. -/
-theorem coefficientOrigin_add (s t : Multiset d.monoid) :
-    d.coefficientOrigin (s + t) = d.coefficientOrigin s + d.coefficientOrigin t := by
-  simp only [coefficientOrigin_eq_neg_sum, Multiset.sum_add, AddSubmonoid.coe_add, neg_add]
 
 /-- Enlarging an arbitrary support leaves its global coefficient unchanged. -/
 theorem toShiftedDirectLimitOfChart_inclusion (p q : Γ)

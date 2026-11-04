@@ -11,8 +11,8 @@ public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.Component
 # Reconstructing finite global coefficient families
 
 A global coefficient with finitely many nonzero ambient components determines
-an ordinary graded module element. Reconstruction uses Mathlib's direct sum
-and the original decomposition isomorphism; it needs no multiplication.
+an ordinary graded module element with exactly those components. Reconstruction
+is inverse to the ordinary coefficient inclusion and needs no multiplication.
 -/
 
 public section
