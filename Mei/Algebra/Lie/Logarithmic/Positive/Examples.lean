@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import Mei.Algebra.Lie.Logarithmic.Coefficient.NonnegIntegers
 public import Mei.Algebra.Lie.Logarithmic.Positive
 public import Mei.RingTheory.FilteredAlgebra.Positive.PowerSeries
 public import Mei.RingTheory.FilteredAlgebra.PowerSeries.Map
@@ -17,20 +18,22 @@ Let `R` be a commutative ring and `a` a polynomial variable. Two checks compare 
 specialization `a ↦ 1` for the `t`-adic and the `a`-adic filtrations.
 
 * *The `t`-adic filtration.* Realize `R[a][t]` and `R[t]` as coefficient monoid algebras over
-  the nonnegative integers `PositiveDegrees.nonnegIntegers`. Their positive-increment
-  filtration is the `t`-adic filtration (`filtration_eq_ofIdeal`). The coefficientwise
-  substitution `a ↦ 1` is a positive specialization `atOne` for the subsemirings `ℕ[a][t]` and
-  `ℕ[t]`, an instance of `Mei.LogarithmicVectorField.coefficientMonoidPositiveSpecialization`.
-  Its completion map sends the positive series `∑ⱼ aʲ tʲ` (`atSeries`, `isPositive_atSeries`,
-  `projection_atSeries`) to `∑ⱼ tʲ` (`completionMap_atOne_atSeries`), which is positive for
-  `ℕ[t]` (`isPositive_tSeries`).
+  the nonnegative integers `PositiveDegrees.nonnegIntegers`, with `t` the variable
+  `PositiveDegrees.nonnegIntegers.X`. Their positive-increment filtration is the `t`-adic
+  filtration (`TropicalVertexCoefficientAction.filtration_nonnegIntegers_eq_ofIdeal`). The
+  coefficientwise substitution `a ↦ 1` is a positive specialization `atOne` for the
+  subsemirings `ℕ[a][t]` and `ℕ[t]`, an instance of
+  `Mei.LogarithmicVectorField.coefficientMonoidPositiveSpecialization`. Its completion map
+  sends the positive series `∑ⱼ aʲ tʲ` (`atSeries`, `projection_atSeries`,
+  `isPositive_atSeries`) to `∑ⱼ tʲ` (`completionMap_atOne_atSeries`, `projection_tSeries`),
+  which is positive for `ℕ[t]` (`isPositive_tSeries`).
 
 * *The `a`-adic filtration.* For the filtration of `R[a]` by the powers of `(a)`, the series
-  `∑ⱼ aʲ` (`aSeries`) is positive for `ℕ[a]` (`isPositive_aSeries`) and is the inverse of
-  `1 - a` (`aSeries_mul_one_sub`). A ring homomorphism out of the `a`-adic completion sending
-  `a` to `1` has a trivial target (`subsingleton_of_map_X_eq_one`). There is no positive
-  specialization with `a ↦ 1` into a filtered ring with nontrivial completion, for any chosen
-  subsemirings (`isEmpty_positiveSpecialization_X_eq_one`).
+  `∑ⱼ aʲ` (`aSeries`, `projection_aSeries`) is positive for `ℕ[a]` (`isPositive_aSeries`) and
+  is the inverse of `1 - a` (`aSeries_mul_one_sub`). A ring homomorphism out of the `a`-adic
+  completion sending `a` to `1` has a trivial target (`subsingleton_of_map_X_eq_one`). There
+  is no positive specialization with `a ↦ 1` into a filtered ring with nontrivial completion,
+  for any chosen subsemirings (`isEmpty_positiveSpecialization_X_eq_one`).
 
 The coefficientwise specializations are those of Burcroff–Lee–Mou, *Positivity of generalized
 cluster scattering diagrams*, §8.1 (arXiv:2503.03719v1), for the positivity of
@@ -44,63 +47,9 @@ noncomputable section
 
 namespace Mei.PositiveSpecialization.Examples
 
-open _root_.AddMonoidAlgebra PositiveDegrees
+open _root_.AddMonoidAlgebra PositiveDegrees nonnegIntegers
 
 local notation "Q" => nonnegIntegers.monoid
-
-/-- The natural number `j` as an exponent in the monoid of nonnegative integers. -/
-def exponent (j : ℕ) : Q :=
-  ⟨j, mem_nonnegIntegers_monoid.mpr (Int.natCast_nonneg j)⟩
-
-/-- The exponent `j` is the integer `j`. -/
-@[simp]
-theorem coe_exponent (j : ℕ) : (exponent j : ℤ) = j :=
-  (rfl)
-
-/-- Natural multiples of the exponent `1` are the natural exponents. -/
-theorem nsmul_exponent_one (j : ℕ) : j • exponent 1 = exponent j :=
-  Subtype.ext (by simp)
-
-section TAdic
-
-variable (A : Type*) [CommSemiring A]
-
-/-- The variable `t` of `A[t]`, the monomial of exponent `1` over the nonnegative integers. -/
-def t : A[Q] :=
-  single (exponent 1) 1
-
-/-- The powers of `t` are the monomials of natural exponent. -/
-theorem t_pow (j : ℕ) : t A ^ j = single (exponent j) 1 := by
-  rw [t, single_pow, one_pow, nsmul_exponent_one]
-
-/-- A monomial of exponent `k` lies in the `k`-th term of the positive-increment filtration
-of `A[t]`. -/
-theorem single_exponent_mem_filtration_ideal (k : ℕ) (r : A) :
-    single (exponent k) r ∈
-      (TropicalVertexCoefficientAction.filtration (R := A) nonnegIntegers Q).ideal k := by
-  rw [TropicalVertexCoefficientAction.filtration_ideal,
-    AddSubmonoid.single_mem_monoidAlgebraIdeal_iff]
-  exact Or.inr ⟨exponent k, by simp, by simp, 0, (zero_add _).symm⟩
-
-/-- The positive-increment filtration of `A[t]` over the nonnegative integers is the `t`-adic
-filtration. -/
-theorem filtration_eq_ofIdeal :
-    TropicalVertexCoefficientAction.filtration (R := A) nonnegIntegers Q =
-      AlgFiltration.ofIdeal (Ideal.span {t A}) := by
-  refine AlgFiltration.ext (funext fun k => le_antisymm ?_ ?_)
-  · rw [TropicalVertexCoefficientAction.filtration_ideal, AddSubmonoid.monoidAlgebraIdeal_le_iff]
-    rintro n - hn
-    have hn' : 0 ≤ (n : ℤ) - k := by simpa using hn
-    rw [AlgFiltration.ofIdeal_ideal, Ideal.span_singleton_pow, t_pow,
-      Ideal.mem_span_singleton']
-    refine ⟨single ⟨(n : ℤ) - k, mem_nonnegIntegers_monoid.mpr hn'⟩ 1, ?_⟩
-    rw [of'_apply, single_mul_single, one_mul]
-    exact congrArg (single · 1) (Subtype.ext (by simp))
-  · rw [AlgFiltration.ofIdeal_ideal, Ideal.span_singleton_pow, t_pow,
-      Ideal.span_singleton_le_iff_mem]
-    exact single_exponent_mem_filtration_ideal A k 1
-
-end TAdic
 
 variable (R : Type*) [CommRing R]
 
@@ -116,28 +65,34 @@ section TAdic
 evaluated at `a t`. -/
 def atSeries : (F).completion :=
   (F).completedAeval (R := R)
-    ⟨(F).toCompletion (single (exponent 1) Polynomial.X),
+    ⟨(F).toCompletion (single (natExponent 1) Polynomial.X),
       ((F).toCompletion_mem_completionIdeal_iff 1 _).mpr
-        (single_exponent_mem_filtration_ideal _ 1 _)⟩
+        (TropicalVertexCoefficientAction.single_natExponent_mem_filtration_nonnegIntegers_ideal
+          _ 1 _)⟩
     (PowerSeries.mk 1)
 
 /-- The series `∑ⱼ tʲ` in the `t`-adic completion of `R[t]`: the geometric series evaluated
 at `t`. -/
 def tSeries : (G).completion :=
   (G).completedAeval (R := R)
-    ⟨(G).toCompletion (t R), ((G).toCompletion_mem_completionIdeal_iff 1 _).mpr
-      (single_exponent_mem_filtration_ideal R 1 1)⟩
+    ⟨(G).toCompletion (X R), ((G).toCompletion_mem_completionIdeal_iff 1 _).mpr
+      (TropicalVertexCoefficientAction.X_mem_filtration_nonnegIntegers_ideal_one R)⟩
     (PowerSeries.mk 1)
 
 /-- At order `k`, the series `∑ⱼ aʲ tʲ` is the class of `∑_{j ≤ k} aʲ tʲ`. -/
 theorem projection_atSeries (k : ℕ) :
     (F).projection k (atSeries R) =
       Ideal.Quotient.mk _
-        (∑ j ∈ Finset.range (k + 1), single (exponent j) (Polynomial.X (R := R) ^ j)) := by
-  rw [atSeries, AlgFiltration.projection_completedAeval_eq_sum, map_sum]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  rw [PowerSeries.coeff_mk, Pi.one_apply, one_smul, AlgFiltration.projection_toCompletion,
-    ← map_pow, single_pow, nsmul_exponent_one]
+        (∑ j ∈ Finset.range (k + 1), single (natExponent j) (Polynomial.X (R := R) ^ j)) := by
+  rw [atSeries, AlgFiltration.projection_completedAeval_eq_sum]
+  simp [← map_pow]
+
+/-- At order `k`, the series `∑ⱼ tʲ` is the class of `∑_{j ≤ k} tʲ`. -/
+theorem projection_tSeries (k : ℕ) :
+    (G).projection k (tSeries R) =
+      Ideal.Quotient.mk _ (∑ j ∈ Finset.range (k + 1), X R ^ j) := by
+  simp only [tSeries, AlgFiltration.projection_completedAeval_eq_sum, map_sum, map_pow,
+    PowerSeries.coeff_mk, Pi.one_apply, one_smul, AlgFiltration.projection_toCompletion]
 
 /-- The coefficientwise substitution `a ↦ 1` from `R[a][t]` to `R[t]`. -/
 def evalOneMap : (Polynomial R)[Q] →ₐ[R] R[Q] :=
@@ -186,13 +141,13 @@ theorem completionMap_atOne_atSeries : (atOne R).completionMap (atSeries R) = tS
     atSeries, AlgFiltration.mapCompletion_completedAeval _ _ (RingHom.id R) _ hψ _ _ _
       (filtration_ideal_le_comap_atOne R 0), PowerSeries.map_id, id_eq, tSeries]
   refine congrArg (fun x => (G).completedAeval x (PowerSeries.mk 1)) (Subtype.ext ?_)
-  simp [AlgFiltration.mapCompletion_toCompletion, evalOneMap, t]
+  simp [AlgFiltration.mapCompletion_toCompletion, evalOneMap, X_def]
 
 /-- The series `∑ⱼ aʲ tʲ` is positive for `ℕ[a][t]`. -/
 theorem isPositive_atSeries : (F).IsPositive 𝒫 (atSeries R) := by
   rw [atSeries]
   refine AlgFiltration.IsPositive.completedAeval (AlgFiltration.isPositive_toCompletion
-    (RingHom.mem_rangeS.mpr ⟨single (exponent 1) Polynomial.X, by simp⟩)) fun i => ?_
+    (RingHom.mem_rangeS.mpr ⟨single (natExponent 1) Polynomial.X, by simp⟩)) fun i => ?_
   rw [PowerSeries.coeff_mk, Pi.one_apply, map_one]
   exact one_mem _
 
@@ -217,6 +172,13 @@ def aSeries : (𝔄).completion :=
     ⟨(𝔄).toCompletion Polynomial.X, ((𝔄).toCompletion_mem_completionIdeal_iff 1 _).mpr
       (X_mem_ideal_one R)⟩
     (PowerSeries.mk 1)
+
+/-- At order `k`, the series `∑ⱼ aʲ` is the class of `∑_{j ≤ k} aʲ`. -/
+theorem projection_aSeries (k : ℕ) :
+    (𝔄).projection k (aSeries R) =
+      Ideal.Quotient.mk _ (∑ j ∈ Finset.range (k + 1), Polynomial.X (R := R) ^ j) := by
+  simp only [aSeries, AlgFiltration.projection_completedAeval_eq_sum, map_sum, map_pow,
+    PowerSeries.coeff_mk, Pi.one_apply, one_smul, AlgFiltration.projection_toCompletion]
 
 /-- In the `a`-adic completion, `∑ⱼ aʲ` is the inverse of `1 - a`. -/
 theorem aSeries_mul_one_sub : aSeries R * (1 - (𝔄).toCompletion Polynomial.X) = 1 := by
