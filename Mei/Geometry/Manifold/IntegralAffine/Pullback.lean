@@ -6,7 +6,7 @@ Authors: Claude Code
 module
 
 public import Mei.Geometry.Manifold.AtlasMap
-public import Mei.Geometry.Manifold.IntegralAffine.ExponentSystem
+public import Mei.Geometry.Manifold.IntegralAffine.ExponentSystem.Basic
 
 /-!
 # Pullback of exponent systems along atlas maps
