@@ -197,6 +197,13 @@ def coefficientGradedLieHom : GradedLieHom (PositiveDegreeMap.id (positiveDegree
         exact Submodule.zero_mem _
 
 omit [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] in
+/-- The graded coefficient map has the underlying semidirect coefficient map. -/
+@[simp]
+theorem coefficientGradedLieHom_apply (x : ProbeLie d ℳ p ℒ) :
+    coefficientGradedLieHom d ℳ 𝓝 p ℒ f hf hequiv x =
+      coefficientLieHom d ℳ 𝓝 p ℒ f hf hequiv x := by rfl
+
+omit [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] in
 /-- Coefficient changes preserve the probe wall spaces, with no injectivity assumption. -/
 theorem coefficientGradedLieHom_mem_wall {Λ : Type*} [AddCommMonoid Λ]
     {ρ : Γ →+ Λ} (H : DirectedWallSpaces ρ ℒ)
