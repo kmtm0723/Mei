@@ -13,9 +13,8 @@ public import Mei.Algebra.QuantumMonoidAlgebra.Ray.Shifted.Map
 # Naturality of global quantum ray actions
 
 Compatible scalar and positive degree maps intertwine the global ray actions.
-The result descends the existing arbitrary-bilinear-form local naturality law and
-uses independence of containing charts. Exponent maps may merge distinct positive
-rays, and the coefficient homomorphism need not be injective.
+Exponent maps may merge distinct positive rays, the coefficient homomorphism need
+not be injective, and neither bilinear form needs to be alternating.
 -/
 
 public section
@@ -59,10 +58,8 @@ theorem mapShiftedDirectLimit_directLimitRayAction
       directLimitRayAction q' β' e ⟨T n, T.map_mem n.property⟩
         (mappedRay_degree_pos d e T n hn) (Units.map (PowerSeries.map φ).toMonoidHom H)
         (mapShiftedDirectLimit d e T φ h x) := by
-  let hx := d.exists_toShiftedDirectLimit (grade q β) x
-  let s := Classical.choose hx
-  let z := Classical.choose (Classical.choose_spec hx)
-  have hz := Classical.choose_spec (Classical.choose_spec hx)
+  refine (d.exists_toShiftedDirectLimit (grade q β) x).elim fun s hs => ?_
+  refine hs.elim fun z hz => ?_
   let t : Multiset e.monoid := {⟨T (s.sum : Γ), T.map_mem s.sum.property⟩}
   have ht : T (d.coefficientOrigin s) - e.coefficientOrigin t ∈ e.monoid := by
     simp only [PositiveDegrees.coefficientOrigin_eq_neg_sum, t, Multiset.sum_singleton,
@@ -82,10 +79,19 @@ theorem mapShiftedDirectLimit_directLimitRayAction
     (mapShiftedCompletion d e T φ h (d.coefficientOrigin s) z)
   have h₅ := congrArg (directLimitRayAction q' β' e N hn' K)
     (mapShiftedDirectLimit_toShiftedDirectLimit d e T φ h s t ht z)
-  have hchart := h₁.trans (h₂.trans (h₃.trans (h₄.symm.trans h₅.symm)))
-  exact (congrArg (fun y => mapShiftedDirectLimit d e T φ h
-      (directLimitRayAction q β d n hn H y)) hz).symm.trans
-    (hchart.trans (congrArg (fun y => directLimitRayAction q' β' e N hn' K
-      (mapShiftedDirectLimit d e T φ h y)) hz))
+  -- Compute both global actions in a common chart using local naturality.
+  calc
+    _ = _ := (congrArg (fun y => mapShiftedDirectLimit d e T φ h
+      (directLimitRayAction q β d n hn H y)) hz).symm
+    _ = _ := h₁
+    _ = E (mapShiftedCompletion d e T φ h (d.coefficientOrigin s)
+        (shiftedRayAction q β d n hn (d.coefficientOrigin s) H z)) := h₂
+    _ = E (shiftedRayAction q' β' e N hn' (T (d.coefficientOrigin s)) K
+        (mapShiftedCompletion d e T φ h (d.coefficientOrigin s) z)) := h₃
+    _ = directLimitRayAction q' β' e N hn' K
+        (E (mapShiftedCompletion d e T φ h (d.coefficientOrigin s) z)) := h₄.symm
+    _ = _ := h₅.symm
+    _ = _ := congrArg (fun y => directLimitRayAction q' β' e N hn' K
+      (mapShiftedDirectLimit d e T φ h y)) hz
 
 end Mei.QuantumMonoidAlgebra
