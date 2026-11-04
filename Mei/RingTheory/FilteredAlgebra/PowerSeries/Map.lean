@@ -52,7 +52,7 @@ theorem mapCompletion_completedAeval (x : F.completionIdeal 1) (f : PowerSeries 
 
 /-- Completed evaluation is natural when a named completion map sends the chosen argument
 to a specified element of the target first ideal. -/
-theorem mapCompletion_aeval_of_eq
+theorem mapCompletion_completedAeval_of_eq
     {R S A B : Type*} [CommRing R] [CommRing S] [Ring A] [Ring B]
     [Algebra R A] [Algebra S B] (F : AlgFiltration A) (G : AlgFiltration B)
     (φ : R →+* S) (ψ : A →+* B)
