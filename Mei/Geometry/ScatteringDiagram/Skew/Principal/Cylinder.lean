@@ -28,9 +28,10 @@ counterpart, whose wall at the unfrozen index `k` is the full hyperplane
 `ker κ(e_k)⟨e_k,-⟩` in `M°_ℝ`. Hence the outgoing scattering class of the principal input
 is the cylinder of the projected scattering class.
 
-For the zero form, `p₁* = 0`, so `ρ(r(n)) = 0` and every projected principal wall has
-zero spatial velocity and is incoming. By `SkewLatticeDatum.consistent_of_form_eq_zero`,
-both adapted polynomial inputs are then consistent.
+For a radical degree `n`, with `{-, n} = 0`, `p₁*(n) = 0`, so `ρ(r(n)) = 0` and every
+projected principal wall of degree `r(n)` has zero spatial velocity and is incoming, as is its
+principal cylinder. For the zero form every degree is radical, and by
+`SkewLatticeDatum.consistent_of_form_eq_zero` both adapted polynomial inputs are consistent.
 
 The principal realization follows Gross–Hacking–Keel–Kontsevich, *Canonical bases for
 cluster algebras*, §1 and Appendix B, arXiv:1411.1394v2. We use
@@ -93,22 +94,36 @@ theorem principalCylinder_outgoing_iff :
   simp
 
 include hn in
+/-- A projected principal wall of radical degree `r(n)`, with `{-, n} = 0`, has zero spatial
+velocity, since `ρ(r(n)) = p₁*(n) = 0`. -/
+theorem projectedPrincipal_direction_eq_zero_of_form_flip_eq_zero
+    (hrad : D.form.flip n = 0) : W.direction = 0 := by
+  rw [projectedPrincipal_direction_eq W hn, (D.principalCharacter_eq_zero_iff n).mpr hrad,
+    map_zero, neg_zero]
+
+include hn in
+/-- A projected principal wall of radical degree `r(n)` and its principal cylinder are
+incoming, whatever their supports. -/
+theorem incoming_of_form_flip_eq_zero (hrad : D.form.flip n = 0) :
+    W.Incoming ∧ (W.cylinder h').Incoming := by
+  have hW : W.Incoming := W.incoming_of_geometricDirection_eq_zero (by
+    rw [hn]
+    simp [(D.principalCharacter_eq_zero_iff n).mpr hrad])
+  exact ⟨hW, (DirectedWall.cylinder_incoming_iff W h').mpr hW⟩
+
+include hn in
 /-- For the zero form, every projected principal wall of degree `r(n)` has zero spatial
 velocity, since `ρ(r(n)) = p₁*(n) = 0`. -/
 theorem projectedPrincipal_direction_eq_zero_of_form_eq_zero (hform : D.form = 0) :
-    W.direction = 0 := by
-  rw [projectedPrincipal_direction_eq W hn, D.principalCharacter_eq_zero_of_form_eq_zero hform,
-    LinearMap.zero_apply, map_zero, neg_zero]
+    W.direction = 0 :=
+  projectedPrincipal_direction_eq_zero_of_form_flip_eq_zero W hn (by ext; simp [hform])
 
 include hn in
 /-- For the zero form, every projected principal wall of degree `r(n)` and its principal
 cylinder are incoming, whatever their supports. -/
 theorem incoming_of_form_eq_zero (hform : D.form = 0) :
-    W.Incoming ∧ (W.cylinder h').Incoming := by
-  have hW : W.Incoming := W.incoming_of_geometricDirection_eq_zero (by
-    rw [hn]
-    simp [D.principalCharacter_eq_zero_of_form_eq_zero hform])
-  exact ⟨hW, (DirectedWall.cylinder_incoming_iff W h').mpr hW⟩
+    W.Incoming ∧ (W.cylinder h').Incoming :=
+  incoming_of_form_flip_eq_zero h' W hn (by ext; simp [hform])
 
 end Wall
 
