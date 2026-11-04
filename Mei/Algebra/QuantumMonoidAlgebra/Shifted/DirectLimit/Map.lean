@@ -12,11 +12,10 @@ public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.Inclusion
 /-!
 # Scalar and exponent transport of global quantum coefficients
 
-Compatible scalar and positive degree maps descend from the existing shifted
-completion maps to the module of global coefficients. The descent uses Mathlib's
-module direct-limit universal property after restriction of scalars. No injectivity
-or alternation hypothesis is needed. Chart independence removes any dependence on
-the auxiliary choice of a containing target chart.
+Compatible scalar and positive degree maps induce semilinear maps on global
+quantum coefficients. These maps agree with shifted completion transport in every
+containing target chart, and respect identity and composition. No injectivity or
+alternation hypothesis is needed.
 -/
 
 public section
@@ -201,21 +200,20 @@ private local instance : Module U (a.ShiftedDirectLimit (grade q'' β'')) := inf
 /-- Scalar and exponent transport compose on all global coefficients. -/
 theorem mapShiftedDirectLimit_comp (x : d.ShiftedDirectLimit (grade q β)) :
     mapShiftedDirectLimit (q' := q'') (β' := β'') d a (T'.comp T) (ψ.comp φ)
-      (fun u v => by
-        rw [PositiveDegreeMap.comp_apply, PositiveDegreeMap.comp_apply, ← h', ← h]; rfl) x =
+      (by
+        simpa only [PositiveDegreeMap.comp_apply, AddMonoidHom.comp_apply] using
+          map_comp_compat φ ψ T.toAddMonoidHom T'.toAddMonoidHom h h') x =
       mapShiftedDirectLimit e a T' ψ h' (mapShiftedDirectLimit d e T φ h x) := by
-  let hx := d.exists_toShiftedDirectLimit (grade q β) x
-  let s := Classical.choose hx
-  let z := Classical.choose (Classical.choose_spec hx)
-  have hz := Classical.choose_spec (Classical.choose_spec hx)
+  refine (d.exists_toShiftedDirectLimit (grade q β) x).elim fun s hs => ?_
+  refine hs.elim fun z hz => ?_
   let r := targetChart d a (T'.comp T) s
   have hrc := targetChart_mem d a (T'.comp T) s
   have hr : T' (T (d.coefficientOrigin s)) - a.coefficientOrigin r ∈ a.monoid := by
     simpa only [PositiveDegreeMap.comp_apply] using hrc
   let hc : ∀ u v, Units.map (ψ.comp φ).toMonoidHom (q ^ β u v) =
-      q'' ^ β'' ((T'.comp T) u) ((T'.comp T) v) := fun u v => by
-    rw [PositiveDegreeMap.comp_apply, PositiveDegreeMap.comp_apply, ← h', ← h]
-    rfl
+      q'' ^ β'' ((T'.comp T) u) ((T'.comp T) v) := by
+    simpa only [PositiveDegreeMap.comp_apply, AddMonoidHom.comp_apply] using
+      map_comp_compat φ ψ T.toAddMonoidHom T'.toAddMonoidHom h h'
   have h₁ := mapShiftedDirectLimit_toShiftedDirectLimit d a (T'.comp T) (ψ.comp φ) hc
     s r hrc z
   have h₂ := mapShiftedCompletion_comp d e T φ h (d.coefficientOrigin s) a T' ψ h' z
@@ -228,11 +226,23 @@ theorem mapShiftedDirectLimit_comp (x : d.ShiftedDirectLimit (grade q β)) :
   have hcast := toShiftedDirectLimitOfChart_cast a
     (PositiveDegreeMap.comp_apply T' T (d.coefficientOrigin s)) r hr
     (mapShiftedCompletion d a (T'.comp T) (ψ.comp φ) hc (d.coefficientOrigin s) z)
-  have hc' := h₁.trans (hcast.symm.trans ((congrArg
-    (a.toShiftedDirectLimitOfChart (grade q'' β'') (T' (T (d.coefficientOrigin s))) r hr)
-      h₂).trans (h₄.symm.trans h₃.symm)))
-  exact (congrArg (mapShiftedDirectLimit d a (T'.comp T) (ψ.comp φ) hc) hz).symm.trans
-    (hc'.trans (congrArg (fun y =>
-      mapShiftedDirectLimit e a T' ψ h' (mapShiftedDirectLimit d e T φ h y)) hz))
+  -- The composed map and the successive maps agree in one containing target chart.
+  calc
+    _ = _ := (congrArg (mapShiftedDirectLimit d a (T'.comp T) (ψ.comp φ) hc) hz).symm
+    _ = _ := h₁
+    _ = a.toShiftedDirectLimitOfChart (grade q'' β'') (T' (T (d.coefficientOrigin s))) r hr
+        (cast (congrArg (a.ShiftedCoefficients (grade q'' β''))
+          (PositiveDegreeMap.comp_apply T' T (d.coefficientOrigin s)))
+          (mapShiftedCompletion d a (T'.comp T) (ψ.comp φ) hc (d.coefficientOrigin s) z)) :=
+      hcast.symm
+    _ = a.toShiftedDirectLimitOfChart (grade q'' β'') (T' (T (d.coefficientOrigin s))) r hr
+        (mapShiftedCompletion e a T' ψ h' (T (d.coefficientOrigin s))
+          (mapShiftedCompletion d e T φ h (d.coefficientOrigin s) z)) :=
+      congrArg (a.toShiftedDirectLimitOfChart (grade q'' β'')
+        (T' (T (d.coefficientOrigin s))) r hr) h₂
+    _ = _ := h₄.symm
+    _ = _ := h₃.symm
+    _ = _ := congrArg (fun y =>
+      mapShiftedDirectLimit e a T' ψ h' (mapShiftedDirectLimit d e T φ h y)) hz
 
 end Mei.QuantumMonoidAlgebra

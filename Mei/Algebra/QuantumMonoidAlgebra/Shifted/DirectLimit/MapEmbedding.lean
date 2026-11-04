@@ -87,7 +87,9 @@ theorem mapShiftedDirectLimit_toShiftedDirectLimitAlgHom (x : QuantumMonoidAlgeb
     { toFun := map φ T.toAddMonoidHom h
       map_add' := (map φ T.toAddMonoidHom h).map_add
       map_smul' := map_smul φ T.toAddMonoidHom h }
-  have hf (z : QuantumMonoidAlgebra q β) : f z = map φ T.toAddMonoidHom h z := rfl
+  have hf (z : QuantumMonoidAlgebra q β) : f z = map φ T.toAddMonoidHom h z := by
+    -- Only the local semilinear-map record is unfolded: its toFun is the quantum map.
+    rfl
   have hmap : (mapShiftedDirectLimit d e T φ h).comp
         (d.toShiftedDirectLimitAlgHom (grade q β) hd).toLinearMap =
       (e.toShiftedDirectLimitAlgHom (grade q' β') he).toLinearMap.comp f := by
