@@ -30,9 +30,14 @@ while their images may lie on one ray of `P`; the equivalence regroups the image
 ray factors of `1 + ∑ c_α z^{n_α}`.
 
 The walls are full affine hyperplanes; walls supported on proper polyhedral subsets of
-hyperplanes are not treated. Not formalized here: the maps of shifted modules induced by the
-lift, positivity of the lifted wall functions, and the identification
-`z^{v_{i,s}} ↦ p_{i,s} z^{s w_i}` for BLM polynomial inputs. The degree inequality of the lift is
+hyperplanes are not treated. If the first coordinates of the exponents on each hyperplane are
+positive multiples of one direction, so are the projections of the lifted exponents
+(`HyperplaneTermInput.liftFiniteAlphabet_projectedDirection`). The grouping and positivity of
+the lifted wall functions are
+`HyperplaneTermInput.isPositiveWallRepresentative_liftFiniteAlphabet_diagram`, in
+`Mei.Geometry.ScatteringDiagram.HyperplaneTermInput.Grouping`. Not formalized here: the maps of
+shifted modules induced by the lift, and the identification `z^{v_{i,s}} ↦ p_{i,s} z^{s w_i}` for
+BLM polynomial inputs. The degree inequality of the lift is
 `PositiveDegrees.finiteAlphabet_degree_lt`.
 
 The finite alphabet lift follows Burcroff–Lee–Mou, *Positivity of generalized cluster
@@ -134,6 +139,18 @@ theorem liftFiniteAlphabet_wallIndex :
 theorem liftFiniteAlphabet_exponent (α : E) :
     (I.liftFiniteAlphabet hτ hτ0 hπ).exponent α = τ (I.exponent α) := by
   simp [liftFiniteAlphabet]
+
+/-- If the first coordinates of the exponents `x_α` on each hyperplane `i` of an input on the
+finite alphabet are positive multiples of `u_i`, the lifted exponents `τ x_α` project under `π`
+to the same positive multiples. -/
+theorem liftFiniteAlphabet_projectedDirection (u : ι → M)
+    (hu : ∀ α, ∃ b : ℕ, 0 < b ∧ (I.exponent α).1 = b • u (I.wallIndex α)) (α : E) :
+    ∃ b : ℕ, 0 < b ∧ π ((I.liftFiniteAlphabet hτ hτ0 hπ).exponent α) =
+      b • u ((I.liftFiniteAlphabet hτ hτ0 hπ).wallIndex α) := by
+  rw [liftFiniteAlphabet_exponent, liftFiniteAlphabet_wallIndex,
+    ← PositiveDegrees.finiteAlphabetLift_apply m hτ hτ0,
+    projection_finiteAlphabetLift hτ hτ0 hπ (I.exponent_mem α)]
+  exact hu α
 
 /-- The lift of the alphabet input has the exponents `n_α = τ v_α`. -/
 theorem liftFiniteAlphabet_finiteAlphabet_exponent (μ : ι → M →+ ℤ) (hμ : ∀ i, μ i ≠ 0)

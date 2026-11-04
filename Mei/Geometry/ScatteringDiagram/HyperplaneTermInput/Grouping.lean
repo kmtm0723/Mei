@@ -149,19 +149,6 @@ variable {R M ι E L : Type u} {V : Type*} [CommRing R] [AddCommGroup M] [Fintyp
   (hπ : ∀ α, π (τ (PositiveDegrees.letter m α)) = m α)
   (I : HyperplaneTermInput (PositiveDegrees.finiteAlphabet m) (AddMonoidHom.fst M (E → ℤ)) ι E)
 
-include hπ in
-/-- If the first coordinates of the exponents `x_α` on each hyperplane `i` of an input on the
-finite alphabet are positive multiples of `u_i`, the lifted exponents `τ x_α` project under `π`
-to the same positive multiples. -/
-theorem liftFiniteAlphabet_projectedDirection (u : ι → M)
-    (hu : ∀ α, ∃ b : ℕ, 0 < b ∧ (I.exponent α).1 = b • u (I.wallIndex α)) (α : E) :
-    ∃ b : ℕ, 0 < b ∧ π ((I.liftFiniteAlphabet hτ hτ0 hπ).exponent α) =
-      b • u ((I.liftFiniteAlphabet hτ hτ0 hπ).wallIndex α) := by
-  rw [liftFiniteAlphabet_exponent, liftFiniteAlphabet_wallIndex,
-    ← PositiveDegrees.finiteAlphabetLift_apply m hτ hτ0,
-    projection_finiteAlphabetLift hτ hτ0 hπ (I.exponent_mem α)]
-  exact hu α
-
 variable [Algebra ℚ R] [Module.Free ℤ L] [DecidableEq ι] [DecidableEq L]
   [NormedAddCommGroup V] [NormedSpace ℝ V] {j : M →+ V} (g : TauCeti.Toric.IsIntegralLattice j)
   (c : E → R) (u : ι → M) (hu : ∀ α, ∃ b : ℕ, 0 < b ∧ (I.exponent α).1 = b • u (I.wallIndex α))
