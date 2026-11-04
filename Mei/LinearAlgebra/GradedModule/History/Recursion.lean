@@ -19,6 +19,8 @@ Only the histories of each actual input are needed; the grading may be infinite.
 Uniform finite support on an input range gives the corresponding identity of
 linear maps, including after any final linear output map. Finite generation of
 that range supplies such supports through `exists_uniform_homogeneousHistory_support`.
+A finitely generated input range also supplies uniform supports for any linear
+family of nilpotent recursion solutions, followed by any linear output map.
 All statements hold over a semiring and semimodule; no additive cancellation is assumed.
 -/
 
@@ -70,5 +72,31 @@ theorem sum_sum_comp_homogeneousHistory_comp_eq_comp_finiteRecursion_comp
       intro x
       simp only [LinearMap.sum_apply, LinearMap.comp_apply, List.ofFn_const,
         List.prod_replicate, Module.End.finiteRecursion_apply, map_sum]
+
+/-- A finitely generated input range gives a uniform finite history expansion
+of any linear family solving a nilpotent recursion, after any linear output map.
+The same history supports work for all inputs, without a finite ambient grading. -/
+theorem exists_uniform_homogeneousHistory_expansion_of_eq_add
+    {E N : Type*} [AddCommMonoid E] [Module R E] [AddCommMonoid N] [Module R N]
+    (a : E →ₗ[R] M) (ha : (LinearMap.range a).FG)
+    {r : ℕ} (hU : U ^ r = 0) (x : E →ₗ[R] M) (hx : x = a + U.comp x)
+    (b : M →ₗ[R] N) :
+    ∃ S : (j : ℕ) → Finset (Fin j → ι),
+      (∀ j < r, ∀ p ∉ S j, (homogeneousHistory ℳ (fun _ : Fin j => U) p).comp a = 0) ∧
+      (∑ j ∈ Finset.range r,
+        ∑ p ∈ S j, b.comp ((homogeneousHistory ℳ (fun _ : Fin j => U) p).comp a)) =
+        b.comp x := by
+  classical
+  have hs (j : ℕ) := exists_uniform_homogeneousHistory_support ℳ
+    (fun _ : Fin j => U) a ha
+  choose S hS using hs
+  have hsol : x = (U.finiteRecursion r).comp a := by
+    apply LinearMap.ext
+    intro z
+    exact U.eq_finiteRecursion_of_eq_add hU (LinearMap.congr_fun hx z)
+  refine ⟨S, fun j _ => hS j, ?_⟩
+  rw [hsol]
+  exact sum_sum_comp_homogeneousHistory_comp_eq_comp_finiteRecursion_comp
+    ℳ U a b r S (fun j _ => hS j)
 
 end Mei
