@@ -118,33 +118,105 @@ private theorem wordCoefficientEquiv_decoration (word : List J) (β) (j) :
     congrFun (wordIncomingEquiv_properties ..).2.2.2 j]
   exact decoratedRayCoefficientEquiv_decoration ..
 
-/-- Over all encounter words, regrading identifies exactly the source rays whose
-final coefficient survives with the target cutoff ray family. -/
-def cutoffDecoratedRayRegradingEquiv : {β : Source // r β.decoration ≠ 0} ≃ Target := by
-  let F : {β : Source // r β.decoration ≠ 0} → Target := fun β => by
-    let E := wordCoefficientEquiv ℳ 𝓝 r σ hσ hr T U hT a v w hv f c ε P W S C Q
-      β.val.itinerary
-    let γ := E ⟨β.val.realization, by
-      simpa only [CutoffDecoratedRay.decoration_eq, DecoratedAdmissibleRay.decoration_zero]
-        using β.property⟩
-    have hh : γ.1.val = σ ∘ β.val.realization.1.val := by
-      exact wordCoefficientEquiv_history ..
-    exact ⟨β.val.itinerary, γ,
-      fun j => by rw [hh]; exact (hcut _).mp (β.val.degree_mem j),
-      fun i j hij => by
-        rw [hh]
-        simpa only [Function.comp_apply, ← map_sub] using
-          (hpos _).mp (β.val.degree_sub_mem i j hij)⟩
-  refine Equiv.ofBijective F ⟨?_, ?_⟩
+/-- Regrade a surviving cutoff ray, keeping its encounter word and complete geometry. -/
+def cutoffDecoratedRayRegradingMap (β : {β : Source // r β.decoration ≠ 0}) : Target := by
+  let E := wordCoefficientEquiv ℳ 𝓝 r σ hσ hr T U hT a v w hv f c ε P W S C Q
+    β.val.itinerary
+  let γ := E ⟨β.val.realization, by
+    simpa only [CutoffDecoratedRay.decoration_eq, DecoratedAdmissibleRay.decoration_zero]
+      using β.property⟩
+  have hh : γ.1.val = σ ∘ β.val.realization.1.val := by
+    exact wordCoefficientEquiv_history ..
+  exact ⟨β.val.itinerary, γ,
+    fun j => by rw [hh]; exact (hcut _).mp (β.val.degree_mem j),
+    fun i j hij => by
+      rw [hh]
+      simpa only [Function.comp_apply, ← map_sub] using
+        (hpos _).mp (β.val.degree_sub_mem i j hij)⟩
+
+/-- Every recorded encounter, including unchanged-degree encounters, is retained. -/
+@[simp]
+theorem cutoffDecoratedRayRegradingMap_itinerary
+    (β : {β : Source // r β.decoration ≠ 0}) :
+    (cutoffDecoratedRayRegradingMap d e ℳ 𝓝 r σ hσ hr T U hT a v w hv f c ε P W S C
+      k l hcut hpos Q β).itinerary = β.val.itinerary := (rfl)
+
+/-- Every segment degree is regraded, retaining shifts of zero spatial direction. -/
+@[simp]
+theorem cutoffDecoratedRayRegradingMap_history
+    (β : {β : Source // r β.decoration ≠ 0}) :
+    HEq (cutoffDecoratedRayRegradingMap d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q β).realization.1.val (σ ∘ β.val.realization.1.val) :=
+  heq_of_eq (wordCoefficientEquiv_history ..)
+
+/-- The entire degree-labelled encounter word is reindexed without omitting encounters. -/
+@[simp]
+theorem cutoffDecoratedRayRegradingMap_degreeItinerary
+    (β : {β : Source // r β.decoration ≠ 0}) :
+    (cutoffDecoratedRayRegradingMap d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q β).degreeItinerary =
+      β.val.degreeItinerary.map (Prod.map σ id) := by
+  simp only [CutoffDecoratedRay.degreeItinerary_eq, List.map_ofFn]
+  rw [eq_of_heq (cutoffDecoratedRayRegradingMap_history d e ℳ 𝓝 r σ hσ hr
+    T U hT a v w hv f c ε P W S C k l hcut hpos Q β)]
+  rfl
+
+/-- Regrading preserves the entire affine path, including the incoming tail. -/
+@[simp]
+theorem cutoffDecoratedRayRegradingMap_ray
+    (β : {β : Source // r β.decoration ≠ 0}) :
+    (cutoffDecoratedRayRegradingMap d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q β).realization.2.ray = β.val.realization.2.ray :=
+  wordCoefficientEquiv_ray ..
+
+/-- Every encounter parameter is preserved across the full cutoff family. -/
+@[simp]
+theorem cutoffDecoratedRayRegradingMap_parameter
+    (β : {β : Source // r β.decoration ≠ 0}) :
+    HEq (cutoffDecoratedRayRegradingMap d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q β).realization.2.parameter β.val.realization.2.parameter :=
+  heq_of_eq (wordCoefficientEquiv_parameter ..)
+
+/-- The whole coefficient on every segment specializes by the coefficient map. -/
+@[simp↓]
+theorem cutoffDecoratedRayRegradingMap_segmentDecorations
+    (β : {β : Source // r β.decoration ≠ 0}) :
+    HEq (cutoffDecoratedRayRegradingMap d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q β).realization.decoration
+      (fun j => r (β.val.realization.decoration j)) :=
+  heq_of_eq (funext (fun _j => wordCoefficientEquiv_decoration ..))
+
+/-- The final whole decoration specializes without discarding retained encounters. -/
+@[simp↓]
+theorem cutoffDecoratedRayRegradingMap_decoration
+    (β : {β : Source // r β.decoration ≠ 0}) :
+    (cutoffDecoratedRayRegradingMap d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q β).decoration = r β.val.decoration := by
+  have hh := eq_of_heq
+    (cutoffDecoratedRayRegradingMap_history d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q β)
+  rw [CutoffDecoratedRay.decoration_eq, CutoffDecoratedRay.decoration_eq, hh]
+  exact (map_homogeneousHistory_of_injective ℳ 𝓝 r σ hr hσ
+    (fun j => T (β.val.itinerary.get j)) (fun j => U (β.val.itinerary.get j))
+    (fun j => hT (β.val.itinerary.get j)) β.val.realization.1.val a).symm
+
+/-- The regrading map is bijective on source rays whose final coefficient survives. -/
+theorem cutoffDecoratedRayRegradingMap_bijective : Function.Bijective
+    (cutoffDecoratedRayRegradingMap d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q) := by
+  constructor
   · rintro ⟨⟨word, β, hβ, hmβ⟩, hb⟩ ⟨⟨word', γ, hγ, hmγ⟩, hc⟩ h
     have hw := congrArg CutoffDecoratedRay.itinerary h
+    simp only [cutoffDecoratedRayRegradingMap_itinerary] at hw
     change word = word' at hw
     subst word'
     apply Subtype.ext
     apply CutoffDecoratedRay.ext
     · rfl
     have hg := congrArg (fun z : Target => z.degreeItinerary) h
-    simp only [CutoffDecoratedRay.degreeItinerary_eq, F, wordCoefficientEquiv_history] at hg
+    rw [cutoffDecoratedRayRegradingMap_degreeItinerary,
+      cutoffDecoratedRayRegradingMap_degreeItinerary] at hg
+    simp only [CutoffDecoratedRay.degreeItinerary_eq, List.map_ofFn] at hg
     have hh : σ ∘ β.1.val = σ ∘ γ.1.val := by
       have he := List.ofFn_injective hg
       exact funext fun j => congrArg Prod.fst (congrFun he j)
@@ -156,6 +228,7 @@ def cutoffDecoratedRayRegradingEquiv : {β : Source // r β.decoration ≠ 0} �
     have hh : σ ∘ α.val.1.val = β.realization.1.val := by
       have he := wordCoefficientEquiv_history ℳ 𝓝 r σ hσ hr T U hT a v w hv
         f c ε P W S C Q β.itinerary α
+      -- `E` names the word-specific equivalence, so its inverse law applies after folding.
       change (E α).1.val = _ at he
       rw [Equiv.apply_symm_apply] at he
       exact he.symm
@@ -170,24 +243,50 @@ def cutoffDecoratedRayRegradingEquiv : {β : Source // r β.decoration ≠ 0} �
     refine ⟨⟨γ, by
       simpa only [CutoffDecoratedRay.decoration_eq, DecoratedAdmissibleRay.decoration_zero]
         using α.property⟩, ?_⟩
-    apply CutoffDecoratedRay.ext
-    · rfl
-    exact heq_of_eq (E.apply_symm_apply β.realization)
+    apply CutoffDecoratedRay.degreeItinerary_injective
+    rw [cutoffDecoratedRayRegradingMap_degreeItinerary]
+    simp only [CutoffDecoratedRay.degreeItinerary_eq, List.map_ofFn]
+    change List.ofFn (fun j => (σ (α.val.1.val j), β.itinerary.get j)) =
+      List.ofFn (fun j => (β.realization.1.val j, β.itinerary.get j))
+    exact congrArg List.ofFn (funext fun j => Prod.ext (congrFun hh j) rfl)
+
+/-- Over all encounter words, regrading identifies exactly the source rays whose
+final coefficient survives with the target cutoff ray family. -/
+def cutoffDecoratedRayRegradingEquiv : {β : Source // r β.decoration ≠ 0} ≃ Target :=
+  Equiv.ofBijective
+    (cutoffDecoratedRayRegradingMap d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q)
+    (cutoffDecoratedRayRegradingMap_bijective d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q)
+
+/-- The all-itinerary equivalence applies the named forward regrading map. -/
+theorem cutoffDecoratedRayRegradingEquiv_apply
+    (β : {β : Source // r β.decoration ≠ 0}) :
+    cutoffDecoratedRayRegradingEquiv d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q β =
+    cutoffDecoratedRayRegradingMap d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q β := by
+  exact Equiv.ofBijective_apply _ _ β
 
 /-- Every recorded encounter, including unchanged-degree encounters, is retained. -/
 @[simp]
 theorem cutoffDecoratedRayRegradingEquiv_itinerary
     (β : {β : Source // r β.decoration ≠ 0}) :
     (cutoffDecoratedRayRegradingEquiv d e ℳ 𝓝 r σ hσ hr T U hT a v w hv f c ε P W S C
-      k l hcut hpos Q β).itinerary = β.val.itinerary := (rfl)
+      k l hcut hpos Q β).itinerary = β.val.itinerary := by
+  rw [cutoffDecoratedRayRegradingEquiv_apply]
+  exact cutoffDecoratedRayRegradingMap_itinerary d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+    f c ε P W S C k l hcut hpos Q β
 
 /-- Every segment degree is regraded, retaining shifts of zero spatial direction. -/
 @[simp]
 theorem cutoffDecoratedRayRegradingEquiv_history
     (β : {β : Source // r β.decoration ≠ 0}) :
     HEq (cutoffDecoratedRayRegradingEquiv d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
-      f c ε P W S C k l hcut hpos Q β).realization.1.val (σ ∘ β.val.realization.1.val) :=
-  heq_of_eq (wordCoefficientEquiv_history ..)
+      f c ε P W S C k l hcut hpos Q β).realization.1.val (σ ∘ β.val.realization.1.val) := by
+  rw [cutoffDecoratedRayRegradingEquiv_apply]
+  exact cutoffDecoratedRayRegradingMap_history d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+    f c ε P W S C k l hcut hpos Q β
 
 /-- The entire degree-labelled encounter word is reindexed without omitting encounters. -/
 @[simp]
@@ -196,26 +295,29 @@ theorem cutoffDecoratedRayRegradingEquiv_degreeItinerary
     (cutoffDecoratedRayRegradingEquiv d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
       f c ε P W S C k l hcut hpos Q β).degreeItinerary =
       β.val.degreeItinerary.map (Prod.map σ id) := by
-  simp only [CutoffDecoratedRay.degreeItinerary_eq, List.map_ofFn]
-  rw [eq_of_heq (cutoffDecoratedRayRegradingEquiv_history d e ℳ 𝓝 r σ hσ hr
-    T U hT a v w hv f c ε P W S C k l hcut hpos Q β)]
-  rfl
+  rw [cutoffDecoratedRayRegradingEquiv_apply]
+  exact cutoffDecoratedRayRegradingMap_degreeItinerary d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+    f c ε P W S C k l hcut hpos Q β
 
 /-- Regrading preserves the entire affine path, including the incoming tail. -/
 @[simp]
 theorem cutoffDecoratedRayRegradingEquiv_ray
     (β : {β : Source // r β.decoration ≠ 0}) :
     (cutoffDecoratedRayRegradingEquiv d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
-      f c ε P W S C k l hcut hpos Q β).realization.2.ray = β.val.realization.2.ray :=
-  wordCoefficientEquiv_ray ..
+      f c ε P W S C k l hcut hpos Q β).realization.2.ray = β.val.realization.2.ray := by
+  rw [cutoffDecoratedRayRegradingEquiv_apply]
+  exact cutoffDecoratedRayRegradingMap_ray d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+    f c ε P W S C k l hcut hpos Q β
 
 /-- Every encounter parameter is preserved across the full cutoff family. -/
 @[simp]
 theorem cutoffDecoratedRayRegradingEquiv_parameter
     (β : {β : Source // r β.decoration ≠ 0}) :
     HEq (cutoffDecoratedRayRegradingEquiv d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
-      f c ε P W S C k l hcut hpos Q β).realization.2.parameter β.val.realization.2.parameter :=
-  heq_of_eq (wordCoefficientEquiv_parameter ..)
+      f c ε P W S C k l hcut hpos Q β).realization.2.parameter β.val.realization.2.parameter := by
+  rw [cutoffDecoratedRayRegradingEquiv_apply]
+  exact cutoffDecoratedRayRegradingMap_parameter d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+    f c ε P W S C k l hcut hpos Q β
 
 /-- The whole coefficient on every segment specializes by the coefficient map. -/
 @[simp↓]
@@ -223,8 +325,10 @@ theorem cutoffDecoratedRayRegradingEquiv_segmentDecorations
     (β : {β : Source // r β.decoration ≠ 0}) :
     HEq (cutoffDecoratedRayRegradingEquiv d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
       f c ε P W S C k l hcut hpos Q β).realization.decoration
-      (fun j => r (β.val.realization.decoration j)) :=
-  heq_of_eq (funext (fun _j => wordCoefficientEquiv_decoration ..))
+      (fun j => r (β.val.realization.decoration j)) := by
+  rw [cutoffDecoratedRayRegradingEquiv_apply]
+  exact cutoffDecoratedRayRegradingMap_segmentDecorations d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+    f c ε P W S C k l hcut hpos Q β
 
 /-- The final whole decoration specializes without discarding retained encounters. -/
 @[simp↓]
@@ -232,13 +336,9 @@ theorem cutoffDecoratedRayRegradingEquiv_decoration
     (β : {β : Source // r β.decoration ≠ 0}) :
     (cutoffDecoratedRayRegradingEquiv d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
       f c ε P W S C k l hcut hpos Q β).decoration = r β.val.decoration := by
-  have hh := eq_of_heq
-    (cutoffDecoratedRayRegradingEquiv_history d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
-      f c ε P W S C k l hcut hpos Q β)
-  rw [CutoffDecoratedRay.decoration_eq, CutoffDecoratedRay.decoration_eq, hh]
-  exact (map_homogeneousHistory_of_injective ℳ 𝓝 r σ hr hσ
-    (fun j => T (β.val.itinerary.get j)) (fun j => U (β.val.itinerary.get j))
-    (fun j => hT (β.val.itinerary.get j)) β.val.realization.1.val a).symm
+  rw [cutoffDecoratedRayRegradingEquiv_apply]
+  exact cutoffDecoratedRayRegradingMap_decoration d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+    f c ε P W S C k l hcut hpos Q β
 
 /-- An injective coefficient map preserves every source ray at corresponding
 cutoffs, including all unchanged-degree and zero-direction encounters. -/
@@ -254,9 +354,9 @@ theorem cutoffDecoratedRayRegradingEmbeddingEquiv_degreeItinerary
     (hinj : Function.Injective r) (β : Source) :
     (cutoffDecoratedRayRegradingEmbeddingEquiv d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
       f c ε P W S C k l hcut hpos Q hinj β).degreeItinerary =
-      β.degreeItinerary.map (Prod.map σ id) :=
-  cutoffDecoratedRayRegradingEquiv_degreeItinerary d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
-    f c ε P W S C k l hcut hpos Q _
+      β.degreeItinerary.map (Prod.map σ id) := by
+  simp only [cutoffDecoratedRayRegradingEmbeddingEquiv, Equiv.trans_apply,
+    Equiv.subtypeUnivEquiv_symm_apply, cutoffDecoratedRayRegradingEquiv_degreeItinerary]
 
 /-- Injective coefficient transport preserves the complete ray and incoming tail. -/
 @[simp]
