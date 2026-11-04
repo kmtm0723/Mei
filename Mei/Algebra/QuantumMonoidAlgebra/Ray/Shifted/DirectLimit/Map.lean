@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.DirectLimit.Map
+public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.DirectLimit.Map.Basic
 public import Mei.Algebra.QuantumMonoidAlgebra.Ray.Shifted.DirectLimit
 public import Mei.Algebra.QuantumMonoidAlgebra.Ray.Shifted.Map
 
