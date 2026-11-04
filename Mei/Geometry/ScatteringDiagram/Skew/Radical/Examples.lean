@@ -90,6 +90,7 @@ def degenerateForm : (Fin 3 → ℤ) →ₗ[ℤ] (Fin 3 → ℤ) →ₗ[ℤ] ℚ
     (fun _ _ _ => by simp; ring) (fun _ _ _ => by simp; ring)
     (fun _ _ _ => by simp; ring) (fun _ _ _ => by simp; ring)
 
+/-- The value of the degenerate form on two vectors of `ℤ³`. -/
 @[simp]
 theorem degenerateForm_apply (x y : Fin 3 → ℤ) :
     degenerateForm x y = (((x 0 - x 1) * y 2 - x 2 * (y 0 - y 1) : ℤ) : ℚ) :=
@@ -109,14 +110,17 @@ def degenerateRankThree : SkewLatticeDatum (Fin 3 → ℤ) where
   integral_unfrozen_sublattice a _ b _ := ⟨_, degenerateForm_apply a b⟩
   integral_unfrozen_inf_sublattice a b _ := ⟨_, degenerateForm_apply a b⟩
 
+/-- Every vector of the rank-three datum is unfrozen. -/
 @[simp]
 theorem degenerateRankThree_unfrozen : degenerateRankThree.unfrozen = ⊤ :=
   (rfl)
 
+/-- The finite-index sublattice of the rank-three datum is all of `ℤ³`. -/
 @[simp]
 theorem degenerateRankThree_sublattice : degenerateRankThree.sublattice = ⊤ :=
   (rfl)
 
+/-- The form of the rank-three datum is the degenerate form. -/
 @[simp]
 theorem degenerateRankThree_form : degenerateRankThree.form = degenerateForm :=
   (rfl)
@@ -131,6 +135,7 @@ theorem degenerateRankThree_form_ne_zero : degenerateRankThree.form ≠ 0 := by
 def rankThreeBasis : Module.Basis (Fin 3) ℤ degenerateRankThree.unfrozen :=
   (Pi.basisFun ℤ (Fin 3)).map (LinearEquiv.ofTop _ degenerateRankThree_unfrozen).symm
 
+/-- The `k`-th vector of the unfrozen basis is the standard basis vector `e_k`. -/
 @[simp]
 theorem coe_rankThreeBasis (k : Fin 3) : (rankThreeBasis k : Fin 3 → ℤ) = Pi.single k 1 := by
   simp [rankThreeBasis]
@@ -139,6 +144,7 @@ theorem coe_rankThreeBasis (k : Fin 3) : (rankThreeBasis k : Fin 3 → ℤ) = Pi
 def radicalVector : degenerateRankThree.unfrozen :=
   rankThreeBasis 0 + rankThreeBasis 1
 
+/-- The radical vector is `e₀ + e₁` in `ℤ³`. -/
 @[simp]
 theorem coe_radicalVector :
     (radicalVector : Fin 3 → ℤ) = Pi.single 0 1 + Pi.single 1 1 := by
@@ -172,10 +178,12 @@ theorem isPrimitive_radicalVector : TauCeti.IsPrimitive radicalVector :=
 def radicalRay : SupportedRay rankThreeDegrees :=
   SupportedRay.ofMem radicalVector radicalVector_mem_monoid isPrimitive_radicalVector
 
+/-- The generator of the radical ray is `e₀ + e₁`. -/
 @[simp]
 theorem radicalRay_generator : radicalRay.generator = radicalVector :=
   SupportedRay.generator_ofMem _ _ _
 
+/-- The radical vector is the sum of the first two unfrozen basis vectors. -/
 theorem radicalVector_def : radicalVector = rankThreeBasis 0 + rankThreeBasis 1 :=
   (rfl)
 
@@ -233,6 +241,7 @@ basis. -/
 def characterEquiv : (Fin 3 → ℤ) ≃+ (degenerateRankThree.unfrozen →+ ℤ) :=
   ((rankThreeBasis.constr ℤ).trans (addMonoidHomLequivInt ℤ).symm).toAddEquiv
 
+/-- The character with coordinates `x` takes the value `x k` at `e_k`. -/
 @[simp]
 theorem characterEquiv_apply_rankThreeBasis (x : Fin 3 → ℤ) (k : Fin 3) :
     characterEquiv x (rankThreeBasis k) = x k := by
@@ -243,12 +252,14 @@ basis. -/
 def ksLattice : (degenerateRankThree.unfrozen →+ ℤ) →+ (Fin 3 → ℝ) :=
   ((Int.castAddHom ℝ).compLeft (Fin 3)).comp characterEquiv.symm.toAddMonoidHom
 
+/-- The `k`-th coordinate of the KS lattice point of a character is its value at `e_k`. -/
 @[simp]
 theorem ksLattice_apply (f : degenerateRankThree.unfrozen →+ ℤ) (k : Fin 3) :
     ksLattice f k = (f (rankThreeBasis k) : ℝ) := by
   obtain ⟨x, rfl⟩ := characterEquiv.surjective f
   simp [ksLattice]
 
+/-- The KS lattice is an integral lattice in `ℝ³`. -/
 theorem isIntegralLattice_ksLattice : IsIntegralLattice ksLattice :=
   (isIntegralLattice_congr characterEquiv (LinearEquiv.refl ℝ _)
     (fun x => by ext k; simp)).mp (isIntegralLattice_intCast 3)
@@ -258,6 +269,7 @@ def restrictEquiv :
     Module.Dual ℤ degenerateRankThree.sublattice ≃+ (degenerateRankThree.unfrozen →+ ℤ) :=
   ((LinearEquiv.ofEq _ _ (by simp)).dualMap.trans (addMonoidHomLequivInt ℤ).symm).toAddEquiv
 
+/-- Restriction evaluates a character of `N°` at the same vector of `N_uf`. -/
 @[simp]
 theorem restrictEquiv_apply (m : Module.Dual ℤ degenerateRankThree.sublattice)
     (n : degenerateRankThree.unfrozen) :
@@ -268,18 +280,22 @@ theorem restrictEquiv_apply (m : Module.Dual ℤ degenerateRankThree.sublattice)
 def characterLattice : Module.Dual ℤ degenerateRankThree.sublattice →+ (Fin 3 → ℝ) :=
   ksLattice.comp restrictEquiv.toAddMonoidHom
 
+/-- The character lattice point of `m` is the KS lattice point of its restriction. -/
 @[simp]
 theorem characterLattice_apply (m : Module.Dual ℤ degenerateRankThree.sublattice) :
     characterLattice m = ksLattice (restrictEquiv m) :=
   (rfl)
 
+/-- The character lattice `M° → ℝ³` is an integral lattice. -/
 theorem isIntegralLattice_characterLattice : IsIntegralLattice characterLattice :=
   (isIntegralLattice_congr restrictEquiv (LinearEquiv.refl ℝ _)
     (fun m => by simp)).mpr isIntegralLattice_ksLattice
 
+/-- The unfrozen lattice is free, with basis `rankThreeBasis`. -/
 instance : Module.Free ℤ degenerateRankThree.unfrozen :=
   Module.Free.of_basis rankThreeBasis
 
+/-- The unfrozen lattice is finitely generated, by `rankThreeBasis`. -/
 instance : Module.Finite ℤ degenerateRankThree.unfrozen :=
   Module.Finite.of_basis rankThreeBasis
 
@@ -287,6 +303,7 @@ instance : Module.Finite ℤ degenerateRankThree.unfrozen :=
 def ksSpace : KSSpace isIntegralLattice_ksLattice :=
   KSSpace.ofLattice isIntegralLattice_ksLattice
 
+/-- Evaluation in the KS space is the real extension of evaluation of characters. -/
 @[simp]
 theorem ksSpace_evaluation (θ : Fin 3 → ℝ) (n : degenerateRankThree.unfrozen) :
     ksSpace.evaluation θ n = isIntegralLattice_ksLattice.realCharacter (AddMonoidHom.eval n) θ :=
@@ -300,6 +317,7 @@ def ksRestriction : degenerateRankThree.KSRestriction isIntegralLattice_characte
   evaluation_apply m n hn := by
     simp
 
+/-- The KS restriction of the rank-three datum is the identity of `ℝ³`. -/
 @[simp]
 theorem ksRestriction_toLinearMap : ksRestriction.toLinearMap = LinearMap.id :=
   (rfl)
@@ -308,11 +326,13 @@ theorem ksRestriction_toLinearMap : ksRestriction.toLinearMap = LinearMap.id :=
 def unfrozenLattice : degenerateRankThree.unfrozen →+ (Fin 3 → ℝ) :=
   ((Int.castAddHom ℝ).compLeft (Fin 3)).comp rankThreeBasis.equivFun.toAddMonoidHom
 
+/-- The cylinder lattice records the standard coordinates of an unfrozen vector. -/
 @[simp]
 theorem unfrozenLattice_apply (n : degenerateRankThree.unfrozen) :
     unfrozenLattice n = (Int.castAddHom ℝ).compLeft (Fin 3) (rankThreeBasis.equivFun n) :=
   (rfl)
 
+/-- The cylinder lattice `N_uf → ℝ³` is an integral lattice. -/
 theorem isIntegralLattice_unfrozenLattice : IsIntegralLattice unfrozenLattice :=
   (isIntegralLattice_congr rankThreeBasis.equivFun.toAddEquiv (LinearEquiv.refl ℝ _)
     (fun n => unfrozenLattice_apply n)).mpr (isIntegralLattice_intCast 3)
@@ -344,6 +364,7 @@ def radicalGenerator : SkewLieAlgebra.positiveLieAlgebra (degenerateRankThree.co
     · exact hn radicalVector_mem_monoid
     · exact isPrimitive_radicalVector.ne_zero hn⟩
 
+/-- The radical generator is the skew generator `X_(e₀+e₁)` with coefficient `1`. -/
 @[simp]
 theorem coe_radicalGenerator :
     (radicalGenerator R : SkewLieAlgebra (degenerateRankThree.coefficientForm R)
@@ -351,6 +372,7 @@ theorem coe_radicalGenerator :
       SkewLieAlgebra.single _ _ radicalVector 1 :=
   (rfl)
 
+/-- The radical generator is homogeneous of degree `e₀ + e₁`. -/
 theorem radicalGenerator_mem : radicalGenerator R ∈ 𝓛₃ radicalVector :=
   (SkewLieAlgebra.mem_positiveGrading_iff _ _ _ _ _).mpr
     ((SkewLieAlgebra.mem_grade_iff _ _ _ _).mpr ⟨1, (coe_radicalGenerator R).symm⟩)
@@ -359,11 +381,13 @@ theorem radicalGenerator_mem : radicalGenerator R ∈ 𝓛₃ radicalVector :=
 def radicalLabel : rankThreeDegrees.completedBCHGroup 𝓛₃ :=
   rankThreeDegrees.expToCompletion 𝓛₃ (radicalGenerator R)
 
+/-- The radical label is the completed exponential of the radical generator. -/
 @[simp]
 theorem radicalLabel_def :
     radicalLabel R = rankThreeDegrees.expToCompletion 𝓛₃ (radicalGenerator R) :=
   (rfl)
 
+/-- The radical label lies in the completed group of the radical ray. -/
 theorem radicalLabel_mem :
     radicalLabel R ∈ rankThreeDegrees.completedRaySubgroup 𝓛₃ radicalRay := by
   rw [radicalLabel_def]
@@ -387,15 +411,18 @@ theorem radicalLabel_ne_one [Nontrivial R] : radicalLabel R ≠ 1 := by
 def radicalWall : IndexedWall ksSpace rankThreeDegrees 𝓛₃ :=
   IndexedWall.hyperplane ksSpace radicalRay (radicalLabel R) (radicalLabel_mem R)
 
+/-- The radical wall lies on the radical ray. -/
 @[simp]
 theorem radicalWall_ray : (radicalWall R).ray = radicalRay :=
   IndexedWall.hyperplane_ray _ _ _ _
 
+/-- The support of the radical wall is the KS hyperplane `(e₀ + e₁)⊥`. -/
 @[simp]
 theorem radicalWall_support :
     (radicalWall R).support = LinearMap.ker (ksSpace.normal radicalVector) := by
   rw [radicalWall, IndexedWall.hyperplane_support, radicalRay_generator]
 
+/-- The radical wall carries the radical label. -/
 @[simp]
 theorem radicalWall_label : (radicalWall R).label = radicalLabel R :=
   IndexedWall.hyperplane_label _ _ _ _
@@ -448,6 +475,7 @@ theorem cylinder_projectedWall_radicalWall_direction :
   rw [principalCylinder_direction_eq _ _ (ksRestriction.projectedWall_ray_generator _),
     radicalWall_ray, radicalRay_generator]
 
+/-- The principal cylinder of the radical wall has the nonzero velocity `-r(e₀ + e₁)`. -/
 theorem cylinder_projectedWall_radicalWall_direction_ne_zero :
     ((ksRestriction.projectedWall (radicalWall R)).cylinder
       isIntegralLattice_unfrozenLattice).direction ≠ 0 := by

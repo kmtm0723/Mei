@@ -61,12 +61,30 @@ def principalEmbedding : D.unfrozen →ₗ[ℤ] (Module.Dual ℤ D.sublattice ×
 theorem principalEmbedding_apply (n : D.unfrozen) :
     D.principalEmbedding n = (D.principalCharacter n, n) := (rfl)
 
+/-- The principal character `p₁*(n) = {n,-}|_{N°}` vanishes exactly when `n` lies in the
+radical of the form, `{-, n} = 0`. The sublattice `N°` has finite index, so it detects the
+radical. -/
+theorem principalCharacter_eq_zero_iff (n : D.unfrozen) :
+    D.principalCharacter n = 0 ↔ D.form.flip n = 0 := by
+  constructor
+  · intro h
+    ext a
+    have hc := D.sublattice.toAddSubgroup.nsmul_index_mem a
+    have he := D.cast_principalCharacter_apply n ⟨_, hc⟩
+    rw [h, LinearMap.zero_apply, Int.cast_zero, map_nsmul, nsmul_eq_mul, eq_comm,
+      mul_eq_zero] at he
+    have ha := he.resolve_left (Nat.cast_ne_zero.mpr AddSubgroup.FiniteIndex.index_ne_zero)
+    rw [LinearMap.flip_apply, LinearMap.zero_apply, D.form_swap (n : N) a, ha, neg_zero]
+  · intro h
+    ext m
+    apply Int.cast_injective (α := ℚ)
+    rw [D.cast_principalCharacter_apply, D.form_swap, ← LinearMap.flip_apply, h]
+    simp
+
 /-- For the zero form the principal character vanishes. -/
 theorem principalCharacter_eq_zero_of_form_eq_zero (hform : D.form = 0) :
-    D.principalCharacter = 0 := by
-  ext n m
-  apply Int.cast_injective (α := ℚ)
-  simp [hform]
+    D.principalCharacter = 0 :=
+  LinearMap.ext fun n => (D.principalCharacter_eq_zero_iff n).mpr (by ext; simp [hform])
 
 /-- For the zero form the principal lift is `r(n) = (0, n)`: its projection
 `ρ(r(n)) = p₁*(n)` to the character lattice is zero. -/

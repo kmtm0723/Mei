@@ -7,14 +7,14 @@ module
 
 public import Mei.Algebra.Lie.Skew.Radical
 public import Mei.Geometry.ScatteringDiagram.Skew.Comparison.Basic
-public import Mei.Geometry.ScatteringDiagram.Skew.Principal.Cylinder
+public import Mei.Geometry.ScatteringDiagram.Skew.LieAlgebra
 
 /-!
 # Radical degrees of a skew lattice datum
 
 A vector `n` lies in the radical of the skew form `{,}` when `{-, n} = 0`
 (`SkewLatticeDatum.form_flip_eq_zero_iff` identifies it with `{n, -} = 0`). For an unfrozen
-radical `n`, the constructions attached to `n` behave as follows.
+radical `n`:
 
 * The normal `{-, κ(n) n}` is zero (`SkewLatticeDatum.normal_eq_zero_iff`), and so is its
   comparison counterpart: evaluation at `n` pulled back along the skew comparison
@@ -23,17 +23,12 @@ radical `n`, the constructions attached to `n` behave as follows.
   (`SkewLatticeDatum.lie_eq_zero_of_form_flip_add_eq_zero`), and the Poisson action of `X_n`
   on monomials is zero (`SkewLatticeDatum.action_single_eq_zero_of_form_flip_eq_zero`). For the
   zero form the whole Poisson action vanishes (`SkewLatticeDatum.action_eq_zero_of_form_eq_zero`).
-* The principal character `p₁*(n) = {n, -}|_{N°}` is zero
-  (`SkewLatticeDatum.principalCharacter_eq_zero_iff`), while the principal exponent
-  `r(n) = (p₁*(n), n)` and the principal normal `ν_n` stay nonzero for `n ≠ 0`
-  (`SkewLatticeDatum.principalEmbedding_injective`,
-  `SkewLatticeDatum.principalNormal_eq_zero_iff`). Hence a projected principal wall of degree
-  `r(n)` has zero spatial velocity and is incoming, as is its principal cylinder, whose velocity
-  is `-r(n)` (`SkewLatticeDatum.projectedPrincipal_direction_eq_zero_of_form_flip_eq_zero`,
-  `SkewLatticeDatum.incoming_of_form_flip_eq_zero`).
 
-The zero-form statements `SkewLatticeDatum.projectedPrincipal_direction_eq_zero_of_form_eq_zero`
-and `SkewLatticeDatum.incoming_of_form_eq_zero` are the case where every degree is radical.
+The principal counterparts are stated with the principal data: `p₁*(n) = 0` exactly for
+radical `n` (`SkewLatticeDatum.principalCharacter_eq_zero_iff`), and projected principal walls
+of radical degree have zero velocity and are incoming
+(`SkewLatticeDatum.projectedPrincipal_direction_eq_zero_of_form_flip_eq_zero`,
+`SkewLatticeDatum.incoming_of_form_flip_eq_zero`).
 Conventions follow Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*, §1
 and Appendix B (arXiv:1411.1394v2).
 -/
@@ -72,25 +67,6 @@ theorem normal_eq_zero_iff [Module.Free ℤ N] {n : N} (hn : n ∈ D.unfrozen) :
     apply Int.cast_injective (α := ℚ)
     rw [D.cast_normal_apply hn a]
     simpa using Or.inr (LinearMap.congr_fun h a)
-
-/-- The principal character `p₁*(n) = {n,-}|_{N°}` vanishes exactly when `n` lies in the
-radical of the form. The sublattice `N°` has finite index, so it detects the radical. -/
-theorem principalCharacter_eq_zero_iff (n : D.unfrozen) :
-    D.principalCharacter n = 0 ↔ D.form.flip n = 0 := by
-  rw [form_flip_eq_zero_iff]
-  constructor
-  · intro h
-    ext a
-    have hc := D.sublattice.toAddSubgroup.nsmul_index_mem a
-    have he := D.cast_principalCharacter_apply n ⟨_, hc⟩
-    rw [h, LinearMap.zero_apply, Int.cast_zero, map_nsmul, nsmul_eq_mul, eq_comm,
-      mul_eq_zero] at he
-    simpa using he.resolve_left (Nat.cast_ne_zero.mpr AddSubgroup.FiniteIndex.index_ne_zero)
-  · intro h
-    ext m
-    apply Int.cast_injective (α := ℚ)
-    rw [D.cast_principalCharacter_apply, h]
-    simp
 
 section Lie
 
@@ -152,38 +128,5 @@ theorem eval_comp_skewComparison_eq_zero_iff (n : N) :
     simpa [D.cast_integralCharacter_apply hD] using LinearMap.congr_fun hn a
 
 end Comparison
-
-section Wall
-
-variable {R V E : Type*} [CommRing R] [Algebra ℚ R]
-  [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [Module.Free ℤ N] {D} {d : PositiveDegrees D.unfrozen}
-  [DecidableEq D.unfrozen] [DecidableEq (Module.Dual ℤ D.sublattice)]
-  {i : Module.Dual ℤ D.sublattice →+ V} {j : D.unfrozen →+ E}
-  {h : TauCeti.Toric.IsIntegralLattice i}
-  (h' : TauCeti.Toric.IsIntegralLattice j)
-  (W : DirectedWall (d := D.principalPositiveDegrees d) h
-    (D.projectedPrincipalGraphWallSpaces (R := R) d))
-  {n : D.unfrozen} (hn : W.ray.generator = D.principalEmbedding n)
-
-include hn in
-/-- A projected principal wall of radical degree `r(n)` has zero spatial velocity, since
-`ρ(r(n)) = p₁*(n) = 0`. -/
-theorem projectedPrincipal_direction_eq_zero_of_form_flip_eq_zero
-    (hrad : D.form.flip n = 0) : W.direction = 0 := by
-  rw [projectedPrincipal_direction_eq W hn, (D.principalCharacter_eq_zero_iff n).mpr hrad,
-    map_zero, neg_zero]
-
-include hn in
-/-- A projected principal wall of radical degree `r(n)` and its principal cylinder are
-incoming, whatever their supports. -/
-theorem incoming_of_form_flip_eq_zero (hrad : D.form.flip n = 0) :
-    W.Incoming ∧ (W.cylinder h').Incoming := by
-  have hW : W.Incoming := W.incoming_of_geometricDirection_eq_zero (by
-    rw [hn]
-    simp [(D.principalCharacter_eq_zero_iff n).mpr hrad])
-  exact ⟨hW, (DirectedWall.cylinder_incoming_iff W h').mpr hW⟩
-
-end Wall
 
 end Mei.SkewLatticeDatum
