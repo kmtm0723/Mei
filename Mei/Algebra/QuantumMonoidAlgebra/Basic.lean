@@ -172,7 +172,14 @@ theorem monomial_pow_eq_smul (p : Γ) (j : ℕ) :
     rw [pow_succ, ih, smul_mul_assoc, monomial_mul, smul_smul,
       ← Units.val_mul, ← zpow_add]
     simp only [map_nsmul, LinearMap.smul_apply, nsmul_eq_mul]
-    congr 1 <;> simp [Nat.choose_succ_succ, add_mul, add_comm, succ_nsmul]
+    have hexp : (j.choose 2 : ℤ) * β p p + (j : ℤ) * β p p =
+        ((j + 1).choose 2 : ℤ) * β p p := by
+      rw [Nat.choose_succ_succ, Nat.choose_one_right]
+      push_cast
+      ring
+    have hdeg : j • p + p = (j + 1) • p := by
+      simp only [succ_nsmul]
+    rw [hexp, hdeg]
 
 /-- Along a single alternating ray, ordinary powers multiply only the exponent. -/
 @[simp]
