@@ -7,8 +7,7 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.RankTwoPolynomialInput.Basic
 public import Mei.Geometry.ScatteringDiagram.WallSpace.Logarithmic.RayFactor
-public import Mei.Geometry.ScatteringDiagram.DirectedWall.Hyperplane
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Basic
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.RayFactor
 public import Mei.RingTheory.FilteredAlgebra.Positive.Basic
 
 /-!
@@ -40,7 +39,7 @@ polynomials of `Mei.Geometry.ScatteringDiagram.WallSpace.Logarithmic.RayFactor`
 `hasFiniteSupport_rayFactor_sigma` and
 `projection_completedBCHExp_completedTropicalTangentField_eq_noncommProd_tangentRayFactor`),
 shared with the BLM inputs of `Mei.Geometry.ScatteringDiagram.Skew.PolynomialInput.Incoming`.
-The rank-two
+The diagram is the ray presentation `DirectedDiagram.ofHyperplaneRayFactors`. The rank-two
 polynomial inputs and their ray presentations follow Burcroff–Lee–Mou, *Positivity of
 generalized cluster scattering diagrams*, Definition 2.1, §9.2 and Theorem 9.9
 (arXiv:2503.03719v1), and the function-wall convention of Gross–Hacking–Keel–Kontsevich,
@@ -149,22 +148,18 @@ variable [NormedAddCommGroup V] [NormedSpace ℝ V] {latticeMap : L →+ V}
 
 /-- The incoming diagram of a rank-two polynomial input: the ray factors of the wall function
 of each line on the cylinder `{x | ν_j(π x) = c_j}` over it. -/
-def incomingDiagram (c : I.Variable → R) : DirectedDiagram (d := d) h (H) I.IncomingIndex where
-  wall j := DirectedWall.ofAffineHyperplane h (H) (I.wallNormal j.1)
-    (I.wallNormal_ne_zero j.1) (I.offset j.1) j.2.val j.2.property
-    ⟨d.rayFactor ℒ (I.initialLabel c j.1) j.2.val,
-      I.rayFactor_initialLabel_mem_wallGroup c j.1 j.2.val⟩
-  finite_active := by
-    let := h.free
-    let : HasUniqueDiv L := .of_isTorsionFree ℤ _
-    simpa only [DirectedWall.ofAffineHyperplane_label] using
-      hasFiniteSupport_rayFactor_sigma d ρ (P := fun j w => I.wallNormal j w.generator = 0)
-        (I.initialLabel c) fun k => (I.finite_nontrivial k).subset fun j ⟨_, hw⟩ => by
+def incomingDiagram (c : I.Variable → R) : DirectedDiagram (d := d) h (H) I.IncomingIndex :=
+  DirectedDiagram.ofHyperplaneRayFactors h I.wallNormal I.wallNormal_ne_zero I.offset
+    (I.initialLabel c) (I.rayFactor_initialLabel_mem_wallGroup c) (by
+      let := h.free
+      let : HasUniqueDiv L := .of_isTorsionFree ℤ _
+      exact hasFiniteSupport_rayFactor_sigma d ρ (I.initialLabel c) fun k =>
+        (I.finite_nontrivial k).subset fun j ⟨_, hw⟩ => by
           obtain ⟨-, n, hn⟩ :=
             mem_raysAtOrder_and_exists_degree_le_of_projection_rayFactor_ne_one d ρ
               (I.wallNormal j) (I.tangentExponent j) (fun n => c ⟨j, n⟩)
               (I.toCompletion_tangentInitialFunction_sub_one_mem c j) hw
-          exact ⟨n, n.property, hn⟩
+          exact ⟨n, n.property, hn⟩)
 
 variable (c : I.Variable → R)
 
@@ -197,14 +192,14 @@ theorem incomingDiagram_label (j : I.IncomingIndex) :
 /-- Every wall is incoming. -/
 @[simp]
 theorem incomingDiagram_incoming (j : I.IncomingIndex) :
-    ((I.incomingDiagram h c).wall j).Incoming :=
-  DirectedWall.ofAffineHyperplane_incoming _ _ _ _ _ _ _ _
+    ((I.incomingDiagram h c).wall j).Incoming := by
+  simp [incomingDiagram]
 
 /-- The full-hyperplane condition required for outgoing completion. -/
 theorem incomingDiagram_full (j : I.IncomingIndex) :
     ∃ a : ℝ, ((I.incomingDiagram h c).wall j).support =
       {x | h.realCharacter ((I.incomingDiagram h c).wall j).normal x = a} :=
-  ⟨I.offset j.1, by simp only [incomingDiagram_support, incomingDiagram_normal]⟩
+  DirectedDiagram.ofHyperplaneRayFactors_full ..
 
 /-- At every cutoff, the labels on the tangent rays of the line `i` reassemble the projection of
 its unsplit label. The finite set may contain additional rays, whose surviving factors are

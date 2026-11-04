@@ -7,8 +7,7 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.Skew.PolynomialInput.Basic
 public import Mei.Geometry.ScatteringDiagram.WallSpace.Logarithmic.RayFactor
-public import Mei.Geometry.ScatteringDiagram.DirectedWall.Hyperplane
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Basic
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.RayFactor
 public import Mei.RingTheory.FilteredAlgebra.Positive.Basic
 
 /-!
@@ -25,7 +24,8 @@ the prescribed polynomial function raised to the normal pairing.
 The constructions use `PositiveDegrees.rayFactor`, its wall-group and finite
 support theorems, the ray-factor theorems for tangent polynomials of
 `Mei.Geometry.ScatteringDiagram.WallSpace.Logarithmic.RayFactor`, shared with the
-rank-two polynomial inputs, and `DirectedWall.ofAffineHyperplane`. The polynomial inputs
+rank-two polynomial inputs, and the ray presentation
+`DirectedDiagram.ofHyperplaneRayFactors` on hyperplanes. The polynomial inputs
 and their ray presentations follow Burcroff–Lee–Mou, *Positivity of generalized
 cluster scattering diagrams*, §8.1 and §9.2 (arXiv:2503.03719v1), and the
 function-wall convention of Gross–Hacking–Keel–Kontsevich, *Canonical bases for
@@ -406,29 +406,26 @@ variable [Module.Finite ℤ N]
 
 /-- The incoming BLM diagram on the finite alphabet lattice. Each polynomial
 is split into supported-ray labels on its full cylinder hyperplane. -/
-def incomingDiagram : DirectedDiagram (d := 𝒅) h (H) I.IncomingIndex where
-  wall j := DirectedWall.ofAffineHyperplane h (H) (I.alphabetNormal j.1)
-    (I.alphabetNormal_ne_zero j.1) 0 j.2.val j.2.property
-    ⟨(𝒅).rayFactor ℒ (I.initialLabel j.1) j.2.val,
-      I.rayFactor_initialLabel_mem_wallGroup j.1 j.2.val⟩
-  finite_active := by
-    let := Module.Free.of_basis B.basis
-    let : HasUniqueDiv (Module.Dual ℤ N × (I.Letter → ℤ)) :=
-      .of_isTorsionFree ℤ _
-    simpa only [DirectedWall.ofAffineHyperplane_label] using
-      hasFiniteSupport_rayFactor_sigma 𝒅 ρ (P := fun i w => I.alphabetNormal i w.generator = 0)
-        I.initialLabel fun _ => Set.toFinite _
+def incomingDiagram : DirectedDiagram (d := 𝒅) h (H) I.IncomingIndex :=
+  DirectedDiagram.ofHyperplaneRayFactors h I.alphabetNormal I.alphabetNormal_ne_zero (fun _ => 0)
+    I.initialLabel I.rayFactor_initialLabel_mem_wallGroup (by
+      let := Module.Free.of_basis B.basis
+      let : HasUniqueDiv (Module.Dual ℤ N × (I.Letter → ℤ)) := .of_isTorsionFree ℤ _
+      exact hasFiniteSupport_rayFactor_sigma 𝒅 ρ I.initialLabel fun _ => Set.toFinite _)
 
+/-- The wall over the polynomial `i` is cooriented by its alphabet normal. -/
 @[simp]
 theorem incomingDiagram_normal (j : I.IncomingIndex) :
     ((I.incomingDiagram (R := R) h).wall j).normal = I.alphabetNormal j.1 := by
   simp [incomingDiagram]
 
+/-- The wall indexed by a tangent supported ray lies on that ray. -/
 @[simp]
 theorem incomingDiagram_ray (j : I.IncomingIndex) :
     ((I.incomingDiagram (R := R) h).wall j).ray = j.2.val := by
   simp [incomingDiagram]
 
+/-- The wall over the polynomial `i` is supported on the kernel of its real normal. -/
 @[simp]
 theorem incomingDiagram_support (j : I.IncomingIndex) :
     ((I.incomingDiagram (R := R) h).wall j).support =
@@ -436,6 +433,7 @@ theorem incomingDiagram_support (j : I.IncomingIndex) :
   ext
   simp [incomingDiagram]
 
+/-- The wall over the polynomial `i` on the ray `w` carries the ray factor of its label. -/
 @[simp]
 theorem incomingDiagram_label (j : I.IncomingIndex) :
     ((I.incomingDiagram (R := R) h).wall j).label =
@@ -466,8 +464,8 @@ theorem projection_initialLabel_eq_noncommProd_incomingDiagram
 /-- Every wall is incoming, with no constraint on the skew form's radical. -/
 @[simp]
 theorem incomingDiagram_incoming (j : I.IncomingIndex) :
-    ((I.incomingDiagram (R := R) h).wall j).Incoming :=
-  DirectedWall.ofAffineHyperplane_incoming _ _ _ _ _ _ _ _
+    ((I.incomingDiagram (R := R) h).wall j).Incoming := by
+  simp [incomingDiagram]
 
 /-- The full-hyperplane condition required for outgoing completion. -/
 theorem incomingDiagram_full (j : I.IncomingIndex) :
