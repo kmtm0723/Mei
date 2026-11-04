@@ -18,9 +18,9 @@ public section
 
 namespace LinearEquiv
 
-variable {R S A B M N : Type*} [CommRing R] [CommRing S]
-  [Ring A] [Ring B] [Algebra R A] [Algebra S B]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module S N]
+variable {R S A B M N : Type*} [CommSemiring R] [CommSemiring S]
+  [Semiring A] [Semiring B] [Algebra R A] [Algebra S B]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module S N]
 
 /-- Compatible ring maps give semilinear maps after changing linear coordinates. -/
 def semilinearTransport (φ : R →+* S) (ψ : A →+* B)
