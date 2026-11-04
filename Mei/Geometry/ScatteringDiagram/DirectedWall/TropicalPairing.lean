@@ -141,6 +141,22 @@ def ofTropicalDegreeMap :
         TropicalPairing.ofDegreeMap_degreeMap, hT n hn])
     (fun _ => ⟨1, one_pos, by ext; simp⟩)
 
+/-- The pushforward along a degree map over a common tangent lattice is the pushforward along
+the pairing `TropicalPairing.ofDegreeMap` with the identity map of normals and the identity
+spatial map. -/
+theorem ofTropicalDegreeMap_eq_ofTropicalPairing :
+    ofTropicalDegreeMap (R := R) (h := h) T hT =
+      ofTropicalPairing (TropicalPairing.ofDegreeMap T hT ⊤) id
+        (fun _ => by
+          rw [TropicalPairing.ofDegreeMap_characterMap]
+          exact Submodule.mem_span_singleton_self _)
+        (ContinuousAffineEquiv.refl ℝ V)
+        (fun n hn => by
+          rw [ContinuousAffineEquiv.toAffineEquiv_refl, AffineEquiv.linear_refl,
+            LinearEquiv.refl_apply, TropicalPairing.ofDegreeMap_degreeMap, hT n hn])
+        (fun _ => ⟨1, one_pos, by ext; simp⟩) :=
+  (rfl)
+
 /-- The degree map is the given positive degree map. -/
 @[simp]
 theorem ofTropicalDegreeMap_degreeMap :

@@ -6,10 +6,12 @@ Authors: Claude Code
 module
 
 public import Mei.Geometry.ScatteringDiagram.RankTwoPolynomialInput.Grouping
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall.Pushforward
 public import Mei.Geometry.ScatteringDiagram.RankTwoPolynomialInput.Translation
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Hyperplane
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Uniqueness
 public import Mei.Algebra.PositiveDegrees.Examples
+public import Mei.Algebra.PositiveDegrees.Basis
 
 /-!
 # Examples of rank-two polynomial inputs
@@ -31,6 +33,20 @@ independent variable `c` it is a positive wall representative
 instance of Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*,
 Theorem 9.9 (arXiv:2503.03719v1). The consistency uses
 `DirectedDiagram.consistent_of_support_eq`.
+
+## Enlarging the positive degrees
+
+The identity of `ℤ²` is a positive degree map from the even quadrant to the quadrant
+`ℕ² = ℕe₁ + ℕe₂`, with the same coordinate-sum degree
+(`RankTwoPolynomialInput.Examples.evenOrthantInclusion`). Pushing forward along it
+(`DirectedWall.Pushforward.ofTropicalDegreeMap`) keeps the support and the normal of the
+horizontal wall and its label as a tropical vertex field, but replaces the positive monoid
+`2ℕe₁ + ℕe₂` by `ℕ²`, and with it the supported rays and the truncations. The pushed
+single-wall diagram is an outgoing completion of the pushed incoming wall
+(`RankTwoPolynomialInput.Examples.isOutgoingCompletion_pushforward`), and the pushed incoming
+diagram is a positive wall representative for the tropical vertex action of `ℕ²` on
+`ℚ[c][[ℤ²]]` (`RankTwoPolynomialInput.Examples.isPositiveWallRepresentative_pushforward`), by
+`DirectedDiagram.IsPositiveWallRepresentative.pushforward_ofTropicalDegreeMap`.
 
 ## Three concurrent lines
 
@@ -197,6 +213,71 @@ theorem isPositiveWallRepresentative :
         (MvPolynomial.map (σ := horizontalInput.Variable) (Nat.castRingHom ℚ))).rangeS
       horizontalInput.projection :=
   horizontalInput.isPositiveWallRepresentative_incomingDiagram_variables h
+
+section Orthant
+
+/-- The positive quadrant `ℕ²` of `ℤ²`, with coordinate-sum degree. -/
+local notation "ℕ²" => Module.Basis.positiveDegrees (Module.Basis.finTwoProd ℤ)
+
+local instance : Fact ((ℕ²).monoid ≤ (⊤ : AddSubmonoid (ℤ × ℤ))) := ⟨le_top⟩
+
+/-- The identity of `ℤ²` as a positive degree map from the even quadrant to the quadrant `ℕ²`,
+with identity cutoff modulus. -/
+def evenOrthantInclusion : PositiveDegreeMap evenOrthant ℕ² :=
+  PositiveDegreeMap.ofBound (AddMonoidHom.id _)
+    (fun n hn => by
+      simp only [evenOrthant_monoid, mem_evenOrthantMonoid] at hn
+      simp [Fin.forall_fin_two, hn.1, hn.2.1])
+    1 (fun n _ => by simp)
+
+/-- The inclusion of the even quadrant is the identity of `ℤ²`. -/
+@[simp]
+theorem evenOrthantInclusion_apply (n : ℤ × ℤ) : evenOrthantInclusion n = n := by
+  simp [evenOrthantInclusion]
+
+/-- The pushforward along the inclusion of the even quadrant into `ℕ²`. It keeps the
+supports, the normals and the labels as tropical vertex fields; only the positive degrees,
+and with them the supported rays and the truncations, change. -/
+abbrev evenOrthantPushforward :
+    DirectedWall.Pushforward evenOrthant ℕ² h h
+      (tropicalVertexWallSpaces (R := MvPolynomial horizontalInput.Variable ℚ) evenOrthant ρ)
+      (tropicalVertexWallSpaces ℕ² ρ) :=
+  DirectedWall.Pushforward.ofTropicalDegreeMap evenOrthantInclusion (fun n _ => by simp)
+
+/-- Pushed to the quadrant `ℕ²`, the single-wall diagram of the horizontal input over the even
+quadrant is still an outgoing completion of its incoming wall. -/
+theorem isOutgoingCompletion_pushforward :
+    DirectedDiagram.IsOutgoingCompletion
+      (fun j => ((horizontalInput.incomingDiagram h MvPolynomial.X).wall j).pushforward
+        (evenOrthantPushforward h))
+      ((completionDiagram MvPolynomial.X h).pushforward (evenOrthantPushforward h)) :=
+  (isOutgoingCompletion MvPolynomial.X h).pushforward
+
+/-- Pushed to the quadrant `ℕ²`, the incoming diagram of the horizontal input is a positive wall
+representative for the tropical vertex action of `ℕ²` on `ℚ[c][[ℤ²]]`: its grouped wall function
+is still `1 + c z^{2e₁}`, with coefficients in `ℕ[c]`. -/
+theorem isPositiveWallRepresentative_pushforward :
+    ((horizontalInput.incomingDiagram h MvPolynomial.X).pushforward
+        (evenOrthantPushforward h)).IsPositiveWallRepresentative
+      ((TropicalVertexCoefficientAction.filtration
+        (R := MvPolynomial horizontalInput.Variable ℚ) ℕ² ⊤).completedBCHAction
+          ℕ² (tropicalVertexGrading (R := MvPolynomial horizontalInput.Variable ℚ) ℕ² ρ))
+      (AddMonoidAlgebra.mapRingHom (⊤ : AddSubmonoid (ℤ × ℤ))
+        (MvPolynomial.map (σ := horizontalInput.Variable) (Nat.castRingHom ℚ))).rangeS
+      horizontalInput.projection := by
+  have hQ : (⊤ : AddSubmonoid (ℤ × ℤ)).map evenOrthantInclusion.toAddMonoidHom = ⊤ :=
+    AddSubmonoid.eq_top_iff' _ |>.mpr fun q => ⟨q, trivial, by simp⟩
+  exact (isPositiveWallRepresentative h).pushforward_ofTropicalDegreeMap _ _ hQ
+    (fun q _ => by simp) (π := horizontalInput.projection) (π' := horizontalInput.projection)
+    (fun n _ => by simp)
+    (fun a ha => AddMonoidAlgebra.map_mem_rangeS_mapRingHom _ _
+      (AlgHom.toRingHom (AddMonoidAlgebra.mapDomainAlgHom (MvPolynomial horizontalInput.Variable ℚ)
+        (MvPolynomial horizontalInput.Variable ℚ) ((AddSubmonoid.inclusion hQ.le).comp
+          (evenOrthantInclusion.toAddMonoidHom.addSubmonoidMap ⊤)))).toAddMonoidHom
+      (fun q b => ⟨AddMonoidAlgebra.single (AddSubmonoid.inclusion hQ.le
+        (evenOrthantInclusion.toAddMonoidHom.addSubmonoidMap ⊤ q)) b, by simp⟩) ha)
+
+end Orthant
 
 section Concurrent
 
