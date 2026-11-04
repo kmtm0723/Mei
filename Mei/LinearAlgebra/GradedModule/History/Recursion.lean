@@ -104,15 +104,6 @@ theorem exists_uniform_homogeneousHistory_expansion_of_eq_add
   exact sum_sum_comp_homogeneousHistory_comp_eq_comp_finiteRecursion_comp
     ℳ U a b r S (fun j _ => hS j)
 
-/-- Unit arrow weights count the steps of the one-object path of a sequence. -/
-private theorem addWeight_one_pathOfFn {α : Type*} {n : ℕ} (T : Fin n → α) :
-    Quiver.Path.addWeight (fun {_ _ : Quiver.SingleObj α} _ => (1 : ℕ))
-      (Quiver.SingleObj.pathOfFn T) = n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [Quiver.SingleObj.pathOfFn_succ, Quiver.Path.addWeight_cons, ih]
-
 /-- When every component transfer raises a filtration vanishing at order `r`,
 each history of length at least `r` vanishes individually. Nilpotence of the sum
 of the component transfers alone would not suffice for this conclusion. -/
@@ -134,14 +125,14 @@ theorem homogeneousHistory_eq_zero_of_filtration
     intro b c e i k y hy
     exact hU i k y hy
   have hlt := Quiver.Path.addWeight_lt_of_homogeneousHistory_ne_zero hraise hr hne
-  rw [addWeight_one_pathOfFn] at hlt
+  rw [Quiver.SingleObj.addWeight_one_pathOfFn] at hlt
   exact (not_lt_of_ge hn) hlt
 
 open Classical in
 /-- Incidence-selected history sums stabilize once their cutoff reaches the
 filtration length, including after any linear output map. Selection need not
 include all histories, and no support assumption on the finite sets is needed. -/
-theorem sum_selected_recursionHistory_eq_of_filtration
+theorem sum_ite_comp_homogeneousHistory_comp_eq_of_filtration
     {E N : Type*} [AddCommMonoid E] [Module R E] [AddCommMonoid N] [Module R N]
     (F : ModuleFiltration R M)
     (hU : ∀ i k x, x ∈ F.submodule k →
