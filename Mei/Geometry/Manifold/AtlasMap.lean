@@ -151,8 +151,8 @@ variable (H M) in
 protected def id : AtlasMap H M M where
   toFun := _root_.id
   chart := _root_.id
-  source_eq _ := rfl
-  apply_eq _ _ _ := rfl
+  source_eq e := by rw [id_eq, preimage_id_eq, id_eq]
+  apply_eq e x _ := by rw [id_eq, id_eq]
 
 /-- The identity atlas map is the identity. -/
 @[simp]
@@ -208,12 +208,10 @@ noncomputable def ofOpens (s : Opens M) : AtlasMap H s M where
   chart e := achart H (mem_iUnion.mp e.2).choose.1
   source_eq e := by
     conv_lhs => rw [mem_singleton_iff.mp (mem_iUnion.mp e.2).choose_spec]
-    rw [OpenPartialHomeomorph.subtypeRestr_source]
-    rfl
+    rw [OpenPartialHomeomorph.subtypeRestr_source, achart_val]
   apply_eq e x _ := by
     conv_lhs => rw [mem_singleton_iff.mp (mem_iUnion.mp e.2).choose_spec]
-    rw [OpenPartialHomeomorph.subtypeRestr_coe]
-    rfl
+    rw [OpenPartialHomeomorph.subtypeRestr_coe, domRestrict_apply, achart_val]
 
 /-- The inclusion of an open subset is the subtype inclusion. -/
 @[simp]

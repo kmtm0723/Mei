@@ -95,7 +95,8 @@ def rightChamber : Opens regularLocus :=
 
 /-- A point of the punctured plane lies in the right chamber exactly when `u > 0`. -/
 @[simp]
-theorem mem_rightChamber (p : regularLocus) : p ∈ rightChamber ↔ 0 < p.val.1 := Iff.rfl
+theorem mem_rightChamber (p : regularLocus) : p ∈ rightChamber ↔ 0 < p.val.1 := by
+  rw [rightChamber, Opens.mem_mk, mem_ofPred_eq]
 
 /-- On the right chamber with its restricted atlas, every frame change of the restriction of
 the focus-focus exponent system is the identity. -/
@@ -121,7 +122,8 @@ def upperHalfPlane : Opens regularLocus :=
 
 /-- A point of the punctured plane lies in the upper half-plane exactly when `v > 0`. -/
 @[simp]
-theorem mem_upperHalfPlane (p : regularLocus) : p ∈ upperHalfPlane ↔ 0 < p.val.2 := Iff.rfl
+theorem mem_upperHalfPlane (p : regularLocus) : p ∈ upperHalfPlane ↔ 0 < p.val.2 := by
+  rw [upperHalfPlane, Opens.mem_mk, mem_ofPred_eq]
 
 /-- In the restricted atlas of the upper half-plane, the chart at a point of the upper slab
 `u = 0` is assigned the upper chart. -/
