@@ -46,17 +46,64 @@ private theorem mem_latticeChart_index (p : regularLocus) :
   · exact hp
   · exact (chart_sources_cover p).resolve_left hp
 
-private def latticeTransition {F : Type*} [AddCommGroup F]
+/-- The change of lattice frames from the chart indexed by `i` to the chart indexed by `j`
+(`false` for the cut chart, `true` for the upper chart) at `p`, for a lattice `F` and the
+upper transition `e`: `e` on the left half of the overlap, its inverse in the opposite
+direction, and the identity elsewhere. -/
+def latticeTransition {F : Type*} [AddCommGroup F]
     (e : F ≃+ F) (i j : Bool) (p : regularLocus) : F ≃+ F :=
   if i = j then AddEquiv.refl F else
     if p.val.1 < 0 then if j then e else e.symm else AddEquiv.refl F
 
-private theorem latticeTransition_comp {F : Type*} [AddCommGroup F]
+/-- The lattice frame changes satisfy the cocycle identity. -/
+theorem latticeTransition_comp {F : Type*} [AddCommGroup F]
     (e : F ≃+ F) (i j k : Bool) (p : regularLocus) (q : F) :
     latticeTransition e j k p (latticeTransition e i j p q) =
       latticeTransition e i k p q := by
   cases i <;> cases j <;> cases k <;>
     by_cases hp : p.val.1 < 0 <;> simp [latticeTransition, hp]
+
+/-- The lattice frame change from a chart to itself is the identity. -/
+@[simp]
+theorem latticeTransition_self {F : Type*} [AddCommGroup F] (e : F ≃+ F) (i : Bool)
+    (p : regularLocus) : latticeTransition e i i p = AddEquiv.refl F := by
+  simp only [latticeTransition, ↓reduceIte]
+
+/-- Reversing the two charts inverts the lattice frame change. -/
+theorem latticeTransition_symm {F : Type*} [AddCommGroup F] (e : F ≃+ F) (i j : Bool)
+    (p : regularLocus) : (latticeTransition e i j p).symm = latticeTransition e j i p := by
+  cases i <;> cases j <;> by_cases hp : p.val.1 < 0 <;>
+    simp [latticeTransition, hp]
+
+/-- On the left half-plane, the lattice frame change from the cut chart to the upper chart is
+the upper transition. -/
+theorem latticeTransition_false_true_of_neg {F : Type*} [AddCommGroup F] (e : F ≃+ F)
+    {p : regularLocus} (hp : p.val.1 < 0) : latticeTransition e false true p = e := by
+  simp only [latticeTransition, Bool.false_eq_true, ↓reduceIte, hp]
+
+/-- On the left half-plane, the lattice frame change from the upper chart to the cut chart is
+the inverse of the upper transition. -/
+theorem latticeTransition_true_false_of_neg {F : Type*} [AddCommGroup F] (e : F ≃+ F)
+    {p : regularLocus} (hp : p.val.1 < 0) : latticeTransition e true false p = e.symm := by
+  simp only [latticeTransition, Bool.true_eq_false, Bool.false_eq_true, ↓reduceIte, hp]
+
+/-- On the closed right half-plane, every lattice frame change is the identity. -/
+theorem latticeTransition_of_nonneg {F : Type*} [AddCommGroup F] (e : F ≃+ F) (i j : Bool)
+    {p : regularLocus} (hp : 0 ≤ p.val.1) : latticeTransition e i j p = AddEquiv.refl F := by
+  simp only [latticeTransition, not_lt.mpr hp, ↓reduceIte, ite_self]
+
+/-- Off the vertical axis, every lattice frame change is locally constant. -/
+theorem eventually_latticeTransition_eq {F : Type*} [AddCommGroup F] (e : F ≃+ F) (i j : Bool)
+    {p : regularLocus} (hp : p.val.1 ≠ 0) :
+    ∀ᶠ q in 𝓝 p, latticeTransition e i j q = latticeTransition e i j p := by
+  have hc : Continuous fun q : regularLocus => q.val.1 := continuous_subtype_val.fst
+  rcases lt_or_gt_of_ne hp with hp | hp
+  · filter_upwards [(isOpen_lt hc continuous_const).mem_nhds hp] with q hq
+    have hq' : q.val.1 < 0 := hq
+    simp only [latticeTransition, hp, hq']
+  · filter_upwards [(isOpen_lt continuous_const hc).mem_nhds hp] with q hq
+    have hq' : 0 < q.val.1 := hq
+    rw [latticeTransition_of_nonneg e i j hq'.le, latticeTransition_of_nonneg e i j hp.le]
 
 private theorem continuousOn_latticeTransition {F : Type*} [AddCommGroup F]
     [TopologicalSpace (Equiv.Perm F)] (e : F ≃+ F) (i j : Bool) :
@@ -64,21 +111,14 @@ private theorem continuousOn_latticeTransition {F : Type*} [AddCommGroup F]
       ((latticeChart i).source ∩ (latticeChart j).source) := by
   by_cases hij : i = j
   · subst j
-    simpa only [latticeTransition, ↓reduceIte] using continuousOn_const
+    simpa only [latticeTransition_self] using continuousOn_const
   intro p hp
   have hx : p.val.1 ≠ 0 := by
     intro hx
     cases i <;> cases j <;> simp_all [latticeChart]
     all_goals linarith
-  rcases lt_or_gt_of_ne hx with hx | hx
-  · have hn : ∀ᶠ w : regularLocus in 𝓝 p, w.val.1 < 0 :=
-      (isOpen_lt continuous_subtype_val.fst continuous_const).mem_nhds hx
-    exact ((continuousAt_const (y := (if j then e else e.symm).toEquiv)).congr_of_eventuallyEq
-      (hn.mono fun w hw => by simp [latticeTransition, hij, hw])).continuousWithinAt
-  · have hn : ∀ᶠ w : regularLocus in 𝓝 p, 0 < w.val.1 :=
-      (isOpen_lt continuous_const continuous_subtype_val.fst).mem_nhds hx
-    exact ((continuousAt_const (y := (AddEquiv.refl F).toEquiv)).congr_of_eventuallyEq
-      (hn.mono fun w hw => by simp [latticeTransition, hij, not_lt.mpr hw.le])).continuousWithinAt
+  exact (continuousAt_const.congr_of_eventuallyEq ((eventually_latticeTransition_eq e i j hx).mono
+    fun q hq => congrArg AddEquiv.toEquiv hq)).continuousWithinAt
 
 private def latticeBundleCore {F : Type*} [AddCommGroup F]
     [TopologicalSpace F] [DiscreteTopology F] (e : F ≃+ F) :
@@ -214,6 +254,20 @@ theorem tangentLatticeBundleCore_coordChange (i j : Bool) (p : regularLocus) (q 
   rw [tangentLatticeBundleCore, latticeBundleCore_coordChange]
   simp only [latticeTransition]
   split_ifs <;> rfl
+
+/-- Exponent coordinate changes are the lattice frame changes of `upperExponent`. -/
+theorem exponentBundleCore_coordChange_eq_latticeTransition (i j : Bool) (p : regularLocus)
+    (q : ℤ × ℤ × ℤ) :
+    exponentBundleCore.coordChange i j p q =
+      latticeTransition upperExponent.toAddEquiv i j p q :=
+  latticeBundleCore_coordChange _ _ _ _ _
+
+/-- Tangent coordinate changes are the lattice frame changes of `upperTangent`. -/
+theorem tangentLatticeBundleCore_coordChange_eq_latticeTransition (i j : Bool)
+    (p : regularLocus) (q : ℤ × ℤ) :
+    tangentLatticeBundleCore.coordChange i j p q =
+      latticeTransition upperTangent.toAddEquiv i j p q :=
+  latticeBundleCore_coordChange _ _ _ _ _
 
 /-- The changes between the actual exponent trivializations are the specified
 core transitions. -/
