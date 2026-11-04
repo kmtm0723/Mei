@@ -51,10 +51,7 @@ variable {R M N Γ Δ V J K : Type*}
   (k l : ℕ) (hcut : ∀ p, p ∈ d.cutoff k ↔ σ p ∈ e.cutoff l)
   (hpos : ∀ p, p ∈ d.monoid ↔ σ p ∈ e.monoid) (Q : V)
 
-/-- The regraded incoming coefficient, placed in degree zero using `map_zero`.
-Exposing this subtype constructor keeps the degree-identity specialization's
-existing incoming-base type definitionally unchanged in downstream modules. -/
-@[expose]
+/-- The regraded incoming coefficient, placed in degree zero using `map_zero`. -/
 def regradeBase : 𝓝 0 :=
   ⟨r a, by simpa only [map_zero] using hr 0 a a.property⟩
 
@@ -63,6 +60,15 @@ omit [DecidableEq Γ] [DecidableEq Δ]
 /-- Regrading the incoming coefficient does not change its underlying value. -/
 @[simp]
 theorem coe_regradeBase : (regradeBase ℳ 𝓝 r σ hr a : N) = r a := (rfl)
+
+omit [DecidableEq Γ] [DirectSum.Decomposition ℳ] in
+/-- For identity degree transport, the regraded base is the ordinary coefficient image. -/
+@[simp]
+theorem regradeBase_id (𝓟 : Γ → Submodule R N)
+    (hr' : ∀ p x, x ∈ ℳ p → r x ∈ 𝓟 p) :
+    regradeBase ℳ 𝓟 r (AddMonoidHom.id Γ) hr' a =
+      (⟨r a, hr' 0 a a.property⟩ : 𝓟 0) :=
+  Subtype.ext (coe_regradeBase ℳ 𝓟 r (AddMonoidHom.id Γ) hr' a)
 
 local notation "a'" => regradeBase ℳ 𝓝 r σ hr a
 local notation "Source" => CutoffDecoratedRay d ℳ T a v f c ε P W S C k Q

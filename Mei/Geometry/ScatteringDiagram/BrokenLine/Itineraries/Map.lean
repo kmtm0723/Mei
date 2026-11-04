@@ -48,7 +48,7 @@ variable {R M N Γ V J K : Type*}
   (ε : J → SignType) (P W : J → Set V) (S : K → Set V) (C : Set V)
   (k : ℕ) (Q : V)
 
-local notation "a'" => (Subtype.mk (r a) (hr 0 a a.property) : 𝓝 0)
+local notation "a'" => regradeBase ℳ 𝓝 r (AddMonoidHom.id Γ) hr a
 local notation "Source" => CutoffDecoratedRay d ℳ T a v f c ε P W S C k Q
 local notation "Target" => CutoffDecoratedRay d 𝓝 U a' v f c ε P W S C k Q
 
@@ -116,9 +116,10 @@ include hT
 coefficient specialization. Vanished decorations are discarded automatically. -/
 theorem map_cutoffDecoratedEvaluation [Finite J] :
     r (cutoffDecoratedEvaluation d ℳ T a v f c ε P W S C k Q) =
-      cutoffDecoratedEvaluation d 𝓝 U a' v f c ε P W S C k Q :=
-  map_cutoffDecoratedEvaluation_regrading d d ℳ 𝓝 r (AddMonoidHom.id Γ)
-    Function.injective_id hr T U hT a v v (fun _ => rfl) f c ε P W S C
-    k k (fun _ => Iff.rfl) (fun _ => Iff.rfl) Q
+      cutoffDecoratedEvaluation d 𝓝 U ⟨r a, hr 0 a a.property⟩ v f c ε P W S C k Q := by
+  simpa only [regradeBase_id] using
+    map_cutoffDecoratedEvaluation_regrading d d ℳ 𝓝 r (AddMonoidHom.id Γ)
+      Function.injective_id hr T U hT a v v (fun _ => rfl) f c ε P W S C
+      k k (fun _ => Iff.rfl) (fun _ => Iff.rfl) Q
 
 end Mei
