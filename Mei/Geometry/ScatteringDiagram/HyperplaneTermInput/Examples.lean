@@ -42,11 +42,15 @@ local notation "ℕ²" => Module.Basis.positiveDegrees (Module.Basis.finTwoProd 
 /-- The exponents `m₀ = (1, 0)` and `m₁ = (2, 0)` of `x` and `x²`. -/
 def axisExponent : Fin 2 → ℤ × ℤ := ![(1, 0), (2, 0)]
 
+/-- The first exponent is `(1, 0)`. -/
 @[simp]
-theorem axisExponent_zero : axisExponent 0 = (1, 0) := (rfl)
+theorem axisExponent_zero : axisExponent 0 = (1, 0) := by
+  simp [axisExponent]
 
+/-- The second exponent is `(2, 0)`. -/
 @[simp]
-theorem axisExponent_one : axisExponent 1 = (2, 0) := (rfl)
+theorem axisExponent_one : axisExponent 1 = (2, 0) := by
+  simp [axisExponent]
 
 /-- The second coordinate `e₂*` is a nonzero normal. -/
 theorem snd_ne_zero : AddMonoidHom.snd ℤ ℤ ≠ 0 := fun h => by
@@ -54,7 +58,7 @@ theorem snd_ne_zero : AddMonoidHom.snd ℤ ℤ ≠ 0 := fun h => by
 
 /-- Both exponents are tangent to the horizontal axis. -/
 theorem snd_axisExponent (α : Fin 2) : AddMonoidHom.snd ℤ ℤ (axisExponent α) = 0 := by
-  fin_cases α <;> rfl
+  fin_cases α <;> simp
 
 /-- The alphabet input of the terms `c₀ x` and `c₁ x²` on the horizontal axis. -/
 def axisInput : HyperplaneTermInput (PositiveDegrees.finiteAlphabet axisExponent)
@@ -62,10 +66,12 @@ def axisInput : HyperplaneTermInput (PositiveDegrees.finiteAlphabet axisExponent
   finiteAlphabet (fun _ => AddMonoidHom.snd ℤ ℤ) (fun _ => snd_ne_zero) (fun _ => 0)
     (fun _ => ()) axisExponent fun α => snd_axisExponent α
 
+/-- The alphabet input has the single normal `e₂*`. -/
 @[simp]
 theorem axisInput_normal : axisInput.normal = fun _ => AddMonoidHom.snd ℤ ℤ := by
   simp [axisInput]
 
+/-- The alphabet input has the letters as exponents. -/
 @[simp]
 theorem axisInput_exponent : axisInput.exponent = letter axisExponent := by
   simp [axisInput]

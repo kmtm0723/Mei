@@ -70,17 +70,25 @@ def finiteAlphabet :
   exponent_ne_zero := letter_ne_zero m
   normal_exponent α := by simpa using hm α
 
+/-- The alphabet input has the normals `μ_i`. -/
 @[simp]
-theorem finiteAlphabet_normal : (finiteAlphabet μ hμ a w m hm).normal = μ := (rfl)
+theorem finiteAlphabet_normal : (finiteAlphabet μ hμ a w m hm).normal = μ := by
+  simp [finiteAlphabet]
 
+/-- The alphabet input has the offsets `a_i`. -/
 @[simp]
-theorem finiteAlphabet_offset : (finiteAlphabet μ hμ a w m hm).offset = a := (rfl)
+theorem finiteAlphabet_offset : (finiteAlphabet μ hμ a w m hm).offset = a := by
+  simp [finiteAlphabet]
 
+/-- The alphabet input places the term `α` on the hyperplane `w α`. -/
 @[simp]
-theorem finiteAlphabet_wallIndex : (finiteAlphabet μ hμ a w m hm).wallIndex = w := (rfl)
+theorem finiteAlphabet_wallIndex : (finiteAlphabet μ hμ a w m hm).wallIndex = w := by
+  simp [finiteAlphabet]
 
+/-- The alphabet input has the letters as exponents. -/
 @[simp]
-theorem finiteAlphabet_exponent : (finiteAlphabet μ hμ a w m hm).exponent = letter m := (rfl)
+theorem finiteAlphabet_exponent : (finiteAlphabet μ hμ a w m hm).exponent = letter m := by
+  simp [finiteAlphabet]
 
 end Alphabet
 
@@ -103,19 +111,23 @@ def liftFiniteAlphabet : HyperplaneTermInput f π ι E :=
   I.map (PositiveDegrees.finiteAlphabetLift m hτ hτ0) fun _ hx =>
     projection_finiteAlphabetLift hτ hτ0 hπ hx
 
+/-- The lifted input has the hyperplane normals of the input. -/
 @[simp]
 theorem liftFiniteAlphabet_normal : (I.liftFiniteAlphabet hτ hτ0 hπ).normal = I.normal := by
   simp [liftFiniteAlphabet]
 
+/-- The lifted input has the hyperplane offsets of the input. -/
 @[simp]
 theorem liftFiniteAlphabet_offset : (I.liftFiniteAlphabet hτ hτ0 hπ).offset = I.offset := by
   simp [liftFiniteAlphabet]
 
+/-- The lifted input places each term on the hyperplane of the input. -/
 @[simp]
 theorem liftFiniteAlphabet_wallIndex :
     (I.liftFiniteAlphabet hτ hτ0 hπ).wallIndex = I.wallIndex := by
   simp [liftFiniteAlphabet]
 
+/-- The lifted input has the exponents `τ x_α`. -/
 @[simp]
 theorem liftFiniteAlphabet_exponent (α : E) :
     (I.liftFiniteAlphabet hτ hτ0 hπ).exponent α = τ (I.exponent α) := by

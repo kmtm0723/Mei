@@ -86,7 +86,8 @@ def tangentExponent (i : ι) (α : I.Term i) : T i :=
 /-- A tangent exponent is the exponent of the term. -/
 @[simp]
 theorem coe_tangentExponent (i : ι) (α : I.Term i) :
-    (I.tangentExponent (R := R) i α : Γ) = I.exponent α := (rfl)
+    (I.tangentExponent (R := R) i α : Γ) = I.exponent α := by
+  simp [tangentExponent]
 
 variable [Fintype E] [DecidableEq ι]
 
@@ -198,7 +199,7 @@ theorem familyLog_diagram (k : ℕ) (i : ι) :
     (A.subtype fun w => I.normal i (ρ w.generator) = 0).map (Function.Embedding.sigmaMk i)
   have hs (x : I.Index) (hx : x ∈ s) : x.1 = i := by
     obtain ⟨⟨w, hw⟩, -, rfl⟩ := Finset.mem_map.mp hx
-    rfl
+    simp
   have hact (x : I.Index) (hx : x ∈ (I.diagram h c).active k) (hxi : x.1 = i) : x ∈ s := by
     obtain ⟨i', w, hw⟩ := x
     obtain rfl : i' = i := hxi

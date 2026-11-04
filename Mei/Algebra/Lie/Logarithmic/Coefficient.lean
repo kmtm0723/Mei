@@ -180,6 +180,30 @@ theorem filtration_ideal_le_comap_mapDomainAlgHom {R : Type*} [CommSemiring R]
       AddSubmonoid.subtype_apply, AddSubmonoid.coe_inclusion,
       AddMonoidHom.addSubmonoidMap_apply_coe] using h
 
+variable {d Q} in
+/-- The monomial map `z^q ↦ z^(T q)` along a positive degree map preserves the first
+filtration term: nonzero allowed degrees have nonzero images, hence positive degree. -/
+theorem filtration_ideal_one_le_comap_mapDomainAlgHom {R : Type*} [CommSemiring R]
+    (T : PositiveDegreeMap d e) (hT : Q.map T.toAddMonoidHom ≤ Q') :
+    (filtration (R := R) d Q).ideal 1 ≤
+      ((filtration e Q').ideal 1).comap (mapDomainAlgHom R R
+        ((AddSubmonoid.inclusion hT).comp (T.toAddMonoidHom.addSubmonoidMap Q))) := by
+  intro a ha
+  rw [filtration_ideal] at ha
+  rw [Ideal.mem_comap, filtration_ideal]
+  refine (d.monoid.comap Q.subtype).monoidAlgebraIdeal_le_comap_mapDomainRingHom
+    (d.degree.comp Q.subtype) (e.monoid.comap Q'.subtype) (e.degree.comp Q'.subtype)
+    _ (fun n hn => ?_) (fun n hn hd => ?_) ha
+  · simpa only [AddSubmonoid.mem_comap, AddMonoidHom.comp_apply, AddSubmonoid.subtype_apply,
+      AddSubmonoid.coe_inclusion, AddMonoidHom.addSubmonoidMap_apply_coe]
+      using T.map_mem (AddSubmonoid.mem_comap.mp hn)
+  · have hn0 : (n : Γ) ≠ 0 := fun h0 => by simp [h0] at hd
+    have h := e.degree_pos (T.map_mem (AddSubmonoid.mem_comap.mp hn))
+      (T.map_ne_zero (AddSubmonoid.mem_comap.mp hn) hn0)
+    simp only [Nat.cast_one, AddMonoidHom.comp_apply, AddSubmonoid.subtype_apply,
+      AddSubmonoid.coe_inclusion, AddMonoidHom.addSubmonoidMap_apply_coe] at h ⊢
+    omega
+
 end Map
 
 variable [Fact (d.monoid ≤ Q)]
