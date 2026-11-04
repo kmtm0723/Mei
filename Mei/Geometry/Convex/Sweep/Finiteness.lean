@@ -198,20 +198,23 @@ theorem length_le_order_mul_card_of_mem_realizedDegreeItineraries [Finite J]
     {k : ℕ} {l : List (Γ × J)} (hl : l ∈ realizedDegreeItineraries d f c v k) :
     l.length ≤ (k + 1) * Nat.card J := by
   classical
+  have hcut (j : Fin l.length) :
+      0 ≤ d.degree (l.get j).1 ∧ d.degree (l.get j).1 ≤ k := by
+    have hm := d.mem_cutoff.mp (hl.1 _ (List.get_mem l j)).1
+    exact ⟨d.degree_nonneg hm.1, hm.2⟩
   let height (j : Fin l.length) : Fin (k + 1) :=
     ⟨(d.degree (l.get j).1).toNat, by
-      have hm := d.mem_cutoff.mp (hl.1 _ (List.get_mem l j)).1
-      have hn := d.degree_nonneg hm.1
-      have hb := hm.2
+      obtain ⟨hn, hb⟩ := hcut j
       omega⟩
   let encode (j : Fin l.length) := (height j, (l.get j).2)
   have hinj : Function.Injective encode := by
     intro a b hab
     have hd : d.degree (l.get a).1 = d.degree (l.get b).1 := by
-      have he := congrArg (fun x => x.1.val) hab
-      have ha := d.degree_nonneg (d.mem_cutoff.mp (hl.1 _ (List.get_mem l a)).1).1
-      have hb := d.degree_nonneg (d.mem_cutoff.mp (hl.1 _ (List.get_mem l b)).1).1
-      change (d.degree (l.get a).1).toNat = (d.degree (l.get b).1).toNat at he
+      have he : (d.degree (l.get a).1).toNat = (d.degree (l.get b).1).toNat := by
+        simpa only [encode, height] using
+          congrArg (fun x : Fin (k + 1) × J => x.1.val) hab
+      have ha := (hcut a).1
+      have hb := (hcut b).1
       omega
     have hdegree {a b : Fin l.length} (hab : a ≤ b)
         (hd : d.degree (l.get a).1 = d.degree (l.get b).1) :
