@@ -66,7 +66,7 @@ def axisInput : HyperplaneTermInput (PositiveDegrees.finiteAlphabet axisExponent
   finiteAlphabet (fun _ => AddMonoidHom.snd ℤ ℤ) (fun _ => snd_ne_zero) (fun _ => 0)
     (fun _ => ()) axisExponent fun α => snd_axisExponent α
 
-/-- The alphabet input has the single normal `e₂*`. -/
+/-- Every hyperplane of the alphabet input has the normal `e₂*`. -/
 @[simp]
 theorem axisInput_normal : axisInput.normal = fun _ => AddMonoidHom.snd ℤ ℤ := by
   simp [axisInput]
@@ -76,18 +76,18 @@ theorem axisInput_normal : axisInput.normal = fun _ => AddMonoidHom.snd ℤ ℤ 
 theorem axisInput_exponent : axisInput.exponent = letter axisExponent := by
   simp [axisInput]
 
-/-- The lift sends each letter to its exponent. -/
+/-- The first projection `ℤ² × (Fin 2 → ℤ) → ℤ²`, used as the lift `τ`. -/
 local notation "τ" => AddMonoidHom.fst (ℤ × ℤ) (Fin 2 → ℤ)
 
-/-- The exponents lie in the positive quadrant. -/
+/-- The lift `τ` sends each letter into the positive quadrant `ℕ²`. -/
 theorem axisExponent_mem (α : Fin 2) : τ (letter axisExponent α) ∈ ℕ².monoid := by
   fin_cases α <;> simp [Fin.forall_fin_two]
 
-/-- The exponents are nonzero. -/
+/-- The lift `τ` sends each letter to a nonzero degree. -/
 theorem axisExponent_ne_zero (α : Fin 2) : τ (letter axisExponent α) ≠ 0 := by
   fin_cases α <;> simp
 
-/-- The identity projection sends each lifted letter to its exponent. -/
+/-- The identity projection sends the lift of each letter to its exponent. -/
 theorem id_axisExponent (α : Fin 2) :
     AddMonoidHom.id (ℤ × ℤ) (τ (letter axisExponent α)) = axisExponent α := by
   simp
@@ -109,7 +109,8 @@ variable (h : TauCeti.Toric.IsIntegralLattice ((Int.castAddHom ℝ).prodMap (Int
 local notation "Pτ" => Pushforward.ofFiniteAlphabetLift (R := ℚ) (g := h) axisExponent_mem
   axisExponent_ne_zero id_axisExponent
 
-/-- The images of both letters lie on the supported ray of `e₁` in `ℕ²`. -/
+/-- The ray map of the pushforward data sends the rays of both letters to the supported ray of
+`e₁` in `ℕ²`. -/
 theorem axisPushforward_rayMap_letterRay (α : Fin 2) :
     (Pτ).rayMap (letterRay axisExponent α) =
       Module.Basis.positiveDegreesRay (Module.Basis.finTwoProd ℤ) 0 := by

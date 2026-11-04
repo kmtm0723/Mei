@@ -89,7 +89,7 @@ theorem coe_tangentExponent (i : ι) (α : I.Term i) :
 variable [Fintype E] [DecidableEq ι]
 
 /-- The completed wall function `f_i = 1 + ∑_{wallIndex α = i} c_α z^{n_α}` of the
-hyperplane `i` is congruent to one: its exponents are nonzero allowed degrees. -/
+hyperplane `i` is congruent to one. -/
 theorem toCompletion_wallFunction_sub_one_mem (c : E → R) (i : ι) :
     (F i).toCompletion (1 + ∑ α : I.Term i, single (I.tangentExponent i α) (c α)) - 1 ∈
       (F i).completionIdeal 1 :=

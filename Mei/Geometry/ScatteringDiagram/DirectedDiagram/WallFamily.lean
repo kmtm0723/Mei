@@ -58,7 +58,7 @@ def familyLog (k : ℕ) (i : κ) : d.truncatedLie ℒ k :=
     BCHGroup.log (L := d.truncatedLie ℒ k) (CompletedGroup.projection k (D.wall j).label)
 
 /-- Any finite set of walls of the family `i` containing its active walls computes the family
-logarithm: inactive walls have trivial projected labels. -/
+logarithm. -/
 theorem familyLog_eq_sum (k : ℕ) (i : κ) (s : Finset ι) (hs : ∀ j ∈ s, a j = i)
     (hact : ∀ j ∈ D.active k, a j = i → j ∈ s) :
     D.familyLog a k i =

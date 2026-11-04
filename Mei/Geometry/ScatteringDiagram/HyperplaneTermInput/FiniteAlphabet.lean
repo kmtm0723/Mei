@@ -98,7 +98,8 @@ variable {m : E → M} {f : PositiveDegrees L} {τ : M × (E → ℤ) →+ L}
   (I : HyperplaneTermInput (PositiveDegrees.finiteAlphabet m) (AddMonoidHom.fst M (E → ℤ)) ι E)
 
 include hπ in
-/-- The finite alphabet lift is compatible with the projections to `M`. -/
+/-- On allowed degrees of the finite alphabet, `π` after the finite alphabet lift is the first
+projection to `M`. -/
 theorem projection_finiteAlphabetLift {x : M × (E → ℤ)}
     (hx : x ∈ (PositiveDegrees.finiteAlphabet m).monoid) :
     π (PositiveDegrees.finiteAlphabetLift m hτ hτ0 x) = AddMonoidHom.fst M (E → ℤ) x := by
