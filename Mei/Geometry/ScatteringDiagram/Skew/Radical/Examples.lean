@@ -7,7 +7,7 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.Skew.Coefficient
 public import Mei.Geometry.ScatteringDiagram.Skew.PolynomialInput.Examples
-public import Mei.Geometry.ScatteringDiagram.Skew.Principal.KSHyperplane
+public import Mei.Geometry.ScatteringDiagram.Skew.Principal.KS.Hyperplane
 public import Mei.Geometry.ScatteringDiagram.Skew.Radical
 public import Mei.Algebra.PositiveDegrees.Basis
 

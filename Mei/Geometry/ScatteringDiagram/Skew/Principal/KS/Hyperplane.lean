@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import Mei.Geometry.ScatteringDiagram.KS.IndexedWall.Hyperplane
-public import Mei.Geometry.ScatteringDiagram.Skew.Principal.KS
+public import Mei.Geometry.ScatteringDiagram.Skew.Principal.KS.Basic
 
 /-!
 # Projected principal walls of full KS hyperplanes
