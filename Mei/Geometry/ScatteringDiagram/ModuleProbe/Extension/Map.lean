@@ -16,8 +16,7 @@ homogeneous equivariant linear coefficient maps. The target diagram can be any
 representative equivalent to the coefficient image of the source diagram. No
 injectivity is required: walls and their individual contributions may disappear.
 
-The comparison extends to allowed endpoints and completed fields, as required by
-[probe transport](https://github.com/yuma-mizuno/TauCetiRoadmap/blob/mei/TauCetiRoadmap/ScatteringDiagrams/README.md#55-module-probes-and-affine-theta-transport).
+The same laws compare extended fields at allowed endpoints and completed fields.
 -/
 
 public noncomputable section
@@ -50,11 +49,11 @@ variable {R Γ Λ V E ι η κ : Type*} {M N L : Type u}
 
 local notation "φ" => coefficientGradedLieHom d ℳ 𝒩 p ℒ f hf hequiv
 local notation "hφ" => coefficientGradedLieHom_mem_wall d ℳ 𝒩 p ℒ f hf hequiv H
-local notation "fₖ" => quotientCoefficientMap d ℳ 𝒩 p f hf
+local notation "fₖ" => PositiveDegrees.quotientCoefficientMap d ℳ 𝒩 p f hf
 
 omit [LieAlgebra ℚ L] [IsScalarTower ℚ R L] in
-/-- Upward crossing labels are natural for actual equivalent target representatives.
-The proof compares short paths, so disappearing walls need no matching indices. -/
+/-- Coefficient maps preserve upward crossing labels of equivalent target representatives
+on the common generic locus, including diagrams with different active wall indices. -/
 theorem map_combinedLabel_of_levelEquivalent (k : ℕ)
     (hDD' : (D.map φ hφ).LevelEquivalent D' (k + 1)) (Q : V)
     (hQ : (coefficientArrangement d ℳ p ℒ H h h' D k).IsGeneric Q)
@@ -101,18 +100,13 @@ theorem quotientCoefficientMap_truncatedBCHAction (k : ℕ) (g : d.truncatedGrou
     (a : (d.shiftedFiltration ℳ p).quotient k) :
     fₖ k ((d.shiftedLieFiltration ℒ ℳ p).truncatedBCHAction d ℒ k g a) =
       (d.shiftedLieFiltration ℒ 𝒩 p).truncatedBCHAction d ℒ k g (fₖ k a) := by
-  let ψ : d.shiftedLieSubmodule ℒ ℳ p →ₗ[R] d.shiftedLieSubmodule ℒ 𝒩 p :=
-    shiftedCoefficientMap d ℳ 𝒩 p f hf
-  have hψ (a : d.shiftedLieSubmodule ℒ ℳ p) : (ψ a : N) = f a :=
-    coe_shiftedCoefficientMap d ℳ 𝒩 p f hf a
-  have heq (x : L) (a : d.shiftedLieSubmodule ℒ ℳ p) : ψ ⁅x, a⁆ = ⁅x, ψ a⁆ := by
-    apply Subtype.ext
-    simp only [hψ, LieSubmodule.coe_bracket, hequiv]
   have ht := (d.shiftedLieFiltration ℒ ℳ p).mapQ_truncatedBCHAction_of_gradedLieHom
-    (d.shiftedLieFiltration ℒ 𝒩 p) (GradedLieHom.id ℒ) ψ
-    (fun x a => by simpa only [GradedLieHom.id_apply] using heq x a) k (by simp)
-    (fun _ ha => shiftedCoefficientMap_mem_filtration d ℳ 𝒩 p f hf k ha) g a
-  simpa only [ψ, quotientCoefficientMap_def, GradedLieHom.truncatedMap_id,
+    (d.shiftedLieFiltration ℒ 𝒩 p) (GradedLieHom.id ℒ)
+    (d.shiftedCoefficientMap ℳ 𝒩 p f hf)
+    (fun x a => by simpa only [GradedLieHom.id_apply] using
+      shiftedCoefficientMap_lie d ℳ 𝒩 p ℒ f hf hequiv x a) k (by simp)
+    (fun _ ha => PositiveDegrees.shiftedCoefficientMap_mem_filtration d ℳ 𝒩 p f hf k ha) g a
+  simpa only [PositiveDegrees.quotientCoefficientMap_def, GradedLieHom.truncatedMap_id,
     LieHom.bchGroupMap_id, MonoidHom.id_apply] using ht
 
 variable (B : DirectedDiagram (d := d) h H κ)
@@ -145,8 +139,8 @@ theorem map_extendedCoefficientField (k : ℕ) (hBc : B.LevelConsistent k)
     quotientCoefficientMap_truncatedBCHAction d ℳ 𝒩 p ℒ f hf hequiv,
     map_coefficientField d ℳ 𝒩 p ℒ H h h' f hf hequiv D D' k hDD' z hz hz']
 
-/-- Coefficient maps commute with the completed extension, by comparing its
-actual finite crossing coefficients at every relative order. -/
+/-- The completed field commutes with coefficient maps for consistent probe diagrams
+with the stated coefficient and base-cylinder equivalences. -/
 theorem map_completedExtendedCoefficientField
     (hD : D.Consistent) (hD' : D'.Consistent) (hBc : B.Consistent)
     (hB : (D.map (chargeZeroGradedLieHom d ℳ p ℒ)
@@ -156,13 +150,13 @@ theorem map_completedExtendedCoefficientField
       (chargeZeroGradedLieHom_mem_wall d 𝒩 p ℒ H)).Equivalent
       (cylinderDiagram d 𝒩 p ℒ H h h' B))
     (hDD' : (D.map φ hφ).Equivalent D') (x : B.Point) :
-    completionCoefficientMap d ℳ 𝒩 p f hf
+    PositiveDegrees.completionCoefficientMap d ℳ 𝒩 p f hf
         (completedExtendedCoefficientField d ℳ p ℒ H h h' D B hD hBc hB x) =
       completedExtendedCoefficientField d 𝒩 p ℒ H h h' D' B hD' hBc hB' x := by
   apply (d.shiftedFiltration 𝒩 p).completion_ext
   intro k
-  rw [projection_completionCoefficientMap, projection_completedExtendedCoefficientField,
-    projection_completedExtendedCoefficientField]
+  rw [PositiveDegrees.projection_completionCoefficientMap,
+    projection_completedExtendedCoefficientField, projection_completedExtendedCoefficientField]
   exact map_extendedCoefficientField d ℳ 𝒩 p ℒ H h h' f hf hequiv D D' B k
     ((B.consistent_iff.mp hBc) k) ((D.consistent_iff.mp hD) (k + 1))
     ((D'.consistent_iff.mp hD') (k + 1))
