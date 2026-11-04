@@ -191,6 +191,20 @@ def chartedSpace : ChartedSpace (ℝ × ℝ) regularLocus := by
     e ∈ atlas (ℝ × ℝ) regularLocus ↔ e = cutChart ∨ e = upperChart := by
   rfl
 
+/-- The preferred chart at a point in the domain of the cut chart is the cut chart. -/
+theorem chartAt_of_mem_cutChart_source {p : regularLocus} (hp : p ∈ cutChart.source) :
+    letI := chartedSpace
+    chartAt (ℝ × ℝ) p = cutChart := by
+  classical
+  exact ite_eq_left hp
+
+/-- The preferred chart at a point outside the domain of the cut chart is the upper chart. -/
+theorem chartAt_of_notMem_cutChart_source {p : regularLocus} (hp : p ∉ cutChart.source) :
+    letI := chartedSpace
+    chartAt (ℝ × ℝ) p = upperChart := by
+  classical
+  exact ite_eq_right hp
+
 variable (h : TauCeti.Toric.IsIntegralLattice
   ((Int.castAddHom ℝ).prodMap (Int.castAddHom ℝ)))
 
