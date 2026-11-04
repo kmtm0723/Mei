@@ -39,6 +39,8 @@ theorem completedSeriesAction_apply (x : F.completionIdeal 1) (H : (PowerSeries 
     F.completedSeriesAction x H a =
       F.completedAeval x (H : PowerSeries R) * a *
         F.completedAeval x (↑(H⁻¹) : PowerSeries R) := by
+  -- This apply lemma exposes the defining ConjAct action and Units.map value;
+  -- both evaluate pointwise, so the displayed product is definitionally equal.
   rfl
 
 /-- Reversing the unit series gives the inverse algebra automorphism. -/

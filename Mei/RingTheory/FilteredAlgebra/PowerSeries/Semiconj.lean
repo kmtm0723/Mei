@@ -10,15 +10,12 @@ public import Mei.RingTheory.PowerSeries.Nilpotent.Semiconj
 public import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
-# Semiconjugacy under completed power series evaluation
+# Rescaling completed power-series evaluation
 
-Scalar rescaling and semiconjugacy commute with evaluation of power series in a
-completed associative algebra. A scalar unit series acts by conjugation through
-its rescaling ratio. The element being acted on can be an arbitrary completed
-coefficient, and the rescaling scalar need not be invertible.
-
-The proof uses the projection formula for `AlgFiltration.completedAeval` and the
-finite nilpotent evaluation identities from `Mei.RingTheory.PowerSeries.Nilpotent.Semiconj`.
+Evaluating a power series at `a • x` in the first completed ideal agrees with
+evaluating its scalar rescaling at `x`. The proof uses the corresponding identity
+on each nilpotent quotient. Completed conjugation is supplied separately by
+`completedAeval_conj` in `PowerSeries.Basic`.
 -/
 
 public section

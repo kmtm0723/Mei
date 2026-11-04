@@ -45,7 +45,9 @@ theorem completedTwistedSeriesAction_apply (x : F.completionIdeal 1) (c : R)
     (H : (PowerSeries R)ˣ) (a : F.completion) :
     F.completedTwistedSeriesAction x c H a =
       F.completedAeval x (PowerSeries.rescale c (H : PowerSeries R)) * a *
-        F.completedAeval x (↑(H⁻¹) : PowerSeries R) := (rfl)
+        F.completedAeval x (↑(H⁻¹) : PowerSeries R) := by
+  -- Both unit-multiplication equivalences and their trans composition compute pointwise.
+  rfl
 
 /-- Inverting the series reverses the twisted action. -/
 @[simp]
