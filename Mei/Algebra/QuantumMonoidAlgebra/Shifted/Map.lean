@@ -243,15 +243,17 @@ variable {U Γ'' : Type*} [CommRing U] [AddCommGroup Γ'']
 theorem mapShiftedCompletion_comp (x : d.ShiftedCoefficients (grade q β) p) :
     cast (congrArg (a.ShiftedCoefficients (grade q'' β''))
         (PositiveDegreeMap.comp_apply T' T p))
-      (mapShiftedCompletion (q' := q'') (β' := β'') d a (T'.comp T) (ψ.comp φ) (fun u v => by
-        rw [PositiveDegreeMap.comp_apply, PositiveDegreeMap.comp_apply, ← h', ← h]; rfl) p x) =
+      (mapShiftedCompletion (q' := q'') (β' := β'') d a (T'.comp T) (ψ.comp φ) (by
+        simpa only [PositiveDegreeMap.comp_apply, AddMonoidHom.comp_apply] using
+          map_comp_compat φ ψ T.toAddMonoidHom T'.toAddMonoidHom h h') p x) =
       mapShiftedCompletion e a T' ψ h' (T p) (mapShiftedCompletion d e T φ h p x) := by
   obtain ⟨b, rfl⟩ := (positiveCompletionShiftEquiv q β d p).surjective x
   let C := cast (congrArg (a.ShiftedCoefficients (grade q'' β''))
     (PositiveDegreeMap.comp_apply T' T p))
   let hc : ∀ u v, Units.map (ψ.comp φ).toMonoidHom (q ^ β u v) =
-      q'' ^ β'' ((T'.comp T) u) ((T'.comp T) v) := fun u v => by
-    rw [PositiveDegreeMap.comp_apply, PositiveDegreeMap.comp_apply, ← h', ← h]; rfl
+      q'' ^ β'' ((T'.comp T) u) ((T'.comp T) v) := by
+    simpa only [PositiveDegreeMap.comp_apply, AddMonoidHom.comp_apply] using
+      map_comp_compat φ ψ T.toAddMonoidHom T'.toAddMonoidHom h h'
   let Z := positiveCompletionShiftEquiv q'' β'' a (T' (T p))
   have h₁ := mapShiftedCompletion_coordinates d a (T'.comp T) (ψ.comp φ) hc p b
   have h₂ : C (positiveCompletionShiftEquiv q'' β'' a ((T'.comp T) p)
@@ -275,8 +277,9 @@ theorem mapShiftedQuotient_comp (k : ℕ)
     (x : (d.shiftedFiltration (grade q β) p).quotient (T.modulus (T'.modulus k))) :
     cast (congrArg (fun r => (a.shiftedFiltration (grade q'' β'') r).quotient k)
         (PositiveDegreeMap.comp_apply T' T p))
-      (mapShiftedQuotient (q' := q'') (β' := β'') d a (T'.comp T) (ψ.comp φ) (fun u v => by
-        rw [PositiveDegreeMap.comp_apply, PositiveDegreeMap.comp_apply, ← h', ← h]; rfl) p k
+      (mapShiftedQuotient (q' := q'') (β' := β'') d a (T'.comp T) (ψ.comp φ) (by
+        simpa only [PositiveDegreeMap.comp_apply, AddMonoidHom.comp_apply] using
+          map_comp_compat φ ψ T.toAddMonoidHom T'.toAddMonoidHom h h') p k
         (cast (congrArg (fun j => (d.shiftedFiltration (grade q β) p).quotient j)
           (PositiveDegreeMap.comp_modulus T' T k).symm) x)) =
       mapShiftedQuotient e a T' ψ h' (T p) k
@@ -286,8 +289,9 @@ theorem mapShiftedQuotient_comp (k : ℕ)
   let C := cast (congrArg (fun r => (a.shiftedFiltration (grade q'' β'') r).quotient k)
     (PositiveDegreeMap.comp_apply T' T p))
   let hc : ∀ u v, Units.map (ψ.comp φ).toMonoidHom (q ^ β u v) =
-      q'' ^ β'' ((T'.comp T) u) ((T'.comp T) v) := fun u v => by
-    rw [PositiveDegreeMap.comp_apply, PositiveDegreeMap.comp_apply, ← h', ← h]; rfl
+      q'' ^ β'' ((T'.comp T) u) ((T'.comp T) v) := by
+    simpa only [PositiveDegreeMap.comp_apply, AddMonoidHom.comp_apply] using
+      map_comp_compat φ ψ T.toAddMonoidHom T'.toAddMonoidHom h h'
   let m := mapShiftedQuotient d a (T'.comp T) (ψ.comp φ) hc p k
   have hs : cast (congrArg (fun j => (d.shiftedFiltration (grade q β) p).quotient j)
       (PositiveDegreeMap.comp_modulus T' T k).symm)

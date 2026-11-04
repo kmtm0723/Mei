@@ -176,7 +176,7 @@ private theorem mapShiftedQuotient_inclusion_mk_coordinates (k : ℕ)
 /-- Finite coefficient transport commutes with inclusion of translated supports,
 using the prescribed source cutoff for both origins. -/
 @[simp]
-theorem mapShiftedQuotient_shiftedQuotientInclusion (k : ℕ)
+theorem mapShiftedQuotient_shiftedQuotientMap (k : ℕ)
     (a : (d.shiftedFiltration (grade q β) p).quotient (T.modulus k)) :
     mapShiftedQuotient d e T φ h s k
       (d.shiftedQuotientMap (grade q β) p s hps (T.modulus k) a) =
@@ -203,7 +203,7 @@ theorem mapShiftedCompletion_shiftedCompletedInclusion
     (d.shiftedCompletedInclusion (grade q β) p s hps a)
   have h₂ := congrArg (mapShiftedQuotient d e T φ h s k)
     (d.projection_shiftedCompletedInclusion (grade q β) p s hps (T.modulus k) a)
-  have h₃ := mapShiftedQuotient_shiftedQuotientInclusion q β d e T φ h p s hps k
+  have h₃ := mapShiftedQuotient_shiftedQuotientMap q β d e T φ h p s hps k
     ((d.shiftedFiltration (grade q β) p).projection (T.modulus k) a)
   have h₄ := congrArg (e.shiftedQuotientMap (grade q' β') (T p) (T s)
     (by simpa only [map_sub] using T.map_mem hps) k)
