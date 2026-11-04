@@ -107,19 +107,20 @@ theorem nonneg_of_incoming_cutHalfspace (hc : (W.cutHalfspace μ a hμ).Incoming
     0 ≤ μ (ρ W.ray.generator) := by
   obtain ⟨x, hx, hax⟩ := id hμ
   by_contra hneg
-  have hneg' : (μ (ρ W.ray.generator) : ℝ) < 0 := by exact_mod_cast not_le.mp hneg
-  have ht : 0 ≤ (h.realCharacter μ x - a) / -(μ (ρ W.ray.generator) : ℝ) + 1 :=
-    add_nonneg (div_nonneg (by linarith) (by linarith)) zero_le_one
+  have hc0 : (μ (ρ W.ray.generator) : ℝ) < 0 := by exact_mod_cast not_le.mp hneg
+  obtain ⟨s, hs⟩ : ∃ s : ℝ, s = (h.realCharacter μ x - a) / -(μ (ρ W.ray.generator) : ℝ) :=
+    ⟨_, rfl⟩
+  have hsc : s * -(μ (ρ W.ray.generator) : ℝ) = h.realCharacter μ x - a := by
+    rw [hs]
+    field_simp [hc0.ne]
+  have hs0 : 0 ≤ s := hs ▸ div_nonneg (by linarith) (by linarith)
   have hxc : x ∈ (W.cutHalfspace μ a hμ).support := by
     rw [cutHalfspace_support]
     exact ⟨hx, hax.le⟩
-  have hmem := (incoming_iff _).mp hc x hxc _ ht
+  have hmem := (incoming_iff _).mp hc x hxc (s + 1) (by linarith)
   simp only [cutHalfspace_support, cutHalfspace_ray, Set.mem_inter_iff,
-    Set.mem_ofPred_eq] at hmem
-  have hle := hmem.2
-  rw [map_add, map_smul, h.realCharacter_apply, smul_eq_mul, add_mul, div_mul_eq_mul_div,
-    div_neg, mul_div_cancel_right₀ _ hneg'.ne] at hle
-  linarith
+    Set.mem_ofPred_eq, map_add, map_smul, h.realCharacter_apply, smul_eq_mul] at hmem
+  nlinarith [hmem.2]
 
 /-- A cut of an incoming wall by a functional nonnegative on the degree direction is incoming. -/
 theorem Incoming.cutHalfspace {W : DirectedWall (d := d) h H} (hW : W.Incoming)

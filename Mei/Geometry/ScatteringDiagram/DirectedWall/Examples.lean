@@ -131,10 +131,9 @@ theorem geometricDirection_notMem_horizontalHalfLine_two :
   rw [horizontalHalfLine_support]
   rintro ⟨t, ht, he⟩
   simp only [horizontalHalfLine, horizontalAxis, cutHalfspace_ray, ofAffineHyperplane_ray,
-    Module.Basis.positiveDegreesRay_generator, Module.Basis.finTwoProd_zero,
-    AddMonoidHom.coe_prodMap, Prod.map_apply, Int.coe_castAddHom, Int.cast_one,
-    Prod.mk.injEq] at he
-  linarith [Set.mem_Ici.mp ht, he.1]
+    Module.Basis.positiveDegreesRay_generator, Module.Basis.finTwoProd_zero] at he
+  have he₁ : t = 1 := by simpa using congrArg Prod.fst he
+  linarith [Set.mem_Ici.mp ht]
 
 end HalfLine
 
