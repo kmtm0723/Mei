@@ -27,7 +27,10 @@ wall, on the supported primitive ray `e₁`, and the logarithm of `1 + c z^{2e�
 Being a single full hyperplane, the diagram is consistent, so with no further walls it is its
 own outgoing completion (`RankTwoPolynomialInput.Examples.isOutgoingCompletion`), and for the
 independent variable `c` it is a positive wall representative
-(`RankTwoPolynomialInput.Examples.isPositiveWallRepresentative`).
+(`RankTwoPolynomialInput.Examples.isPositiveWallRepresentative`). The horizontal input is an
+instance of Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*,
+Theorem 9.9 (arXiv:2503.03719v1). The consistency uses
+`DirectedDiagram.consistent_of_support_eq`.
 
 ## Three concurrent lines
 
@@ -38,11 +41,8 @@ origin, so they are not in general position
 (`RankTwoPolynomialInput.Examples.not_isGenericOn_concurrentInput`). Translating the diagonal
 line to `{x - y = 1}` puts them in general position
 (`RankTwoPolynomialInput.Examples.isGenericOn_translate_concurrentInput`): the third coorientation
-is the difference of the first two.
-
-The inputs are instances of Burcroff–Lee–Mou, *Positivity of generalized cluster scattering
-diagrams*, Theorem 9.9 (arXiv:2503.03719v1). The consistency uses
-`DirectedDiagram.consistent_of_support_eq`.
+is the difference of the first two. This example only illustrates general position: no outgoing
+completion or consistency statement is proved for it.
 -/
 
 public section
