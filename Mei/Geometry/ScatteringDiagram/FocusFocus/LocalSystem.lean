@@ -75,6 +75,16 @@ theorem latticeTransition_symm {F : Type*} [AddCommGroup F] (e : F ≃+ F) (i j 
   cases i <;> cases j <;> by_cases hp : p.val.1 < 0 <;>
     simp [latticeTransition, hp]
 
+/-- A map of the lattice commuting with the upper transition commutes with every lattice frame
+change. -/
+theorem latticeTransition_comm {F : Type*} [AddCommGroup F] {e : F ≃+ F} {σ : F → F}
+    (hσ : ∀ q, σ (e q) = e (σ q)) (i j : Bool) (p : regularLocus) (q : F) :
+    σ (latticeTransition e i j p q) = latticeTransition e i j p (σ q) := by
+  have hσ' (q : F) : σ (e.symm q) = e.symm (σ q) := by
+    rw [AddEquiv.eq_symm_apply, ← hσ, AddEquiv.apply_symm_apply]
+  cases i <;> cases j <;> by_cases hp : p.val.1 < 0 <;>
+    simp [latticeTransition, hp, hσ, hσ']
+
 /-- On the left half-plane, the lattice frame change from the cut chart to the upper chart is
 the upper transition. -/
 theorem latticeTransition_false_true_of_neg {F : Type*} [AddCommGroup F] (e : F ≃+ F)

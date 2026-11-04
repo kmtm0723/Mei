@@ -17,7 +17,10 @@ pullback of `f.chart e` along `f`: the domain of `e` is the preimage of the doma
 (`Mei.AtlasMap.continuous`), and every chart change `e⁻¹ ≫ e'` of `M` is the restriction of the
 chart change of the corresponding charts of `M'` (`Mei.AtlasMap.symm_trans_eqOn`); hence `M`
 inherits every structure groupoid of `M'` that is closed under restriction
-(`Mei.AtlasMap.hasGroupoid`).
+(`Mei.AtlasMap.hasGroupoid`). More generally, for two atlas maps with the same underlying map,
+every chart change of `M` is the restriction of the chart change from the target chart of the
+first chart under the first map to the target chart of the second chart under the second map
+(`Mei.AtlasMap.symm_trans_eqOn_of_coe_eq`).
 
 Atlas maps compose (`Mei.AtlasMap.comp`) with identities (`Mei.AtlasMap.id`). The inclusion of
 an open subset with Mathlib's restricted atlas `TopologicalSpace.Opens.instChartedSpace` is an
@@ -83,6 +86,13 @@ theorem mem_source_inter_iff (e e' : atlas H M) {x : M} :
     x ∈ e.1.source ∩ e'.1.source ↔ f x ∈ (f.chart e).1.source ∩ (f.chart e').1.source := by
   rw [mem_inter_iff, mem_inter_iff, f.mem_source_iff e, f.mem_source_iff e']
 
+/-- For two atlas maps with the same underlying map, at a point of the domain of a chart, the
+image point lies in the domains of the target charts of that chart under both maps. -/
+theorem mem_chart_source_inter_of_coe_eq {f g : AtlasMap H M M'} (hfg : ⇑f = ⇑g)
+    {e : atlas H M} {x : M} (hx : x ∈ e.1.source) :
+    f x ∈ (f.chart e).1.source ∩ (g.chart e).1.source :=
+  ⟨(f.mem_source_iff e).mp hx, by rw [hfg]; exact (g.mem_source_iff e).mp hx⟩
+
 /-- On its domain, a chart is its target chart composed with the map. -/
 theorem chart_apply (e : atlas H M) {x : M} (hx : x ∈ e.1.source) :
     (f.chart e).1 (f x) = e.1 x :=
@@ -107,10 +117,12 @@ theorem continuous : Continuous f := by
   filter_upwards [(chartAt H x).open_source.mem_nhds hx] with y hy
   exact (f.chart_symm_apply (achart H x) hy).symm
 
-/-- The chart change between two charts of the source is defined wherever the chart change
-between their target charts is. -/
-theorem symm_trans_source_subset (e e' : atlas H M) :
-    (e.1.symm ≫ₕ e'.1).source ⊆ ((f.chart e).1.symm ≫ₕ (f.chart e').1).source := by
+/-- For two atlas maps with the same underlying map, the chart change between two charts of
+the source is defined wherever the chart change from the target chart of the first chart under
+the first map to the target chart of the second chart under the second map is. -/
+theorem symm_trans_source_subset_of_coe_eq (g : AtlasMap H M M') (hfg : ⇑f = ⇑g)
+    (e e' : atlas H M) :
+    (e.1.symm ≫ₕ e'.1).source ⊆ ((f.chart e).1.symm ≫ₕ (g.chart e').1).source := by
   intro y hy
   rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hy ⊢
   have hz := e.1.map_target hy.1
@@ -118,21 +130,35 @@ theorem symm_trans_source_subset (e e' : atlas H M) :
   refine ⟨?_, ?_⟩
   · rw [← hzy]
     exact (f.chart e).1.map_source ((f.mem_source_iff e).mp hz)
-  · rw [mem_preimage, ← hzy, (f.chart e).1.left_inv ((f.mem_source_iff e).mp hz)]
-    exact (f.mem_source_iff e').mp hy.2
+  · rw [mem_preimage, ← hzy, (f.chart e).1.left_inv ((f.mem_source_iff e).mp hz), hfg]
+    exact (g.mem_source_iff e').mp hy.2
 
-/-- The chart change between two charts of the source is the restriction of the chart change
-between their target charts. -/
-theorem symm_trans_eqOn (e e' : atlas H M) :
-    EqOn (e.1.symm ≫ₕ e'.1) ((f.chart e).1.symm ≫ₕ (f.chart e').1)
+/-- The chart change between two charts of the source is defined wherever the chart change
+between their target charts is. -/
+theorem symm_trans_source_subset (e e' : atlas H M) :
+    (e.1.symm ≫ₕ e'.1).source ⊆ ((f.chart e).1.symm ≫ₕ (f.chart e').1).source :=
+  f.symm_trans_source_subset_of_coe_eq f rfl e e'
+
+/-- For two atlas maps with the same underlying map, the chart change between two charts of
+the source is the restriction of the chart change from the target chart of the first chart
+under the first map to the target chart of the second chart under the second map. -/
+theorem symm_trans_eqOn_of_coe_eq (g : AtlasMap H M M') (hfg : ⇑f = ⇑g) (e e' : atlas H M) :
+    EqOn (e.1.symm ≫ₕ e'.1) ((f.chart e).1.symm ≫ₕ (g.chart e').1)
       (e.1.symm ≫ₕ e'.1).source := by
   intro y hy
   rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hy
   have hz := e.1.map_target hy.1
   have hzy : (f.chart e).1.symm y = f (e.1.symm y) := by
     rw [← f.chart_symm_apply e hz, e.1.right_inv hy.1]
-  rw [OpenPartialHomeomorph.trans_apply, OpenPartialHomeomorph.trans_apply, hzy,
-    f.chart_apply e' hy.2]
+  rw [OpenPartialHomeomorph.trans_apply, OpenPartialHomeomorph.trans_apply, hzy, hfg,
+    g.chart_apply e' hy.2]
+
+/-- The chart change between two charts of the source is the restriction of the chart change
+between their target charts. -/
+theorem symm_trans_eqOn (e e' : atlas H M) :
+    EqOn (e.1.symm ≫ₕ e'.1) ((f.chart e).1.symm ≫ₕ (f.chart e').1)
+      (e.1.symm ≫ₕ e'.1).source :=
+  f.symm_trans_eqOn_of_coe_eq f rfl e e'
 
 include f in
 /-- If the chart changes of the target lie in a groupoid closed under restriction, then so do

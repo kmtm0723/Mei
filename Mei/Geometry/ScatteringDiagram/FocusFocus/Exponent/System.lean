@@ -5,7 +5,7 @@ Authors: Claude Code
 -/
 module
 
-public import Mei.Geometry.Manifold.IntegralAffine.ExponentSystem
+public import Mei.Geometry.Manifold.IntegralAffine.ExponentSystem.Basic
 public import Mei.Geometry.ScatteringDiagram.FocusFocus.LocalSystem
 
 /-!
