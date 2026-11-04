@@ -46,7 +46,8 @@ variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ 
 
 /-- An exponent system on an integral-affine charted space `B`, with model fibre `Γ`: lattice
 automorphisms `coordChange e e' x` of `Γ` from the frame of the chart `e` to that of `e'`,
-locally constant on overlaps and satisfying the cocycle identity, and in the frame of each
+locally constant on overlaps, satisfying the cocycle identity and trivial off the overlap,
+and in the frame of each
 chart a projection `ρ_e : Γ → N` to the integral tangent lattice, compatible with the tangent
 frame changes. -/
 structure ExponentSystem (h : TauCeti.Toric.IsIntegralLattice i) (B : Type*)
@@ -62,6 +63,9 @@ structure ExponentSystem (h : TauCeti.Toric.IsIntegralLattice i) (B : Type*)
   /-- The frame changes are locally constant on overlaps. -/
   eventually_coordChange_eq {e e' : atlas V B} {x : B} :
     x ∈ e.1.source ∩ e'.1.source → ∀ᶠ y in 𝓝 x, coordChange e e' y = coordChange e e' x
+  /-- Off the overlap of the two chart domains, the frame change is the identity. -/
+  coordChange_of_notMem {e e' : atlas V B} {x : B} :
+    x ∉ e.1.source ∩ e'.1.source → coordChange e e' x = AddEquiv.refl Γ
   /-- The projection `ρ_e` to the integral tangent lattice in the frame of a chart. -/
   projection : atlas V B → Γ →+ N
   /-- On overlaps, `ρ_{e'} ∘ T_Γ = T_Λ ∘ ρ_e`. -/
@@ -92,12 +96,31 @@ theorem coordChange_symm {e e' : atlas V B} {x : B} (hx : x ∈ e.1.source ∩ e
   rw [AddEquiv.eq_symm_apply, ← AddEquiv.trans_apply, E.coordChange_trans ⟨⟨hx.2, hx.1⟩, hx.2⟩,
     E.coordChange_self hx.2, AddEquiv.refl_apply]
 
+/-- Two exponent systems are equal when their frame changes agree on every overlap and their
+projections agree in every chart. -/
+@[ext]
+theorem ext {E E' : ExponentSystem h B Γ}
+    (hc : ∀ e e' : atlas V B, ∀ x ∈ e.1.source ∩ e'.1.source,
+      E.coordChange e e' x = E'.coordChange e e' x)
+    (hp : ∀ e, E.projection e = E'.projection e) : E = E' := by
+  have hc' : E.coordChange = E'.coordChange := by
+    funext e e' x
+    by_cases hx : x ∈ e.1.source ∩ e'.1.source
+    · exact hc e e' x hx
+    · rw [E.coordChange_of_notMem hx, E'.coordChange_of_notMem hx]
+  rcases E with ⟨c, _, _, _, ρ, _⟩
+  rcases E' with ⟨c', _, _, _, ρ', _⟩
+  obtain rfl : c = c' := hc'
+  obtain rfl : ρ = ρ' := funext hp
+  rfl
+
 variable (h B) in
 /-- The integral tangent lattice as an exponent system, with `ρ = id`. -/
 noncomputable def tangent : ExponentSystem h B N where
   coordChange := tangentLatticeChange h
   coordChange_trans := tangentLatticeChange_trans
   eventually_coordChange_eq := eventually_tangentLatticeChange_eq
+  coordChange_of_notMem := tangentLatticeChange_of_notMem
   projection _ := AddMonoidHom.id N
   projection_coordChange _ _ := rfl
 

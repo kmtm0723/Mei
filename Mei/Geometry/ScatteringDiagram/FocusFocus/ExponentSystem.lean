@@ -21,8 +21,8 @@ the focus-focus model is the canonical one of its integral-affine structure.
 
 The rank-three exponent lattice with the `upperExponent` transitions and the projection
 `exponentProjection` forgetting the smoothing exponent is therefore an exponent system on the
-punctured plane (`Mei.FocusFocus.exponentSystem`), whose frame changes are those of
-`exponentBundleCore`.
+punctured plane (`Mei.FocusFocus.exponentSystem`). On overlaps its frame changes are those of
+`exponentBundleCore`, and off them they are the identity, as for every exponent system.
 
 The geometry is the focus-focus local model of Gross–Siebert, *An Invitation to Toric
 Degenerations*, §2.2–2.3 (arXiv:0808.2749v2).
@@ -58,12 +58,12 @@ theorem fst_ne_zero_of_mem_source {p : regularLocus} (hc : p ∈ cutChart.source
 noncomputable def atlasIndex (e : atlas (ℝ × ℝ) regularLocus) : Bool :=
   @decide (e.1 = upperChart) (Classical.propDecidable _)
 
-/-- The upper chart has index `true`. -/
+/-- A chart has index `true` exactly when it is the upper chart. -/
 theorem atlasIndex_eq_true_iff (e : atlas (ℝ × ℝ) regularLocus) :
     atlasIndex e = true ↔ e.1 = upperChart :=
   @decide_eq_true_iff _ (Classical.propDecidable _)
 
-/-- The cut chart has index `false`. -/
+/-- A chart has index `false` exactly when it is the cut chart. -/
 theorem atlasIndex_eq_false_iff (e : atlas (ℝ × ℝ) regularLocus) :
     atlasIndex e = false ↔ e.1 = cutChart := by
   rw [← Bool.not_eq_true, atlasIndex_eq_true_iff]
@@ -71,7 +71,8 @@ theorem atlasIndex_eq_false_iff (e : atlas (ℝ × ℝ) regularLocus) :
   · exact iff_of_true cutChart_ne_upperChart rfl
   · exact iff_of_false (not_not.mpr rfl) cutChart_ne_upperChart.symm
 
-/-- The chart of the focus-focus atlas with a given index. -/
+/-- A chart of the focus-focus atlas is the upper chart if its index is `true` and the cut
+chart otherwise. -/
 theorem eq_of_atlasIndex (e : atlas (ℝ × ℝ) regularLocus) :
     e.1 = if atlasIndex e then upperChart else cutChart := by
   cases he : atlasIndex e
@@ -95,23 +96,16 @@ theorem fst_ne_zero_of_atlasIndex_ne {e e' : atlas (ℝ × ℝ) regularLocus}
     exact fst_ne_zero_of_mem_source hp.2 hp.1
   · exact absurd rfl hee
 
-/-- On the overlap of two charts, the change of lattice frames is locally constant. -/
-theorem eventually_latticeTransition_eq {F : Type*} [AddCommGroup F] (σ : F ≃+ F)
+/-- On the overlap of two charts, the change of lattice frames between their indices is
+locally constant. -/
+theorem eventually_latticeTransition_atlasIndex_eq {F : Type*} [AddCommGroup F] (σ : F ≃+ F)
     {e e' : atlas (ℝ × ℝ) regularLocus} {p : regularLocus}
     (hp : p ∈ e.1.source ∩ e'.1.source) :
     ∀ᶠ q in 𝓝 p, latticeTransition σ (atlasIndex e) (atlasIndex e') q =
       latticeTransition σ (atlasIndex e) (atlasIndex e') p := by
   by_cases hee : atlasIndex e = atlasIndex e'
   · simp only [hee, latticeTransition_self, Filter.eventually_true]
-  have hc : Continuous fun q : regularLocus => q.val.1 :=
-    continuous_fst.comp continuous_subtype_val
-  rcases lt_or_gt_of_ne (fst_ne_zero_of_atlasIndex_ne hee hp) with hx | hx
-  · filter_upwards [(isOpen_lt hc continuous_const).mem_nhds hx] with q hq
-    have hq' : q.val.1 < 0 := hq
-    simp only [latticeTransition, hee, ↓reduceIte, hq', hx]
-  · filter_upwards [(isOpen_lt continuous_const hc).mem_nhds hx] with q hq
-    have hq' : 0 < q.val.1 := hq
-    simp only [latticeTransition, hee, ↓reduceIte, not_lt.mpr hq'.le, not_lt.mpr hx.le]
+  · exact eventually_latticeTransition_eq σ _ _ (fst_ne_zero_of_atlasIndex_ne hee hp)
 
 /-- On the overlap, the tangent frame changes of the focus-focus atlas are the transitions
 of `tangentLatticeBundleCore`: the upper shear `upperTangent` on the left half and the
@@ -130,13 +124,11 @@ theorem tangentLatticeChange_eq_latticeTransition {e e' : atlas (ℝ × ℝ) reg
     · rw [Toric.tangentLatticeChange_eq hp (isOpen_lt continuous_fst continuous_const)
         (by rw [he, cutChart_apply]; exact hx)
         (by simpa only [he, he'] using eqOn_cutChart_symm_trans_upperChart_upperAffine h),
-        upperAffine_latticeEquiv]
-      simp only [latticeTransition, hx, Bool.false_eq_true, ↓reduceIte]
+        upperAffine_latticeEquiv, latticeTransition_false_true_of_neg _ hx]
     · rw [Toric.tangentLatticeChange_eq hp (isOpen_lt continuous_const continuous_fst)
         (by rw [he, cutChart_apply]; exact hx)
         (by simpa only [he, he'] using eqOn_cutChart_symm_trans_upperChart_refl h),
-        Toric.IntegralAffineEquiv.refl_latticeEquiv]
-      simp only [latticeTransition, not_lt.mpr hx.le, Bool.false_eq_true, ↓reduceIte]
+        Toric.IntegralAffineEquiv.refl_latticeEquiv, latticeTransition_of_nonneg _ _ _ hx.le]
   cases he : atlasIndex e <;> cases he' : atlasIndex e'
   · rw [atlasIndex_injective (he.trans he'.symm), Toric.tangentLatticeChange_self hp.2,
       latticeTransition_self]
@@ -147,8 +139,8 @@ theorem tangentLatticeChange_eq_latticeTransition {e e' : atlas (ℝ × ℝ) reg
   · rw [atlasIndex_injective (he.trans he'.symm), Toric.tangentLatticeChange_self hp.2,
       latticeTransition_self]
 
-/-- The tangent frame changes of the focus-focus atlas are the coordinate changes of
-`tangentLatticeBundleCore`. -/
+/-- On the overlap, the tangent frame changes of the focus-focus atlas are the coordinate
+changes of `tangentLatticeBundleCore`. -/
 theorem tangentLatticeChange_apply {e e' : atlas (ℝ × ℝ) regularLocus} {p : regularLocus}
     (hp : p ∈ e.1.source ∩ e'.1.source) (q : ℤ × ℤ) :
     Toric.tangentLatticeChange h e e' p q =
@@ -156,37 +148,54 @@ theorem tangentLatticeChange_apply {e e' : atlas (ℝ × ℝ) regularLocus} {p :
   rw [tangentLatticeChange_eq_latticeTransition h hp,
     tangentLatticeBundleCore_coordChange_eq_latticeTransition]
 
+open Classical in
 /-- The exponent system of the focus-focus puncture: the rank-three exponent lattice with the
-`upperExponent` frame changes, projected to the integral tangent lattice by
+`upperExponent` frame changes on overlaps, projected to the integral tangent lattice by
 `exponentProjection`. -/
 noncomputable def exponentSystem : Toric.ExponentSystem h regularLocus (ℤ × ℤ × ℤ) where
-  coordChange e e' := latticeTransition upperExponent.toAddEquiv (atlasIndex e) (atlasIndex e')
-  coordChange_trans _ := AddEquiv.ext fun q => latticeTransition_comp _ _ _ _ _ q
-  eventually_coordChange_eq hp := eventually_latticeTransition_eq _ hp
+  coordChange e e' p :=
+    if p ∈ e.1.source ∩ e'.1.source then
+      latticeTransition upperExponent.toAddEquiv (atlasIndex e) (atlasIndex e') p
+    else AddEquiv.refl _
+  coordChange_trans {e e' e'' p} hp := by
+    have h₁ : p ∈ e.1.source ∩ e'.1.source := hp.1
+    have h₂ : p ∈ e'.1.source ∩ e''.1.source := ⟨hp.1.2, hp.2⟩
+    have h₃ : p ∈ e.1.source ∩ e''.1.source := ⟨hp.1.1, hp.2⟩
+    simp only [h₁, h₂, h₃, ↓reduceIte]
+    exact AddEquiv.ext fun q => latticeTransition_comp _ _ _ _ _ q
+  eventually_coordChange_eq {e e' p} hp := by
+    filter_upwards [(e.1.open_source.inter e'.1.open_source).mem_nhds hp,
+      eventually_latticeTransition_atlasIndex_eq upperExponent.toAddEquiv hp] with q hq hq'
+    simp only [hq, hp, ↓reduceIte]
+    exact hq'
+  coordChange_of_notMem hp := by simp only [hp, ↓reduceIte]
   projection _ := exponentProjection.toAddMonoidHom
   projection_coordChange {e e' p} hp q := by
+    simp only [hp, ↓reduceIte]
     rw [LinearMap.toAddMonoidHom_coe, tangentLatticeChange_apply h hp,
       ← exponentBundleCore_coordChange_eq_latticeTransition]
     exact exponentProjection_coordChange _ _ _ _
 
-/-- The frame changes of the focus-focus exponent system are the `upperExponent`
-transitions. -/
-@[simp]
-theorem exponentSystem_coordChange (e e' : atlas (ℝ × ℝ) regularLocus) :
-    (exponentSystem h).coordChange e e' =
-      latticeTransition upperExponent.toAddEquiv (atlasIndex e) (atlasIndex e') := (rfl)
+/-- On the overlap, the frame changes of the focus-focus exponent system are the
+`upperExponent` transitions. -/
+theorem exponentSystem_coordChange_of_mem {e e' : atlas (ℝ × ℝ) regularLocus}
+    {p : regularLocus} (hp : p ∈ e.1.source ∩ e'.1.source) :
+    (exponentSystem h).coordChange e e' p =
+      latticeTransition upperExponent.toAddEquiv (atlasIndex e) (atlasIndex e') p := by
+  simp only [exponentSystem, hp, ↓reduceIte]
 
 /-- The focus-focus exponent system projects by forgetting the smoothing exponent. -/
 @[simp]
 theorem exponentSystem_projection (e : atlas (ℝ × ℝ) regularLocus) :
     (exponentSystem h).projection e = exponentProjection.toAddMonoidHom := (rfl)
 
-/-- The frame changes of the focus-focus exponent system are the coordinate changes of
-`exponentBundleCore`. -/
-theorem exponentSystem_coordChange_apply (e e' : atlas (ℝ × ℝ) regularLocus) (p : regularLocus)
-    (q : ℤ × ℤ × ℤ) :
+/-- On the overlap, the frame changes of the focus-focus exponent system are the coordinate
+changes of `exponentBundleCore`. -/
+theorem exponentSystem_coordChange_apply {e e' : atlas (ℝ × ℝ) regularLocus}
+    {p : regularLocus} (hp : p ∈ e.1.source ∩ e'.1.source) (q : ℤ × ℤ × ℤ) :
     (exponentSystem h).coordChange e e' p q =
       exponentBundleCore.coordChange (atlasIndex e) (atlasIndex e') p q := by
-  rw [exponentSystem_coordChange, exponentBundleCore_coordChange_eq_latticeTransition]
+  rw [exponentSystem_coordChange_of_mem h hp,
+    exponentBundleCore_coordChange_eq_latticeTransition]
 
 end Mei.FocusFocus
