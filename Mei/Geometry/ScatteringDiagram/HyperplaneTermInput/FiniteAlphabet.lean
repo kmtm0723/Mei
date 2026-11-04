@@ -30,9 +30,14 @@ while their images may lie on one ray of `P`; the equivalence regroups the image
 ray factors of `1 + ∑ c_α z^{n_α}`.
 
 The walls are full affine hyperplanes; walls supported on proper polyhedral subsets of
-hyperplanes are not treated. Not formalized here: the maps of shifted modules induced by the
-lift, positivity of the lifted wall functions, and the identification
-`z^{v_{i,s}} ↦ p_{i,s} z^{s w_i}` for BLM polynomial inputs. The degree inequality of the lift is
+hyperplanes are not treated. If the first coordinates of the exponents on each hyperplane are
+positive multiples of one direction, so are the projections of the lifted exponents
+(`HyperplaneTermInput.liftFiniteAlphabet_projectedDirection`). The grouping and positivity of
+the lifted wall functions are
+`HyperplaneTermInput.isPositiveWallRepresentative_liftFiniteAlphabet_diagram`, in
+`Mei.Geometry.ScatteringDiagram.HyperplaneTermInput.Grouping`. Not formalized here: the maps of
+shifted modules induced by the lift, and the identification `z^{v_{i,s}} ↦ p_{i,s} z^{s w_i}` for
+BLM polynomial inputs. The degree inequality of the lift is
 `PositiveDegrees.finiteAlphabet_degree_lt`.
 
 The finite alphabet lift follows Burcroff–Lee–Mou, *Positivity of generalized cluster
@@ -109,8 +114,9 @@ theorem projection_finiteAlphabetLift {x : M × (E → ℤ)}
 /-- An input on the finite alphabet lifted along `τ`: the same hyperplanes, with exponents
 `τ x_α`. -/
 def liftFiniteAlphabet : HyperplaneTermInput f π ι E :=
-  I.map (PositiveDegrees.finiteAlphabetLift m hτ hτ0) fun _ hx =>
-    projection_finiteAlphabetLift hτ hτ0 hπ hx
+  I.map (PositiveDegrees.finiteAlphabetLift m hτ hτ0) (AddMonoidHom.id M)
+    (fun _ hx => projection_finiteAlphabetLift hτ hτ0 hπ hx) I.normal
+    fun _ => AddMonoidHom.comp_id _
 
 /-- The lifted input has the hyperplane normals of the input. -/
 @[simp]
@@ -134,6 +140,18 @@ theorem liftFiniteAlphabet_exponent (α : E) :
     (I.liftFiniteAlphabet hτ hτ0 hπ).exponent α = τ (I.exponent α) := by
   simp [liftFiniteAlphabet]
 
+/-- If the first coordinates of the exponents `x_α` on each hyperplane `i` of an input on the
+finite alphabet are positive multiples of `u_i`, the lifted exponents `τ x_α` project under `π`
+to the same positive multiples. -/
+theorem liftFiniteAlphabet_projectedDirection (u : ι → M)
+    (hu : ∀ α, ∃ b : ℕ, 0 < b ∧ (I.exponent α).1 = b • u (I.wallIndex α)) (α : E) :
+    ∃ b : ℕ, 0 < b ∧ π ((I.liftFiniteAlphabet hτ hτ0 hπ).exponent α) =
+      b • u ((I.liftFiniteAlphabet hτ hτ0 hπ).wallIndex α) := by
+  rw [liftFiniteAlphabet_exponent, liftFiniteAlphabet_wallIndex,
+    ← PositiveDegrees.finiteAlphabetLift_apply m hτ hτ0,
+    projection_finiteAlphabetLift hτ hτ0 hπ (I.exponent_mem α)]
+  exact hu α
+
 /-- The lift of the alphabet input has the exponents `n_α = τ v_α`. -/
 theorem liftFiniteAlphabet_finiteAlphabet_exponent (μ : ι → M →+ ℤ) (hμ : ∀ i, μ i ≠ 0)
     (a : ι → ℝ) (w : E → ι) (hm : ∀ α, μ (w α) (m α) = 0) (α : E) :
@@ -149,8 +167,9 @@ local notation "Pτ" => Pushforward.ofFiniteAlphabetLift (R := R) (g := g) hτ h
 /-- The lifted input is the input mapped along the degree map of the pushforward data. -/
 theorem map_ofFiniteAlphabetLift_degreeMap
     (hPT : ∀ x ∈ (PositiveDegrees.finiteAlphabet m).monoid,
-      π ((Pτ).degreeMap x) = AddMonoidHom.fst M (E → ℤ) x) :
-    I.map (Pτ).degreeMap hPT = I.liftFiniteAlphabet hτ hτ0 hπ := by
+      π ((Pτ).degreeMap x) = AddMonoidHom.id M (AddMonoidHom.fst M (E → ℤ) x)) :
+    I.map (Pτ).degreeMap (AddMonoidHom.id M) hPT I.normal (fun _ => AddMonoidHom.comp_id _) =
+      I.liftFiniteAlphabet hτ hτ0 hπ := by
   rw [liftFiniteAlphabet]
   exact map_congr fun α => by rw [Pushforward.ofFiniteAlphabetLift_degreeMap]
 
@@ -162,14 +181,14 @@ theorem diagram_pushforward_ofFiniteAlphabetLift_equivalent :
     ((I.diagram g c).pushforward (Pτ)).Equivalent
       ((I.liftFiniteAlphabet hτ hτ0 hπ).diagram g c) := by
   have hPT : ∀ x ∈ (PositiveDegrees.finiteAlphabet m).monoid,
-      π ((Pτ).degreeMap x) = AddMonoidHom.fst M (E → ℤ) x := fun x hx => by
+      π ((Pτ).degreeMap x) = AddMonoidHom.id M (AddMonoidHom.fst M (E → ℤ) x) := fun x hx => by
     rw [Pushforward.ofFiniteAlphabetLift_degreeMap]
     exact projection_finiteAlphabetLift hτ hτ0 hπ hx
   rw [← I.map_ofFiniteAlphabetLift_degreeMap hτ hτ0 hπ g hPT]
-  refine I.diagram_pushforward_equivalent (Pτ) (fun y μ hy => ?_) hPT c
-    (Pushforward.ofFiniteAlphabetLift_normalMap hτ hτ0 hπ)
-    (Pushforward.ofFiniteAlphabetLift_spatialMap hτ hτ0 hπ)
-  rw [Pushforward.coe_ofFiniteAlphabetLift_lieHom_of_homogeneous hτ hτ0 hπ y μ hy,
+  refine I.diagram_pushforward_equivalent _ _ _ (Pτ) (fun _ _ y hy => ?_) hPT c
+    (fun _ => Pushforward.ofFiniteAlphabetLift_normalMap hτ hτ0 hπ _)
+    (fun _ _ => by simp)
+  rw [Pushforward.coe_ofFiniteAlphabetLift_lieHom_of_homogeneous hτ hτ0 hπ y _ hy,
     Pushforward.ofFiniteAlphabetLift_degreeMap, finiteAlphabetLift_apply]
 
 /-- Pushing forward the scattering class of an input on the finite alphabet along the finite
