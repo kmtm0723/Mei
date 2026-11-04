@@ -357,6 +357,18 @@ variable {Γ' Λ' L' V' M' : Type*} [AddCommGroup Γ'] [AddCommGroup Λ']
   {σ : d.completedBCHGroup ℒ →* (F.completion ≃ₐ[R] F.completion)}
   {σ' : d'.completedBCHGroup ℳ →* (F'.completion ≃ₐ[R] F'.completion)}
 
+/-- A completed monomial `c z^p` is the product of the completed monomial `z^p` and the
+completed constant `c`. -/
+private theorem toCompletion_single_eq_mul {B N : Type*} [CommRing B] [AddMonoid N]
+    (E : AlgFiltration (AddMonoidAlgebra B N)) (p : N) (c : B) :
+    E.toCompletion (single p c) = E.toCompletion (single p 1) * E.toCompletion (single 0 c) := by
+  rw [← map_mul, single_mul_single, add_zero, one_mul]
+
+/-- The integer powers of the unit `Φ(u)` are the images of the powers of `u`. -/
+private theorem coe_units_map_zpow {B C : Type*} [Ring B] [Ring C] (Φ : B →+* C) (u : Bˣ)
+    (k : ℤ) : ((Units.map (Φ : B →* C) u ^ k : Cˣ) : C) = Φ ((u ^ k : Bˣ) : B) := by
+  rw [← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
+
 variable {G} in
 /-- **Transfer of wall functions.** Let `Φ` be a ring map of completed coefficient algebras
 sending each monomial `z^p` to `z^{τ p}` for a surjection `τ : Q → Q'` of exponents, and
@@ -382,10 +394,8 @@ theorem IsWallFunction.of_intertwining {g : κ} {u : F.completionˣ}
   · rw [← hmono]
     exact hunit.map Φ
   · obtain ⟨q, rfl⟩ := hτ p'
-    have hsingle : (single (τ q) c : AddMonoidAlgebra A' Q') = single (τ q) 1 * single 0 c := by
-      rw [single_mul_single, add_zero, one_mul]
-    rw [hsingle, map_mul, map_mul, hconst, ← hmono, ← hΦ, hact q 1, map_mul, hν, ← map_zpow,
-      Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, mul_assoc]
+    rw [toCompletion_single_eq_mul, map_mul, hconst, ← hmono, ← hΦ, hact q 1, hν]
+    simp [coe_units_map_zpow, mul_assoc]
 
 variable {G} {S : Subsemiring (AddMonoidAlgebra A Q)} {S' : Subsemiring (AddMonoidAlgebra A' Q')}
 

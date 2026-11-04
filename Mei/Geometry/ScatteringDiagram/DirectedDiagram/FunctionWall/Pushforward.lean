@@ -9,6 +9,7 @@ public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall.Specia
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.Completion
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.Scat
 public import Mei.Geometry.ScatteringDiagram.DirectedWall.TropicalPairing.WallFunction
+public import Mei.Algebra.MonoidAlgebra.Range
 
 /-!
 # Function-wall groupings under pushforward
@@ -57,14 +58,19 @@ degree-changing counterpart of
 `Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall.Specialization`.
 
 For tropical vertex walls pushed along a tropical pairing on all characters
-(`DirectedWall.Pushforward.ofTropicalPairing`), take `Q' = T(Q)` and the monomial map
-`z^q ↦ z^{T q}`. When the evaluation identity holds on `Q` and the normal map keeps primitive
-normals primitive and preserves their pairings with `Q`, the hypotheses above hold, with the
+(`DirectedWall.Pushforward.ofTropicalPairing`), take a surjection `τ : Q → Q'` lifting the
+degree map `T`, so that `Q' = T(Q)`, and the monomial map `z^q ↦ z^{τ q}`. When the evaluation
+identity holds on `Q` and the normal map keeps primitive normals primitive and preserves their
+pairings with `Q`, the hypotheses above hold, with the
 intertwining `TropicalPairing.mapCompletionₐ_completedBCHAction_tropicalVertexGradedLieHom`
 (`DirectedDiagram.IsPositiveWallRepresentative.pushforward_ofTropicalPairing`). In particular this
 applies to a positive degree map `T` over a common tangent lattice with `ρ' ∘ T = ρ` on `Q`, such
 as an enlargement of the positive monoid
-(`DirectedDiagram.IsPositiveWallRepresentative.pushforward_ofTropicalDegreeMap`). Here the wall
+(`DirectedDiagram.IsPositiveWallRepresentative.pushforward_ofTropicalDegreeMap`). For the images
+`ι(B)[Q]` and `ι(B)[Q']` of a coefficient semiring the hypothesis on the positive subsemirings is
+automatic (`DirectedDiagram.IsPositiveWallRepresentative.pushforward_ofTropicalPairing_rangeS`,
+`DirectedDiagram.IsPositiveWallRepresentative.pushforward_ofTropicalDegreeMap_rangeS`), by
+`AddMonoidAlgebra.mapDomainAlgHom_mem_rangeS_mapRingHom`. Here the wall
 function of a pushed group is the image `Φ(u)` of a source wall function: the hypotheses
 require the normal pairings to be preserved exactly. Normal maps scaling the pairings by
 `r > 1`, with target wall functions `Φ(u)^r`, are not covered. Transport of positivity along
@@ -385,43 +391,49 @@ variable {R Γ Λ Γ' Λ' : Type u} {V V' M : Type*} {ι : Type v} [CommRing R] 
     (h'.realCharacter (ν m)).comp A.toAffineEquiv.linear.toLinearMap =
       (r : ℝ) • h.realCharacter m)
   {Q : AddSubmonoid Γ} {Q' : AddSubmonoid Γ'} [Fact (d.monoid ≤ Q)] [Fact (e.monoid ≤ Q')]
-  (hQ : Q.map p.degreeMap.toAddMonoidHom = Q')
+  (τ : Q →+ Q') (hτ : ∀ q : Q, (τ q : Γ') = p.degreeMap q) (hτs : Function.Surjective τ)
+  {π : Γ →+ M} {π' : Γ' →+ M} (hπ : ∀ n ∈ d.monoid, π' (p.degreeMap n) = π n)
+  (heval : ∀ (m : (⊤ : Submodule R (Λ →+ R))) {q : Γ}, q ∈ Q →
+    p.characterMap m (ρ' (p.degreeMap q)) = m.val (ρ q))
+  (hprim : ∀ m : Λ →+ ℤ, TauCeti.IsPrimitive m → TauCeti.IsPrimitive (ν m))
+  (hνQ : ∀ (m : Λ →+ ℤ) {q : Γ}, q ∈ Q → ν m (ρ' (p.degreeMap q)) = m (ρ q))
+  {D : DirectedDiagram (d := d) h (tropicalVertexWallSpaces (R := R) d ρ) ι}
 
 local notation "F" => TropicalVertexCoefficientAction.filtration (R := R) d Q
 local notation "F'" => TropicalVertexCoefficientAction.filtration (R := R) e Q'
-local notation "θ" => AddMonoidHom.comp (AddSubmonoid.inclusion hQ.le)
-  (AddMonoidHom.addSubmonoidMap p.degreeMap.toAddMonoidHom Q)
-local notation "ψ" => mapDomainAlgHom R R (θ)
-local notation "hψ" =>
-  TropicalVertexCoefficientAction.filtration_ideal_le_comap_mapDomainAlgHom p.degreeMap hQ.le
+
+include hτ hτs hπ heval hprim hνQ
 
 /-- **Positive wall representatives along tropical pairings.** Let `p` be a tropical pairing
 on all characters, pushing tropical vertex walls forward by `ofTropicalPairing p ν hν A hA hνA`,
-and let `Q' = T(Q)` be the image of the source coefficient monoid. Assume that the evaluation
-identity of `p` holds on `Q`, that `ν` keeps primitive normals primitive and preserves the
-pairings of integral normals with `Q`, that `π' ∘ T = π` on allowed degrees, and that the
-monomial map `z^q ↦ z^{T q}` sends the positive subsemiring `S` into `S'`. Then the pushforward
-of a positive wall representative for the tropical vertex action on `R[[Q]]` is a positive wall
-representative for the tropical vertex action on `R[[Q']]`. -/
+and let `τ : Q → Q'` be a surjection of coefficient monoids lifting the degree map `T`, so that
+`Q' = T(Q)`. Assume that the evaluation identity of `p` holds on `Q`, that `ν` keeps primitive
+normals primitive and preserves the pairings of integral normals with `Q`, that `π' ∘ T = π` on
+allowed degrees, and that the monomial map `z^q ↦ z^{τ q}` sends the positive subsemiring `S`
+into `S'`. Then the pushforward of a positive wall representative for the tropical vertex action
+on `R[[Q]]` is a positive wall representative for the tropical vertex action on `R[[Q']]`. -/
 theorem IsPositiveWallRepresentative.pushforward_ofTropicalPairing
-    {π : Γ →+ M} {π' : Γ' →+ M} (hπ : ∀ n ∈ d.monoid, π' (p.degreeMap n) = π n)
-    (heval : ∀ (m : (⊤ : Submodule R (Λ →+ R))) {q : Γ}, q ∈ Q →
-      p.characterMap m (ρ' (p.degreeMap q)) = m.val (ρ q))
-    (hprim : ∀ m : Λ →+ ℤ, TauCeti.IsPrimitive m → TauCeti.IsPrimitive (ν m))
-    (hνQ : ∀ (m : Λ →+ ℤ) {q : Γ}, q ∈ Q → ν m (ρ' (p.degreeMap q)) = m (ρ q))
-    {S : Subsemiring R[Q]} {S' : Subsemiring R[Q']} (hS : ∀ a ∈ S, ψ a ∈ S')
-    {D : DirectedDiagram (d := d) h (tropicalVertexWallSpaces (R := R) d ρ) ι}
+    {S : Subsemiring R[Q]} {S' : Subsemiring R[Q']} (hS : ∀ a ∈ S, mapDomainAlgHom R R τ a ∈ S')
     (hD : D.IsPositiveWallRepresentative
       ((F).completedBCHAction d (tropicalVertexGrading (R := R) d ρ)) S π) :
     (D.pushforward (DirectedWall.Pushforward.ofTropicalPairing p ν hν A hA hνA)
       ).IsPositiveWallRepresentative
         ((F').completedBCHAction e (tropicalVertexGrading (R := R) e ρ')) S' π' := by
+  have hT : Q.map p.degreeMap.toAddMonoidHom ≤ Q' := by
+    rintro _ ⟨q, hq, rfl⟩
+    rw [← hτ ⟨q, hq⟩]
+    exact (τ ⟨q, hq⟩).property
+  let θ : Q →+ Q' := (AddSubmonoid.inclusion hT).comp (p.degreeMap.toAddMonoidHom.addSubmonoidMap Q)
+  obtain rfl : τ = θ := AddMonoidHom.ext fun q => Subtype.ext (by rw [hτ]; simp [θ])
+  have hψ := TropicalVertexCoefficientAction.filtration_ideal_le_comap_mapDomainAlgHom
+    (R := R) p.degreeMap hT
   let φ : PositiveSpecialization F F' S S' :=
-    { toRingHom := ψ
+    { toRingHom := mapDomainAlgHom R R θ
       exists_modulus := ⟨p.degreeMap.modulus, p.degreeMap.monotone_modulus, hψ⟩
       map_mem := hS }
   have hφ (x : (F).completion) : φ.completionMap x =
-      (F).mapCompletionₐ F' ψ p.degreeMap.modulus p.degreeMap.monotone_modulus hψ x := by
+      (F).mapCompletionₐ F' (mapDomainAlgHom R R θ) p.degreeMap.modulus
+        p.degreeMap.monotone_modulus hψ x := by
     rw [φ.completionMap_eq_mapCompletion p.degreeMap.modulus p.degreeMap.monotone_modulus hψ,
       ← AlgFiltration.coe_mapCompletionₐ, AlgHom.coe_toRingHom]
   have hlie : (DirectedWall.Pushforward.ofTropicalPairing (h := h) (h' := h') p ν hν A hA hνA
@@ -429,22 +441,32 @@ theorem IsPositiveWallRepresentative.pushforward_ofTropicalPairing
     GradedLieHom.completedMap_eq_of_toLieHom_eq _ _ (LieHom.ext fun x =>
       DirectedWall.Pushforward.ofTropicalPairing_lieHom_apply p ν hν A hA hνA x)
   refine hD.pushforward (by simpa only [DirectedWall.Pushforward.ofTropicalPairing_degreeMap])
-    φ (τ := θ) (fun q' => ?_) (fun q => ?_) (fun g x => ?_)
+    φ hτs (fun q => ?_) (fun g x => ?_)
     (fun g c => AlgFiltration.algEquiv_toCompletion_single_zero _ c)
     (fun m hm => by
       rw [DirectedWall.Pushforward.ofTropicalPairing_normalMap]
       exact hprim m hm)
     (fun m q => by
-      rw [DirectedWall.Pushforward.ofTropicalPairing_normalMap, AddMonoidHom.comp_apply,
-        AddSubmonoid.coe_inclusion, AddMonoidHom.addSubmonoidMap_apply_coe]
+      rw [DirectedWall.Pushforward.ofTropicalPairing_normalMap, hτ]
       exact hνQ m q.property)
-  · obtain ⟨q, hq, hq'⟩ := (AddSubmonoid.mem_map.mp (hQ.ge q'.property))
-    exact ⟨⟨q, hq⟩, Subtype.ext (by
-      rw [AddMonoidHom.comp_apply, AddSubmonoid.coe_inclusion,
-        AddMonoidHom.addSubmonoidMap_apply_coe, ← hq'])⟩
   · simp only [φ, RingHom.coe_coe, mapDomainAlgHom_apply, mapDomain_single]
   · rw [hφ, hφ, hlie]
-    exact p.mapCompletionₐ_completedBCHAction_tropicalVertexGradedLieHom hQ.le heval g x
+    exact p.mapCompletionₐ_completedBCHAction_tropicalVertexGradedLieHom hT heval g x
+
+/-- `DirectedDiagram.IsPositiveWallRepresentative.pushforward_ofTropicalPairing` for the images
+`ι(B)[Q]` and `ι(B)[Q']` of a coefficient semiring `B`, such as `ℕ[c] ⊆ ℚ[c]`: the monomial map
+sends one into the other (`AddMonoidAlgebra.mapDomainAlgHom_mem_rangeS_mapRingHom`). -/
+theorem IsPositiveWallRepresentative.pushforward_ofTropicalPairing_rangeS {B : Type*}
+    [CommSemiring B] (ι : B →+* R)
+    (hD : D.IsPositiveWallRepresentative
+      ((F).completedBCHAction d (tropicalVertexGrading (R := R) d ρ))
+      (AddMonoidAlgebra.mapRingHom Q ι).rangeS π) :
+    (D.pushforward (DirectedWall.Pushforward.ofTropicalPairing p ν hν A hA hνA)
+      ).IsPositiveWallRepresentative
+        ((F').completedBCHAction e (tropicalVertexGrading (R := R) e ρ'))
+        (AddMonoidAlgebra.mapRingHom Q' ι).rangeS π' :=
+  hD.pushforward_ofTropicalPairing p ν hν A hA hνA τ hτ hτs hπ heval hprim hνQ
+    fun _ ha => mapDomainAlgHom_mem_rangeS_mapRingHom ι τ ha
 
 end OfTropicalPairing
 
@@ -457,46 +479,52 @@ variable {R Γ Λ Γ' : Type u} {V M : Type*} {ι : Type v} [CommRing R] [Algebr
   {i : Λ →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
   (T : PositiveDegreeMap d e) (hT : ∀ n ∈ d.monoid, ρ' (T n) = ρ n)
   {Q : AddSubmonoid Γ} {Q' : AddSubmonoid Γ'} [Fact (d.monoid ≤ Q)] [Fact (e.monoid ≤ Q')]
-  (hQ : Q.map T.toAddMonoidHom = Q')
+  (τ : Q →+ Q') (hτ : ∀ q : Q, (τ q : Γ') = T q) (hτs : Function.Surjective τ)
+  (hρQ : ∀ q ∈ Q, ρ' (T q) = ρ q)
+  {π : Γ →+ M} {π' : Γ' →+ M} (hπ : ∀ n ∈ d.monoid, π' (T n) = π n)
+  {D : DirectedDiagram (d := d) h (tropicalVertexWallSpaces (R := R) d ρ) ι}
 
 local notation "F" => TropicalVertexCoefficientAction.filtration (R := R) d Q
 local notation "F'" => TropicalVertexCoefficientAction.filtration (R := R) e Q'
 
+include hτ hτs hρQ hπ
+
 /-- **Positive wall representatives along degree maps over a common tangent lattice.** Let
 `T` be a positive degree map with `ρ' ∘ T = ρ` on the coefficient monoid `Q`, and let
-`Q' = T(Q)`. If `π' ∘ T = π` on allowed degrees and the monomial map `z^q ↦ z^{T q}` sends the
-positive subsemiring `S` into `S'`, the pushforward along `ofTropicalDegreeMap T hT`, which keeps
-supports and normals, carries positive wall representatives for the tropical vertex action on
-`R[[Q]]` to positive wall representatives for the tropical vertex action on `R[[Q']]`. -/
+`τ : Q → Q'` be a surjection lifting `T`, so that `Q' = T(Q)`. If `π' ∘ T = π` on allowed
+degrees and the monomial map `z^q ↦ z^{τ q}` sends the positive subsemiring `S` into `S'`, the
+pushforward along `ofTropicalDegreeMap T hT`, which keeps supports and normals, carries positive
+wall representatives for the tropical vertex action on `R[[Q]]` to positive wall
+representatives for the tropical vertex action on `R[[Q']]`. -/
 theorem IsPositiveWallRepresentative.pushforward_ofTropicalDegreeMap
-    (hρQ : ∀ q ∈ Q, ρ' (T q) = ρ q)
-    {π : Γ →+ M} {π' : Γ' →+ M} (hπ : ∀ n ∈ d.monoid, π' (T n) = π n)
-    {S : Subsemiring R[Q]} {S' : Subsemiring R[Q']}
-    (hS : ∀ a ∈ S, mapDomainAlgHom R R ((AddSubmonoid.inclusion hQ.le).comp
-      (T.toAddMonoidHom.addSubmonoidMap Q)) a ∈ S')
-    {D : DirectedDiagram (d := d) h (tropicalVertexWallSpaces (R := R) d ρ) ι}
+    {S : Subsemiring R[Q]} {S' : Subsemiring R[Q']} (hS : ∀ a ∈ S, mapDomainAlgHom R R τ a ∈ S')
     (hD : D.IsPositiveWallRepresentative
       ((F).completedBCHAction d (tropicalVertexGrading (R := R) d ρ)) S π) :
     (D.pushforward (DirectedWall.Pushforward.ofTropicalDegreeMap T hT)
       ).IsPositiveWallRepresentative
         ((F').completedBCHAction e (tropicalVertexGrading (R := R) e ρ')) S' π' := by
-  have hQ' :
-      Q.map (TropicalPairing.ofDegreeMap (R := R) T hT ⊤).degreeMap.toAddMonoidHom = Q' := by
-    rw [TropicalPairing.ofDegreeMap_degreeMap, hQ]
-  have hmap : AddMonoidHom.comp (AddSubmonoid.inclusion hQ'.le) (AddMonoidHom.addSubmonoidMap
-      (TropicalPairing.ofDegreeMap (R := R) T hT ⊤).degreeMap.toAddMonoidHom Q) =
-      (AddSubmonoid.inclusion hQ.le).comp (T.toAddMonoidHom.addSubmonoidMap Q) :=
-    AddMonoidHom.ext fun q => Subtype.ext (by
-      simp only [AddMonoidHom.comp_apply, AddSubmonoid.coe_inclusion,
-        AddMonoidHom.addSubmonoidMap_apply_coe, TropicalPairing.ofDegreeMap_degreeMap])
   rw [DirectedWall.Pushforward.ofTropicalDegreeMap_eq_ofTropicalPairing]
-  exact hD.pushforward_ofTropicalPairing _ _ _ _ _ _ hQ'
+  exact hD.pushforward_ofTropicalPairing _ _ _ _ _ _ τ
+    (fun q => by rw [TropicalPairing.ofDegreeMap_degreeMap, hτ]) hτs
     (by simpa only [TropicalPairing.ofDegreeMap_degreeMap] using hπ)
     (fun m q hq => by
       rw [TropicalPairing.ofDegreeMap_characterMap, TropicalPairing.ofDegreeMap_degreeMap,
         hρQ q hq])
-    (fun _ hm => hm) (fun m q hq => by rw [TropicalPairing.ofDegreeMap_degreeMap, hρQ q hq])
-    (by simpa only [hmap] using hS)
+    (fun _ hm => hm) (fun m q hq => by rw [TropicalPairing.ofDegreeMap_degreeMap, hρQ q hq]) hS
+
+/-- `DirectedDiagram.IsPositiveWallRepresentative.pushforward_ofTropicalDegreeMap` for the
+images `ι(B)[Q]` and `ι(B)[Q']` of a coefficient semiring `B`, such as `ℕ[c] ⊆ ℚ[c]`. -/
+theorem IsPositiveWallRepresentative.pushforward_ofTropicalDegreeMap_rangeS {B : Type*}
+    [CommSemiring B] (ι : B →+* R)
+    (hD : D.IsPositiveWallRepresentative
+      ((F).completedBCHAction d (tropicalVertexGrading (R := R) d ρ))
+      (AddMonoidAlgebra.mapRingHom Q ι).rangeS π) :
+    (D.pushforward (DirectedWall.Pushforward.ofTropicalDegreeMap T hT)
+      ).IsPositiveWallRepresentative
+        ((F').completedBCHAction e (tropicalVertexGrading (R := R) e ρ'))
+        (AddMonoidAlgebra.mapRingHom Q' ι).rangeS π' :=
+  hD.pushforward_ofTropicalDegreeMap T hT τ hτ hτs hρQ hπ
+    fun _ ha => mapDomainAlgHom_mem_rangeS_mapRingHom ι τ ha
 
 end OfTropicalDegreeMap
 

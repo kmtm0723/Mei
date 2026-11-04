@@ -46,7 +46,7 @@ single-wall diagram is an outgoing completion of the pushed incoming wall
 (`RankTwoPolynomialInput.Examples.isOutgoingCompletion_pushforward`), and the pushed incoming
 diagram is a positive wall representative for the tropical vertex action of `ℕ²` on
 `ℚ[c][[ℤ²]]` (`RankTwoPolynomialInput.Examples.isPositiveWallRepresentative_pushforward`), by
-`DirectedDiagram.IsPositiveWallRepresentative.pushforward_ofTropicalDegreeMap`.
+`DirectedDiagram.IsPositiveWallRepresentative.pushforward_ofTropicalDegreeMap_rangeS`.
 
 ## Three concurrent lines
 
@@ -264,18 +264,9 @@ theorem isPositiveWallRepresentative_pushforward :
           ℕ² (tropicalVertexGrading (R := MvPolynomial horizontalInput.Variable ℚ) ℕ² ρ))
       (AddMonoidAlgebra.mapRingHom (⊤ : AddSubmonoid (ℤ × ℤ))
         (MvPolynomial.map (σ := horizontalInput.Variable) (Nat.castRingHom ℚ))).rangeS
-      horizontalInput.projection := by
-  have hQ : (⊤ : AddSubmonoid (ℤ × ℤ)).map evenOrthantInclusion.toAddMonoidHom = ⊤ :=
-    AddSubmonoid.eq_top_iff' _ |>.mpr fun q => ⟨q, trivial, by simp⟩
-  exact (isPositiveWallRepresentative h).pushforward_ofTropicalDegreeMap _ _ hQ
-    (fun q _ => by simp) (π := horizontalInput.projection) (π' := horizontalInput.projection)
-    (fun n _ => by simp)
-    (fun a ha => AddMonoidAlgebra.map_mem_rangeS_mapRingHom _ _
-      (AlgHom.toRingHom (AddMonoidAlgebra.mapDomainAlgHom (MvPolynomial horizontalInput.Variable ℚ)
-        (MvPolynomial horizontalInput.Variable ℚ) ((AddSubmonoid.inclusion hQ.le).comp
-          (evenOrthantInclusion.toAddMonoidHom.addSubmonoidMap ⊤)))).toAddMonoidHom
-      (fun q b => ⟨AddMonoidAlgebra.single (AddSubmonoid.inclusion hQ.le
-        (evenOrthantInclusion.toAddMonoidHom.addSubmonoidMap ⊤ q)) b, by simp⟩) ha)
+      horizontalInput.projection :=
+  (isPositiveWallRepresentative h).pushforward_ofTropicalDegreeMap_rangeS _ _ (AddMonoidHom.id _)
+    (fun q => by simp) Function.surjective_id (fun q _ => by simp) (fun n _ => by simp) _
 
 end Orthant
 
