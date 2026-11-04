@@ -93,6 +93,17 @@ namespace DecoratedAdmissibleRay
 
 variable {ℳ T p₀ a velocity f c ε P W S C} {Q : V}
 
+/-- At a fixed endpoint and itinerary, the degree history determines the entire
+admissible decorated ray, including its encounter parameters and incoming tail. -/
+theorem ext_history
+    {β γ : DecoratedAdmissibleRay ℳ T p₀ a velocity f c ε P W S C Q}
+    (h : β.1.val = γ.1.val) : β = γ := by
+  obtain ⟨p, β⟩ := β
+  obtain ⟨q, γ⟩ := γ
+  have hpq : p = q := Subtype.ext h
+  subst q
+  exact congrArg (Sigma.mk p) (Subsingleton.elim β γ)
+
 /-- The entire homogeneous decoration on a segment, indexed backwards from the
 endpoint to the incoming tail. -/
 def decoration (r : DecoratedAdmissibleRay ℳ T p₀ a velocity f c ε P W S C Q)

@@ -262,4 +262,12 @@ theorem length_pathOfFn {n : ℕ} (T : Fin n → α) : (pathOfFn T).length = n :
   | zero => rfl
   | succ n ih => rw [pathOfFn_succ, Path.length_cons, ih]
 
+/-- Unit arrow weights count the steps of the one-object path of a sequence. -/
+@[simp]
+theorem addWeight_one_pathOfFn {n : ℕ} (T : Fin n → α) :
+    Path.addWeight (fun {_ _ : SingleObj α} _ => (1 : ℕ)) (pathOfFn T) = n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pathOfFn_succ, Path.addWeight_cons, ih]
+
 end Quiver.SingleObj

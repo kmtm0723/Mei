@@ -7,6 +7,7 @@ module
 
 public import Mei.LinearAlgebra.End.Recursion
 public import Mei.LinearAlgebra.GradedModule.History.Uniform
+public import Mei.LinearAlgebra.GradedModule.History.Filtration
 
 /-!
 # Homogeneous histories of finite recursion solutions
@@ -21,6 +22,10 @@ linear maps, including after any final linear output map. Finite generation of
 that range supplies such supports through `exists_uniform_homogeneousHistory_support`.
 A finitely generated input range also supplies uniform supports for any linear
 family of nilpotent recursion solutions, followed by any linear output map.
+If each component transfer raises a finite-length filtration, long histories vanish
+individually. Hence arbitrary selected history sums stabilize at the filtration length,
+also after a linear output map. Nilpotence of the total operator alone would not
+justify this statement for selected histories, because of possible cancellation.
 All statements hold over a semiring and semimodule; no additive cancellation is assumed.
 -/
 
@@ -98,5 +103,69 @@ theorem exists_uniform_homogeneousHistory_expansion_of_eq_add
   rw [hsol]
   exact sum_sum_comp_homogeneousHistory_comp_eq_comp_finiteRecursion_comp
     ℳ U a b r S (fun j _ => hS j)
+
+/-- When every component transfer raises a filtration vanishing at order `r`,
+each history of length at least `r` vanishes individually. Nilpotence of the sum
+of the component transfers alone would not suffice for this conclusion. -/
+theorem homogeneousHistory_eq_zero_of_filtration
+    (F : ModuleFiltration R M)
+    (hU : ∀ i k x, x ∈ F.submodule k →
+      homogeneousComponent ℳ i (U x) ∈ F.submodule (k + 1))
+    {r n : ℕ} (hr : F.submodule r = ⊥) (hn : r ≤ n) (p : Fin n → ι) :
+    homogeneousHistory ℳ (fun _ : Fin n => U) p = 0 := by
+  have hraise : ComponentTransfersRaise
+      (M := fun _ : Quiver.SingleObj Unit => M) (T := fun _ => U) (ℳ := fun _ => ℳ)
+      (F := fun _ => F) (w := fun _ _ _ => 1) := by
+    rw [componentTransfersRaise_iff]
+    intro b c e i j k y _ hy
+    exact hU j k y hy
+  apply LinearMap.ext
+  intro x
+  rw [LinearMap.zero_apply]
+  induction x using DirectSum.Decomposition.inductionOn ℳ with
+  | zero => exact map_zero _
+  | add x y hx hy => rw [map_add, hx, hy, add_zero]
+  | @homogeneous i x =>
+    by_contra hne
+    rw [homogeneousHistory_eq_pathOfFn ℳ (fun _ : Unit => U) (fun _ : Fin n => ())] at hne
+    let P := Quiver.SingleObj.pathOfFn (fun _ : Fin n => ())
+    let d := Quiver.SingleObj.degreesPathOfFn ι (fun _ : Fin n => ()) p
+    let q := Quiver.Path.Degrees.liftPath i P d
+    have hlt := P.componentWeight_lt_of_homogeneousHistory_ne_zero hraise i x.property hr hne
+    have hv : q.vertices.map (fun v => v.chamber) = P.vertices.map id := by
+      simpa only [Prefunctor.vertices_mapPath, List.map_id] using
+        congrArg Quiver.Path.vertices (Quiver.Path.Degrees.mapPath_liftPath i P d)
+    have hw : Quiver.Path.addWeight (GradedVertex.componentWeight
+        (fun {_ _ : Quiver.SingleObj Unit} _ (_ _ : ι) => (1 : ℕ))) q =
+        Quiver.Path.addWeight (fun {_ _ : Quiver.SingleObj Unit} _ => (1 : ℕ)) P :=
+      q.addWeight_eq_of_map_vertices_eq P (fun v => v.chamber) id _ _
+        (fun _ _ _ _ => GradedVertex.componentWeight_apply _ _) hv
+    rw [hw, Quiver.SingleObj.addWeight_one_pathOfFn] at hlt
+    exact (not_lt_of_ge hn) hlt
+
+open Classical in
+/-- Incidence-selected history sums stabilize once their cutoff reaches the
+filtration length, including after any linear output map. Selection need not
+include all histories, and no support assumption on the finite sets is needed. -/
+theorem sum_ite_comp_homogeneousHistory_comp_eq_of_filtration
+    {E N : Type*} [AddCommMonoid E] [Module R E] [AddCommMonoid N] [Module R N]
+    (F : ModuleFiltration R M)
+    (hU : ∀ i k x, x ∈ F.submodule k →
+      homogeneousComponent ℳ i (U x) ∈ F.submodule (k + 1))
+    {r s : ℕ} (hr : F.submodule r = ⊥) (hrs : r ≤ s)
+    (a : E →ₗ[R] M) (b : M →ₗ[R] N)
+    (S : (j : ℕ) → Finset (Fin j → ι)) (P : (j : ℕ) → (Fin j → ι) → Prop) :
+    (∑ j ∈ Finset.range s, ∑ p ∈ (S j).filter (P j),
+      b.comp ((homogeneousHistory ℳ (fun _ : Fin j => U) p).comp a)) =
+    ∑ j ∈ Finset.range r, ∑ p ∈ (S j).filter (P j),
+      b.comp ((homogeneousHistory ℳ (fun _ : Fin j => U) p).comp a) := by
+  symm
+  apply Finset.sum_subset (Finset.range_mono hrs)
+  intro j _ hj
+  have hrj : r ≤ j := Nat.le_of_not_gt (by simpa using hj)
+  apply Finset.sum_eq_zero
+  intro p _
+  rw [homogeneousHistory_eq_zero_of_filtration ℳ U F hU hr hrj p,
+    LinearMap.zero_comp, LinearMap.comp_zero]
 
 end Mei

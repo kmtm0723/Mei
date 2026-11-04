@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.BrokenLine.CoefficientMap
+public import Mei.Geometry.ScatteringDiagram.BrokenLine.Coefficient.Map
 public import Mei.Algebra.Lie.Graded.Shifted.Basic
 public import Mei.Algebra.Lie.Filtered.BCH
 public import Mei.LinearAlgebra.GradedModule.Shifted.Quotient
