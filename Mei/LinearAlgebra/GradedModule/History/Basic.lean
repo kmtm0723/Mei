@@ -359,8 +359,9 @@ theorem map_homogeneousHistoryStage_of_injective (hσ : Function.Injective σ) {
     (j : Fin (n + 1)) :
     r (homogeneousHistoryStage ℳ T p j a) =
       homogeneousHistoryStage 𝓝 U (σ ∘ p) j (r a) := by
+  -- The operator and degree tuples depend on n and vary with the induction hypothesis.
   induction n with
-  | zero => rfl
+  | zero => simp only [homogeneousHistoryStage, LinearMap.id_apply]
   | succ n ih =>
     refine Fin.cases ?_ (fun j => ?_) j
     · simpa only [homogeneousHistoryStage_zero] using

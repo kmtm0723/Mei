@@ -56,31 +56,44 @@ private theorem regrade_velocity (p : Fin n → Γ) (j : Fin (n + 1)) :
       w (Fin.snoc (α := fun _ => Δ) (σ ∘ p) (σ p₀) j) := by
   rw [hv, ← Function.comp_apply (f := σ), Fin.comp_snoc]
 
-/-- An injective regrading identifies the rays whose final coefficient
-survives with all target rays. The geometric source and obstacle data are fixed. -/
-def decoratedRayCoefficientEquiv : {β : Source // r (β.decoration 0) ≠ 0} ≃ Target := by
-  let F : {β : Source // r (β.decoration 0) ≠ 0} → Target := fun β => by
-    have he := map_homogeneousHistory_of_injective ℳ 𝓝 r σ hr hσ
-      T U hT β.val.1.val a
-    have hnormal := (mem_decoratedHistorySupport ..).mp β.val.1.property |>.2
-    refine ⟨⟨σ ∘ β.val.1.val, ?_⟩, β.val.2.congrVelocity ?_⟩
-    · rw [mem_decoratedHistorySupport]
-      refine ⟨?_, fun j => ?_⟩
-      · rw [← he]
-        simpa only [DecoratedAdmissibleRay.decoration_zero] using β.property
-      · constructor
-        · change f j (w (σ (β.val.1.val j))) = _
-          rw [← hv, ← regrade_velocity σ p₀ v w hv β.val.1.val j.succ]
-          exact (hnormal j).1
-        · change SignType.sign (f j (w (σ (β.val.1.val j)))) = ε j
-          rw [← hv]
-          exact (hnormal j).2
-    · exact funext (regrade_velocity σ p₀ v w hv β.val.1.val)
-  refine Equiv.ofBijective F ⟨?_, ?_⟩
+include hr hσ hT hv in
+/-- Regrading a surviving coefficient history preserves its normal conditions. -/
+theorem map_mem_decoratedHistorySupport {p : Fin n → Γ}
+    (hp : p ∈ decoratedHistorySupport ℳ T p₀ a v f ε)
+    (hne : r (homogeneousHistory ℳ T p a) ≠ 0) :
+    σ ∘ p ∈ decoratedHistorySupport 𝓝 U (σ p₀) a' w f ε := by
+  rw [mem_decoratedHistorySupport] at hp ⊢
+  refine ⟨?_, fun j => ⟨?_, ?_⟩⟩
+  · rw [← map_homogeneousHistory_of_injective ℳ 𝓝 r σ hr hσ T U hT p a]
+    exact hne
+  · simp only [Function.comp_apply]
+    rw [← hv, ← regrade_velocity σ p₀ v w hv p j.succ]
+    exact (hp.2 j).1
+  · simpa only [Function.comp_apply, hv] using (hp.2 j).2
+
+/-- Map a decorated ray whose final coefficient survives, retaining its full geometry. -/
+def decoratedRayCoefficientMap (β : {β : Source // r (β.decoration 0) ≠ 0}) : Target :=
+  ⟨⟨σ ∘ β.val.1.val, map_mem_decoratedHistorySupport ℳ 𝓝 r σ hr hσ T U hT
+      p₀ a v w hv f ε β.val.1.property
+      (by simpa only [DecoratedAdmissibleRay.decoration_zero] using β.property)⟩,
+    β.val.2.congrVelocity (funext (regrade_velocity σ p₀ v w hv β.val.1.val))⟩
+
+/-- The forward coefficient map reindexes the entire recorded history. -/
+@[simp]
+theorem decoratedRayCoefficientMap_history
+    (β : {β : Source // r (β.decoration 0) ≠ 0}) :
+    (decoratedRayCoefficientMap ℳ 𝓝 r σ hr hσ T U hT p₀ a v w hv f c ε P W S C Q β).1.val =
+      σ ∘ β.val.1.val := (rfl)
+
+/-- Injective regrading makes the surviving-ray coefficient map bijective. -/
+theorem decoratedRayCoefficientMap_bijective : Function.Bijective
+    (decoratedRayCoefficientMap ℳ 𝓝 r σ hr hσ T U hT p₀ a v w hv f c ε P W S C Q) := by
+  refine ⟨?_, ?_⟩
   · intro β γ h
     apply Subtype.ext
     apply DecoratedAdmissibleRay.ext_history
-    have he : σ ∘ β.val.1.val = σ ∘ γ.val.1.val := congrArg (fun δ : Target => δ.1.val) h
+    have he := congrArg (fun δ : Target => δ.1.val) h
+    simp only [decoratedRayCoefficientMap_history] at he
     exact funext fun j => hσ (congrFun he j)
   · intro β
     obtain ⟨α, hp, hn, -, -⟩ :=
@@ -88,7 +101,22 @@ def decoratedRayCoefficientEquiv : {β : Source // r (β.decoration 0) ≠ 0} �
         p₀ a v w hv f c ε P W S C Q β
     refine ⟨⟨α, hn⟩, ?_⟩
     apply DecoratedAdmissibleRay.ext_history
+    rw [decoratedRayCoefficientMap_history]
     exact funext hp
+
+/-- An injective regrading identifies the rays whose final coefficient
+survives with all target rays. The geometric source and obstacle data are fixed. -/
+def decoratedRayCoefficientEquiv : {β : Source // r (β.decoration 0) ≠ 0} ≃ Target :=
+  Equiv.ofBijective
+    (decoratedRayCoefficientMap ℳ 𝓝 r σ hr hσ T U hT p₀ a v w hv f c ε P W S C Q)
+    (decoratedRayCoefficientMap_bijective ℳ 𝓝 r σ hr hσ T U hT p₀ a v w hv f c ε P W S C Q)
+
+/-- The equivalence applies the named forward coefficient map. -/
+theorem decoratedRayCoefficientEquiv_apply
+    (β : {β : Source // r (β.decoration 0) ≠ 0}) :
+    decoratedRayCoefficientEquiv ℳ 𝓝 r σ hr hσ T U hT p₀ a v w hv f c ε P W S C Q β =
+      decoratedRayCoefficientMap ℳ 𝓝 r σ hr hσ T U hT p₀ a v w hv f c ε P W S C Q β := by
+  exact Equiv.ofBijective_apply _ _ β
 
 /-- The coefficient comparison reindexes the full history and retains every
 encounter, rather than forgetting unchanged-degree or zero-direction changes. -/
@@ -96,7 +124,8 @@ encounter, rather than forgetting unchanged-degree or zero-direction changes. -/
 theorem decoratedRayCoefficientEquiv_history
     (β : {β : Source // r (β.decoration 0) ≠ 0}) :
     (decoratedRayCoefficientEquiv ℳ 𝓝 r σ hr hσ T U hT p₀ a v w hv f c ε P W S C Q β).1.val =
-      σ ∘ β.val.1.val := (rfl)
+      σ ∘ β.val.1.val := by
+  rw [decoratedRayCoefficientEquiv_apply, decoratedRayCoefficientMap_history]
 
 /-- The entire affine path, including the incoming tail, is preserved. -/
 @[simp]
@@ -136,7 +165,9 @@ def decoratedRayCoefficientEmbeddingEquiv (hinj : Function.Injective r) : Source
 theorem decoratedRayCoefficientEmbeddingEquiv_history (hinj : Function.Injective r)
     (β : Source) :
     (decoratedRayCoefficientEmbeddingEquiv ℳ 𝓝 r σ hr hσ T U hT p₀ a v w hv
-      f c ε P W S C Q hinj β).1.val = σ ∘ β.1.val := (rfl)
+      f c ε P W S C Q hinj β).1.val = σ ∘ β.1.val := by
+  simp only [decoratedRayCoefficientEmbeddingEquiv, Equiv.trans_apply,
+    decoratedRayCoefficientEquiv_history, Equiv.subtypeUnivEquiv_symm_apply]
 
 /-- An injective coefficient comparison preserves the complete affine path. -/
 @[simp]
