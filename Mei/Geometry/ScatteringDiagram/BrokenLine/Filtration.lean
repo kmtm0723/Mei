@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.LinearAlgebra.GradedModule.History.ComponentFiltration
+public import Mei.LinearAlgebra.GradedModule.History.Filtration
 public import Mei.Geometry.ScatteringDiagram.BrokenLine.DecoratedRay
 
 /-!
@@ -20,13 +20,8 @@ degree change may be marked even when its spatial velocity is unchanged.
 A nonzero ray in a filtration vanishing at order `r`, with at most `h` unmarked
 encounters between marked ones, has at most `r * h + r - 1` encounters. The bound
 applies to the actual fiber and its full incoming datum; no local restriction of an
-incoming tail or deletion of identity encounters is used. The geometric construction
-of the unmarked-run bound remains a separate hypothesis.
-
-This supplies the component-dependent filtration step of
-[roadmap §5.3](https://github.com/yuma-mizuno/TauCetiRoadmap/blob/mei/TauCetiRoadmap/ScatteringDiagrams/README.md#53-endpoint-evaluation-closed-families-and-general-position).
-Constructing closed endpoint charts and deriving the unmarked-run bound from convex
-wall geometry are separate steps.
+incoming tail or deletion of identity encounters is used.
+The bound on unmarked runs is the hypothesis `hp`.
 -/
 
 public noncomputable section
@@ -46,21 +41,34 @@ variable {R M Γ V J K : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 namespace DecoratedAdmissibleRay
 
 /-- The complete homogeneous history as a path of encounter-labelled degree pairs. -/
-@[expose, reducible]
 def componentPath (β : DecoratedAdmissibleRay ℳ T p₀ a v f c ε P W S C Q) :=
   Path.Degrees.liftPath p₀ (SingleObj.pathOfFn (fun j : Fin n => j))
     (SingleObj.degreesPathOfFn Γ (fun j : Fin n => j) β.1.val)
 
+/-- The lifted path is determined by the ray's complete degree history. -/
+theorem componentPath_eq_liftPath
+    (β : DecoratedAdmissibleRay ℳ T p₀ a v f c ε P W S C Q) :
+    β.componentPath = Path.Degrees.liftPath p₀ (SingleObj.pathOfFn (fun j : Fin n => j))
+      (SingleObj.degreesPathOfFn Γ (fun j : Fin n => j) β.1.val) := (rfl)
+
 /-- No original encounter, including an unchanged-degree encounter, is removed. -/
 theorem componentPath_length (β : DecoratedAdmissibleRay ℳ T p₀ a v f c ε P W S C Q) :
     β.componentPath.length = n := by
-  rw [componentPath, Path.Degrees.length_liftPath]
-  have hlen : ∀ {m : ℕ} (p : Fin m → Fin n), (SingleObj.pathOfFn p).length = m := by
-    intro m p
-    induction m with
-    | zero => rfl
-    | succ m ih => rw [SingleObj.pathOfFn_succ, Path.length_cons, ih]
-  exact hlen _
+  rw [componentPath_eq_liftPath, Path.Degrees.length_liftPath]
+  exact SingleObj.length_pathOfFn _
+
+/-- Forgetting component degrees recovers every original encounter label. -/
+@[simp]
+theorem mapPath_componentPath (β : DecoratedAdmissibleRay ℳ T p₀ a v f c ε P W S C Q) :
+    (GradedVertex.forget (ι := fun _ : SingleObj (Fin n) => Γ)).mapPath β.componentPath =
+      SingleObj.pathOfFn (fun j : Fin n => j) := by
+  rw [componentPath_eq_liftPath, Path.Degrees.mapPath_liftPath]
+
+/-- The source vertex records exactly the prescribed incoming degree. -/
+theorem componentPath_source_degree
+    (β : DecoratedAdmissibleRay ℳ T p₀ a v f c ε P W S C Q) :
+    (β.componentPath.vertices.head β.componentPath.vertices_ne_nil).degree = p₀ := by
+  rw [Path.vertices_head_eq]
 
 /-- A nilpotent component filtration bounds the complete encounter itinerary of
 an actual ray. Marks distinguish homogeneous components of the same wall map;
@@ -80,19 +88,19 @@ theorem filtrationEncounterBound (β : DecoratedAdmissibleRay ℳ T p₀ a v f c
       (SingleObj.degreesPathOfFn Γ (fun j : Fin n => j) β.1.val) (a : M) ≠ 0 := by
     rw [← homogeneousHistory_eq_pathOfFn]
     exact ((mem_decoratedHistorySupport ℳ T p₀ a v f ε β.1.val).mp β.1.property).1
-  have hraise : ComponentTransfersRaiseBy (Q := SingleObj (Fin n))
+  have hraise : ComponentTransfersRaise (Q := SingleObj (Fin n))
       (M := fun _ => M) (T := fun e => T e) (ℳ := fun _ => ℳ)
       (F := fun _ => F) (w := fun e => w e) := by
+    rw [componentTransfersRaise_iff]
     intro b c e i j k x hxi hxF
     exact hT e i j k x hxi hxF
   have hweight := Path.componentWeight_lt_of_homogeneousHistory_ne_zero
     (SingleObj.pathOfFn (fun j : Fin n => j)) hraise p₀ a.property hr hnonzero
-  have hlength := Path.length_add_one_le_of_componentHistory_ne_zero
-    (SingleObj.pathOfFn (fun j : Fin n => j)) hraise p₀ a.property hr hnonzero hp
-  have hlen : (SingleObj.pathOfFn (fun j : Fin n => j)).length = n := by
-    simpa only [componentPath, Path.Degrees.length_liftPath] using β.componentPath_length
-  rw [hlen, Nat.mul_add, Nat.mul_one] at hlength
-  exact ⟨hweight, by omega⟩
+  have hlength := Path.length_add_one_le_of_homogeneousHistory_ne_zero
+    (SingleObj.pathOfFn (fun j : Fin n => j)) hraise p₀ a.property hr hnonzero
+      (by simpa only [componentPath_eq_liftPath] using hp)
+  rw [SingleObj.length_pathOfFn, Nat.mul_add, Nat.mul_one] at hlength
+  exact ⟨by simpa only [componentPath_eq_liftPath] using hweight, by omega⟩
 
 /-- A component degree order supplies the encounter bound directly. Every
 nonidentity degree transition is marked, even if it lies in the kernel of the
@@ -110,11 +118,13 @@ theorem degreeEncounterBound (β : DecoratedAdmissibleRay ℳ T p₀ a v f c ε 
   apply β.filtrationEncounterBound (componentDegreeFiltration ℳ rank)
     (fun _ i j => if i = j then 0 else 1) ?_ (componentDegreeFiltration_eq_bot ℳ rank hr) hp
   intro e i j k x hxi hxF
-  exact componentTransfersRaiseBy_of_rank (Q := SingleObj (Fin n))
-    (M := fun _ => M) (T := fun e => T e) (ℳ := fun _ => ℳ)
-    (w := fun _ i j => if i = j then 0 else 1) (fun _ => rank)
-    (fun {b c} e i j x hx hn => hT e i j x hx hn)
-    (b := SingleObj.star (Fin n)) (c := SingleObj.star (Fin n)) e i j k x hxi hxF
+  have hraise : ComponentTransfersRaise (Q := SingleObj (Fin n))
+      (M := fun _ => M) (T := fun e => T e) (ℳ := fun _ => ℳ)
+      (F := fun _ => componentDegreeFiltration ℳ rank)
+      (w := fun _ i j => if i = j then 0 else 1) :=
+    componentTransfersRaise_of_rank (fun _ => rank) (fun e => hT e)
+  rw [componentTransfersRaise_iff] at hraise
+  exact hraise (b := SingleObj.star (Fin n)) (c := SingleObj.star (Fin n)) e i j k x hxi hxF
 
 end DecoratedAdmissibleRay
 
