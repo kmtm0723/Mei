@@ -7,7 +7,7 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.SquareZero.Consistency
 public import Mei.Geometry.ScatteringDiagram.WallSpace.BaseChange
-public import Mathlib.RingTheory.MvPolynomial.Basic
+public import Mei.RingTheory.MvPolynomial.SquareZero
 
 /-!
 # Square-zero local scattering over `ℚ[t₀, t₁]/(t₀², t₁²)`
@@ -17,7 +17,7 @@ algebra `g` over a commutative ring `R`. For a commutative `R`-algebra `S` and s
 `t₀, t₁ ∈ S` with `t₀² = t₁² = 0`, the elements `1 ⊗ x₀` and `1 ⊗ x₁` lie in the extended
 wall spaces `S ⊗[R] h_{n,m}` (`DirectedWallSpaces.baseChange`) and give a `SquareZeroPair`
 (`SquareZeroPair.baseChange`). For `R = ℚ` and `S = ℚ[t₀, t₁]/(t₀², t₁²)`
-(`SquareZeroPair.DualNumbers₂`), the outgoing completion of the hyperplanes labelled
+(`Mei.SquareZeroPolynomial₂`), the outgoing completion of the hyperplanes labelled
 `exp (t₀ x₀)` and `exp (t₁ x₁)` adds the single wall `exp (t₀ t₁ ⁅x₀, x₁⁆)` with normal
 `μ = m₀(ρ n₁) m₁ - m₁(ρ n₀) m₀` on the joint swept by `-i(ρ(n₀ + n₁))`, and no wall if `μ = 0`
 (`SquareZeroPair.scat_baseChange_eq_toClass_completion`).
@@ -83,23 +83,7 @@ theorem bracketNormal_baseChange : (P.baseChange S t ht).bracketNormal = P.brack
 
 end BaseChange
 
-/-- The coefficient ring `ℚ[t₀, t₁]/(t₀², t₁²)`. -/
-abbrev DualNumbers₂ : Type :=
-  MvPolynomial (Fin 2) ℚ ⧸
-    (Ideal.span {MvPolynomial.X 0 ^ 2, MvPolynomial.X 1 ^ 2} : Ideal (MvPolynomial (Fin 2) ℚ))
-
-/-- The generators `t₀, t₁` of `ℚ[t₀, t₁]/(t₀², t₁²)`. -/
-def DualNumbers₂.gen (j : Fin 2) : DualNumbers₂ :=
-  Ideal.Quotient.mk _ (MvPolynomial.X j)
-
-/-- The generators of `ℚ[t₀, t₁]/(t₀², t₁²)` square to zero. -/
-theorem DualNumbers₂.gen_mul_self (j : Fin 2) : DualNumbers₂.gen j * DualNumbers₂.gen j = 0 := by
-  rw [DualNumbers₂.gen, ← map_mul, Ideal.Quotient.eq_zero_iff_mem, ← sq]
-  fin_cases j
-  · exact Ideal.subset_span (Set.mem_insert _ _)
-  · exact Ideal.subset_span (Set.mem_insert_of_mem _ rfl)
-
-section DualNumbers
+section SquareZeroPolynomial
 
 variable {Γ Λ L V : Type*} [AddCommGroup Γ] [AddCommGroup Λ] [LieRing L] [LieAlgebra ℚ L]
   [DecidableEq Γ] [Module.Free ℤ Γ] [NormedAddCommGroup V] [NormedSpace ℝ V]
@@ -108,27 +92,27 @@ variable {Γ Λ L V : Type*} [AddCommGroup Γ] [AddCommGroup Λ] [LieRing L] [Li
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
   {H : DirectedWallSpaces ρ ℒ} (P : SquareZeroPair d H) (θ₀ : V)
 
+open SquareZeroPolynomial₂ in
+/-- The scalar extension of `P` to `ℚ[t₀, t₁]/(t₀², t₁²)`, with scalars `t₀, t₁`. -/
+local notation "P₂" => P.baseChange SquareZeroPolynomial₂ gen gen_mul_self
+
 /-- **Local scattering over `ℚ[t₀, t₁]/(t₀², t₁²)`.** With wall spaces
 `ℚ[t₀, t₁]/(t₀², t₁²) ⊗ h_{n,m}`, the hyperplanes labelled `exp (t₀ x₀)` and `exp (t₁ x₁)`
 have the scattering class of the diagram obtained by adding the single wall
 `exp (t₀ t₁ ⁅x₀, x₁⁆)` with normal `μ ≠ 0` on the joint swept by `-i(ρ(n₀ + n₁))`. -/
 theorem scat_baseChange_eq_toClass_completion {w : SupportedRay d}
     (hw : P.degree 0 + P.degree 1 ∈ w.rayDegrees) (hμ : P.bracketNormal ≠ 0) :
-    ((P.baseChange DualNumbers₂ DualNumbers₂.gen DualNumbers₂.gen_mul_self).input h θ₀).Scat
-        (input_full _ h θ₀) =
-      ((P.baseChange DualNumbers₂ DualNumbers₂.gen DualNumbers₂.gen_mul_self).completion
-        h θ₀ (w := w) (by rwa [baseChange_degree]) (by rwa [bracketNormal_baseChange])).toClass :=
+    ((P₂).input h θ₀).Scat (input_full _ h θ₀) =
+      ((P₂).completion h θ₀ (w := w) (by rwa [baseChange_degree])
+        (by rwa [bracketNormal_baseChange])).toClass :=
   scat_input_eq_toClass_completion _ h θ₀ _ _
 
 /-- **Local scattering over `ℚ[t₀, t₁]/(t₀², t₁²)` without correction.** If `μ = 0`, the
 hyperplanes labelled `exp (t₀ x₀)` and `exp (t₁ x₁)` alone represent their scattering class. -/
 theorem scat_baseChange_eq_toClass_of_bracketNormal_eq_zero (hμ : P.bracketNormal = 0) :
-    ((P.baseChange DualNumbers₂ DualNumbers₂.gen DualNumbers₂.gen_mul_self).input h θ₀).Scat
-        (input_full _ h θ₀) =
-      ((P.baseChange DualNumbers₂ DualNumbers₂.gen
-        DualNumbers₂.gen_mul_self).inputWithoutCorrection h θ₀).toClass :=
+    ((P₂).input h θ₀).Scat (input_full _ h θ₀) = ((P₂).inputWithoutCorrection h θ₀).toClass :=
   scat_input_eq_toClass_of_bracketNormal_eq_zero _ h θ₀ (by rwa [bracketNormal_baseChange])
 
-end DualNumbers
+end SquareZeroPolynomial
 
 end Mei.DirectedDiagram.SquareZeroPair

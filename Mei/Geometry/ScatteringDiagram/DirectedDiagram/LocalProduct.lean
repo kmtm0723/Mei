@@ -28,7 +28,8 @@ The proof subdivides a path into segments with at most one crossing time
 (`Quiver.Path.exists_subdivision_subsingleton_crossingTimes`), which does not change the
 ordered signed crossing events. Such a segment computes the combined label at its crossing
 point (`DirectedDiagram.levelPathProduct_toPath_eq_combinedLabel`), and `F` is constant on
-the two wall-free pieces on either side of it.
+the two wall-free pieces on either side of it (`WallComplement.apply_eq_of_lt_crossings` and
+`WallComplement.apply_eq_of_crossings_lt`).
 -/
 
 public section
@@ -36,6 +37,41 @@ public section
 noncomputable section
 
 open Set Filter Topology Mei.Convex
+
+namespace Mei.Convex.WallComplement
+
+variable {V ι Y : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {W : ι → Set V}
+  {F : V → Y} (hF : ∀ θ, (∀ i, θ ∉ W i) → ∀ᶠ φ in 𝓝 θ, F φ = F θ)
+  {x y a : WallComplement W} {r : ℝ}
+
+include hF in
+/-- A function locally constant off the walls agrees at the start of a segment and at a point
+of it before all crossings. -/
+theorem apply_eq_of_lt_crossings (hr : r ∈ Icc (0 : ℝ) 1)
+    (ha : a.val = AffineMap.lineMap x.val y.val r)
+    (hcr : ∀ i t, (i, t) ∈ crossings x y → r < t) : F x.val = F a.val := by
+  refine apply_eq_of_crossings_eq_empty hF (eq_empty_iff_forall_notMem.mpr fun ⟨i, t⟩ ht => ?_)
+  obtain ⟨⟨-, ht₁⟩, hit⟩ := (mem_crossings_subsegment ⟨le_rfl, zero_le_one⟩ hr
+    (AffineMap.lineMap_apply_zero _ _).symm ha i t).mp ht
+  have hlt := hcr _ _ hit
+  have hle : t * r ≤ r := mul_le_of_le_one_left hr.1 ht₁
+  rw [zero_add, sub_zero] at hlt
+  linarith
+
+include hF in
+/-- A function locally constant off the walls agrees at a point of a segment after all
+crossings and at its end. -/
+theorem apply_eq_of_crossings_lt (hr : r ∈ Icc (0 : ℝ) 1)
+    (ha : a.val = AffineMap.lineMap x.val y.val r)
+    (hcr : ∀ i t, (i, t) ∈ crossings x y → t < r) : F a.val = F y.val := by
+  refine apply_eq_of_crossings_eq_empty hF (eq_empty_iff_forall_notMem.mpr fun ⟨i, t⟩ ht => ?_)
+  obtain ⟨⟨ht₀, -⟩, hit⟩ := (mem_crossings_subsegment hr ⟨zero_le_one, le_rfl⟩ ha
+    (AffineMap.lineMap_apply_one _ _).symm i t).mp ht
+  have hlt := hcr _ _ hit
+  have hle : 0 ≤ t * (1 - r) := mul_nonneg ht₀ (sub_nonneg.mpr hr.2)
+  linarith
+
+end Mei.Convex.WallComplement
 
 namespace Mei.DirectedDiagram
 
@@ -119,24 +155,12 @@ theorem levelPathProduct_toPath_eq_mul_inv_of_local
   let a₂ : WallComplement (fun j : D.active k => (D.wall j).support) :=
     ⟨AffineMap.lineMap x.val y.val (t + s),
       hoff ⟨by linarith, by linarith⟩ (by linarith)⟩
-  have hI₀ : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
-  have hI₁ : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨zero_le_one, le_rfl⟩
-  have hx₁ : F x.val = F a₁.val := by
-    refine WallComplement.apply_eq_of_crossings_eq_empty hF
-      (eq_empty_iff_forall_notMem.mpr fun ⟨j, r⟩ hr => ?_)
-    obtain ⟨⟨hr₀, hr₁⟩, hjr⟩ := (WallComplement.mem_crossings_subsegment hI₀
-      (⟨by linarith, by linarith⟩ : t - s ∈ Icc (0 : ℝ) 1)
-      (AffineMap.lineMap_apply_zero _ _).symm rfl j r).mp hr
-    have := htime hjr
-    nlinarith
-  have hy₂ : F a₂.val = F y.val := by
-    refine WallComplement.apply_eq_of_crossings_eq_empty hF
-      (eq_empty_iff_forall_notMem.mpr fun ⟨j, r⟩ hr => ?_)
-    obtain ⟨⟨hr₀, hr₁⟩, hjr⟩ := (WallComplement.mem_crossings_subsegment
-      (⟨by linarith, by linarith⟩ : t + s ∈ Icc (0 : ℝ) 1) hI₁ rfl
-      (AffineMap.lineMap_apply_one _ _).symm j r).mp hr
-    have := htime hjr
-    nlinarith
+  have hx₁ : F x.val = F a₁.val :=
+    WallComplement.apply_eq_of_lt_crossings hF ⟨by linarith, by linarith⟩ rfl
+      fun _ _ hr => by linarith [htime hr]
+  have hy₂ : F a₂.val = F y.val :=
+    WallComplement.apply_eq_of_crossings_lt hF ⟨by linarith, by linarith⟩ rfl
+      fun _ _ hr => by linarith [htime hr]
   have ha₁ : a₁.val = θ - s • (y.val - x.val) := by
     rw [sub_eq_add_neg, ← neg_smul, ← hline (-s), ← sub_eq_add_neg]
   have ha₂ : a₂.val = θ + s • (y.val - x.val) := hline s
