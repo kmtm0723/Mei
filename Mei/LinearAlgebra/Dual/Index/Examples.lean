@@ -16,19 +16,22 @@ Let `M = ℤ²` and let `M₀` be the sublattice spanned by `m₁ = (1, 0)` and 
 
 * `M₀` has index `ℓ = 2` in `M` (`Mei.DualLatticeIndex.Examples.index_sublattice`);
 * `m₀ = m₁ + m₂ = (2, 2)` is primitive in `M₀`
-  (`Mei.DualLatticeIndex.Examples.isPrimitive_generatorSum`) and equals `2 • (1, 1)` with
-  `(1, 1)` primitive in `M` (`Mei.DualLatticeIndex.Examples.coe_generatorSum_eq_nsmul`);
+  (`Mei.DualLatticeIndex.Examples.isPrimitive_generatorSum`) and equals `2 • (1, 1)`
+  (`Mei.DualLatticeIndex.Examples.coe_generatorSum_eq_nsmul`), with `(1, 1)` primitive in `M`
+  (`Mei.DualLatticeIndex.Examples.isPrimitive_one_one`);
 * `r = 2` is the only `r` with `m₀ = r • m` for a primitive `m ∈ M`
   (`Mei.DualLatticeIndex.Examples.eq_two_of_coe_generatorSum_eq_nsmul`);
 * `[m₀⊥ ∩ Dual ℤ M₀ : m₀⊥ ∩ Dual ℤ M] = 1`
-  (`Mei.DualLatticeIndex.Examples.relIndex_ker_eval_generatorSum`), so the primitive normals of
-  `ℝ m₀` in `Dual ℤ M` and `Dual ℤ M₀` agree up to sign
+  (`Mei.DualLatticeIndex.Examples.relIndex_ker_eval_generatorSum`), where `Dual ℤ M` is viewed
+  in `Dual ℤ M₀` by restriction;
+* if `n ∈ Dual ℤ M` and `n₀ ∈ Dual ℤ M₀` are primitive and vanish at `m₀`, then the
+  restriction of `n` to `M₀` is `n₀` or `-n₀`
   (`Mei.DualLatticeIndex.Examples.dualRestrict_eq_or_eq_neg`).
 
-This is the lattice change of Burcroff–Lee–Mou, *Positivity of generalized cluster scattering
-diagrams*, Theorem 9.5 (arXiv:2503.03719v1), for `m₁ = (1, 0)` and `m₂ = (1, 2)`, where the
-index `ℓ = r · [m₀⊥ ∩ Dual ℤ M₀ : m₀⊥ ∩ Dual ℤ M]` splits with outer power `r = 2` and
-normal ratio `1`.
+This computes the lattice invariants `ℓ`, `r` and the normal ratio that enter the lattice change
+of Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*, Theorem 9.5
+(arXiv:2503.03719v1), for `m₁ = (1, 0)` and `m₂ = (1, 2)`; the statement about wall functions is
+not formalized here.
 -/
 
 public section
@@ -90,7 +93,7 @@ theorem generatorSum_ne_zero : generatorSum ≠ 0 := by
   intro h
   simpa [h] using congrFun coe_generatorSum 0
 
-/-- `m₀ = m₁ + m₂` is primitive in `M₀`, its coefficients `(1, 1)` being coprime. -/
+/-- `m₀ = m₁ + m₂` is primitive in `M₀`. -/
 theorem isPrimitive_generatorSum : TauCeti.IsPrimitive generatorSum := by
   simpa [generatorSum] using sublatticeBasis.isPrimitive_zsmul_add_zsmul (i := 0) (j := 1)
     (p := 1) (q := 1) (by decide) isCoprime_one_left
@@ -99,7 +102,8 @@ theorem isPrimitive_generatorSum : TauCeti.IsPrimitive generatorSum := by
 theorem isPrimitive_one_one : TauCeti.IsPrimitive (![1, 1] : Fin 2 → ℤ) :=
   TauCeti.isPrimitive_def.mpr ⟨(Pi.basisFun ℤ (Fin 2)).coord 0, by simp⟩
 
-/-- The index `[m₀⊥ ∩ Dual ℤ M₀ : m₀⊥ ∩ Dual ℤ M]` of the annihilators of `m₀ = (2, 2)` is `1`. -/
+/-- The index `[m₀⊥ ∩ Dual ℤ M₀ : m₀⊥ ∩ Dual ℤ M]` of the annihilators of `m₀ = (2, 2)` is `1`,
+where `Dual ℤ M` is viewed in `Dual ℤ M₀` by restriction. -/
 @[simp]
 theorem relIndex_ker_eval_generatorSum :
     (LinearMap.range sublattice.dualRestrict).toAddSubgroup.relIndex
@@ -115,9 +119,8 @@ theorem eq_two_of_coe_generatorSum_eq_nsmul {m : Fin 2 → ℤ} (hm : TauCeti.Is
   have := Submodule.index_eq_mul_relIndex_ker_eval sublattice isPrimitive_generatorSum hm hr
   rwa [index_sublattice, relIndex_ker_eval_generatorSum, mul_one, eq_comm] at this
 
-/-- The primitive normals of the line `ℝ m₀` in `Dual ℤ ℤ²` and in `Dual ℤ M₀` agree up to
-sign: the restriction to `M₀` of a primitive functional vanishing at `m₀` is `±` any primitive
-functional on `M₀` vanishing at `m₀`. -/
+/-- If `n ∈ Dual ℤ ℤ²` and `n₀ ∈ Dual ℤ M₀` are primitive and vanish at `m₀`, then the
+restriction of `n` to `M₀` is `n₀` or `-n₀`. -/
 theorem dualRestrict_eq_or_eq_neg {n₀ : Dual ℤ sublattice} (hn₀ : TauCeti.IsPrimitive n₀)
     (hn₀m₀ : n₀ generatorSum = 0) {n : Dual ℤ (Fin 2 → ℤ)} (hn : TauCeti.IsPrimitive n)
     (hnm₀ : n generatorSum = 0) :
