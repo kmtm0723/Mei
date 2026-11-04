@@ -36,8 +36,7 @@ local notation "S" => AdjoinRoot (Polynomial.X ^ (k + 1) : Polynomial K)
 local notation "τ" => AdjoinRoot.root (Polynomial.X ^ (k + 1) : Polynomial K)
 local notation "A" => slabAlgebra (C τ) (1 + T 1) k
 
-local instance : IsScalarTower K S (SlabNode τ) :=
-  IsScalarTower.to₁₂₄ K S S[ℤ] _
+attribute [local instance] instScalarTowerSlabNode
 
 /-- Every target face coefficient has its specified preimage under the inverse
 slab dictionary. This is the terminal-lift preimage condition for reflection. -/
