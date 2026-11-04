@@ -69,6 +69,7 @@ def shiftedRayQuotientAction (k : ℕ) :
     ext a
     obtain ⟨b, rfl⟩ := (S).projection_surjective k a
     simp only [quotientRayEquiv_projection, map_one]
+    -- LinearEquiv.refl applies as the identity; both sides are this same projection.
     rfl
   map_mul' H K := by
     ext a

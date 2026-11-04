@@ -42,8 +42,8 @@ abbrev shiftedRayDifference (H : (PowerSeries R)ˣ) : Module.End R (S).completio
 /-- Applying the difference endomorphism subtracts the original coefficient. -/
 @[simp]
 theorem shiftedRayDifference_apply (H : (PowerSeries R)ˣ) (a : (S).completion) :
-    shiftedRayDifference q β d n hn p H a = shiftedRayAction q β d n hn p H a - a :=
-  (rfl)
+    shiftedRayDifference q β d n hn p H a = shiftedRayAction q β d n hn p H a - a := by
+  simp only [shiftedRayDifference, LinearMap.sub_apply, LinearMap.id_apply, LinearEquiv.coe_coe]
 
 private theorem shiftedRayDifference_raises (H : (PowerSeries R)ˣ) (k : ℕ) :
     (S).completedFiltration.submodule k ≤

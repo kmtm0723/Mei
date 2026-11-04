@@ -56,7 +56,9 @@ private theorem shiftedRayAction_sub_mem_coordinates (n : d.monoid)
   have heq : e ((F).completedTwistedSeriesAction x c H b - b) =
       shiftedRayAction q β d n hn p H (e b) - e b :=
     (e.map_sub _ _).trans (congrArg (fun u => u - e b) hc.symm)
-  exact heq ▸ hmap
+  change e ((F).completedTwistedSeriesAction x c H b - b) ∈
+    (d.shiftedFiltration (grade q β) p).completedFiltration.submodule (k + 1) at hmap
+  rwa [heq] at hmap
 
 /-- A ray action on an arbitrary translate is the identity modulo the next relative order. -/
 theorem shiftedRayAction_sub_mem (n : d.monoid)
@@ -68,13 +70,11 @@ theorem shiftedRayAction_sub_mem (n : d.monoid)
   let e := positiveCompletionShiftEquiv q β d p
   have he : e (e.symm a) = a := e.apply_symm_apply a
   have ha' : e (e.symm a) ∈
-      (d.shiftedFiltration (grade q β) p).completedFiltration.submodule k :=
-    (congrArg (fun y => y ∈ (d.shiftedFiltration (grade q β) p).completedFiltration.submodule k)
-      he).mpr ha
+      (d.shiftedFiltration (grade q β) p).completedFiltration.submodule k := by
+    simpa only [he] using ha
   have hb := (positiveCompletionShiftEquiv_mem_iff q β d p k (e.symm a)).mp ha'
-  have h := shiftedRayAction_sub_mem_coordinates q β d n hn p H k hb
-  exact (congrArg (fun y => shiftedRayAction q β d n hn p H y - y ∈
-    (d.shiftedFiltration (grade q β) p).completedFiltration.submodule (k + 1)) he).mp h
+  simpa only [e, LinearEquiv.apply_symm_apply] using
+    shiftedRayAction_sub_mem_coordinates q β d n hn p H k hb
 
 /-- The inverse shifted action raises relative order by the same amount. -/
 theorem shiftedRayAction_symm_sub_mem (n : d.monoid)

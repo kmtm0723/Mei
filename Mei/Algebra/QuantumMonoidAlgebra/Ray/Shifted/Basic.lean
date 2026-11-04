@@ -7,6 +7,7 @@ module
 
 public import Mei.Algebra.QuantumMonoidAlgebra.Ray.Action
 public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.Completion
+public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.Monomial
 public import Mei.RingTheory.FilteredAlgebra.PowerSeries.TwistedAction
 
 /-!
@@ -28,16 +29,6 @@ namespace Mei.QuantumMonoidAlgebra
 
 variable {R Γ : Type*} [CommRing R] [AddCommGroup Γ]
   (q : Rˣ) (β : LinearMap.BilinForm ℤ Γ)
-
-/-- Conjugating a ray generator by the opposite shift gives the positive rescaling exponent. -/
-theorem monomial_conj_ray (hβ : β.IsAlt) (n p : Γ) :
-    monomial q β (-p) * monomial q β n * monomial q β p =
-      ((q ^ (2 * β n p) : Rˣ) : R) • monomial q β n := by
-  have h := congrArg (fun a => monomial q β (-p) * a)
-    (monomial_semiconjBy q β hβ n p).eq
-  have hi : monomial q β (-p) * monomial q β p = 1 := by
-    simpa only [neg_neg] using monomial_mul_neg q β hβ (-p)
-  simpa only [← mul_assoc, hi, one_mul] using h.symm
 
 variable (d : PositiveDegrees Γ)
 
@@ -100,18 +91,47 @@ theorem shiftedRayAction_zero (n : d.monoid)
     shiftedRayAction q β d n hn 0 H (positiveCompletionShiftEquiv q β d 0 a) =
       positiveCompletionShiftEquiv q β d 0
         (completedRayAction q β d.monoid d.degree (fun _ h => d.degree_nonneg h) n hn H a) := by
-  have h := shiftedRayAction_coordinates_skew q β d n hn 0 H a
-  refine h.trans (congrArg (positiveCompletionShiftEquiv q β d 0) ?_)
   have h₀ : PowerSeries.rescale ((q ^ (β n (0 : Γ) - β 0 n) : Rˣ) : R)
       (H : PowerSeries R) = H := by simp
-  simp only [completedRayAction, AlgFiltration.completedSeriesAction_apply]
-  exact congrArg (fun b => b * a * (F).completedAeval
-    (completedRayGenerator q β d.monoid d.degree (fun _ h => d.degree_nonneg h) n hn)
-    (↑(H⁻¹) : PowerSeries R))
-      (congrArg ((F).completedAeval
-        (completedRayGenerator q β d.monoid d.degree (fun _ h => d.degree_nonneg h) n hn)) h₀)
+  simpa only [h₀, completedRayAction, AlgFiltration.completedSeriesAction_apply] using
+    shiftedRayAction_coordinates_skew q β d n hn 0 H a
 
-/-- The base monomial transforms by the scalar ray ratio even at a negative shift. -/
+private theorem positiveCompletionShiftEquiv_one (p : Γ) :
+    positiveCompletionShiftEquiv q β d p (1 : (F).completion) =
+      (d.shiftedFiltration (grade q β) p).of
+        (shiftedMonomial q β d.monoid p 0) := by
+  have h := positiveCompletionShiftEquiv_toCompletion q β d p
+    (1 : positiveSubalgebra q β d.monoid)
+  have h₁ := congrArg (positiveCompletionShiftEquiv q β d p) (F).toCompletion.map_one
+  have hm : positiveShiftEquiv q β d p (1 : positiveSubalgebra q β d.monoid) =
+      shiftedMonomial q β d.monoid p 0 := by
+    apply Subtype.ext
+    simp only [coe_positiveShiftEquiv, Subalgebra.coe_one, mul_one,
+      coe_shiftedMonomial, ZeroMemClass.coe_zero, add_zero]
+  exact h₁.symm.trans (h.trans (congrArg (d.shiftedFiltration (grade q β) p).of hm))
+
+/-- The relative-zero monomial transforms by the evaluated ray ratio, for arbitrary
+bilinear forms and even negative ambient shifts. -/
+theorem shiftedRayAction_base_monomial (n : d.monoid)
+    (hn : 0 < d.degree n) (p : Γ) (H : (PowerSeries R)ˣ) :
+    shiftedRayAction q β d n hn p H
+        ((d.shiftedFiltration (grade q β) p).of
+          (shiftedMonomial q β d.monoid p 0)) =
+      positiveCompletionShiftEquiv q β d p
+        ((F).completedAeval
+          (completedRayGenerator q β d.monoid d.degree (fun _ h => d.degree_nonneg h) n hn)
+          (PowerSeries.rescale ((q ^ (β n p - β p n) : Rˣ) : R) (H : PowerSeries R) *
+            (↑(H⁻¹) : PowerSeries R))) := by
+  have h := congrArg (shiftedRayAction q β d n hn p H)
+    (positiveCompletionShiftEquiv_one q β d p)
+  refine h.symm.trans ?_
+  have hm := map_mul ((F).completedAeval
+    (completedRayGenerator q β d.monoid d.degree (fun _ h => d.degree_nonneg h) n hn))
+    (PowerSeries.rescale ((q ^ (β n p - β p n) : Rˣ) : R) (H : PowerSeries R))
+    (↑(H⁻¹) : PowerSeries R)
+  simpa only [mul_one, hm] using shiftedRayAction_coordinates_skew q β d n hn p H 1
+
+/-- Under `β.IsAlt`, the base-monomial ratio has exponent `2β(n,p)`. -/
 theorem shiftedRayAction_base (hβ : β.IsAlt) (n : d.monoid)
     (hn : 0 < d.degree n) (p : Γ) (H : (PowerSeries R)ˣ) :
     shiftedRayAction q β d n hn p H (positiveCompletionShiftEquiv q β d p 1) =
@@ -120,12 +140,11 @@ theorem shiftedRayAction_base (hβ : β.IsAlt) (n : d.monoid)
           (completedRayGenerator q β d.monoid d.degree (fun _ h => d.degree_nonneg h) n hn)
           (PowerSeries.rescale ((q ^ (2 * β n p) : Rˣ) : R) (H : PowerSeries R) *
             (↑(H⁻¹) : PowerSeries R))) := by
-  refine (shiftedRayAction_coordinates q β d hβ n hn p H 1).trans ?_
-  apply congrArg (positiveCompletionShiftEquiv q β d p)
-  rw [mul_one]
-  exact ((F).completedAeval
-    (completedRayGenerator q β d.monoid d.degree (fun _ h => d.degree_nonneg h) n hn)).map_mul'
-      _ _ |>.symm
+  have h := congrArg (shiftedRayAction q β d n hn p H)
+    (positiveCompletionShiftEquiv_one q β d p)
+  refine h.trans ?_
+  simpa only [← hβ.neg_eq n p, sub_neg_eq_add, ← two_mul] using
+    shiftedRayAction_base_monomial q β d n hn p H
 
 /-- Reversing a wall crossing gives the inverse shifted ray action. -/
 @[simp]
@@ -150,9 +169,9 @@ theorem shiftedRayAction_mem_iff (n : d.monoid)
     ((F).completedTwistedSeriesAction x c H (e.symm a))
   have h₂ := (F).completedTwistedSeriesAction_mem_iff x c H k (e.symm a)
   have h₃ := positiveCompletionShiftEquiv_mem_iff q β d p k (e.symm a)
-  have he : positiveCompletionShiftEquiv q β d p (e.symm a) = a := e.apply_symm_apply a
-  have h₄ := Iff.of_eq (congrArg
-    (fun y => y ∈ (d.shiftedFiltration (grade q β) p).completedFiltration.submodule k) he)
-  exact h₁.trans (h₂.trans (h₃.symm.trans h₄))
+  have h₃' : e.symm a ∈ (F).completionIdeal k ↔
+      a ∈ (d.shiftedFiltration (grade q β) p).completedFiltration.submodule k := by
+    simpa only [e, LinearEquiv.apply_symm_apply] using h₃.symm
+  exact h₁.trans (h₂.trans h₃')
 
 end Mei.QuantumMonoidAlgebra
