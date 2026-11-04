@@ -11,6 +11,7 @@ public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Hyperplane
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Scat
 public import Mei.Algebra.Lie.BCH.Commutator
 public import Mei.Algebra.Order.Sign
+public import Mei.Topology.Order.Sign
 
 /-!
 # Consistency of local scattering with square-zero coefficients
@@ -103,6 +104,16 @@ private theorem side_sub_sub_side {P e : ℝ} (h : P ≠ 0 → |e| < |P|) (he : 
     decide
   · rw [ite_eq_right hP, side_eq, side_eq, sign_sub_of_abs_lt (h hP), sign_add_of_abs_lt (h hP),
       sub_self]
+
+/-- Off the joint, a small perturbation keeps the side of one of the two hyperplanes. -/
+private theorem side_add_eq_side_sub_or {P0 P1 a b : ℝ} (hreg : P0 = 0 → P1 ≠ 0)
+    (h0 : P0 ≠ 0 → |a| < |P0|) (h1 : P1 ≠ 0 → |b| < |P1|) :
+    side (P0 + a) = side (P0 - a) ∨ side (P1 + b) = side (P1 - b) := by
+  rcases eq_or_ne P0 0 with hP0 | hP0
+  · right
+    rw [side_eq, side_eq, sign_add_of_abs_lt (h1 (hreg hP0)), sign_sub_of_abs_lt (h1 (hreg hP0))]
+  · left
+    rw [side_eq, side_eq, sign_add_of_abs_lt (h0 hP0), sign_sub_of_abs_lt (h0 hP0)]
 
 /-! #### The jump of the correction exponent
 
@@ -260,6 +271,26 @@ variable {M : Type*} [LieRing M] [LieAlgebra ℚ M] [LieRing.IsNilpotent M]
 private def potential (a b c : M) (s r u : ℤ) : BCHGroup M :=
   BCHGroup.exp ((-r) • b) * BCHGroup.exp ((-s) • a) * BCHGroup.exp ((-u) • c)
 
+/-- The quotient of two normal forms, after merging the central factors: if `⁅a, c⁆ = 0`, it is
+the conjugate of `exp ((s₂ - s₁) • a + (u₂ - u₁) • c)` by `exp ((-r₁) • b)`, followed by
+`exp ((r₂ - r₁) • b)`. -/
+private theorem potential_mul_inv_eq {a b c : M} (hac : ⁅a, c⁆ = 0) (s₁ r₁ u₁ s₂ r₂ u₂ : ℤ) :
+    potential a b c s₁ r₁ u₁ * (potential a b c s₂ r₂ u₂)⁻¹ =
+      BCHGroup.exp ((-r₁) • b) * BCHGroup.exp ((s₂ - s₁) • a + (u₂ - u₁) • c) *
+        BCHGroup.exp (r₂ • b) := by
+  have hca : ⁅c, a⁆ = 0 := by rw [← lie_skew, hac, neg_zero]
+  have hinv (n : ℤ) (x : M) : (BCHGroup.exp ((-n) • x))⁻¹ = BCHGroup.exp (n • x) := by
+    rw [← BCHGroup.exp_neg, neg_smul, neg_neg]
+  -- The central factors merge, and commute past `exp (s₂ • a)`.
+  have hcomm : Commute (BCHGroup.exp ((-u₁ + u₂) • c)) (BCHGroup.exp (s₂ • a)) :=
+    BCHGroup.commute_exp_of_lie_eq_zero _ _ (by simp [hca])
+  simp only [potential, mul_inv_rev, hinv, mul_assoc]
+  rw [← mul_assoc (BCHGroup.exp ((-u₁) • c)), BCHGroup.exp_zsmul_mul_exp_zsmul,
+    ← mul_assoc (BCHGroup.exp ((-u₁ + u₂) • c)), hcomm.eq, mul_assoc,
+    ← mul_assoc (BCHGroup.exp ((-s₁) • a)), BCHGroup.exp_zsmul_mul_exp_zsmul,
+    ← mul_assoc (BCHGroup.exp ((-s₁ + s₂) • a)),
+    ← BCHGroup.exp_add_of_lie_eq_zero _ _ (by simp [hac]), neg_add_eq_sub, neg_add_eq_sub]
+
 /-- If `⁅a, b⁆ = c` is central for `a` and `b`, two normal forms differing in only one of the
 first two exponents have quotient `exp ((s₂ - s₁) a + (r₂ - r₁) b + (r₁ (s₂ - s₁) + u₂ - u₁) c)`.
 The extra multiple of `c` is the commutator of `b ^ r₁` with `a ^ (s₂ - s₁)`. -/
@@ -267,46 +298,26 @@ private theorem potential_mul_inv {a b c : M} (hab : ⁅a, b⁆ = c) (hac : ⁅a
     (hbc : ⁅b, c⁆ = 0) {s₁ r₁ u₁ s₂ r₂ u₂ : ℤ} (h : s₁ = s₂ ∨ r₁ = r₂) :
     potential a b c s₁ r₁ u₁ * (potential a b c s₂ r₂ u₂)⁻¹ =
       BCHGroup.exp ((s₂ - s₁) • a + (r₂ - r₁) • b + (r₁ * (s₂ - s₁) + (u₂ - u₁)) • c) := by
-  have hca : ⁅c, a⁆ = 0 := by rw [← lie_skew, hac, neg_zero]
-  have hcb : ⁅c, b⁆ = 0 := by rw [← lie_skew, hbc, neg_zero]
-  have hba : ⁅b, a⁆ = -c := by rw [← lie_skew, hab]
-  have hinv (n : ℤ) (x : M) : (BCHGroup.exp ((-n) • x))⁻¹ = BCHGroup.exp (n • x) := by
-    rw [← BCHGroup.exp_neg, neg_smul, neg_neg]
-  simp only [potential, mul_inv_rev, hinv]
-  -- The central factors merge, and commute past `exp (s₂ • a)`.
-  have hcomm : Commute (BCHGroup.exp ((-u₁ + u₂) • c)) (BCHGroup.exp (s₂ • a)) :=
-    BCHGroup.commute_exp_of_lie_eq_zero _ _ (by simp [hca])
-  calc BCHGroup.exp ((-r₁) • b) * BCHGroup.exp ((-s₁) • a) * BCHGroup.exp ((-u₁) • c) *
-        (BCHGroup.exp (u₂ • c) * (BCHGroup.exp (s₂ • a) * BCHGroup.exp (r₂ • b)))
-      = BCHGroup.exp ((-r₁) • b) *
-          (BCHGroup.exp ((-s₁) • a) * BCHGroup.exp (s₂ • a) *
-            BCHGroup.exp ((-u₁ + u₂) • c)) * BCHGroup.exp (r₂ • b) := by
-        simp only [mul_assoc]
-        rw [← mul_assoc (BCHGroup.exp ((-u₁) • c)), BCHGroup.exp_zsmul_mul_exp_zsmul,
-          ← mul_assoc (BCHGroup.exp ((-u₁ + u₂) • c)), hcomm.eq]
-        simp only [mul_assoc]
-    _ = BCHGroup.exp ((-r₁) • b) * BCHGroup.exp ((s₂ - s₁) • a + (u₂ - u₁) • c) *
-          BCHGroup.exp (r₂ • b) := by
-        rw [BCHGroup.exp_zsmul_mul_exp_zsmul, ← BCHGroup.exp_add_of_lie_eq_zero _ _
-          (by simp [hac]), neg_add_eq_sub, neg_add_eq_sub]
-    _ = _ := by
-        rcases h with rfl | rfl
-        · -- Only the second exponent changes: everything else is central.
-          have hcomm' : Commute (BCHGroup.exp ((-r₁) • b))
-              (BCHGroup.exp ((s₁ - s₁) • a + (u₂ - u₁) • c)) :=
-            BCHGroup.commute_exp_of_lie_eq_zero _ _ (by simp [hbc])
-          rw [hcomm'.eq, mul_assoc, BCHGroup.exp_zsmul_mul_exp_zsmul,
-            ← BCHGroup.exp_add_of_lie_eq_zero _ _ (by simp [hcb, sub_self])]
-          congr 1
-          module
-        · -- Only the first exponent changes: conjugate by `exp ((-r₁) • b)`.
-          have hlie : ⁅(-r₁) • b, (s₂ - s₁) • a + (u₂ - u₁) • c⁆ = (r₁ * (s₂ - s₁)) • c := by
-            simp only [zsmul_lie, lie_add, lie_zsmul, hba, hbc, smul_neg, smul_zero, add_zero]
-            module
-          rw [show r₁ • b = -((-r₁) • b) by rw [neg_smul, neg_neg],
-            BCHGroup.exp_mul_exp_mul_exp_neg_of_lie_lie_eq_zero (by rw [hlie]; simp [hbc]), hlie]
-          congr 1
-          module
+  rw [potential_mul_inv_eq hac]
+  rcases h with rfl | rfl
+  · -- Only the second exponent changes: everything else is central.
+    have hcb : ⁅c, b⁆ = 0 := by rw [← lie_skew, hbc, neg_zero]
+    have hcomm : Commute (BCHGroup.exp ((-r₁) • b))
+        (BCHGroup.exp ((s₁ - s₁) • a + (u₂ - u₁) • c)) :=
+      BCHGroup.commute_exp_of_lie_eq_zero _ _ (by simp [hbc])
+    rw [hcomm.eq, mul_assoc, BCHGroup.exp_zsmul_mul_exp_zsmul,
+      ← BCHGroup.exp_add_of_lie_eq_zero _ _ (by simp [hcb, sub_self])]
+    congr 1
+    module
+  · -- Only the first exponent changes: conjugate by `exp ((-r₁) • b)`.
+    have hba : ⁅b, a⁆ = -c := by rw [← lie_skew, hab]
+    have hlie : ⁅(-r₁) • b, (s₂ - s₁) • a + (u₂ - u₁) • c⁆ = (r₁ * (s₂ - s₁)) • c := by
+      simp only [zsmul_lie, lie_add, lie_zsmul, hba, hbc, smul_neg, smul_zero, add_zero]
+      module
+    rw [show r₁ • b = -((-r₁) • b) by rw [neg_smul, neg_neg],
+      BCHGroup.exp_mul_exp_mul_exp_neg_of_lie_lie_eq_zero (by rw [hlie]; simp [hbc]), hlie]
+    congr 1
+    module
 
 end LocalPotential
 
@@ -473,16 +484,6 @@ private def localPotential (z : V) : d.truncatedGroup ℒ k :=
     (side (P.coord h θ₀ 1 z)) (corner (P.rayCoeff 0) (P.coord h θ₀ 0 z)
       (P.rayCoeff 0 * P.coord h θ₀ 1 z - P.rayCoeff 1 * P.coord h θ₀ 0 z))
 
-omit [NormedSpace ℝ V] [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L] [DecidableEq Γ]
-  [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ] in
-/-- Near a point where a continuous function does not vanish, its sign is constant. -/
-private theorem eventually_sign_eq {f : V → ℝ} (hf : Continuous f) (hne : f θ ≠ 0) :
-    ∀ᶠ φ in 𝓝 θ, SignType.sign (f φ) = SignType.sign (f θ) := by
-  filter_upwards [(hf.tendsto θ).eventually
-    (Metric.ball_mem_nhds (f θ) (abs_pos.mpr hne))] with φ hφ
-  rw [Real.dist_eq] at hφ
-  simpa only [add_sub_cancel] using sign_add_of_abs_lt hφ
-
 variable (k) in
 /-- Off the walls, the local potential is locally constant. -/
 private theorem eventually_localPotential_eq (h₀ : P.coord h θ₀ 0 θ ≠ 0)
@@ -499,71 +500,100 @@ private theorem eventually_localPotential_eq (h₀ : P.coord h θ₀ 0 θ ≠ 0)
         SignType.sign (α * P.coord h θ₀ 1 θ - β * P.coord h θ₀ 0 θ) := by
     by_cases hq0 : α * P.coord h θ₀ 1 θ - β * P.coord h θ₀ 0 θ = 0
     · exact Eventually.of_forall fun _ hne => absurd hq0 hne
-    · filter_upwards [eventually_sign_eq hq hq0] with φ hφ _ using hφ
-  filter_upwards [eventually_sign_eq (P.continuous_coord h θ₀ 0) h₀,
-    eventually_sign_eq (P.continuous_coord h θ₀ 1) h₁, evq] with φ hφ₀ hφ₁ hφq
+    · filter_upwards [hq.continuousAt.eventually_sign_eq hq0] with φ hφ _ using hφ
+  filter_upwards [(P.continuous_coord h θ₀ 0).continuousAt.eventually_sign_eq h₀,
+    (P.continuous_coord h θ₀ 1).continuousAt.eventually_sign_eq h₁, evq] with φ hφ₀ hφ₁ hφq
   rw [localPotential, localPotential, side_eq (P.coord h θ₀ 0 φ), side_eq (P.coord h θ₀ 0 θ), hφ₀,
     side_eq (P.coord h θ₀ 1 φ), side_eq (P.coord h θ₀ 1 θ), hφ₁,
     corner_eq_of_sign_eq (P.rayCoeff_ne_zero_or_ne_zero hμ) h₀ h₂ hφ₀ hφq]
 
-omit [NormedSpace ℝ V] in
-/-- Small multiples of a fixed real number are smaller than a nonzero real number. -/
-private theorem eventually_abs_mul_lt (x y : ℝ) : ∀ᶠ σ in 𝓝[>] (0 : ℝ), x ≠ 0 → |σ * y| < |x| := by
+omit [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L] [DecidableEq Γ]
+  [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ] in
+/-- Small multiples `σ * y`, `σ > 0`, have absolute value below `|x|` when `x ≠ 0`. -/
+private theorem eventually_abs_mul_lt_of_ne (x y : ℝ) :
+    ∀ᶠ σ in 𝓝[>] (0 : ℝ), x ≠ 0 → |σ * y| < |x| := by
   by_cases hx : x = 0
   · exact Eventually.of_forall fun _ hne => absurd hx hne
-  · have hlim : Tendsto (fun σ : ℝ => |σ * y|) (𝓝 0) (𝓝 0) := by
-      simpa using ((continuous_id.mul continuous_const).abs.tendsto (0 : ℝ) :
-        Tendsto (fun σ : ℝ => |σ * y|) (𝓝 0) (𝓝 |0 * y|))
-    exact Eventually.mono (nhdsWithin_le_nhds (hlim.eventually_lt_const (abs_pos.mpr hx)))
-      fun _ hσ _ => hσ
+  · exact Eventually.mono (nhdsWithin_le_nhds (eventually_abs_mul_lt hx y)) fun _ hσ _ => hσ
 
 include hC in
+/-- The logarithm of a combined label of the completed diagram at a regular point is the signed
+sum of the logarithms of the walls through the point. -/
+theorem log_combinedLabel_completion (v : V) :
+    BCHGroup.log ((P.completion h θ₀ hw hμ).combinedLabel k θ v hθ) =
+      ((if P.coord h θ₀ 0 θ = 0 then
+          (if 0 < h.realCharacter (P.normal 0) v then -1 else 1 : ℤ) • P.labelLog k 0 else 0) +
+        if P.coord h θ₀ 1 θ = 0 then
+          (if 0 < h.realCharacter (P.normal 1) v then -1 else 1 : ℤ) • P.labelLog k 1 else 0) +
+      if P.rayCoeff 0 * P.coord h θ₀ 1 θ - P.rayCoeff 1 * P.coord h θ₀ 0 θ = 0 ∧
+          P.rayCoeff 0 * P.coord h θ₀ 0 θ + P.rayCoeff 1 * P.coord h θ₀ 1 θ ≤ 0 then
+        (if 0 < P.rayCoeff 0 * h.realCharacter (P.normal 1) v -
+            P.rayCoeff 1 * h.realCharacter (P.normal 0) v then -1 else 1 : ℤ) • P.commutatorLog k
+      else 0 := by
+  classical
+  set D := P.completion h θ₀ hw hμ
+  let G : Fin 2 ⊕ Unit → d.truncatedLie ℒ k := fun j =>
+    if θ ∈ (D.wall j).support then
+      (if 0 < h.realCharacter (D.wall j).normal v then -1 else 1 : ℤ) •
+        BCHGroup.log (L := d.truncatedLie ℒ k) (CompletedGroup.projection k (D.wall j).label)
+    else 0
+  have hsum : BCHGroup.log (D.combinedLabel k θ v hθ) = ∑ j, G j := by
+    let := Fintype.ofFinite (D.active k)
+    rw [D.log_combinedLabel_eq_sum k θ v hθ]
+    -- `Equiv.subtypeUnivEquiv` sends an active index to its underlying index.
+    exact Fintype.sum_equiv (Equiv.subtypeUnivEquiv (P.mem_active_completion h θ₀ k hw hμ hC)) _
+      G (fun _ => rfl)
+  rw [hsum, Fintype.sum_sum_type, Fin.sum_univ_two, Fintype.sum_unique]
+  simp only [G, D, P.projection_completion_label_inl, P.projection_completion_label_inr,
+    BCHGroup.log_exp]
+  simp only [completion_wall_inl, completion_wall_inr, hyperplane_normal, correction_normal,
+    mem_hyperplane_support_iff, mem_correction_support_iff, P.realCharacter_bracketNormal]
+
+variable (v : V) (hv : ∀ j : (P.completion h θ₀ hw hμ).active k,
+  θ ∈ ((P.completion h θ₀ hw hμ).wall j).support →
+    h.realCharacter ((P.completion h θ₀ hw hμ).wall j).normal v ≠ 0)
+
+include hC hv in
+/-- A velocity transverse to the walls through `θ` is transverse to each hyperplane through
+`θ`. -/
+theorem realCharacter_normal_ne_zero_of_coord_eq_zero (j : Fin 2)
+    (hj : P.coord h θ₀ j θ = 0) : h.realCharacter (P.normal j) v ≠ 0 := by
+  simpa only [completion_wall_inl, hyperplane_normal] using
+    hv ⟨_, P.mem_active_completion h θ₀ k hw hμ hC (.inl j)⟩
+      (by rwa [completion_wall_inl, mem_hyperplane_support_iff])
+
+include hC hv in
+/-- A velocity transverse to the walls through `θ` is transverse to the correction wall when
+`θ` lies on it. -/
+theorem rayCoeff_mul_sub_ne_zero_of_mem
+    (h2 : P.rayCoeff 0 * P.coord h θ₀ 1 θ - P.rayCoeff 1 * P.coord h θ₀ 0 θ = 0)
+    (h2' : P.rayCoeff 0 * P.coord h θ₀ 0 θ + P.rayCoeff 1 * P.coord h θ₀ 1 θ ≤ 0) :
+    P.rayCoeff 0 * h.realCharacter (P.normal 1) v -
+      P.rayCoeff 1 * h.realCharacter (P.normal 0) v ≠ 0 := by
+  simpa only [completion_wall_inr, correction_normal, P.realCharacter_bracketNormal] using
+    hv ⟨_, P.mem_active_completion h θ₀ k hw hμ hC (.inr ())⟩
+      (by rw [completion_wall_inr, mem_correction_support_iff]; exact ⟨h2, h2'⟩)
+
+include hC hv in
 /-- At a regular wall germ, the local potential jumps by the combined label. -/
-private theorem eventually_localPotential_mul_inv (v : V)
-    (hv : ∀ j : (P.completion h θ₀ hw hμ).active k, θ ∈ ((P.completion h θ₀ hw hμ).wall j).support →
-      h.realCharacter ((P.completion h θ₀ hw hμ).wall j).normal v ≠ 0) :
+private theorem eventually_localPotential_mul_inv :
     ∀ᶠ σ in 𝓝[>] (0 : ℝ), P.localPotential h θ₀ k (θ + σ • v) *
       (P.localPotential h θ₀ k (θ - σ • v))⁻¹ =
         (P.completion h θ₀ hw hμ).combinedLabel k θ v hθ := by
-  classical
-  have hall := P.mem_active_completion h θ₀ k hw hμ hC
   set α := P.rayCoeff 0 with hα_def
   set β := P.rayCoeff 1 with hβ_def
   set ℓ₀ := h.realCharacter (P.normal 0) with hℓ₀_def
   set ℓ₁ := h.realCharacter (P.normal 1) with hℓ₁_def
-  set p₀ := P.coord h θ₀ 0 θ
-  set p₁ := P.coord h θ₀ 1 θ
-  have hmem₀ : θ ∈ ((P.completion h θ₀ hw hμ).wall (.inl 0)).support ↔ p₀ = 0 := by
-    rw [completion_wall_inl, mem_hyperplane_support_iff]
-  have hmem₁ : θ ∈ ((P.completion h θ₀ hw hμ).wall (.inl 1)).support ↔ p₁ = 0 := by
-    rw [completion_wall_inl, mem_hyperplane_support_iff]
-  have hmem₂ (u : Unit) : θ ∈ ((P.completion h θ₀ hw hμ).wall (.inr u)).support ↔
-      α * p₁ - β * p₀ = 0 ∧ α * p₀ + β * p₁ ≤ 0 := by
-    rw [completion_wall_inr, mem_correction_support_iff]
+  set p₀ := P.coord h θ₀ 0 θ with hp₀_def
+  set p₁ := P.coord h θ₀ 1 θ with hp₁_def
   have hreg := P.coord_ne_zero_of_coord_eq_zero h θ₀ hw hμ hC hθ
-  -- Transversality of the velocity to the walls through `θ`.
-  have hnormal (j : Fin 2 ⊕ Unit) (hj : θ ∈ ((P.completion h θ₀ hw hμ).wall j).support) :
-      h.realCharacter ((P.completion h θ₀ hw hμ).wall j).normal v ≠ 0 := hv ⟨j, hall j⟩ hj
-  have ht₀ (h0 : p₀ = 0) : ℓ₀ v ≠ 0 := by
-    simpa only [completion_wall_inl, hyperplane_normal] using hnormal _ (hmem₀.mpr h0)
-  have ht₁ (h1 : p₁ = 0) : ℓ₁ v ≠ 0 := by
-    simpa only [completion_wall_inl, hyperplane_normal] using hnormal _ (hmem₁.mpr h1)
-  have ht₂ (h2 : α * p₁ - β * p₀ = 0) (h2' : α * p₀ + β * p₁ ≤ 0) :
-      α * ℓ₁ v - β * ℓ₀ v ≠ 0 := by
-    simpa only [completion_wall_inr, correction_normal, P.realCharacter_bracketNormal] using
-      hnormal (.inr ()) ((hmem₂ ()).mpr ⟨h2, h2'⟩)
-  filter_upwards [self_mem_nhdsWithin, eventually_abs_mul_lt p₀ (ℓ₀ v),
-    eventually_abs_mul_lt p₁ (ℓ₁ v),
-    eventually_abs_mul_lt (α * p₁ - β * p₀) (α * ℓ₁ v - β * ℓ₀ v)] with σ hσ hs₀ hs₁ hsq
+  have ht := P.realCharacter_normal_ne_zero_of_coord_eq_zero h θ₀ hw hμ hC v hv
+  have ht₂ := P.rayCoeff_mul_sub_ne_zero_of_mem h θ₀ hw hμ hC v hv
+  filter_upwards [self_mem_nhdsWithin, eventually_abs_mul_lt_of_ne p₀ (ℓ₀ v),
+    eventually_abs_mul_lt_of_ne p₁ (ℓ₁ v),
+    eventually_abs_mul_lt_of_ne (α * p₁ - β * p₀) (α * ℓ₁ v - β * ℓ₀ v)] with σ hσ hs₀ hs₁ hsq
   have hσ : 0 < σ := hσ
-  -- One of the two hyperplane sides is unchanged.
-  have hsr : side (p₀ + σ * ℓ₀ v) = side (p₀ - σ * ℓ₀ v) ∨
-      side (p₁ + σ * ℓ₁ v) = side (p₁ - σ * ℓ₁ v) := by
-    rcases eq_or_ne p₀ 0 with h0 | h0
-    · right
-      rw [side_eq, side_eq, sign_add_of_abs_lt (hs₁ (hreg h0)), sign_sub_of_abs_lt (hs₁ (hreg h0))]
-    · left
-      rw [side_eq, side_eq, sign_add_of_abs_lt (hs₀ h0), sign_sub_of_abs_lt (hs₀ h0)]
+  have hne {x : ℝ} (hx : x ≠ 0) : σ * x ≠ 0 := mul_ne_zero hσ.ne' hx
   rw [localPotential, localPotential, P.coord_add_smul, P.coord_sub_smul, P.coord_add_smul,
     P.coord_sub_smul,
     show α * (p₁ + σ * ℓ₁ v) - β * (p₀ + σ * ℓ₀ v) =
@@ -571,33 +601,19 @@ private theorem eventually_localPotential_mul_inv (v : V)
     show α * (p₁ - σ * ℓ₁ v) - β * (p₀ - σ * ℓ₀ v) =
       (α * p₁ - β * p₀) - σ * (α * ℓ₁ v - β * ℓ₀ v) by ring,
     potential_mul_inv (P.lie_labelLog k) (P.lie_labelLog_commutatorLog k 0)
-      (P.lie_labelLog_commutatorLog k 1) hsr]
-  -- Compare logarithms with the signed sum of the incident wall logarithms.
+      (P.lie_labelLog_commutatorLog k 1) (side_add_eq_side_sub_or hreg hs₀ hs₁)]
+  -- Compare logarithms: the three integer coefficients are the jumps of the potential.
   apply BCHGroup.log_injective
-  let G : Fin 2 ⊕ Unit → d.truncatedLie ℒ k := fun j =>
-    if θ ∈ ((P.completion h θ₀ hw hμ).wall j).support then
-      (if 0 < h.realCharacter ((P.completion h θ₀ hw hμ).wall j).normal v then -1 else 1 : ℤ) •
-        BCHGroup.log (L := d.truncatedLie ℒ k)
-          (CompletedGroup.projection k ((P.completion h θ₀ hw hμ).wall j).label) else 0
-  have hsum : BCHGroup.log ((P.completion h θ₀ hw hμ).combinedLabel k θ v hθ) = ∑ j, G j := by
-    let := Fintype.ofFinite ((P.completion h θ₀ hw hμ).active k)
-    rw [(P.completion h θ₀ hw hμ).log_combinedLabel_eq_sum k θ v hθ]
-    exact Fintype.sum_equiv (Equiv.subtypeUnivEquiv hall) _ G (fun _ => rfl)
-  rw [BCHGroup.log_exp, hsum, Fintype.sum_sum_type, Fin.sum_univ_two, Fintype.sum_unique]
-  simp only [G, hmem₀, hmem₁, hmem₂, P.projection_completion_label_inl,
-    P.projection_completion_label_inr, BCHGroup.log_exp]
-  simp only [completion_wall_inl, completion_wall_inr, hyperplane_normal, correction_normal,
-    P.realCharacter_bracketNormal]
-  -- The three integer coefficients are the jumps of the potential.
-  have hne {x : ℝ} (hx : x ≠ 0) : σ * x ≠ 0 := mul_ne_zero hσ.ne' hx
+  rw [BCHGroup.log_exp, P.log_combinedLabel_completion h θ₀ hw hμ hC hθ v]
   have hjump := cornerJump_eq_rayJump α β p₀ p₁ _ (σ * ℓ₀ v) (σ * ℓ₁ v)
     (σ * (α * ℓ₁ v - β * ℓ₀ v)) (P.rayCoeff_ne_zero_or_ne_zero hμ) rfl (by ring) hs₀ hs₁ hsq hreg
-    (fun h0 => hne (ht₀ h0)) (fun h2 h2' => hne (ht₂ h2 h2'))
+    (fun h0 => hne (ht 0 h0)) (fun h2 h2' => hne (ht₂ h2 h2'))
   rw [cornerJump, rayJump] at hjump
-  rw [hjump, side_sub_sub_side hs₀ (fun h0 => hne (ht₀ h0)),
-    side_sub_sub_side hs₁ (fun h1 => hne (ht₁ h1)),
+  rw [hjump, side_sub_sub_side hs₀ (fun h0 => hne (ht 0 h0)),
+    side_sub_sub_side hs₁ (fun h1 => hne (ht 1 h1)),
     crossSign_mul hσ, crossSign_mul hσ, crossSign_mul hσ]
-  simp only [crossSign, ite_smul, zero_smul, ← hℓ₀_def, ← hℓ₁_def, ← hα_def, ← hβ_def]
+  simp only [crossSign, ite_smul, zero_smul, ← hℓ₀_def, ← hℓ₁_def, ← hα_def, ← hβ_def,
+    ← hp₀_def, ← hp₁_def]
 
 variable (k) in
 /-- The completed diagram is consistent at every finite order: every path from `x` to `y` has

@@ -270,6 +270,7 @@ def label (j : Fin 2) : H.wallGroup (P.ray j) (P.normal j) :=
 @[simp]
 theorem coe_label (j : Fin 2) :
     (P.label j : d.completedBCHGroup ℒ) = d.expToCompletion ℒ (P.scalar j • P.coeff j) :=
+  -- `label` is a subtype literal, whose value is this exponential.
   (rfl)
 
 /-- The incoming hyperplane `{m_j = m_j(θ₀)}` labelled by `exp (t_j x_j)`. -/
@@ -313,8 +314,8 @@ theorem input_full (j : Fin 2) : ∃ a : ℝ,
 /-- The joint is the intersection of the two hyperplanes. -/
 theorem joint_eq :
     P.joint h θ₀ = (P.hyperplane h θ₀ 0).support ∩ (P.hyperplane h θ₀ 1).support := by
-  rw [hyperplane_support, hyperplane_support]
-  rfl
+  ext z
+  simp only [joint, Set.mem_inter_iff, hyperplane_support, Set.mem_ofPred_eq]
 
 /-- The joint is a rational-normal polyhedron. -/
 theorem isRationalNormalPolyhedron_joint : IsRationalNormalPolyhedron h (P.joint h θ₀) := by

@@ -60,6 +60,8 @@ def baseChange : SquareZeroPair d (H.baseChange S) where
   scalar := t
   scalar_mul_self := ht
 
+-- The projections below compute on the structure literal `baseChange`.
+
 /-- Scalar extension keeps the normals. -/
 @[simp]
 theorem baseChange_normal : (P.baseChange S t ht).normal = P.normal := (rfl)

@@ -71,6 +71,38 @@ theorem apply_eq_of_crossings_lt (hr : r ∈ Icc (0 : ℝ) 1)
   have hle : 0 ≤ t * (1 - r) := mul_nonneg ht₀ (sub_nonneg.mpr hr.2)
   linarith
 
+omit hF in
+/-- On a segment whose crossings all occur at one time `t`, the crossings are exactly the walls
+through the point at time `t`. -/
+theorem mem_crossings_iff_of_subsingleton (he : (Prod.snd '' crossings x y).Subsingleton)
+    {i₀ : ι} {t : ℝ} (ht : (i₀, t) ∈ crossings x y) (i : ι) (s : ℝ) :
+    (i, s) ∈ crossings x y ↔ AffineMap.lineMap x.val y.val t ∈ W i ∧ s = t := by
+  constructor
+  · intro hs
+    obtain rfl : s = t := he ⟨_, hs, rfl⟩ ⟨_, ht, rfl⟩
+    exact ⟨((mem_crossings _ _ _ _).mp hs).2, rfl⟩
+  · rintro ⟨hi, rfl⟩
+    exact (mem_crossings _ _ _ _).mpr ⟨((mem_crossings _ _ _ _).mp ht).1, hi⟩
+
+include hF in
+/-- On a segment whose crossings all occur at one time `t`, a function locally constant off the
+walls takes its endpoint values at the points of times `t - s` and `t + s` for `0 < s` with
+`t ± s ∈ [0, 1]`. -/
+theorem apply_eq_lineMap_of_subsingleton (he : (Prod.snd '' crossings x y).Subsingleton)
+    {i₀ : ι} {t : ℝ} (ht : (i₀, t) ∈ crossings x y) {s : ℝ} (hs : 0 < s) (hst : s ≤ t)
+    (hst' : s ≤ 1 - t) :
+    F x.val = F (AffineMap.lineMap x.val y.val (t - s)) ∧
+      F (AffineMap.lineMap x.val y.val (t + s)) = F y.val := by
+  have htime {i : ι} {r : ℝ} (hr : (i, r) ∈ crossings x y) : r = t :=
+    he ⟨_, hr, rfl⟩ ⟨_, ht, rfl⟩
+  have hoff {r : ℝ} (hr : r ∈ Icc (0 : ℝ) 1) (hrt : r ≠ t) (i : ι) :
+      AffineMap.lineMap x.val y.val r ∉ W i := fun hi =>
+    hrt (htime ((mem_crossings _ _ _ _).mpr ⟨hr, hi⟩))
+  exact ⟨apply_eq_of_lt_crossings (a := ⟨_, hoff ⟨by linarith, by linarith⟩ (by linarith)⟩) hF
+      ⟨by linarith, by linarith⟩ rfl fun _ _ hr => by linarith [htime hr],
+    apply_eq_of_crossings_lt (a := ⟨_, hoff ⟨by linarith, by linarith⟩ (by linarith)⟩) hF
+      ⟨by linarith, by linarith⟩ rfl fun _ _ hr => by linarith [htime hr]⟩
+
 end Mei.Convex.WallComplement
 
 namespace Mei.DirectedDiagram
@@ -112,22 +144,12 @@ theorem levelPathProduct_toPath_eq_mul_inv_of_local
   · rw [D.levelPathProduct_eq_one_of_crossings_eq_empty k e hempty,
       WallComplement.apply_eq_of_crossings_eq_empty hF hempty, mul_inv_cancel]
   -- All crossings occur at the single parameter `t`, at the point `θ`.
-  have htime {j : D.active k} {r : ℝ} (hr : (j, r) ∈ WallComplement.crossings x y) :
-      r = t := he ⟨_, hr, rfl⟩ ⟨_, ht, rfl⟩
   have htI := ((WallComplement.mem_crossings _ _ _ _).mp ht).1
   have htIoo := WallComplement.mem_Ioo_of_mem_crossings ht
   set θ := AffineMap.lineMap x.val y.val t with hθ_def
   have hθ := e.down.regular t htI
-  have hcr : ∀ j r, (j, r) ∈ WallComplement.crossings x y ↔
-      θ ∈ (D.wall j).support ∧ r = t := by
-    intro j r
-    constructor
-    · intro hr
-      obtain rfl := htime hr
-      exact ⟨((WallComplement.mem_crossings _ _ _ _).mp hr).2, rfl⟩
-    · rintro ⟨hj, rfl⟩
-      exact (WallComplement.mem_crossings _ _ _ _).mpr ⟨htI, hj⟩
-  rw [D.levelPathProduct_toPath_eq_combinedLabel k e θ hθ t hcr]
+  rw [D.levelPathProduct_toPath_eq_combinedLabel k e θ hθ t
+    (WallComplement.mem_crossings_iff_of_subsingleton he ht)]
   have hv : ∀ j : D.active k, θ ∈ (D.wall j).support →
       h.realCharacter (D.wall j).normal (y.val - x.val) ≠ 0 := by
     intro j hj hzero
@@ -135,36 +157,16 @@ theorem levelPathProduct_toPath_eq_mul_inv_of_local
     rw [(D.wall j).direction_support]
     exact hzero
   -- Choose a small parameter `s` with `t ± s` inside the segment.
-  obtain ⟨s, hs, hspos, hst⟩ : ∃ s : ℝ,
-      F (θ + s • (y.val - x.val)) * (F (θ - s • (y.val - x.val)))⁻¹ =
-        D.combinedLabel k θ (y.val - x.val) hθ ∧ 0 < s ∧ s < min t (1 - t) :=
-    ((hcross θ hθ _ hv).and (Ioo_mem_nhdsGT (lt_min htIoo.1 (by linarith [htIoo.2])))).exists
-      |>.imp fun s hs => ⟨hs.1, hs.2.1, hs.2.2⟩
-  have hs₁ : s < t := hst.trans_le (min_le_left _ _)
-  have hs₂ : s < 1 - t := hst.trans_le (min_le_right _ _)
+  obtain ⟨s, hs, hspos, hst⟩ := ((hcross θ hθ _ hv).and
+    (Ioo_mem_nhdsGT (lt_min htIoo.1 (sub_pos.mpr htIoo.2)))).exists
   have hline (r : ℝ) : AffineMap.lineMap x.val y.val (t + r) = θ + r • (y.val - x.val) := by
     simp only [hθ_def, AffineMap.lineMap_apply_module']
     module
-  -- Points of the segment other than `θ` lie off every wall.
-  have hoff {r : ℝ} (hr : r ∈ Icc (0 : ℝ) 1) (hrt : r ≠ t) (j : D.active k) :
-      AffineMap.lineMap x.val y.val r ∉ (D.wall j).support := fun hj =>
-    hrt (htime ((WallComplement.mem_crossings _ _ _ _).mpr ⟨hr, hj⟩))
-  let a₁ : WallComplement (fun j : D.active k => (D.wall j).support) :=
-    ⟨AffineMap.lineMap x.val y.val (t - s),
-      hoff ⟨by linarith, by linarith⟩ (by linarith)⟩
-  let a₂ : WallComplement (fun j : D.active k => (D.wall j).support) :=
-    ⟨AffineMap.lineMap x.val y.val (t + s),
-      hoff ⟨by linarith, by linarith⟩ (by linarith)⟩
-  have hx₁ : F x.val = F a₁.val :=
-    WallComplement.apply_eq_of_lt_crossings hF ⟨by linarith, by linarith⟩ rfl
-      fun _ _ hr => by linarith [htime hr]
-  have hy₂ : F a₂.val = F y.val :=
-    WallComplement.apply_eq_of_crossings_lt hF ⟨by linarith, by linarith⟩ rfl
-      fun _ _ hr => by linarith [htime hr]
-  have ha₁ : a₁.val = θ - s • (y.val - x.val) := by
-    rw [sub_eq_add_neg, ← neg_smul, ← hline (-s), ← sub_eq_add_neg]
-  have ha₂ : a₂.val = θ + s • (y.val - x.val) := hline s
-  rw [hx₁, ← hy₂, ha₁, ha₂, hs]
+  obtain ⟨hx, hy⟩ := WallComplement.apply_eq_lineMap_of_subsingleton hF he ht hspos
+    (hst.le.trans (min_le_left _ _)) (hst.le.trans (min_le_right _ _))
+  have hminus : AffineMap.lineMap x.val y.val (t - s) = θ - s • (y.val - x.val) := by
+    rw [sub_eq_add_neg t, hline, neg_smul, ← sub_eq_add_neg]
+  rw [hx, ← hy, hminus, hline, hs]
 
 /-- If `F` is locally constant off the active supports and satisfies the local crossing
 formulas at every regular wall germ, then every admissible path from `x` to `y` has
