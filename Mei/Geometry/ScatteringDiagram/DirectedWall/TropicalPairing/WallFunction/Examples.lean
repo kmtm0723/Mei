@@ -85,12 +85,17 @@ instance : latticeChange.range.FiniteIndex := by
     ⟨by rw [AddSubgroup.index_range_nsmul]; norm_num⟩
   refine AddSubgroup.finiteIndex_of_le (H := (nsmulAddMonoidHom (α := ℤ × ℤ) 2).range) ?_
   rintro _ ⟨x, rfl⟩
-  exact ⟨(x.1 + x.2, 2 * x.2), by ext <;> simp; ring⟩
+  refine ⟨(x.1 + x.2, 2 * x.2), ?_⟩
+  simp only [Prod.ext_iff, latticeChange_apply, nsmulAddMonoidHom_apply, two_nsmul,
+    Prod.fst_add, Prod.snd_add]
+  omega
 
 /-- The two coordinate maps are compatible with the inclusion `M ⊆ ½M₀`. -/
 theorem halfLatticeCoord_eq_latticeChange (n : ℤ × ℤ) (_ : n ∈ ℕ².monoid) :
     halfLatticeCoord (PositiveDegreeMap.id ℕ² n) = latticeChange (latticeCoord n) := by
-  ext <;> simp; ring
+  simp only [Prod.ext_iff, PositiveDegreeMap.id_apply, halfLatticeCoord_apply,
+    latticeChange_apply, latticeCoord_apply, and_true]
+  omega
 
 /-- The normal map `μ ↦ μ ∘ latticeCoord`, where `latticeCoord ∘ latticeChange = 2`. -/
 def latticeChangeNormal (μ : ℤ × ℤ →+ ℤ) : ℤ × ℤ →+ ℤ := μ.comp latticeCoord
@@ -103,7 +108,9 @@ theorem latticeChangeNormal_apply (μ : ℤ × ℤ →+ ℤ) (x : ℤ × ℤ) :
 /-- The normal map pulls back along `latticeChange` to twice the original normal. -/
 theorem latticeChangeNormal_apply_latticeChange (μ : ℤ × ℤ →+ ℤ) (x : ℤ × ℤ) :
     (latticeChangeNormal μ (latticeChange x) : ℚ) = 2 * μ x := by
-  have hx : ((2 * x.1 - x.2 + x.2, 2 * x.2) : ℤ × ℤ) = (2 : ℤ) • x := by ext <;> simp
+  have hx : ((2 * x.1 - x.2 + x.2, 2 * x.2) : ℤ × ℤ) = (2 : ℤ) • x := by
+    simp only [Prod.ext_iff, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, and_true]
+    omega
   rw [latticeChangeNormal_apply, latticeChange_apply, hx, map_zsmul, smul_eq_mul, Int.cast_mul,
     Int.cast_ofNat]
 
@@ -111,13 +118,16 @@ theorem latticeChangeNormal_apply_latticeChange (μ : ℤ × ℤ →+ ℤ) (x : 
 def diagonalNormal : ℤ × ℤ →+ ℤ := AddMonoidHom.fst ℤ ℤ - AddMonoidHom.snd ℤ ℤ
 
 @[simp]
-theorem diagonalNormal_apply (x : ℤ × ℤ) : diagonalNormal x = x.1 - x.2 := (rfl)
+theorem diagonalNormal_apply (x : ℤ × ℤ) : diagonalNormal x = x.1 - x.2 := by
+  simp [diagonalNormal]
 
 /-- The normal of the diagonal is kept: `n°` is primitive both in the dual of `M` and in the
 dual of `½M₀`, and `n° ∘ latticeChange = 2 • n°` with `r = 2`. -/
 @[simp]
 theorem latticeChangeNormal_diagonalNormal : latticeChangeNormal diagonalNormal = diagonalNormal :=
-  AddMonoidHom.ext fun x => by simp; ring
+  AddMonoidHom.ext fun x => by
+    simp only [latticeChangeNormal_apply, diagonalNormal_apply]
+    omega
 
 variable (h : IsIntegralLattice ((Int.castAddHom ℝ).prodMap (Int.castAddHom ℝ)))
 
@@ -162,7 +172,8 @@ theorem coe_diagonalFunction (ρ₀ : ℤ × ℤ →+ ℤ × ℤ) (hρ₀ : diag
     (c : ℚ) :
     (diagonalFunction ρ₀ hρ₀ c : (G ρ₀).completion) =
       (G ρ₀).toCompletion (1 + AddMonoidAlgebra.single
-        ⟨(1, 1), one_one_mem_tropicalTangentMonoid hρ₀⟩ c) := (rfl)
+        ⟨(1, 1), one_one_mem_tropicalTangentMonoid hρ₀⟩ c) := by
+  simp only [diagonalFunction]
 
 theorem diagonalNormal_latticeCoord : diagonalNormal (latticeCoord (1, 1)) = 0 := by simp
 
@@ -178,8 +189,8 @@ def squaredDiagonalFunction (c : ℚ) :
 theorem coe_squaredDiagonalFunction (c : ℚ) :
     (squaredDiagonalFunction c : (G latticeCoord).completion) =
       (diagonalFunction latticeCoord diagonalNormal_latticeCoord c :
-        (G latticeCoord).completion) ^ 2 :=
-  (rfl)
+        (G latticeCoord).completion) ^ 2 := by
+  simp only [squaredDiagonalFunction]
 
 /-- The tangent monomial map of the identity degree map sends `(1 + c z^{(1,1)})²` over `M` to
 the square of `1 + c z^{(1,1)}` over `½M₀`. -/
