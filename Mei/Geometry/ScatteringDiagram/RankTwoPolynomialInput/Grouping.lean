@@ -55,16 +55,6 @@ variable {L M ι R V : Type*} [AddCommGroup L] [AddCommGroup M] {d : PositiveDeg
 local notation "ρ" => AddMonoidHom.id L
 local notation "ℒ" => tropicalVertexGrading (R := R) d ρ
 
-/-- The incoming diagram is the ray presentation of the unsplit labels on the cylinders over the
-lines. -/
-theorem isRayFactorPresentation_incomingDiagram :
-    (I.incomingDiagram h c).IsRayFactorPresentation (μ := I.wallNormal)
-      (fun j => {x | h.realCharacter (I.wallNormal j) x = I.offset j}) (I.initialLabel c) where
-  support := I.incomingDiagram_support h c
-  normal := I.incomingDiagram_normal h c
-  ray := I.incomingDiagram_ray h c
-  label := I.incomingDiagram_label h c
-
 /-- The grouping of the incoming ray walls by their line. -/
 def incomingGrouping [Module.Free ℤ M] [Module.Finite ℤ M] :
     (I.incomingDiagram h c).FunctionWallGrouping I.projection ι :=

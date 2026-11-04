@@ -31,10 +31,9 @@ ray factors of `1 + ∑ c_α z^{n_α}`.
 
 The walls are full affine hyperplanes; walls supported on proper polyhedral subsets of
 hyperplanes are not treated. Not formalized here: the maps of shifted modules induced by the
-lift, and the identification `z^{v_{i,s}} ↦ p_{i,s} z^{s w_i}` for BLM polynomial inputs. The
-grouping and positivity of the lifted wall functions are
-`HyperplaneTermInput.isPositiveWallRepresentative_liftFiniteAlphabet_diagram`, and the degree
-inequality of the lift is `PositiveDegrees.finiteAlphabet_degree_lt`.
+lift, positivity of the lifted wall functions, and the identification
+`z^{v_{i,s}} ↦ p_{i,s} z^{s w_i}` for BLM polynomial inputs. The degree inequality of the lift is
+`PositiveDegrees.finiteAlphabet_degree_lt`.
 
 The finite alphabet lift follows Burcroff–Lee–Mou, *Positivity of generalized cluster
 scattering diagrams*, §9.2 (arXiv:2503.03719v1).

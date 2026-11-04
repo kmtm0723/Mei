@@ -11,13 +11,9 @@ public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.RayFactor
 /-!
 # Function walls of ray presentations
 
-Let labels `g_j` of the completed tropical vertex group carry integral normals `μ_j`. A directed
-diagram is a *ray presentation* of the `g_j` on supports `S_j`
-(`DirectedDiagram.IsRayFactorPresentation`) when its walls are indexed by pairs `(j, w)` of a
-label and a supported ray tangent to `μ_j`, and the wall `(j, w)` lies on `S_j` with normal
-`μ_j`, ray `w` and the ray factor of `g_j` on `w` as label. The diagram
-`DirectedDiagram.ofHyperplaneRayFactors` of labels on affine hyperplanes is one
-(`DirectedDiagram.isRayFactorPresentation_ofHyperplaneRayFactors`).
+Let a directed diagram be a ray presentation of labels `g_j` with integral normals `μ_j` on
+supports `S_j` (`DirectedDiagram.IsRayFactorPresentation`): its wall `(j, w)` carries the ray
+factor of `g_j` on a supported ray `w` tangent to `μ_j`.
 
 Grouping the walls `(j, w)` by `j` is a function-wall grouping
 (`DirectedDiagram.FunctionWallGrouping.ofRayFactors`) when the normals are primitive and, for
@@ -47,39 +43,6 @@ variable {R Γ Λ V M ι : Type*} [CommRing R] [Algebra ℚ R] [AddCommGroup Γ]
   {d : PositiveDegrees Γ} {ρ : Γ →+ Λ} {i : Λ →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
 
 local notation "ℒ" => tropicalVertexGrading (R := R) d ρ
-local notation "H" => tropicalVertexWallSpaces (R := R) d ρ
-
-/-- The diagram `D` is a ray presentation of the labels `g_j` on the supports `S_j`: the wall
-`(j, w)`, for a supported ray `w` tangent to `μ_j`, has support `S_j`, normal `μ_j`, ray `w`
-and the ray factor of `g_j` on `w` as label. -/
-structure IsRayFactorPresentation {μ : ι → Λ →+ ℤ}
-    (D : DirectedDiagram (d := d) h H (Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}))
-    (S : ι → Set V) (g : ι → d.completedBCHGroup ℒ) : Prop where
-  /-- The wall `(j, w)` lies on `S_j`. -/
-  support (x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}) :
-    (D.wall x).support = S x.1
-  /-- The wall `(j, w)` is cooriented by `μ_j`. -/
-  normal (x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}) : (D.wall x).normal = μ x.1
-  /-- The wall `(j, w)` lies on the ray `w`. -/
-  ray (x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}) : (D.wall x).ray = x.2.val
-  /-- The wall `(j, w)` carries the ray factor of `g_j` on `w`. -/
-  label (x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}) :
-    (D.wall x).label = d.rayFactor ℒ (g x.1) x.2.val
-
-/-- The ray factors of labels on affine hyperplanes form a ray presentation on the
-hyperplanes. -/
-theorem isRayFactorPresentation_ofHyperplaneRayFactors (μ : ι → Λ →+ ℤ) (hμ : ∀ j, μ j ≠ 0)
-    (a : ι → ℝ) (g : ι → d.completedBCHGroup ℒ)
-    (hg : ∀ j w, d.rayFactor _ (g j) w ∈ (H).wallGroup w (μ j))
-    (hfin : CompletedGroup.HasFiniteSupport
-      fun x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0} =>
-        d.rayFactor ℒ (g x.1) x.2.val) :
-    (ofHyperplaneRayFactors h μ hμ a g hg hfin).IsRayFactorPresentation
-      (fun j => {y | h.realCharacter (μ j) y = a j}) g where
-  support := ofHyperplaneRayFactors_support h μ hμ a g hg hfin
-  normal := ofHyperplaneRayFactors_normal h μ hμ a g hg hfin
-  ray := ofHyperplaneRayFactors_ray h μ hμ a g hg hfin
-  label := ofHyperplaneRayFactors_label h μ hμ a g hg hfin
 
 namespace FunctionWallGrouping
 

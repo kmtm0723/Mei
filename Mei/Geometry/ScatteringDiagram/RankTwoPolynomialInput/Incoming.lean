@@ -201,6 +201,16 @@ theorem incomingDiagram_full (j : I.IncomingIndex) :
       {x | h.realCharacter ((I.incomingDiagram h c).wall j).normal x = a} :=
   DirectedDiagram.ofHyperplaneRayFactors_full ..
 
+/-- The incoming diagram is the ray presentation of the unsplit labels on the cylinders over the
+lines. -/
+theorem isRayFactorPresentation_incomingDiagram :
+    (I.incomingDiagram h c).IsRayFactorPresentation (μ := I.wallNormal)
+      (fun j => {x | h.realCharacter (I.wallNormal j) x = I.offset j}) (I.initialLabel c) where
+  support := I.incomingDiagram_support h c
+  normal := I.incomingDiagram_normal h c
+  ray := I.incomingDiagram_ray h c
+  label := I.incomingDiagram_label h c
+
 /-- At every cutoff, the labels on the tangent rays of the line `i` reassemble the projection of
 its unsplit label. The finite set may contain additional rays, whose surviving factors are
 retained automatically. -/

@@ -60,21 +60,6 @@ variable {Γ Λ R ι E V M : Type*} [AddCommGroup Γ] [AddCommGroup Λ] [AddComm
 
 local notation "ℒ" => tropicalVertexGrading (R := R) d ρ
 
-omit [Module.Free ℤ Γ] in
-/-- If the exponents on the hyperplane `i` project under `π` to positive multiples of `u_i`,
-every nontrivial ray factor of the label of `f_i` has a generator projecting to a positive
-rational multiple of `u_i`. -/
-theorem rayFactor_label_projectedDirection
-    (hu : ∀ α, ∃ b : ℕ, 0 < b ∧ π (I.exponent α) = b • u (I.wallIndex α)) (i : ι)
-    {w : SupportedRay d} (hw : d.rayFactor ℒ (I.label c i) w ≠ 1) :
-    ∃ a b : ℕ, 0 < a ∧ 0 < b ∧ a • π w.generator = b • u i := by
-  rw [label_def] at hw
-  refine exists_nsmul_eq_nsmul_of_rayFactor_completedLog_ne_one d ρ (I.normal i)
-    (I.tangentExponent i) (fun α => c α) π (u i) (fun α => ?_)
-    (I.toCompletion_wallFunction_sub_one_mem c i) hw
-  obtain ⟨b, hb, he⟩ := hu α.1
-  exact ⟨b, hb, by rw [coe_tangentExponent, he, α.property]⟩
-
 variable (hμ : ∀ i, TauCeti.IsPrimitive (I.normal i))
   (hu : ∀ α, ∃ b : ℕ, 0 < b ∧ π (I.exponent α) = b • u (I.wallIndex α))
 
@@ -104,23 +89,6 @@ variable (Q : AddSubmonoid Γ) [Fact (d.monoid ≤ Q)]
 
 local notation "G" => TropicalVertexCoefficientAction.filtration (R := R) d Q
 
-omit [DecidableEq Γ] [Algebra ℚ R] [Module.Free ℤ Γ] in
-/-- The wall function `f_i = 1 + ∑_{wallIndex α = i} c_α z^{n_α}` as a unit of the completion
-of `R[Q]`. -/
-def completedWallFunction (i : ι) : (G).completionˣ :=
-  (isUnit_completedTropicalTangentInclusion d ρ _ Q
-    (I.toCompletion_wallFunction_sub_one_mem c i)).unit
-
-omit [DecidableEq Γ] [Algebra ℚ R] [Module.Free ℤ Γ] in
-/-- The completed wall function is the completion of `1 + ∑_{wallIndex α = i} c_α z^{n_α}`. -/
-@[simp]
-theorem coe_completedWallFunction (i : ι) :
-    (I.completedWallFunction c Q i : (G).completion) = (G).toCompletion
-      (1 + ∑ α : I.Term i,
-        single (⟨I.exponent α, (Fact.out : d.monoid ≤ Q) (I.exponent_mem α)⟩ : Q) (c α)) := by
-  rw [completedWallFunction, IsUnit.unit_spec, completedTropicalTangentInclusion_toCompletion]
-  simp only [map_add, map_one, map_sum, tropicalTangentInclusion_single, coe_tangentExponent]
-
 /-- If `Q` contains `±p` for a degree `p` with `μ_i(ρ p) = 1`, the completed wall function
 `f_i` is the wall function of the group of the hyperplane `i`. -/
 theorem isWallFunction_grouping (i : ι) {p : Γ} (hp : I.normal i (ρ p) = 1) (hpQ : p ∈ Q)
@@ -128,20 +96,10 @@ theorem isWallFunction_grouping (i : ι) {p : Γ} (hp : I.normal i (ρ p) = 1) (
     (I.grouping h c π u hμ hu).IsWallFunction ((G).completedBCHAction d ℒ) i
       (I.completedWallFunction c Q i) :=
   FunctionWallGrouping.isWallFunction_ofRayFactors _ hμ π u _ Q i _ (I.label_def c i) _
-    (by rw [completedWallFunction, IsUnit.unit_spec]) hp hpQ hnpQ
-
-omit [DecidableEq Γ] [Algebra ℚ R] [Module.Free ℤ Γ] in
-/-- Coefficients in the image of a semiring map `φ : S →+* R` give completed wall functions
-positive for the image of `S[Q]`. -/
-theorem isPositive_completedWallFunction {S : Type*} [Semiring S] (φ : S →+* R)
-    (hc : ∀ α, c α ∈ φ.rangeS) (i : ι) :
-    (G).IsPositive (mapRingHom Q φ).rangeS (I.completedWallFunction c Q i).val := by
-  rw [coe_completedWallFunction]
-  refine AlgFiltration.isPositive_toCompletion ?_
-  choose s hs using hc
-  exact ⟨1 + ∑ α : I.Term i,
-    single (⟨I.exponent α, (Fact.out : d.monoid ≤ Q) (I.exponent_mem α)⟩ : Q) (s α),
-    by simp only [map_add, map_one, map_sum, mapRingHom_single, hs]⟩
+    (by
+      rw [coe_completedWallFunction, completedTropicalTangentInclusion_toCompletion]
+      simp only [map_add, map_one, map_sum, tropicalTangentInclusion_single, coe_tangentExponent])
+    hp hpQ hnpQ
 
 variable (hQ : ∀ i, ∃ p ∈ Q, -p ∈ Q ∧ I.normal i (ρ p) = 1)
   {S : Type*} [Semiring S] (φ : S →+* R) (hc : ∀ α, c α ∈ φ.rangeS)

@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.RayFactor
+public import Mei.RingTheory.FilteredAlgebra.Positive.Basic
 
 /-!
 # Polynomial function walls on affine hyperplanes
@@ -16,14 +17,20 @@ integral normals `μ_i`, and a family `E` of terms: the term `α` lies on the hy
 `wallIndex α` and has a nonzero allowed exponent `n_α` tangent to it. For coefficients
 `c : E → R` in a `ℚ`-algebra, the hyperplane `i` carries the polynomial wall function
 `f_i = 1 + ∑_{wallIndex α = i} c_α z^{n_α}` and the function-wall label
-`exp(log(f_i) ∂_{μ_i})` (`HyperplaneTermInput.label`).
+`exp(log(f_i) ∂_{μ_i})` (`HyperplaneTermInput.label`). For a coefficient monoid `Q`, the image
+of `f_i` in the completion of `R[Q]` is a unit (`HyperplaneTermInput.completedWallFunction`),
+positive for the image of `S[Q]` when the coefficients lie in the image of a semiring map
+`S →+* R` (`HyperplaneTermInput.isPositive_completedWallFunction`).
 
 Its logarithm generally has terms on several supported rays, so the label is not a wall label.
 Its ray presentation (`HyperplaneTermInput.diagram`) is the shared construction
 `DirectedDiagram.ofHyperplaneRayFactors`, which places the ray factors
 `exp((log f_i)_w ∂_{μ_i})` on the supported rays `w` tangent to `μ_i` on the whole hyperplane;
 with finitely many terms it is finitely active at every order. Its walls, their incomingness
-and its family logarithms are described by the lemmas of that construction.
+and its family logarithms are described by the lemmas of that construction. If the exponents
+on the hyperplane `i` project under a map `π` to positive multiples of one direction `u_i`, so
+do the generators of the nontrivial ray factors of the label
+(`HyperplaneTermInput.rayFactor_label_projectedDirection`).
 
 These are the cooriented affine walls with finitely many terms `c_α z^{m_α}` of the
 finite-alphabet lift of Burcroff–Lee–Mou, *Positivity of generalized cluster scattering
@@ -96,6 +103,41 @@ theorem toCompletion_wallFunction_sub_one_mem (c : E → R) (i : ι) :
   toCompletion_one_add_sum_single_sub_one_mem d ρ (I.normal i) (I.tangentExponent i)
     (fun α => c α) fun α => I.exponent_ne_zero α
 
+section WallFunction
+
+variable (c : E → R) (Q : AddSubmonoid Γ) [Fact (d.monoid ≤ Q)]
+
+local notation "G" => TropicalVertexCoefficientAction.filtration (R := R) d Q
+
+/-- The wall function `f_i = 1 + ∑_{wallIndex α = i} c_α z^{n_α}` as a unit of the completion
+of `R[Q]`. -/
+def completedWallFunction (i : ι) : (G).completionˣ :=
+  (isUnit_completedTropicalTangentInclusion d ρ _ Q
+    (I.toCompletion_wallFunction_sub_one_mem c i)).unit
+
+/-- The completed wall function is the completion of `1 + ∑_{wallIndex α = i} c_α z^{n_α}`. -/
+@[simp]
+theorem coe_completedWallFunction (i : ι) :
+    (I.completedWallFunction c Q i : (G).completion) = (G).toCompletion
+      (1 + ∑ α : I.Term i,
+        single (⟨I.exponent α, (Fact.out : d.monoid ≤ Q) (I.exponent_mem α)⟩ : Q) (c α)) := by
+  rw [completedWallFunction, IsUnit.unit_spec, completedTropicalTangentInclusion_toCompletion]
+  simp only [map_add, map_one, map_sum, tropicalTangentInclusion_single, coe_tangentExponent]
+
+/-- Coefficients in the image of a semiring map `φ : S →+* R` give completed wall functions
+positive for the image of `S[Q]`. -/
+theorem isPositive_completedWallFunction {S : Type*} [Semiring S] (φ : S →+* R)
+    (hc : ∀ α, c α ∈ φ.rangeS) (i : ι) :
+    (G).IsPositive (mapRingHom Q φ).rangeS (I.completedWallFunction c Q i).val := by
+  rw [coe_completedWallFunction]
+  refine AlgFiltration.isPositive_toCompletion ?_
+  choose s hs using hc
+  exact ⟨1 + ∑ α : I.Term i,
+    single (⟨I.exponent α, (Fact.out : d.monoid ≤ Q) (I.exponent_mem α)⟩ : Q) (s α),
+    by simp only [map_add, map_one, map_sum, mapRingHom_single, hs]⟩
+
+end WallFunction
+
 variable [DecidableEq Γ] [Algebra ℚ R]
 
 local notation "ℒ" => tropicalVertexGrading (R := R) d ρ
@@ -132,6 +174,21 @@ theorem hasFiniteSupport_rayFactor_label [Module.Free ℤ Γ] (c : E → R) :
         (I.normal i) (I.tangentExponent i) (fun α => c α)
         (I.toCompletion_wallFunction_sub_one_mem c i) hw
       exact ⟨α, α.property⟩
+
+/-- If the exponents on the hyperplane `i` project under `π` to positive multiples of `u_i`,
+every nontrivial ray factor of the label of `f_i` has a generator projecting to a positive
+rational multiple of `u_i`. -/
+theorem rayFactor_label_projectedDirection {M : Type*} [AddCommGroup M] (c : E → R)
+    (π : Γ →+ M) (u : ι → M)
+    (hu : ∀ α, ∃ b : ℕ, 0 < b ∧ π (I.exponent α) = b • u (I.wallIndex α)) (i : ι)
+    {w : SupportedRay d} (hw : d.rayFactor ℒ (I.label c i) w ≠ 1) :
+    ∃ a b : ℕ, 0 < a ∧ 0 < b ∧ a • π w.generator = b • u i := by
+  rw [label_def] at hw
+  refine exists_nsmul_eq_nsmul_of_rayFactor_completedLog_ne_one d ρ (I.normal i)
+    (I.tangentExponent i) (fun α => c α) π (u i) (fun α => ?_)
+    (I.toCompletion_wallFunction_sub_one_mem c i) hw
+  obtain ⟨b, hb, he⟩ := hu α.1
+  exact ⟨b, hb, by rw [coe_tangentExponent, he, α.property]⟩
 
 variable [NormedAddCommGroup V] [NormedSpace ℝ V] {j : Λ →+ V}
   (h : TauCeti.Toric.IsIntegralLattice j)

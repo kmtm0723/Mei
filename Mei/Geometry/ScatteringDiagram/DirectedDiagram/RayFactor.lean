@@ -23,6 +23,12 @@ rays tangent to `μ_j`, placed on the whole hyperplane, form a directed diagram
 hyperplanes form families in the sense of `DirectedDiagram.familyLog`: at every order the family
 logarithm of `j` is the logarithm of `g_j` (`DirectedDiagram.familyLog_ofHyperplaneRayFactors`).
 
+More generally, a diagram is a *ray presentation* of labels `g_j` on supports `S_j`
+(`DirectedDiagram.IsRayFactorPresentation`) when its walls are indexed by pairs `(j, w)` of a
+label and a supported ray tangent to `μ_j`, and the wall `(j, w)` lies on `S_j` with normal
+`μ_j`, ray `w` and the ray factor of `g_j` on `w` as label. The diagram of labels on affine
+hyperplanes is one (`DirectedDiagram.isRayFactorPresentation_ofHyperplaneRayFactors`).
+
 This is the common ray presentation of the incoming diagrams of
 `RankTwoPolynomialInput.incomingDiagram`, `BLMPolynomialInput.incomingDiagram` and
 `HyperplaneTermInput.diagram`. The splitting of function walls into ray walls follows
@@ -38,8 +44,28 @@ namespace Mei.DirectedDiagram
 
 variable {R Γ Λ V ι : Type*} [CommRing R] [Algebra ℚ R] [AddCommGroup Γ] [AddCommGroup Λ]
   [DecidableEq Γ] [NormedAddCommGroup V] [NormedSpace ℝ V]
-  {d : PositiveDegrees Γ} {ρ : Γ →+ Λ} {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
-  (μ : ι → Λ →+ ℤ) (hμ : ∀ j, μ j ≠ 0) (a : ι → ℝ)
+  {d : PositiveDegrees Γ} {ρ : Γ →+ Λ} {i : Λ →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
+
+/-- The diagram `D` is a ray presentation of the labels `g_j` on the supports `S_j`: the wall
+`(j, w)`, for a supported ray `w` tangent to `μ_j`, has support `S_j`, normal `μ_j`, ray `w`
+and the ray factor of `g_j` on `w` as label. -/
+structure IsRayFactorPresentation {μ : ι → Λ →+ ℤ}
+    (D : DirectedDiagram (d := d) h (tropicalVertexWallSpaces (R := R) d ρ)
+      (Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}))
+    (S : ι → Set V) (g : ι → d.completedBCHGroup (tropicalVertexGrading (R := R) d ρ)) :
+    Prop where
+  /-- The wall `(j, w)` lies on `S_j`. -/
+  support (x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}) :
+    (D.wall x).support = S x.1
+  /-- The wall `(j, w)` is cooriented by `μ_j`. -/
+  normal (x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}) : (D.wall x).normal = μ x.1
+  /-- The wall `(j, w)` lies on the ray `w`. -/
+  ray (x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}) : (D.wall x).ray = x.2.val
+  /-- The wall `(j, w)` carries the ray factor of `g_j` on `w`. -/
+  label (x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}) :
+    (D.wall x).label = d.rayFactor (tropicalVertexGrading (R := R) d ρ) (g x.1) x.2.val
+
+variable (h) (μ : ι → Λ →+ ℤ) (hμ : ∀ j, μ j ≠ 0) (a : ι → ℝ)
   (g : ι → d.completedBCHGroup (tropicalVertexGrading (R := R) d ρ))
   (hg : ∀ j w, d.rayFactor _ (g j) w ∈ (tropicalVertexWallSpaces d ρ).wallGroup w (μ j))
   (hfin : CompletedGroup.HasFiniteSupport
@@ -86,6 +112,16 @@ theorem ofHyperplaneRayFactors_label :
 theorem ofHyperplaneRayFactors_incoming :
     ((ofHyperplaneRayFactors h μ hμ a g hg hfin).wall x).Incoming := by
   simp [ofHyperplaneRayFactors]
+
+/-- The ray factors of labels on affine hyperplanes form a ray presentation on the
+hyperplanes. -/
+theorem isRayFactorPresentation_ofHyperplaneRayFactors :
+    (ofHyperplaneRayFactors h μ hμ a g hg hfin).IsRayFactorPresentation
+      (fun j => {y | h.realCharacter (μ j) y = a j}) g where
+  support := ofHyperplaneRayFactors_support h μ hμ a g hg hfin
+  normal := ofHyperplaneRayFactors_normal h μ hμ a g hg hfin
+  ray := ofHyperplaneRayFactors_ray h μ hμ a g hg hfin
+  label := ofHyperplaneRayFactors_label h μ hμ a g hg hfin
 
 /-- Every wall is a full affine hyperplane, as required for outgoing completion. -/
 theorem ofHyperplaneRayFactors_full : ∃ b : ℝ,

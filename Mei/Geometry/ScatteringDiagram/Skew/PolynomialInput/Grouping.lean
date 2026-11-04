@@ -49,16 +49,6 @@ local notation "𝒅" => PositiveDegrees.finiteAlphabet I.letterExponent
 local notation "ρ" => AddMonoidHom.id (Module.Dual ℤ N × (I.Letter → ℤ))
 local notation "ℒ" => tropicalVertexGrading (R := R) 𝒅 ρ
 
-/-- The incoming diagram is the ray presentation of the unsplit initial labels on the
-cylinders over the `eᵢ⊥`. -/
-theorem isRayFactorPresentation_incomingDiagram :
-    (I.incomingDiagram (R := R) h).IsRayFactorPresentation (μ := I.alphabetNormal)
-      (fun i => (h.realCharacter (I.alphabetNormal i)).ker) I.initialLabel where
-  support := I.incomingDiagram_support h
-  normal := I.incomingDiagram_normal h
-  ray := I.incomingDiagram_ray h
-  label := I.incomingDiagram_label h
-
 /-- The grouping of the incoming ray walls by their initial polynomial. -/
 def incomingGrouping :
     (I.incomingDiagram (R := R) h).FunctionWallGrouping (AddMonoidHom.fst _ _) B.unfrozenIndex :=
