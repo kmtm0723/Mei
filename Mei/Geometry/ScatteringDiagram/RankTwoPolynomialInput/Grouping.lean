@@ -6,7 +6,7 @@ Authors: Claude Code
 module
 
 public import Mei.Geometry.ScatteringDiagram.RankTwoPolynomialInput.Incoming
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall.RayFactor
 public import Mei.Algebra.MonoidAlgebra.Range
 public import Mathlib.Algebra.MvPolynomial.Basic
 
@@ -31,13 +31,12 @@ variables `c_{j,n}` of `ℚ[c_{j,n}]` and the full coefficient lattice, the grou
 have coefficients in `ℕ[c_{j,n}]`
 (`RankTwoPolynomialInput.isPositiveWallRepresentative_incomingDiagram_variables`).
 
-We use `RankTwoPolynomialInput.projection_initialLabel_eq_noncommProd_incomingDiagram`,
-`RankTwoPolynomialInput.completedBCHAction_initialLabel` and the function-wall API of
-`Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall`. The inputs and their positivity
-follow Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*,
-Definition 2.1 and Theorem 9.9 (arXiv:2503.03719v1), with the grouped wall functions of
-Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*, §1.1
-(arXiv:1411.1394v2).
+The grouping is the grouping of a ray presentation by label,
+`DirectedDiagram.FunctionWallGrouping.ofRayFactors`, with its label and wall-function
+theorems. The inputs and their positivity follow Burcroff–Lee–Mou, *Positivity of generalized
+cluster scattering diagrams*, Definition 2.1 and Theorem 9.9 (arXiv:2503.03719v1), with the
+grouped wall functions of Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster
+algebras*, §1.1 (arXiv:1411.1394v2).
 -/
 
 public section
@@ -56,59 +55,38 @@ variable {L M ι R V : Type*} [AddCommGroup L] [AddCommGroup M] {d : PositiveDeg
 local notation "ρ" => AddMonoidHom.id L
 local notation "ℒ" => tropicalVertexGrading (R := R) d ρ
 
+/-- The incoming diagram is the ray presentation of the unsplit labels on the cylinders over the
+lines. -/
+theorem isRayFactorPresentation_incomingDiagram :
+    (I.incomingDiagram h c).IsRayFactorPresentation (μ := I.wallNormal)
+      (fun j => {x | h.realCharacter (I.wallNormal j) x = I.offset j}) (I.initialLabel c) where
+  support := I.incomingDiagram_support h c
+  normal := I.incomingDiagram_normal h c
+  ray := I.incomingDiagram_ray h c
+  label := I.incomingDiagram_label h c
+
 /-- The grouping of the incoming ray walls by their line. -/
 def incomingGrouping [Module.Free ℤ M] [Module.Finite ℤ M] :
-    (I.incomingDiagram h c).FunctionWallGrouping I.projection ι where
-  group := Sigma.fst
-  support_eq hj := by simp only [incomingDiagram_support, hj]
-  normal_eq hj := by simp only [incomingDiagram_normal, hj]
-  projectedDirection_eq {j j'} hj hj0 hj'0 := by
-    simp only [incomingDiagram_label] at hj0 hj'0
-    obtain ⟨a, b, ha, hb, he⟩ := I.rayFactor_initialLabel_projectedDirection c j.1 hj0
-    obtain ⟨a', b', ha', hb', he'⟩ := I.rayFactor_initialLabel_projectedDirection c j'.1 hj'0
-    refine ⟨b' * a, b * a', Nat.mul_pos hb' ha, Nat.mul_pos hb ha', ?_⟩
-    simp only [incomingDiagram_ray]
-    rw [mul_smul, he, mul_smul, he', ← hj, smul_comm b' b]
-  isPrimitive_normal j := by
-    simpa only [incomingDiagram_normal] using I.isPrimitive_wallNormal j.1
+    (I.incomingDiagram h c).FunctionWallGrouping I.projection ι :=
+  DirectedDiagram.FunctionWallGrouping.ofRayFactors (I.isRayFactorPresentation_incomingDiagram h c)
+    I.isPrimitive_wallNormal I.projection I.tangent fun j _ hw =>
+      I.rayFactor_initialLabel_projectedDirection c j hw
 
 variable [Module.Free ℤ M] [Module.Finite ℤ M]
 
 /-- A ray wall belongs to the group of its line. -/
 @[simp]
 theorem incomingGrouping_group (j : I.IncomingIndex) :
-    (I.incomingGrouping h c).group j = j.1 := (rfl)
+    (I.incomingGrouping h c).group j = j.1 :=
+  DirectedDiagram.FunctionWallGrouping.ofRayFactors_group ..
 
 /-- The label of the group of ray walls over the line `i` is its unsplit label
 `exp(log(f_i) ∂_{ν_i ∘ π})`. -/
 @[simp]
 theorem label_incomingGrouping (i : ι) :
-    (I.incomingGrouping h c).label i = I.initialLabel c i := by
-  classical
-  refine (((I.incomingGrouping h c).eq_label_iff i _).mpr fun k => ?_).symm
+    (I.incomingGrouping h c).label i = I.initialLabel c i :=
   let := h.free
-  let : HasUniqueDiv L := .of_isTorsionFree ℤ _
-  let T : Finset {w : SupportedRay d // I.wallNormal i w.generator = 0} :=
-    (d.finite_raysAtOrder k).toFinset.subtype _
-  let e : {w : SupportedRay d // I.wallNormal i w.generator = 0} ↪ I.IncomingIndex :=
-    ⟨fun w => ⟨i, w⟩, fun _ _ hw => by simpa using hw⟩
-  refine (I.projection_initialLabel_eq_noncommProd_incomingDiagram h c i k T
-    fun w hw hw0 => by simpa [T] using hw).trans ((Finset.noncommProd_map T e _ _).symm.trans
-      ((I.incomingGrouping h c).groupLabel_eq_noncommProd i k (T.map e) ?_ ?_).symm)
-  · intro j hj
-    obtain ⟨w, -, rfl⟩ := Finset.mem_map.mp hj
-    exact I.incomingGrouping_group h c _
-  · intro j hact hj
-    rw [incomingGrouping_group] at hj
-    obtain ⟨i', w⟩ := j
-    obtain rfl : i' = i := hj
-    refine Finset.mem_map.mpr ⟨w, ?_, rfl⟩
-    rw [Finset.mem_subtype, Set.Finite.mem_toFinset]
-    by_contra hw
-    apply ((I.incomingDiagram h c).mem_active k _).mp hact
-    simpa only [incomingDiagram_label] using
-      d.projection_eq_one_of_notMem_raysAtOrder ℒ
-        (d.rayFactor_mem_completedRaySubgroup ℒ (I.initialLabel c i') w.val) k hw
+  DirectedDiagram.FunctionWallGrouping.label_ofRayFactors _ _ _ _ _ i _ (I.initialLabel_def c i)
 
 section Action
 
@@ -123,23 +101,13 @@ when the coefficient monoid contains both signs of a degree of normal pairing on
 theorem isWallFunction_incomingGrouping (i : ι)
     (hQ : ∃ p : L, I.wallNormal i p = 1 ∧ p ∈ Q ∧ -p ∈ Q) :
     (I.incomingGrouping h c).IsWallFunction ((G).completedBCHAction d ℒ) i
-      (I.completedInitialFunction c Q i) := by
-  refine ((I.incomingGrouping h c).isWallFunction_iff _ i _).mpr fun j hj => ?_
-  rw [incomingGrouping_group] at hj
-  subst hj
-  obtain ⟨p, hp, hpQ, hp'Q⟩ := hQ
-  constructor
-  · let p₁ : Q := ⟨p, hpQ⟩
-    let p₂ : Q := ⟨-p, hp'Q⟩
-    have hp₁₂ : p₁ + p₂ = 0 := Subtype.ext (by simp [p₁, p₂])
-    have hmul : (single p₁ 1 * single p₂ 1 : R[Q]) = 1 := by
-      rw [single_mul_single, hp₁₂, mul_one, one_def]
-    refine ⟨p₁, by simpa [p₁] using hp, ?_⟩
-    exact (isUnit_iff_exists_inv.mpr ⟨single p₂ 1, hmul⟩).map (G).toCompletion
-  · intro p r
-    rw [label_incomingGrouping]
-    simpa only [incomingDiagram_normal, AddMonoidHom.id_apply] using
-      I.completedBCHAction_initialLabel c Q j.1 p r
+      (I.completedInitialFunction c Q i) :=
+  let := h.free
+  let ⟨_, hp, hpQ, hnpQ⟩ := hQ
+  DirectedDiagram.FunctionWallGrouping.isWallFunction_ofRayFactors _ _ _ _ _ Q i _
+    (I.initialLabel_def c i) _
+    (by rw [coe_completedInitialFunction, completedTropicalTangentInclusion_toCompletion,
+      tropicalTangentInclusion_tangentInitialFunction]) hp hpQ hnpQ
 
 omit [DecidableEq L] [Algebra ℚ R] [Module.Free ℤ M] [Module.Finite ℤ M] in
 /-- Coefficients in the image of a semiring map `φ : S →+* R` give wall functions positive
