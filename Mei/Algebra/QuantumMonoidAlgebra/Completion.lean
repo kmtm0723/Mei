@@ -265,10 +265,18 @@ theorem mapPositiveCompletion_id :
 variable (a : PositiveDegrees Γ'') (T' : PositiveDegreeMap e a) (ψ : S →+* U)
   (h' : ∀ p r, Units.map ψ.toMonoidHom (q' ^ β' p r) = q'' ^ β'' (T' p) (T' r))
 
+include h h' in
+/-- The factor-set condition for completed transport is preserved by positive degree composition. -/
+theorem mapPositiveCompletion_comp_compat (p r : Γ) :
+    Units.map (ψ.comp φ).toMonoidHom (q ^ β p r) =
+      q'' ^ β'' ((T'.comp T) p) ((T'.comp T) r) := by
+  simpa only [PositiveDegreeMap.comp_apply, AddMonoidHom.comp_apply] using
+    map_comp_compat φ ψ T.toAddMonoidHom T'.toAddMonoidHom h h' p r
+
 /-- Completed coefficient and exponent maps compose with the composed cutoff modulus. -/
 theorem mapPositiveCompletion_comp :
-    mapPositiveCompletion d a (T'.comp T) (ψ.comp φ) (fun p r => by
-      rw [PositiveDegreeMap.comp_apply, PositiveDegreeMap.comp_apply, ← h', ← h]; rfl) =
+    mapPositiveCompletion d a (T'.comp T) (ψ.comp φ)
+      (mapPositiveCompletion_comp_compat d e T φ h a T' ψ h') =
       (mapPositiveCompletion e a T' ψ h').comp (mapPositiveCompletion d e T φ h) := by
   have hf : (T'.comp T).toAddMonoidHom = T'.toAddMonoidHom.comp T.toAddMonoidHom := by
     ext n
