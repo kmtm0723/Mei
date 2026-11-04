@@ -46,17 +46,34 @@ private theorem mem_latticeChart_index (p : regularLocus) :
   · exact hp
   · exact (chart_sources_cover p).resolve_left hp
 
-private def latticeTransition {F : Type*} [AddCommGroup F]
+/-- The change of lattice frames from the chart indexed by `i` to the chart indexed by `j`
+(`false` for the cut chart, `true` for the upper chart) at `p`, for a lattice `F` and the
+upper transition `e`: `e` on the left half of the overlap, its inverse in the opposite
+direction, and the identity elsewhere. -/
+@[expose] def latticeTransition {F : Type*} [AddCommGroup F]
     (e : F ≃+ F) (i j : Bool) (p : regularLocus) : F ≃+ F :=
   if i = j then AddEquiv.refl F else
     if p.val.1 < 0 then if j then e else e.symm else AddEquiv.refl F
 
-private theorem latticeTransition_comp {F : Type*} [AddCommGroup F]
+/-- The lattice frame changes satisfy the cocycle identity. -/
+theorem latticeTransition_comp {F : Type*} [AddCommGroup F]
     (e : F ≃+ F) (i j k : Bool) (p : regularLocus) (q : F) :
     latticeTransition e j k p (latticeTransition e i j p q) =
       latticeTransition e i k p q := by
   cases i <;> cases j <;> cases k <;>
     by_cases hp : p.val.1 < 0 <;> simp [latticeTransition, hp]
+
+/-- The lattice frame change from a chart to itself is the identity. -/
+@[simp]
+theorem latticeTransition_self {F : Type*} [AddCommGroup F] (e : F ≃+ F) (i : Bool)
+    (p : regularLocus) : latticeTransition e i i p = AddEquiv.refl F := by
+  simp only [latticeTransition, ↓reduceIte]
+
+/-- Reversing the two charts inverts the lattice frame change. -/
+theorem latticeTransition_symm {F : Type*} [AddCommGroup F] (e : F ≃+ F) (i j : Bool)
+    (p : regularLocus) : (latticeTransition e i j p).symm = latticeTransition e j i p := by
+  cases i <;> cases j <;> by_cases hp : p.val.1 < 0 <;>
+    simp [latticeTransition, hp]
 
 private theorem continuousOn_latticeTransition {F : Type*} [AddCommGroup F]
     [TopologicalSpace (Equiv.Perm F)] (e : F ≃+ F) (i j : Bool) :
@@ -214,6 +231,20 @@ theorem tangentLatticeBundleCore_coordChange (i j : Bool) (p : regularLocus) (q 
   rw [tangentLatticeBundleCore, latticeBundleCore_coordChange]
   simp only [latticeTransition]
   split_ifs <;> rfl
+
+/-- Exponent coordinate changes are the lattice frame changes of `upperExponent`. -/
+theorem exponentBundleCore_coordChange_eq_latticeTransition (i j : Bool) (p : regularLocus)
+    (q : ℤ × ℤ × ℤ) :
+    exponentBundleCore.coordChange i j p q =
+      latticeTransition upperExponent.toAddEquiv i j p q :=
+  latticeBundleCore_coordChange _ _ _ _ _
+
+/-- Tangent coordinate changes are the lattice frame changes of `upperTangent`. -/
+theorem tangentLatticeBundleCore_coordChange_eq_latticeTransition (i j : Bool)
+    (p : regularLocus) (q : ℤ × ℤ) :
+    tangentLatticeBundleCore.coordChange i j p q =
+      latticeTransition upperTangent.toAddEquiv i j p q :=
+  latticeBundleCore_coordChange _ _ _ _ _
 
 /-- The changes between the actual exponent trivializations are the specified
 core transitions. -/

@@ -212,23 +212,35 @@ def upperAffine : Toric.IntegralAffineEquiv h h :=
     (upperAffine h).latticeEquiv = upperTangent.toAddEquiv := by
   rw [upperAffine, Toric.IntegralAffineEquiv.ofLatticeEquiv_latticeEquiv]
 
+/-- On the left half-plane, the change from the cut chart to the upper chart is the upper
+shear `upperAffine`. -/
+theorem eqOn_cutChart_symm_trans_upperChart_upperAffine :
+    EqOn (cutChart.symm.trans upperChart) (upperAffine h)
+      ((cutChart.symm.trans upperChart).source ∩ {q | q.1 < 0}) := by
+  intro q hq
+  have hq' : q.1 < 0 := hq.2
+  rw [cutChart_symm_trans_upperChart_apply q hq.1, upperAffine_apply, min_eq_left hq'.le]
+
+/-- On the right half-plane, the change from the cut chart to the upper chart is the
+identity. -/
+theorem eqOn_cutChart_symm_trans_upperChart_refl :
+    EqOn (cutChart.symm.trans upperChart) (Toric.IntegralAffineEquiv.refl h)
+      ((cutChart.symm.trans upperChart).source ∩ {q | 0 < q.1}) := by
+  intro q hq
+  have hq' : 0 < q.1 := hq.2
+  simp only [cutChart_symm_trans_upperChart_apply q hq.1, min_eq_right hq'.le,
+    sub_zero, Toric.IntegralAffineEquiv.refl_toAffineEquiv, AffineEquiv.refl_apply]
+
 private theorem cutChart_symm_trans_upperChart_mem :
     cutChart.symm.trans upperChart ∈ Toric.integralAffineGroupoid h := by
   rw [Toric.mem_integralAffineGroupoid_iff_forward, Toric.isLocallyIntegralAffineOn_iff]
   intro p hp
   have hu := ((mem_cutChart_symm_trans_upperChart_source p).mp hp).1
   rcases lt_or_gt_of_ne hu with hu | hu
-  · refine ⟨upperAffine h, {q | q.1 < 0}, isOpen_lt continuous_fst continuous_const, hu, ?_⟩
-    intro q hq
-    have hq' : q.1 < 0 := hq.2
-    rw [cutChart_symm_trans_upperChart_apply q hq.1, upperAffine_apply,
-      min_eq_left hq'.le]
-  · refine ⟨Toric.IntegralAffineEquiv.refl h, {q | 0 < q.1},
-      isOpen_lt continuous_const continuous_fst, hu, ?_⟩
-    intro q hq
-    have hq' : 0 < q.1 := hq.2
-    simp only [cutChart_symm_trans_upperChart_apply q hq.1, min_eq_right hq'.le,
-      sub_zero, Toric.IntegralAffineEquiv.refl_toAffineEquiv, AffineEquiv.refl_apply]
+  · exact ⟨upperAffine h, {q | q.1 < 0}, isOpen_lt continuous_fst continuous_const, hu,
+      eqOn_cutChart_symm_trans_upperChart_upperAffine h⟩
+  · exact ⟨Toric.IntegralAffineEquiv.refl h, {q | 0 < q.1},
+      isOpen_lt continuous_const continuous_fst, hu, eqOn_cutChart_symm_trans_upperChart_refl h⟩
 
 /-- Every change of coordinates in the focus-focus atlas is locally integral affine. -/
 theorem hasGroupoid :
