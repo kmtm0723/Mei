@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Algebra.QuantumMonoidAlgebra.Shifted
+public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.Monomial
 public import Mei.Algebra.QuantumMonoidAlgebra.Positive
 public import Mei.RingTheory.FilteredAlgebra.Module
 public import Mathlib.Algebra.Module.Submodule.Equiv
@@ -110,6 +110,22 @@ theorem positiveCompletionShiftEquiv_toCompletion (p : Γ)
       (d.shiftedFiltration (grade q β) p).of (positiveShiftEquiv q β d p x) := by
   simp only [positiveCompletionShiftEquiv, LinearEquiv.trans_apply,
     AlgFiltration.moduleCompletionEquiv_symm_toCompletion, ModuleFiltration.completionEquiv_of]
+
+/-- The completed unit is the monomial of relative exponent zero at the chosen shift. -/
+@[simp]
+theorem positiveCompletionShiftEquiv_one (p : Γ) :
+    positiveCompletionShiftEquiv q β d p (1 : (F).completion) =
+      (d.shiftedFiltration (grade q β) p).of
+        (shiftedMonomial q β d.monoid p 0) := by
+  have h := positiveCompletionShiftEquiv_toCompletion q β d p
+    (1 : positiveSubalgebra q β d.monoid)
+  have h₁ := congrArg (positiveCompletionShiftEquiv q β d p) (F).toCompletion.map_one
+  have hm : positiveShiftEquiv q β d p (1 : positiveSubalgebra q β d.monoid) =
+      shiftedMonomial q β d.monoid p 0 := by
+    apply Subtype.ext
+    simp only [coe_positiveShiftEquiv, Subalgebra.coe_one, mul_one,
+      coe_shiftedMonomial, ZeroMemClass.coe_zero, add_zero]
+  exact h₁.symm.trans (h.trans (congrArg (d.shiftedFiltration (grade q β) p).of hm))
 
 /-- Positive coordinates preserve and reflect all completed relative degrees. -/
 @[simp]
