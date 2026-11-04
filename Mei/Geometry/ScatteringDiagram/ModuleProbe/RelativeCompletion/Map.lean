@@ -66,6 +66,7 @@ theorem completedMap_coefficientGradedLieHom_baseGradedLieHom
     DFunLike.congr_fun hc g
 
 /-- A cylinder wall maps to the cylinder with the same base label. -/
+@[simp]
 theorem baseCylinder_map_coefficientGradedLieHom (W : DirectedWall (d := d) h H) :
     (baseCylinder d ℳ p ℒ H h h' W).map φ hφ =
       baseCylinder d 𝒩 p ℒ H h h' W := by
@@ -87,6 +88,7 @@ theorem coe_mappedProbeCoefficient (a : ℳ p) :
 
 omit [LieAlgebra ℚ L] [IsScalarTower ℚ R L] in
 /-- Mapping a probe wall applies the coefficient map to its input. -/
+@[simp]
 theorem probeWall_map_coefficientGradedLieHom (a : ℳ p) :
     (probeWall d ℳ p ℒ H h h' a).map φ hφ =
       probeWall d 𝒩 p ℒ H h h' (mappedProbeCoefficient ℳ 𝒩 p f hf a) := by
@@ -109,6 +111,7 @@ theorem probeWall_map_coefficientGradedLieHom (a : ℳ p) :
 variable (B : DirectedDiagram (d := d) h H κ)
 
 /-- The entire initial probe family commutes with coefficient changes. -/
+@[simp]
 theorem initialDiagram_map_coefficientGradedLieHom (a : ℳ p) :
     (initialDiagram d ℳ p ℒ H h h' B a).map φ hφ =
       initialDiagram d 𝒩 p ℒ H h h' B (mappedProbeCoefficient ℳ 𝒩 p f hf a) := by
