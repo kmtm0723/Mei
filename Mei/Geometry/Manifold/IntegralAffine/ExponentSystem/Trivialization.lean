@@ -151,10 +151,9 @@ theorem ofIso_frame (σ : E.Iso E') (τ : E'.Trivialization Γ₀) (e : atlas V 
     (ofIso σ τ).frame e x hx = (σ.app e x hx).trans (τ.frame e x hx) := (rfl)
 
 variable (E) in
-/-- Let `f` be an atlas map whose image lies in the domain of the chart `e₀`. The pullback of
-an exponent system `E` along `f` is trivialized, with model fibre the frame of `e₀`, by the
-frame changes of `E` to `e₀`: the frame in a chart `e` at `x` is the frame change from the
-target chart of `e` to `e₀` at `f x`. -/
+/-- Let `f` be an atlas map whose image lies in the domain of the chart `e₀`. The pullback
+`E.comap f` of an exponent system `E` is trivialized, with model fibre `Γ`, by the frame changes
+of `E` to `e₀`: the frame in a chart `e` at `x` is `E.coordChange (f.chart e) e₀ (f x)`. -/
 def ofAtlasMap (f : AtlasMap V B' B) (e₀ : atlas V B) (hf : ∀ x, f x ∈ e₀.1.source) :
     (E.comap f).Trivialization Γ where
   frame e x _ := E.coordChange (f.chart e) e₀ (f x)

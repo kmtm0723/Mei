@@ -17,7 +17,8 @@ the nonnegative vertical ray. The upper chart crosses that ray and sends
 `(u,v)` to `(u,v - min u 0)`. On the upper left overlap the change of coordinates
 is the integral shear `(u,v) ↦ (u,v-u)`; on the upper right it is the identity.
 Thus the chamber coordinates agree across the lower slab and differ by the
-specified shear across the upper slab. Both chart domains are preconnected
+specified shear across the upper slab. As elements of the atlas the two charts are
+`cutAtlas` and `upperAtlas`, and both chart domains are preconnected
 (`isPreconnected_source`).
 
 `chartedSpace` and `hasGroupoid` equip the actual punctured plane with this
@@ -226,6 +227,26 @@ def chartedSpace : ChartedSpace (ℝ × ℝ) regularLocus := by
     letI := chartedSpace
     e ∈ atlas (ℝ × ℝ) regularLocus ↔ e = cutChart ∨ e = upperChart := by
   rfl
+
+/-- The cut chart as a chart of the focus-focus atlas. -/
+def cutAtlas :
+    letI := chartedSpace
+    atlas (ℝ × ℝ) regularLocus :=
+  ⟨cutChart, (mem_atlas_iff _).mpr (Or.inl rfl)⟩
+
+/-- The upper chart as a chart of the focus-focus atlas. -/
+def upperAtlas :
+    letI := chartedSpace
+    atlas (ℝ × ℝ) regularLocus :=
+  ⟨upperChart, (mem_atlas_iff _).mpr (Or.inr rfl)⟩
+
+/-- The underlying chart of `cutAtlas` is the cut chart. -/
+@[simp]
+theorem cutAtlas_val : cutAtlas.1 = cutChart := (rfl)
+
+/-- The underlying chart of `upperAtlas` is the upper chart. -/
+@[simp]
+theorem upperAtlas_val : upperAtlas.1 = upperChart := (rfl)
 
 /-- The domain of every chart of the focus-focus atlas is preconnected. -/
 theorem isPreconnected_source :

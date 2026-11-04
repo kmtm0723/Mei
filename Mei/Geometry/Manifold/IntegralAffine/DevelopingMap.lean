@@ -86,11 +86,10 @@ theorem isLocallyIntegralAffineOn (dev : DevelopingMap h B) (e : atlas V B) :
 def comap (dev : DevelopingMap h B) (f : AtlasMap V B' B) : DevelopingMap h B' where
   toFun := dev ∘ f
   isLocallyIntegralAffineOn' e := by
-    refine ((dev.isLocallyIntegralAffineOn (f.chart e)).mono fun y hy => ?_).congr fun y hy => ?_
-    · rw [← e.1.right_inv hy, ← f.chart_apply e (e.1.map_target hy)]
-      exact (f.chart e).1.map_source ((f.mem_source_iff e).mp (e.1.map_target hy))
-    · rw [Function.comp_apply, Function.comp_apply, Function.comp_apply,
-        ← f.chart_symm_apply e (e.1.map_target hy), e.1.right_inv hy]
+    refine ((dev.isLocallyIntegralAffineOn (f.chart e)).mono
+      (f.target_subset_chart_target e)).congr fun y hy => ?_
+    rw [Function.comp_apply, Function.comp_apply, Function.comp_apply,
+      f.apply_symm_eq_chart_symm e hy]
 
 /-- The pullback of a developing map along an atlas map is evaluated at the image point. -/
 @[simp]
@@ -123,12 +122,8 @@ theorem tangentFrame_comap (dev : DevelopingMap h B) (f : AtlasMap V B' B) (e : 
   rw [dev.tangentFrame_eq _ hu hxu ha]
   rw [f.chart_apply e hx] at hxu
   refine tangentFrame_eq _ hx hu hxu fun y hy => ?_
-  have hy' := e.1.map_target hy.1
-  have hyt : y ∈ (f.chart e).1.target := by
-    rw [← e.1.right_inv hy.1, ← f.chart_apply e hy']
-    exact (f.chart e).1.map_source ((f.mem_source_iff e).mp hy')
-  rw [← ha ⟨hyt, hy.2⟩, Function.comp_apply, comap_apply, Function.comp_apply,
-    ← f.chart_symm_apply e hy', e.1.right_inv hy.1]
+  rw [← ha ⟨f.target_subset_chart_target e hy.1, hy.2⟩, Function.comp_apply, comap_apply,
+    Function.comp_apply, f.apply_symm_eq_chart_symm e hy.1]
 
 /-- The tangent frames of a developing map are locally constant on the domain of each
 chart. -/
@@ -199,12 +194,11 @@ def ofAtlasMap (f : AtlasMap V B' B) (e₀ : atlas V B) (hf : ∀ x, f x ∈ e�
   isLocallyIntegralAffineOn' e := by
     refine ((isLocallyIntegralAffineOn_symm_trans h (f.chart e) e₀).mono fun y hy => ?_).congr
       fun y hy => ?_
-    · rw [← e.1.right_inv hy, ← f.chart_apply e (e.1.map_target hy)]
-      refine PartialEquiv.mem_symm_trans_source _
-        ((f.mem_source_iff e).mp (e.1.map_target hy)) ?_
+    · refine ⟨f.target_subset_chart_target e hy, show (f.chart e).1.symm y ∈ e₀.1.source from ?_⟩
+      rw [← f.apply_symm_eq_chart_symm e hy]
       exact hf _
     · rw [OpenPartialHomeomorph.trans_apply, Function.comp_apply, Function.comp_apply,
-        ← f.chart_symm_apply e (e.1.map_target hy), e.1.right_inv hy]
+        f.apply_symm_eq_chart_symm e hy]
 
 /-- The developing map given by a chart `e₀` along an atlas map `f` is `e₀ ∘ f`. -/
 @[simp]
@@ -221,12 +215,13 @@ theorem tangentFrame_ofAtlasMap (f : AtlasMap V B' B) (e₀ : atlas V B)
     exists_tangentLatticeChange_eq (h := h) ⟨(f.mem_source_iff e).mp hx, hf x⟩
   rw [f.chart_apply e hx] at hxu
   refine (tangentFrame_eq _ hx hu hxu fun y hy => ?_).trans hT.symm
-  have hy' := e.1.map_target hy.1
-  have hys : y ∈ ((f.chart e).1.symm ≫ₕ e₀.1).source := by
-    rw [← e.1.right_inv hy.1, ← f.chart_apply e hy']
-    exact PartialEquiv.mem_symm_trans_source _ ((f.mem_source_iff e).mp hy') (hf _)
+  have hy₀ : (f.chart e).1.symm y ∈ e₀.1.source := by
+    rw [← f.apply_symm_eq_chart_symm e hy.1]
+    exact hf _
+  have hys : y ∈ ((f.chart e).1.symm ≫ₕ e₀.1).source :=
+    ⟨f.target_subset_chart_target e hy.1, hy₀⟩
   rw [← ha ⟨hys, hy.2⟩, OpenPartialHomeomorph.trans_apply, Function.comp_apply,
-    ofAtlasMap_apply, ← f.chart_symm_apply e hy', e.1.right_inv hy.1]
+    ofAtlasMap_apply, f.apply_symm_eq_chart_symm e hy.1]
 
 end DevelopingMap
 
