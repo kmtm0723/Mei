@@ -12,10 +12,7 @@ public import Mei.LinearAlgebra.GradedModule.Shifted.Inclusion
 # Products commute with inclusions of translated coefficient supports
 
 Including each factor in a containing translated support includes their completed
-product in the sum of the containing translates. At every relative cutoff, choose
-representatives of the two original coefficients and use the public projection
-laws for the completed product and support inclusions. The resulting underlying
-coefficients are the same product in the original algebra.
+product in the sum of the containing translates.
 -/
 
 public section

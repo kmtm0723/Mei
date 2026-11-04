@@ -11,10 +11,9 @@ public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.Inclusion
 /-!
 # Multiplication of global shifted coefficients
 
-Completed products in individual translated supports descend to the existing
-module direct limit. Mathlib's universal property is applied in each variable;
-compatibility comes from the completed product's support-inclusion law. No choice
-of a representative chart enters the resulting bilinear multiplication.
+Completed products in individual translated supports give a bilinear multiplication
+on the module direct limit. The product is independent of the containing charts
+and agrees with multiplication in every pair of translated supports.
 -/
 
 public section
@@ -32,7 +31,7 @@ def shiftedDirectLimitChartMul (s t : Multiset d.monoid) :
       d.ShiftedCoefficients 𝒜 (d.coefficientOrigin t) →ₗ[R] d.ShiftedDirectLimit 𝒜 :=
   (d.shiftedCompletionMul 𝒜 (d.coefficientOrigin s) (d.coefficientOrigin t)).compr₂
     (d.toShiftedDirectLimitOfChart 𝒜 (d.coefficientOrigin s + d.coefficientOrigin t)
-      (s + t) (by rw [coefficientOrigin_add]; simp))
+      (s + t) (d.add_sub_coefficientOrigin_mem (by simp) (by simp)))
 
 omit [DirectSum.Decomposition 𝒜] in
 /-- The chart product uses the original completed shifted multiplication. -/
@@ -41,7 +40,7 @@ theorem shiftedDirectLimitChartMul_apply (s t : Multiset d.monoid)
     (y : d.ShiftedCoefficients 𝒜 (d.coefficientOrigin t)) :
     d.shiftedDirectLimitChartMul 𝒜 s t x y =
       d.toShiftedDirectLimitOfChart 𝒜 (d.coefficientOrigin s + d.coefficientOrigin t)
-        (s + t) (by rw [coefficientOrigin_add]; simp)
+        (s + t) (d.add_sub_coefficientOrigin_mem (by simp) (by simp))
         (d.shiftedCompletionMul 𝒜 (d.coefficientOrigin s) (d.coefficientOrigin t) x y) :=
   (rfl)
 
@@ -52,16 +51,8 @@ private theorem shiftedDirectLimitChartMul_inclusion (s s' t t' : Multiset d.mon
     d.shiftedDirectLimitChartMul 𝒜 s' t'
         (d.coefficientInclusion 𝒜 s s' hs x) (d.coefficientInclusion 𝒜 t t' ht y) =
       d.shiftedDirectLimitChartMul 𝒜 s t x y := by
-  have hsum : d.coefficientOrigin s + d.coefficientOrigin t -
-      (d.coefficientOrigin s' + d.coefficientOrigin t') ∈ d.monoid := by
-    have h := d.monoid.add_mem (d.coefficientOrigin_sub_mem hs)
-      (d.coefficientOrigin_sub_mem ht)
-    have he : d.coefficientOrigin s + d.coefficientOrigin t -
-        (d.coefficientOrigin s' + d.coefficientOrigin t') =
-        (d.coefficientOrigin s - d.coefficientOrigin s') +
-          (d.coefficientOrigin t - d.coefficientOrigin t') := by abel
-    rw [he]
-    exact h
+  have hsum := d.sub_add_mem (d.coefficientOrigin_sub_mem hs)
+    (d.coefficientOrigin_sub_mem ht)
   simp only [shiftedDirectLimitChartMul, LinearMap.compr₂_apply, coefficientInclusion_eq]
   rw [← d.shiftedCompletedInclusion_shiftedCompletionMul 𝒜
     (d.coefficientOrigin s) (d.coefficientOrigin t)
@@ -101,8 +92,7 @@ def shiftedDirectLimitMul : d.ShiftedDirectLimit 𝒜 →ₗ[R]
       have hh := d.shiftedDirectLimitChartMul_inclusion 𝒜 s s' t t h le_rfl x z
       simpa only [coefficientInclusion_eq, shiftedCompletedInclusion_refl] using hh)
 
-/-- Global multiplication is the completed product on each pair of charts. -/
-@[simp]
+/-- The descended bilinear map is the completed product on each pair of charts. -/
 theorem shiftedDirectLimitMul_toShiftedDirectLimit (s t : Multiset d.monoid)
     (x : d.ShiftedCoefficients 𝒜 (d.coefficientOrigin s))
     (y : d.ShiftedCoefficients 𝒜 (d.coefficientOrigin t)) :
@@ -120,18 +110,9 @@ theorem shiftedDirectLimitMul_toShiftedDirectLimitOfChart (p q : Γ)
     d.shiftedDirectLimitMul 𝒜 (d.toShiftedDirectLimitOfChart 𝒜 p s hp x)
         (d.toShiftedDirectLimitOfChart 𝒜 q t hq y) =
       d.toShiftedDirectLimitOfChart 𝒜 (p + q) (s + t)
-        (by
-          rw [coefficientOrigin_add]
-          have he : p + q - (d.coefficientOrigin s + d.coefficientOrigin t) =
-              (p - d.coefficientOrigin s) + (q - d.coefficientOrigin t) := by abel
-          rw [he]
-          exact d.monoid.add_mem hp hq)
+        (d.add_sub_coefficientOrigin_mem hp hq)
         (d.shiftedCompletionMul 𝒜 p q x y) := by
-  have hsum : p + q - (d.coefficientOrigin s + d.coefficientOrigin t) ∈ d.monoid := by
-    have he : p + q - (d.coefficientOrigin s + d.coefficientOrigin t) =
-        (p - d.coefficientOrigin s) + (q - d.coefficientOrigin t) := by abel
-    rw [he]
-    exact d.monoid.add_mem hp hq
+  have hsum := d.sub_add_mem hp hq
   rw [d.toShiftedDirectLimitOfChart_apply 𝒜 p s hp,
     d.toShiftedDirectLimitOfChart_apply 𝒜 q t hq,
     shiftedDirectLimitMul_toShiftedDirectLimit, shiftedDirectLimitChartMul_apply,
