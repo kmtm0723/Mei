@@ -169,4 +169,26 @@ theorem mapCompletion_completedTwistedSeriesAction_symm (x : F.completionIdeal 1
   rw [completedTwistedSeriesAction_inv, map_inv, completedTwistedSeriesAction_inv] at he
   exact he
 
+/-- Twisted completed-series transport allows prescribed argument and rescaling images. -/
+theorem mapCompletion_completedTwistedSeriesAction_of_eq
+    {R S A B : Type*} [CommRing R] [CommRing S] [Ring A] [Ring B]
+    [Algebra R A] [Algebra S B] (F : AlgFiltration A) (G : AlgFiltration B)
+    (φ : R →+* S) (ψ : A →+* B)
+    (hψ : ∀ r, ψ (algebraMap R A r) = algebraMap S B (φ r))
+    (l : ℕ → ℕ) (hl : Monotone l)
+    (hf : ∀ k, F.ideal (l k + 1) ≤ (G.ideal (k + 1)).comap ψ)
+    (h₁ : F.ideal 1 ≤ (G.ideal 1).comap ψ)
+    (x : F.completionIdeal 1) (y : G.completionIdeal 1)
+    (hy : F.mapCompletion G ψ l hl hf x = y)
+    (c : R) (d : S) (hc : φ c = d) (H : (PowerSeries R)ˣ) (a : F.completion) :
+    F.mapCompletion G ψ l hl hf (F.completedTwistedSeriesAction x c H a) =
+      G.completedTwistedSeriesAction y d (Units.map (PowerSeries.map φ).toMonoidHom H)
+        (F.mapCompletion G ψ l hl hf a) := by
+  have he := F.mapCompletion_completedTwistedSeriesAction G φ ψ hψ l hl hf h₁ x c H a
+  have hy' : (⟨F.mapCompletion G ψ l hl hf x,
+    F.mapCompletion_mem_first G ψ l hl hf h₁ x.property⟩ : G.completionIdeal 1) = y :=
+    Subtype.ext hy
+  rw [hy', hc] at he
+  exact he
+
 end Mei.AlgFiltration
