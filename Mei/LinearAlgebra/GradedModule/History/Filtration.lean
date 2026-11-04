@@ -247,6 +247,19 @@ theorem Degrees.mapPath_liftPath (i₀ : ι a) :
     rw [Degrees.liftPath_cons, Prefunctor.mapPath_cons, Degrees.mapPath_liftPath,
       GradedVertex.forget_map]
 
+/-- Weights independent of the selected degrees have the same sum on a history
+lift as on the original encounter path. -/
+@[simp]
+theorem Degrees.addWeight_componentWeight_liftPath
+    (w : ∀ {b c : Q}, (b ⟶ c) → ℕ) (i₀ : ι a) :
+    ∀ {b : Q} (p : Path a b) (d : p.Degrees ι),
+      addWeight (GradedVertex.componentWeight (fun e _ _ => w e))
+        (Degrees.liftPath i₀ p d) = addWeight w p
+  | _, nil, _ => by simp only [Degrees.liftPath_nil, addWeight_nil]
+  | _, cons p e, d => by
+    rw [Degrees.liftPath_cons, addWeight_cons, GradedVertex.componentWeight_apply,
+      Degrees.addWeight_componentWeight_liftPath, addWeight_cons]
+
 section Filtration
 
 variable {R : Type*} [Semiring R] {M : Q → Type*}

@@ -128,19 +128,10 @@ theorem homogeneousHistory_eq_zero_of_filtration
   | @homogeneous i x =>
     by_contra hne
     rw [homogeneousHistory_eq_pathOfFn ℳ (fun _ : Unit => U) (fun _ : Fin n => ())] at hne
-    let P := Quiver.SingleObj.pathOfFn (fun _ : Fin n => ())
-    let d := Quiver.SingleObj.degreesPathOfFn ι (fun _ : Fin n => ()) p
-    let q := Quiver.Path.Degrees.liftPath i P d
-    have hlt := P.componentWeight_lt_of_homogeneousHistory_ne_zero hraise i x.property hr hne
-    have hv : q.vertices.map (fun v => v.chamber) = P.vertices.map id := by
-      simpa only [Prefunctor.vertices_mapPath, List.map_id] using
-        congrArg Quiver.Path.vertices (Quiver.Path.Degrees.mapPath_liftPath i P d)
-    have hw : Quiver.Path.addWeight (GradedVertex.componentWeight
-        (fun {_ _ : Quiver.SingleObj Unit} _ (_ _ : ι) => (1 : ℕ))) q =
-        Quiver.Path.addWeight (fun {_ _ : Quiver.SingleObj Unit} _ => (1 : ℕ)) P :=
-      q.addWeight_eq_of_map_vertices_eq P (fun v => v.chamber) id _ _
-        (fun _ _ _ _ => GradedVertex.componentWeight_apply _ _) hv
-    rw [hw, Quiver.SingleObj.addWeight_one_pathOfFn] at hlt
+    have hlt := Quiver.Path.componentWeight_lt_of_homogeneousHistory_ne_zero
+      (Quiver.SingleObj.pathOfFn (fun _ : Fin n => ())) hraise i x.property hr hne
+    rw [Quiver.Path.Degrees.addWeight_componentWeight_liftPath,
+      Quiver.SingleObj.addWeight_one_pathOfFn] at hlt
     exact (not_lt_of_ge hn) hlt
 
 open Classical in
