@@ -62,7 +62,7 @@ consistency of the transported diagram at that order. -/
 theorem LevelConsistent.image {k a : ℕ} (ha : E.degreeMap.modulus k ≤ a)
     (hD : D.LevelConsistent a) : (D.image e E hE).LevelConsistent k := by
   rw [← pushforward_ofCoordinateChange]
-  exact hD.pushforward ha
+  exact hD.pushforward (by rwa [DirectedWall.Pushforward.ofCoordinateChange_degreeMap])
 
 /-- Coordinate changes preserve consistency at every order. -/
 theorem Consistent.image (hD : D.Consistent) : (D.image e E hE).Consistent := by
@@ -82,7 +82,7 @@ theorem LevelEquivalent.image {k a : ℕ} (ha : E.degreeMap.modulus k ≤ a)
     (hDF : D.LevelEquivalent F a) :
     (D.image e E hE).LevelEquivalent (F.image e E hE) k := by
   rw [← pushforward_ofCoordinateChange, ← pushforward_ofCoordinateChange]
-  exact hDF.pushforward ha
+  exact hDF.pushforward (by rwa [DirectedWall.Pushforward.ofCoordinateChange_degreeMap])
 
 /-- Coordinate changes preserve equivalence of directed diagrams. -/
 theorem Equivalent.image (hDF : D.Equivalent F) :

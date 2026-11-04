@@ -134,7 +134,8 @@ theorem pathProduct_swapImage {x y : D.Point} (p : Quiver.Path x y) :
     D.swapImage.pathProduct (D.swapPathImage.mapPath p) = D.pathProduct p :=
   calc
     _ = (CoordinateChange.ofTangentEquiv H AddEquiv.prodComm).gradedLieHom.completedMap
-        (D.pathProduct p) := D.pathProduct_pushforward _ p
+        (D.pathProduct p) := (D.pathProduct_pushforward _ p).trans
+          (by rw [DirectedWall.Pushforward.ofCoordinateChange_lieHom_completedMap])
     _ = D.pathProduct p := by rw [← CoordinateChange.completedEquiv_apply]; simp
 
 end Mei.DirectedDiagram

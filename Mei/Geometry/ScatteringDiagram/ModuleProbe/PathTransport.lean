@@ -91,7 +91,8 @@ theorem baseBCHProjection_levelPathProduct (k : ℕ)
       ((D.levelPathPushforward P k (by simp [P])).mapPath r) =
       ((chargeZeroGradedLieHom d ℳ p ℒ).truncatedMap (a := k) k (by simp)).bchGroupMap
         (D.levelPathProduct k r) :=
-    D.levelPathProduct_pushforward P k _ r
+    (D.levelPathProduct_pushforward P k _ r).trans
+      (by rw [DirectedWall.Pushforward.ofFixedDegree_lieHom_truncatedMap])
   have hpx : (cylinderPathProjection d ℳ p ℒ H h h' B k).obj x' = x :=
     WallComplement.ext (by simp [x'])
   have hpy : (cylinderPathProjection d ℳ p ℒ H h h' B k).obj y' = y :=

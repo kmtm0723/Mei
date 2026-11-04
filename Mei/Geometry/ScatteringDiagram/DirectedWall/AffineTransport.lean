@@ -77,8 +77,6 @@ theorem realCharacter_comp_tangentEquiv_symm
 end DirectedWallSpaces.CoordinateChange
 
 /-- Compatible spatial and algebraic coordinate changes, with inverse-dual normals. -/
--- The data must compute when transport statements for `image` are read as pushforwards.
-@[expose]
 def DirectedWall.Pushforward.ofCoordinateChange (e : Toric.IntegralAffineEquiv h h')
     (E : DirectedWallSpaces.CoordinateChange (d := d) (e := d') H H')
     (hE : E.tangentEquiv = e.latticeEquiv) : DirectedWall.Pushforward d d' h h' H H' where
@@ -101,6 +99,40 @@ def DirectedWall.Pushforward.ofCoordinateChange (e : Toric.IntegralAffineEquiv h
     ext v
     simp⟩
 
+section ofCoordinateChange
+
+variable (e : Toric.IntegralAffineEquiv h h')
+  (E : DirectedWallSpaces.CoordinateChange (d := d) (e := d') H H')
+  (hE : E.tangentEquiv = e.latticeEquiv)
+
+/-- The degree map of a coordinate change is its degree isomorphism. -/
+@[simp]
+theorem DirectedWall.Pushforward.ofCoordinateChange_degreeMap :
+    (Pushforward.ofCoordinateChange e E hE).degreeMap = E.degreeMap := (rfl)
+
+/-- The Lie map of a coordinate change has the values of its graded Lie map. -/
+@[simp]
+theorem DirectedWall.Pushforward.ofCoordinateChange_lieHom_apply (x : L) :
+    (Pushforward.ofCoordinateChange e E hE).lieHom x = E.gradedLieHom x := (rfl)
+
+/-- The ray map of a coordinate change is its ray equivalence. -/
+@[simp]
+theorem DirectedWall.Pushforward.ofCoordinateChange_rayMap (w : SupportedRay d) :
+    (Pushforward.ofCoordinateChange e E hE).rayMap w = E.rayEquiv w := (rfl)
+
+/-- The normal map of a coordinate change is the inverse-dual map. -/
+@[simp]
+theorem DirectedWall.Pushforward.ofCoordinateChange_normalMap (m : Λ →+ ℤ) :
+    (Pushforward.ofCoordinateChange e E hE).normalMap m =
+      m.comp (E.tangentEquiv.symm : Λ' →+ Λ) := (rfl)
+
+/-- The spatial map of a coordinate change is the integral affine equivalence. -/
+@[simp]
+theorem DirectedWall.Pushforward.ofCoordinateChange_spatialMap :
+    (Pushforward.ofCoordinateChange e E hE).spatialMap = e.toContinuousAffineEquiv := (rfl)
+
+end ofCoordinateChange
+
 namespace DirectedWall
 
 variable [Algebra ℚ R]
@@ -115,6 +147,12 @@ variable [Algebra ℚ R]
   (e : Toric.IntegralAffineEquiv h h')
   (E : DirectedWallSpaces.CoordinateChange (d := d) (e := d') H H')
   (hE : E.tangentEquiv = e.latticeEquiv)
+
+/-- The Lie map of a coordinate change has the completed map of its graded Lie map. -/
+@[simp]
+theorem Pushforward.ofCoordinateChange_lieHom_completedMap :
+    (Pushforward.ofCoordinateChange e E hE).lieHom.completedMap = E.gradedLieHom.completedMap :=
+  (rfl)
 
 /-- Transport all directed wall data through compatible spatial and algebraic
 coordinate changes. The two positive degree functions need not agree. -/
@@ -166,18 +204,13 @@ theorem image_label : (W.image e E hE).label = E.completedEquiv W.label := (rfl)
 theorem pushforward_ofCoordinateChange :
     W.pushforward (Pushforward.ofCoordinateChange e E hE) = W.image e E hE := by
   apply DirectedWall.ext
-  · rw [pushforward_normal, image_normal]
-    -- The normal map of `ofCoordinateChange e E hE` is the inverse-dual map by definition.
-    rfl
-  · rw [pushforward_ray, image_ray]
-    -- The ray map of `ofCoordinateChange e E hE` is `E.rayEquiv` by definition.
-    rfl
-  · rw [pushforward_support, image_support]
+  · rw [pushforward_normal, image_normal, Pushforward.ofCoordinateChange_normalMap]
+  · rw [pushforward_ray, image_ray, Pushforward.ofCoordinateChange_rayMap]
+  · rw [pushforward_support, image_support, Pushforward.ofCoordinateChange_spatialMap]
     ext
-    simp [Pushforward.ofCoordinateChange]
-  · rw [pushforward_label, image_label, E.completedEquiv_apply]
-    -- The Lie map of `ofCoordinateChange e E hE` is `E.gradedLieHom` by definition.
-    rfl
+    simp
+  · rw [pushforward_label, image_label, E.completedEquiv_apply,
+      Pushforward.ofCoordinateChange_lieHom_completedMap]
 
 /-- Evaluating the transported real normal on a transported vector preserves its value. -/
 theorem realCharacter_image_normal (v : V) :

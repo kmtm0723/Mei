@@ -41,8 +41,6 @@ variable {Γ Λ R V : Type*} {L L' L'' : Type u}
   (hf : ∀ n m, ∀ x ∈ H.wall n m, f x ∈ H'.wall n m)
 
 /-- A fixed-degree coefficient map, with identity spatial map, rays and normals. -/
--- The data must compute when transport statements for `map` are read as pushforwards.
-@[expose]
 def Pushforward.ofFixedDegree : Pushforward d d h h H H' where
   degreeMap := PositiveDegreeMap.id d
   lieHom := f
@@ -58,6 +56,11 @@ def Pushforward.ofFixedDegree : Pushforward d d h h H H' where
 @[simp]
 theorem Pushforward.ofFixedDegree_degreeMap :
     (Pushforward.ofFixedDegree (h := h) f hf).degreeMap = PositiveDegreeMap.id d := (rfl)
+
+/-- The Lie map of a fixed-degree coefficient map has the values of the given map. -/
+@[simp]
+theorem Pushforward.ofFixedDegree_lieHom_apply (x : L) :
+    (Pushforward.ofFixedDegree (h := h) f hf).lieHom x = f x := (rfl)
 
 /-- The ray map of a fixed-degree coefficient map is the identity. -/
 @[simp]
@@ -75,6 +78,15 @@ theorem Pushforward.ofFixedDegree_spatialMap :
     (Pushforward.ofFixedDegree (h := h) f hf).spatialMap = ContinuousAffineEquiv.refl ℝ V :=
   (rfl)
 
+/-- The truncations of the Lie map of a fixed-degree coefficient map are those of the
+given map. -/
+@[simp]
+theorem Pushforward.ofFixedDegree_lieHom_truncatedMap [DecidableEq Γ]
+    [GradedLieAlgebra ℒ] [GradedLieAlgebra ℳ] [IsPositiveGrading d ℒ] [IsPositiveGrading d ℳ]
+    {a : ℕ} (k : ℕ) (ha : (Pushforward.ofFixedDegree (h := h) f hf).degreeMap.modulus k ≤ a) :
+    (Pushforward.ofFixedDegree (h := h) f hf).lieHom.truncatedMap k ha =
+      f.truncatedMap k (by simpa using ha) := (rfl)
+
 /-- The identity pushforward data: identity degree map, Lie map, spatial map, rays and
 normals. -/
 def Pushforward.id : Pushforward d d h h H H :=
@@ -85,6 +97,11 @@ variable [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
   [DecidableEq Γ] [GradedLieAlgebra ℒ] [GradedLieAlgebra ℳ] [GradedLieAlgebra ℋ]
   [IsPositiveGrading d ℒ] [IsPositiveGrading d ℳ] [IsPositiveGrading d ℋ]
   (W : DirectedWall (d := d) h H)
+
+/-- The Lie map of a fixed-degree coefficient map has the completed map of the given map. -/
+@[simp]
+theorem Pushforward.ofFixedDegree_lieHom_completedMap :
+    (Pushforward.ofFixedDegree (h := h) f hf).lieHom.completedMap = f.completedMap := (rfl)
 
 /-- Map the completed label of a directed wall, retaining all its geometric data. -/
 def map : DirectedWall (d := d) h H' where
@@ -134,9 +151,7 @@ theorem pushforward_ofFixedDegree :
   · rw [pushforward_ray, map_ray, Pushforward.ofFixedDegree_rayMap]
   · rw [pushforward_support, map_support, Pushforward.ofFixedDegree_spatialMap,
       ContinuousAffineEquiv.coe_refl, Set.image_id]
-  · rw [pushforward_label, map_label]
-    -- The Lie map of `ofFixedDegree f hf` is `f` by definition.
-    rfl
+  · rw [pushforward_label, map_label, Pushforward.ofFixedDegree_lieHom_completedMap]
 
 /-- The identity coefficient map fixes every directed wall. -/
 @[simp]
