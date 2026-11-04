@@ -233,7 +233,7 @@ def evenOrthantInclusion : PositiveDegreeMap evenOrthant ℕ² :=
 /-- The inclusion of the even quadrant is the identity of `ℤ²`. -/
 @[simp]
 theorem evenOrthantInclusion_apply (n : ℤ × ℤ) : evenOrthantInclusion n = n := by
-  simp [evenOrthantInclusion]
+  rw [evenOrthantInclusion, PositiveDegreeMap.ofBound_apply, AddMonoidHom.id_apply]
 
 /-- The pushforward along the inclusion of the even quadrant into `ℕ²`. It keeps the
 supports, the normals and the labels as tropical vertex fields; only the positive degrees,

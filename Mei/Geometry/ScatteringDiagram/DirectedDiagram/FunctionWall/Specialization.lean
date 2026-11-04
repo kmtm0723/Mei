@@ -164,11 +164,9 @@ theorem IsPositive.map (φ : PositiveSpecialization F F' P P')
     (hφ : ∀ p : Q, φ.toRingHom (single p 1) = single p 1)
     (hconst : ∀ g (c : A'),
       σ' g (F'.toCompletion (single 0 c)) = F'.toCompletion (single 0 c))
-    (hG : G.IsPositive σ P) : (G.map f hf).IsPositive σ' P' := by
-  refine ((G.map f hf).isPositive_iff σ' P').mpr fun g => ?_
-  obtain ⟨u, hu, hpos⟩ := (G.isPositive_iff σ P).mp hG g
-  exact ⟨_, hu.map φ.completionMap hφσ
-    (fun p => by rw [φ.completionMap_toCompletion, hφ]) hconst, φ.map_isPositive hpos⟩
+    (hG : G.IsPositive σ P) : (G.map f hf).IsPositive σ' P' :=
+  hG.of_isWallFunction_completionMap (G.map f hf) φ fun _ _ hu => hu.map φ.completionMap hφσ
+    (fun p => by rw [φ.completionMap_toCompletion, hφ]) hconst
 
 end WallFunction
 

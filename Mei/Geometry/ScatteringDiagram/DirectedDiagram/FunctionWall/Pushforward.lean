@@ -231,11 +231,10 @@ theorem IsPositive.pushforward (φ : PositiveSpecialization F F' S S')
     (hconst : ∀ g (c : A'),
       σ' g (F'.toCompletion (single 0 c)) = F'.toCompletion (single 0 c))
     (hν : ∀ j (p : Q), P.normalMap (D.wall j).normal (ρ' (τ p)) = (D.wall j).normal (ρ p))
-    (hG : G.IsPositive σ S) : (G.pushforward hπ hprim).IsPositive σ' S' := by
-  refine ((G.pushforward hπ hprim).isPositive_iff σ' S').mpr fun g => ?_
-  obtain ⟨u, hu, hpos⟩ := (G.isPositive_iff σ S).mp hG g
-  exact ⟨_, hu.pushforward hπ φ.completionMap hτ
-    (fun p => by rw [φ.completionMap_toCompletion, hφ]) hφσ hconst hν, φ.map_isPositive hpos⟩
+    (hG : G.IsPositive σ S) : (G.pushforward hπ hprim).IsPositive σ' S' :=
+  hG.of_isWallFunction_completionMap (G.pushforward hπ hprim) φ fun _ _ hu =>
+    hu.pushforward hπ φ.completionMap hτ (fun p => by rw [φ.completionMap_toCompletion, hφ]) hφσ
+      hconst hν
 
 end WallFunction
 

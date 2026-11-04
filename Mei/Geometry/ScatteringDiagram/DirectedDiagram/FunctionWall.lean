@@ -44,7 +44,9 @@ of `AlgFiltration.IsPositive`, and a diagram is a *positive wall representative*
 admits a positive grouping (`DirectedDiagram.IsPositiveWallRepresentative`). A ring map of
 completed coefficients that sends monomials onto monomials, intertwines the actions of two
 group labels, preserves the normal pairings and whose target label fixes constants carries
-wall functions to wall functions (`FunctionWallGrouping.IsWallFunction.of_intertwining`). Walls in
+wall functions to wall functions (`FunctionWallGrouping.IsWallFunction.of_intertwining`). A
+positive specialization doing so for every group carries positive groupings to positive
+groupings (`FunctionWallGrouping.IsPositive.of_isWallFunction_completionMap`). Walls in
 one group may have different degree rays, but their nontrivial labels must have positively
 proportional projected generators. Identity labels impose no direction constraint. For
 instance, the full cylinder over a polynomial in a single spatial monomial splits into
@@ -384,6 +386,21 @@ theorem IsWallFunction.of_intertwining {g : κ} {u : F.completionˣ}
       rw [single_mul_single, add_zero, one_mul]
     rw [hsingle, map_mul, map_mul, hconst, ← hmono, ← hΦ, hact q 1, map_mul, hν, ← map_zpow,
       Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, mul_assoc]
+
+variable {G} {S : Subsemiring (AddMonoidAlgebra A Q)} {S' : Subsemiring (AddMonoidAlgebra A' Q')}
+
+/-- **Transfer of positivity.** Let `G'` be a grouping of another diagram `D'` with the same
+index type of groups, and `φ` a positive specialization of completed coefficients. If the
+completion map of `φ` sends every wall function of a group `g` of `G` to a wall function of the
+group `g` of `G'`, then `G'` is positive for `S'` whenever `G` is positive for `S`. -/
+theorem IsPositive.of_isWallFunction_completionMap (G' : D'.FunctionWallGrouping π' κ)
+    (φ : PositiveSpecialization F F' S S')
+    (hwf : ∀ (g : κ) (u : F.completionˣ), G.IsWallFunction σ g u →
+      G'.IsWallFunction σ' g (Units.map φ.completionMap.toMonoidHom u))
+    (hG : G.IsPositive σ S) : G'.IsPositive σ' S' := by
+  refine (G'.isPositive_iff σ' S').mpr fun g => ?_
+  obtain ⟨u, hu, hpos⟩ := (G.isPositive_iff σ S).mp hG g
+  exact ⟨_, hwf g u hu, φ.map_isPositive hpos⟩
 
 end Transfer
 
