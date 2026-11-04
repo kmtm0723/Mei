@@ -19,10 +19,10 @@ use the coordinates of `Mei.DirectedWall.LatticeChange.Examples`: the coefficien
 `latticeChange (x, y) = (2x - y, y)`.
 
 The incoming lines `ℝm₁` and `ℝm₂` carry the functions `1 + ∑_{k < K} c_{i,k} x^{(k+1) m_i}`
-(`lineInput`). Over `M` they are cooriented by the primitive normals `e₂*` and `2e₁* - e₂*`
-(`latticeLineInput`); over `½M₀` by the primitive normals `e₂*` and `e₁*`
-(`halfLatticeLineInput`). Both normals of `M` are restrictions of the normals of `½M₀`: the
-vectors `m_i` are primitive, so the comparison scalar is one on their normals.
+(`lineInput`). Over `M` they are cooriented by the normals `e₂*` and `2e₁* - e₂*`
+(`latticeLineInput`); over `½M₀` by the normals `e₂*` and `e₁*` (`halfLatticeLineInput`). Both
+normals of `M` are restrictions of the normals of `½M₀`, so the comparison scalar is one on
+them (`primitiveLatticeChangeNormal_lineNormal`, `primitiveLatticeChangeScalar_lineNormal`).
 
 The normal map `primitiveLatticeChangeNormal` sends `μ` to the integral character `μ ∘ t⁻¹` of
 `½M₀` when it exists, that is when `μ (1, 0)` is even, and to `μ ∘ latticeCoord`, with
@@ -35,13 +35,19 @@ scattering class over `½M₀` (`latticeLineInput_pushforward_scat`), so it send
 of the first class to representatives of the second (`latticeLineInput_toClass_pushforward`).
 
 The normal `n° = x - y` of the diagonal `ℝ(1, 1)`, along `m° = m₁ + m₂ = 2 • (1, 1)`, is kept
-with comparison scalar `r = 2`. So a function-wall group of a diagram over `M` with the label of
-`(1 + a z^{(1,1)})²` is pushed to a group with the label of `1 + a z^{(1,1)}` over `½M₀`
-(`diagonal_label_pushforward`).
+with comparison scalar `r = 2`. So if a diagram over `M` has a function-wall grouping whose
+normals stay primitive under `primitiveLatticeChangeNormal`, and one of its groups has the label
+of `(1 + a z^{(1,1)})²` with normal `n°`, then the pushed group has the label of `1 + a z^{(1,1)}`
+with normal `n°` over `½M₀` (`diagonal_label_pushforward`); the grouping and the label are
+hypotheses.
 
-This is the identification of the incoming lines in the lattice change of Burcroff–Lee–Mou,
-*Positivity of generalized cluster scattering diagrams*, Theorem 9.5 (arXiv:2503.03719v1), for
-the lattice of the second check of the roadmap target.
+So for this lattice the file proves: the pushforward of the ray presentation of the lines, the
+pushforward of their scattering class and of its representatives, and the transport of a given
+function-wall label on the diagonal. It does not compute the scattering class, and it does not
+compare the pushed group with a group of an independently chosen representative over `½M₀`.
+
+The lattice change is motivated by Burcroff–Lee–Mou, *Positivity of generalized cluster
+scattering diagrams*, Theorem 9.5 (arXiv:2503.03719v1).
 -/
 
 public section
@@ -197,11 +203,11 @@ theorem lineInput_exponent (α : Fin 2 × Fin K) :
 
 end LineInput
 
-/-- The primitive normals `e₂*` of `ℝm₁` and `2e₁* - e₂*` of `ℝm₂` in `M`. -/
+/-- The normals `e₂*` of `ℝm₁` and `2e₁* - e₂*` of `ℝm₂` in `M`. -/
 def lineNormal : Fin 2 → ℤ × ℤ →+ ℤ :=
   ![AddMonoidHom.snd ℤ ℤ, (2 : ℤ) • AddMonoidHom.fst ℤ ℤ - AddMonoidHom.snd ℤ ℤ]
 
-/-- The primitive normals `e₂*` of `ℝm₁` and `e₁*` of `ℝm₂` in `½M₀`. -/
+/-- The normals `e₂*` of `ℝm₁` and `e₁*` of `ℝm₂` in `½M₀`. -/
 def halfLineNormal : Fin 2 → ℤ × ℤ →+ ℤ := ![AddMonoidHom.snd ℤ ℤ, AddMonoidHom.fst ℤ ℤ]
 
 /-- The normal of `ℝm₁` in `M` is `e₂*`. -/
@@ -245,11 +251,11 @@ theorem halfLineNormal_halfLatticeCoord (i : Fin 2) :
     halfLineNormal i (halfLatticeCoord (Module.Basis.finTwoProd ℤ i)) = 0 := by
   fin_cases i <;> simp
 
-/-- The incoming lines `ℝm₁` and `ℝm₂` over `M`, with primitive normals. -/
+/-- The incoming lines `ℝm₁` and `ℝm₂` over `M`, with the normals `lineNormal`. -/
 abbrev latticeLineInput (K : ℕ) : HyperplaneTermInput ℕ² latticeCoord (Fin 2) (Fin 2 × Fin K) :=
   lineInput latticeCoord lineNormal lineNormal_ne_zero lineNormal_latticeCoord K
 
-/-- The incoming lines `ℝm₁` and `ℝm₂` over `½M₀`, with primitive normals. -/
+/-- The incoming lines `ℝm₁` and `ℝm₂` over `½M₀`, with the normals `halfLineNormal`. -/
 abbrev halfLatticeLineInput (K : ℕ) :
     HyperplaneTermInput ℕ² halfLatticeCoord (Fin 2) (Fin 2 × Fin K) :=
   lineInput halfLatticeCoord halfLineNormal halfLineNormal_ne_zero
@@ -334,7 +340,7 @@ theorem primitiveLatticeChangeScalar_diagonalNormal :
 local notation "F" ρ₀ => TropicalVertexCoefficientAction.filtration (R := ℚ) ℕ²
   (tropicalTangentMonoid ℕ² ρ₀ (AddMonoidHom.comp (Int.castAddHom ℚ) diagonalNormal))
 
-/-- **Square of the wall function on the diagonal.** Let a diagram over `M` have a function-wall
+/-- **Transport of a diagonal group label.** Let a diagram over `M` have a function-wall
 grouping whose normals stay primitive under `primitiveLatticeChangeNormal`, and let its group
 `g` have the function-wall label of `(1 + a z^{(1,1)})²` with normal `n°`. Then the group `g` of
 the pushforward along `M ⊆ ½M₀` has the function-wall label of `1 + a z^{(1,1)}` with normal

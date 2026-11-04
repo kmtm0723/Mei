@@ -18,7 +18,9 @@ normals `μ_i` have comparison scalar `q μ_i = 1`, so that `ν μ_i ∘ t = μ_
 (`HyperplaneTermInput.comp_normal_of_ofFiniteIndex`). For instance, for the inclusion
 `M ⊆ ℓ⁻¹M₀` of a rank-two lattice, where `M₀` is spanned by primitive vectors `m₁, m₂` of `M`
 with index `ℓ`, the primitive normals of a line `ℝm_i` for `M` and for `ℓ⁻¹M₀` restrict to each
-other: `ℓ = r · ind(m_i)` with `r = 1` (`Submodule.index_eq_mul_relIndex_ker_eval`).
+other, since `ℓ = r · ind(m_i)` with `r = 1` (`Submodule.index_eq_mul_relIndex_ker_eval`);
+this instance of the hypothesis is not derived here in general, only checked in
+`Mei.HyperplaneTermInput.FiniteIndex.Examples`.
 
 The image input `I.map T t hρ (ν ∘ μ)` has normals `ν μ_i`, the same offsets and terms, and
 exponents `T n_α`. The finite-index pushforward sends `z^n ∂_{μ_i}` to `z^{T n} ∂_{ν μ_i}`, since
@@ -28,15 +30,18 @@ the image input (`HyperplaneTermInput.diagram_pushforward_ofFiniteIndex_equivale
 pushforward of the scattering class of `I` is the scattering class of the image input
 (`HyperplaneTermInput.pushforward_ofFiniteIndex_scat_diagram`). So the pushforward of any
 representative of the first class represents the second
-(`HyperplaneTermInput.toClass_pushforward_ofFiniteIndex`), and its function-wall groupings are
-pushed along with it (`DirectedDiagram.FunctionWallGrouping.pushforward`): a group with label
-`exp(log(f₁ ^ r) ∂_n)` on a ray whose normal has comparison scalar `r` becomes a group with label
-`exp(log(f₁) ∂_{ν n})` (`DirectedDiagram.FunctionWallGrouping.label_pushforward_ofFiniteIndex`).
+(`HyperplaneTermInput.toClass_pushforward_ofFiniteIndex`). When the pushed normals of its walls
+stay primitive, its function-wall groupings are pushed along with it
+(`DirectedDiagram.FunctionWallGrouping.pushforward`), and a given group label
+`exp(log(f₀) ∂_n)` with `q n = r` and `T_* f₀ = f₁ ^ r` becomes `exp(log(f₁) ∂_{ν n})`
+(`DirectedDiagram.FunctionWallGrouping.label_pushforward_ofFiniteIndex`).
 
-This is the identification of the incoming lines in the lattice change of Burcroff–Lee–Mou,
-*Positivity of generalized cluster scattering diagrams*, Theorem 9.5 (arXiv:2503.03719v1),
-where `t` is the inclusion `M ⊆ ℓ⁻¹M₀` and the incoming lines are the lines `ℝm_i` with functions
-`1 + ∑_k p_{i,k} x^{k m_i}`.
+This is the incoming-lines step used in the lattice change of Burcroff–Lee–Mou, *Positivity of
+generalized cluster scattering diagrams*, Theorem 9.5 (arXiv:2503.03719v1), where `t` is the
+inclusion `M ⊆ ℓ⁻¹M₀` and the incoming lines are the lines `ℝm_i` with functions
+`1 + ∑_k p_{i,k} x^{k m_i}`, here with finitely many terms. Only the pushforward of a given
+representative and of its groups is treated: no comparison of the pushed groups with the groups
+of an independently chosen representative of the image class is proved.
 -/
 
 public section

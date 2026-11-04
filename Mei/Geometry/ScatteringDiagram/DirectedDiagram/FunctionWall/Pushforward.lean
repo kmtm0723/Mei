@@ -14,7 +14,7 @@ public import Mei.Geometry.ScatteringDiagram.DirectedWall.TropicalPairing.WallFu
 
 Let `P` be `DirectedWall.Pushforward` data over a positive degree map `T`, and let spatial
 projections `π : Γ → M` and `π' : Γ' → M` satisfy `π' ∘ T = π` on allowed degrees. The projected
-generator of a wall is then a positive rational multiple of the projected generator of the pushed
+generator of a wall is then positively proportional to the projected generator of the pushed
 wall (`DirectedWall.exists_nsmul_projection_pushforward_ray_generator`). Hence a function-wall
 grouping of a diagram `D` is a grouping of `D.pushforward P`
 (`DirectedDiagram.FunctionWallGrouping.pushforward`), provided the normal map keeps the normals
@@ -23,14 +23,17 @@ uniformly in each group. The completed label of a pushed group is the image of t
 group label under the completed Lie map (`FunctionWallGrouping.label_pushforward`).
 
 For the finite-index pushforward `DirectedWall.Pushforward.ofFiniteIndex`, where the normal `n`
-of a group goes to `ν n` with `ν n ∘ t = q n • n`, a group with function-wall label
-`exp(log(f₀) ∂_n)` such that `q n = r` and `T_* f₀ = f₁ ^ r` is pushed to a group with label
-`exp(log(f₁) ∂_{ν n})` (`FunctionWallGrouping.label_pushforward_ofFiniteIndex`; any normal `n'`
-with `n' ∘ t = q n • n` may replace `ν n` in the label). This is the
-ray-power comparison
-`Mei.DirectedWall.Pushforward.ofFiniteIndex_lieHom_completedMap_completedBCHExp_completedLog`
-for grouped walls, as in the lattice change of Burcroff–Lee–Mou, *Positivity of generalized
-cluster scattering diagrams*, Theorem 9.5 (arXiv:2503.03719v1).
+of a group goes to `ν n` with `ν n ∘ t = q n • n`, the theorem
+`FunctionWallGrouping.label_pushforward_ofFiniteIndex` transports a given group label. Assume
+that `π' ∘ T = π` on allowed degrees, that the pushed normals of the walls are primitive, that
+the group has the function-wall label `exp(log(f₀) ∂_n)`, that `q n = r` and that
+`T_* f₀ = f₁ ^ r`. Then the pushed group has the label `exp(log(f₁) ∂_{n'})` for any integral
+normal `n'` with `n' ∘ t = q n • n`, for instance `ν n`. The proof applies
+`Mei.DirectedWall.Pushforward.ofFiniteIndex_lieHom_completedMap_completedBCHExp_completedLog` to
+the group label. That a representative has such a group, and the comparison with groups of other
+representatives of the pushed class, are not treated here. The lattice change is motivated by
+Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*, Theorem 9.5
+(arXiv:2503.03719v1).
 -/
 
 public section
@@ -180,10 +183,12 @@ local notation "F'" => TropicalVertexCoefficientAction.filtration (R := R) e
   (tropicalTangentMonoid e ρ' (AddMonoidHom.comp (Int.castAddHom R) n'))
 
 include hr in
-/-- **Ray-power comparison of function walls.** Let `n'` be an integral normal with
-`n' ∘ t = q n • n`, for instance `ν n`. If a group has the function-wall label `exp(log(f₀) ∂_n)`,
-where `q n = r` and the tangent monomial map sends `f₀` to `f₁ ^ r`, the finite-index
-pushforward of the group has the function-wall label `exp(log(f₁) ∂_{n'})`. -/
+/-- **Transport of a group label under a finite-index pushforward.** Suppose `π' ∘ T = π` on
+allowed degrees (`hπ`) and the normal map sends the normals of all walls to primitive normals
+(`hprim`), so that the grouping is pushed forward. Let `n'` be an integral normal with
+`n' ∘ t = q n • n`, for instance `ν n`. If the group `g` has the function-wall label
+`exp(log(f₀) ∂_n)`, where `q n = r` and the tangent monomial map sends `f₀` to `f₁ ^ r`, then the
+pushed group `g` has the function-wall label `exp(log(f₁) ∂_{n'})`. -/
 theorem label_pushforward_ofFiniteIndex (hπ : ∀ x ∈ d.monoid, π' ((P).degreeMap x) = π x)
     (hprim : ∀ j, TauCeti.IsPrimitive ((P).normalMap (D.wall j).normal))
     (f₀ : {u : (F).completion // u - 1 ∈ (F).completionIdeal 1})

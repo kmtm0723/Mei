@@ -61,8 +61,9 @@ variable {R Γ Λ Γ' Λ' ι E : Type u} {V V' : Type*} [CommRing R]
   (hT : ∀ n ∈ d.monoid, ρ' (T n) = t (ρ n)) (ν : ι → Λ' →+ ℤ)
   (hν : ∀ i, (ν i).comp t = I.normal i)
 
-/-- The input with normals `ν_i`, where `ν_i ∘ t = μ_i`, the same offsets and terms, and the
-exponents `T n_α`. -/
+/-- For a degree map `T` and a tangent map `t` with `ρ' ∘ T = t ∘ ρ` on allowed degrees, and
+normals `ν_i` with `ν_i ∘ t = μ_i`: the input with normals `ν_i`, the same offsets and terms, and
+the exponents `T n_α`. -/
 def map : HyperplaneTermInput e ρ' ι E where
   normal := ν
   normal_ne_zero i h0 := I.normal_ne_zero i (by rw [← hν i, h0, AddMonoidHom.zero_comp])
@@ -116,8 +117,9 @@ variable [Fintype E] [DecidableEq ι] [DecidableEq Γ] [DecidableEq Γ'] [Algebr
 
 omit [Fintype E] [DecidableEq ι] [DecidableEq Γ] [DecidableEq Γ'] in
 include hν hPT in
-/-- The degree map of the pushforward data sends degrees tangent to the normal `μ_i` to degrees
-tangent to `ν_i`. -/
+/-- If `ρ' ∘ T = t ∘ ρ` on allowed degrees for the degree map `T` of the pushforward data and
+`ν_i ∘ t = μ_i`, then `T` sends degrees tangent to the normal `μ_i` to degrees tangent to
+`ν_i`. -/
 theorem map_tropicalTangentMonoid_le (i : ι) :
     (tropicalTangentMonoid d ρ ((Int.castAddHom R).comp (I.normal i))).map
         P.degreeMap.toAddMonoidHom ≤
@@ -126,8 +128,10 @@ theorem map_tropicalTangentMonoid_le (i : ι) :
     rw [← hν i, AddMonoidHom.comp_apply, one_mul]
 
 include hP in
-/-- Pushforward data over a degree map `T` acting by `z^n ∂_{μ_i} ↦ z^{T n} ∂_{ν_i}` send the
-label of `1 + ∑ c_α z^{n_α}` on a hyperplane to the label of `1 + ∑ c_α z^{T n_α}`. -/
+/-- Let pushforward data over a degree map `T` with `ρ' ∘ T = t ∘ ρ` on allowed degrees act by
+`z^n ∂_{μ_i} ↦ z^{T n} ∂_{ν_i}`, where `ν_i ∘ t = μ_i`. Then they send the label of
+`1 + ∑ c_α z^{n_α}` on the hyperplane `i` to the label of `1 + ∑ c_α z^{T n_α}` of the mapped
+input. -/
 theorem completedMap_label (i : ι) :
     P.lieHom.completedMap (I.label c i) = (I.map P.degreeMap t hPT ν hν).label c i := by
   have hf₀ : completedTropicalTangentMap P.degreeMap (I.map_tropicalTangentMonoid_le t ν hν P hPT i)
@@ -170,9 +174,10 @@ theorem image_spatialMap_hyperplane (i : ι) :
   · rwa [Set.mem_ofPred_eq, ← hPA, P.spatialMap.apply_symm_apply]
 
 include hP hPν hPA in
-/-- For pushforward data over a degree map `T` acting by `z^n ∂_{μ_i} ↦ z^{T n} ∂_{ν_i}`,
-sending the normals `μ_i` to `ν_i` and with spatial map pulling `ν_i` back to `μ_i`, the
-pushforward of the ray presentation is equivalent to the ray presentation of the image input. -/
+/-- Let pushforward data over a degree map `T` with `ρ' ∘ T = t ∘ ρ` on allowed degrees act by
+`z^n ∂_{μ_i} ↦ z^{T n} ∂_{ν_i}`, where `ν_i ∘ t = μ_i`, send the normals `μ_i` to `ν_i`, and have
+spatial map pulling `ν_i` back to `μ_i`. Then the pushforward of the ray presentation is
+equivalent to the ray presentation of the mapped input. -/
 theorem diagram_pushforward_equivalent :
     ((I.diagram h c).pushforward P).Equivalent ((I.map P.degreeMap t hPT ν hν).diagram h' c) := by
   refine (DirectedDiagram.equivalent_iff _ _).mpr fun k =>
@@ -193,8 +198,10 @@ theorem diagram_pushforward_equivalent :
     exact (familyLog_ofHyperplaneRayFactors _ _ _ _ _ _ _ k i).symm
 
 include hP hPν hPA in
-/-- Under the same hypotheses, pushing forward the scattering class of the input gives the
-scattering class of the image input. -/
+/-- Let pushforward data over a degree map `T` with `ρ' ∘ T = t ∘ ρ` on allowed degrees act by
+`z^n ∂_{μ_i} ↦ z^{T n} ∂_{ν_i}`, where `ν_i ∘ t = μ_i`, send the normals `μ_i` to `ν_i`, and have
+spatial map pulling `ν_i` back to `μ_i`. Then pushing forward the scattering class of the input
+gives the scattering class of the mapped input. -/
 theorem pushforward_scat_diagram :
     Class.pushforward P ((I.diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..)) =
       ((I.map P.degreeMap t hPT ν hν).diagram h' c).Scat
