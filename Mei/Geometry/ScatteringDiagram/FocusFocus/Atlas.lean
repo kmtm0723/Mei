@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.Manifold.IntegralAffine
+public import Mei.Geometry.Manifold.IntegralAffine.Basic
 public import Mei.Geometry.ScatteringDiagram.FocusFocus.Exponent.Basic
 public import Mathlib.Geometry.Manifold.HasGroupoid
 
@@ -17,7 +17,8 @@ the nonnegative vertical ray. The upper chart crosses that ray and sends
 `(u,v)` to `(u,v - min u 0)`. On the upper left overlap the change of coordinates
 is the integral shear `(u,v) ↦ (u,v-u)`; on the upper right it is the identity.
 Thus the chamber coordinates agree across the lower slab and differ by the
-specified shear across the upper slab.
+specified shear across the upper slab. Both chart domains are preconnected
+(`isPreconnected_source`), while their overlap has two components.
 
 `chartedSpace` and `hasGroupoid` equip the actual punctured plane with this
 integral-affine structure. The charted-space definition is explicit, so a caller
@@ -171,6 +172,41 @@ theorem chart_sources_cover (p : regularLocus) :
     · exact Or.inr hv
   · exact Or.inl (Or.inl hu)
 
+/-- The domain of the cut chart is preconnected: in the plane it is the complement of the closed
+upper half of the vertical axis, which is star-convex about `(0, -1)`. -/
+theorem isPreconnected_cutChart_source : IsPreconnected cutChart.source := by
+  have hstar : StarConvex ℝ ((0, -1) : ℝ × ℝ) {p : ℝ × ℝ | p.1 ≠ 0 ∨ p.2 < 0} := by
+    intro p hp a b ha hb hab
+    simp only [mem_ofPred_eq, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd,
+      smul_eq_mul, mul_zero, zero_add, mul_neg, mul_one]
+    rcases hb.eq_or_lt with rfl | hb
+    · exact Or.inr (by linarith)
+    rcases hp with hp | hp
+    · exact Or.inl (mul_ne_zero hb.ne' hp)
+    · exact Or.inr (by nlinarith)
+  have hsrc : cutChart.source = Subtype.val ⁻¹' {p : ℝ × ℝ | p.1 ≠ 0 ∨ p.2 < 0} := by
+    ext p
+    exact mem_cutChart_source p
+  rw [hsrc]
+  refine (hstar.isPathConnected (Or.inr (by norm_num))).isConnected.isPreconnected
+    |>.preimage_of_isOpenMap Subtype.val_injective regularLocus.isOpen.isOpenMap_subtype_val
+      fun p hp => ⟨⟨p, ?_⟩, rfl⟩
+  rw [mem_regularLocus]
+  rintro rfl
+  simp at hp
+
+/-- The domain of the upper chart, the upper half-plane, is preconnected. -/
+theorem isPreconnected_upperChart_source : IsPreconnected upperChart.source := by
+  have hsrc : upperChart.source = Subtype.val ⁻¹' (univ ×ˢ Ioi (0 : ℝ)) := by
+    ext p
+    simp only [mem_upperChart_source, mem_preimage, mem_prod, mem_univ, mem_Ioi, true_and]
+  rw [hsrc]
+  refine (isPreconnected_univ.prod isPreconnected_Ioi).preimage_of_isOpenMap
+    Subtype.val_injective regularLocus.isOpen.isOpenMap_subtype_val fun p hp => ⟨⟨p, ?_⟩, rfl⟩
+  rw [mem_regularLocus]
+  rintro rfl
+  exact lt_irrefl _ hp.2
+
 /-- The focus-focus atlas on the punctured plane. Choose this charted-space
 structure explicitly when using its integral-affine chart changes. -/
 @[instance_reducible]
@@ -190,6 +226,15 @@ def chartedSpace : ChartedSpace (ℝ × ℝ) regularLocus := by
     letI := chartedSpace
     e ∈ atlas (ℝ × ℝ) regularLocus ↔ e = cutChart ∨ e = upperChart := by
   rfl
+
+/-- The domain of every chart of the focus-focus atlas is preconnected. -/
+theorem isPreconnected_source :
+    letI := chartedSpace
+    ∀ e : atlas (ℝ × ℝ) regularLocus, IsPreconnected e.1.source := by
+  intro e
+  rcases (mem_atlas_iff e.1).mp e.2 with he | he <;> rw [he]
+  · exact isPreconnected_cutChart_source
+  · exact isPreconnected_upperChart_source
 
 open Classical in
 /-- The preferred chart at a point is the cut chart on its domain and the upper chart

@@ -12,10 +12,10 @@ public import Mei.Geometry.ScatteringDiagram.FocusFocus.LocalSystem
 # The exponent system of the focus-focus puncture
 
 The integral-affine atlas of the punctured plane (`Mei.FocusFocus.chartedSpace`) has two
-charts, indexed by `atlasIndex`: `false` for the cut chart and `true` for the upper chart. On
-the left half of their overlap the chart change is the shear `(u, v) ↦ (u, v - u)`, and on the
-right half it is the identity. Hence the tangent frame changes of the atlas are the
-`upperTangent` transitions of `tangentLatticeBundleCore`
+charts, `cutAtlas` and `upperAtlas`, indexed by `atlasIndex`: `false` for the cut chart and
+`true` for the upper chart. On the left half of their overlap the chart change is the shear
+`(u, v) ↦ (u, v - u)`, and on the right half it is the identity. Hence the tangent frame changes
+of the atlas are the `upperTangent` transitions of `tangentLatticeBundleCore`
 (`tangentLatticeChange_eq_latticeTransition`): the tangent lattice local system specified for
 the focus-focus model is the canonical one of its integral-affine structure.
 
@@ -83,6 +83,32 @@ theorem eq_of_atlasIndex (e : atlas (ℝ × ℝ) regularLocus) :
 theorem atlasIndex_injective : Function.Injective atlasIndex := by
   intro e e' he
   exact Subtype.ext ((eq_of_atlasIndex e).trans (he ▸ (eq_of_atlasIndex e').symm))
+
+/-- The cut chart as a chart of the focus-focus atlas. -/
+noncomputable def cutAtlas : atlas (ℝ × ℝ) regularLocus :=
+  ⟨cutChart, (mem_atlas_iff _).mpr (Or.inl rfl)⟩
+
+/-- The upper chart as a chart of the focus-focus atlas. -/
+noncomputable def upperAtlas : atlas (ℝ × ℝ) regularLocus :=
+  ⟨upperChart, (mem_atlas_iff _).mpr (Or.inr rfl)⟩
+
+/-- The underlying chart of `cutAtlas` is the cut chart. -/
+@[simp]
+theorem cutAtlas_val : cutAtlas.1 = cutChart := (rfl)
+
+/-- The underlying chart of `upperAtlas` is the upper chart. -/
+@[simp]
+theorem upperAtlas_val : upperAtlas.1 = upperChart := (rfl)
+
+/-- The cut chart has index `false`. -/
+@[simp]
+theorem atlasIndex_cutAtlas : atlasIndex cutAtlas = false :=
+  (atlasIndex_eq_false_iff _).mpr rfl
+
+/-- The upper chart has index `true`. -/
+@[simp]
+theorem atlasIndex_upperAtlas : atlasIndex upperAtlas = true :=
+  (atlasIndex_eq_true_iff _).mpr rfl
 
 /-- A point in the domains of two charts with different indices lies off the vertical axis. -/
 theorem fst_ne_zero_of_atlasIndex_ne {e e' : atlas (ℝ × ℝ) regularLocus}
