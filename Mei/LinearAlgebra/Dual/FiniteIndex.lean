@@ -18,10 +18,13 @@ characters valued in a rational algebra. The forward map extends a
 character across the embedding; the inverse restricts it. No freeness or finite
 rank assumption on the additive groups is needed.
 
-The extension divides evaluation on an index multiple by that index. We use
-Mathlib's `AddMonoidHom.ofInjective` to invert the map onto its range and
-`LinearMap.lcomp` to bundle character restriction. This is the rational inverse
-dual needed to transport logarithmic derivations through lattice embeddings.
+The extension divides evaluation on an index multiple by that index. The index multiple is
+inverted by `AddMonoidHom.indexInverse`, the additive map `y ↦ f⁻¹(c • y)` for the index `c`
+of the image. Composing with it turns an integral character `m` into the integral character
+`c` times the rational inverse dual of `m`. We use Mathlib's `AddMonoidHom.ofInjective` to
+invert the map onto its range and `LinearMap.lcomp` to bundle character restriction. This is
+the rational inverse dual needed to transport logarithmic derivations through lattice
+embeddings.
 -/
 
 public section
@@ -33,6 +36,32 @@ namespace AddMonoidHom
 variable {M N R : Type*} [AddCommGroup M] [AddCommGroup N]
   [Ring R] [Algebra ℚ R]
 
+/-- For an injective additive map `f` whose image has index `c`, the additive map
+`y ↦ f⁻¹(c • y)`. It inverts `f` up to the factor `c` on both sides; for an image of infinite
+index, `c = 0` and the map is zero. -/
+def indexInverse (f : M →+ N) (hf : Function.Injective f) : N →+ M :=
+  (ofInjective hf).symm.toAddMonoidHom.comp
+    ((nsmulAddMonoidHom f.range.index).codRestrict f.range (fun y => f.range.nsmul_index_mem y))
+
+/-- `f` sends `f⁻¹(c • y)` back to `c • y`. -/
+@[simp]
+theorem map_indexInverse (f : M →+ N) (hf : Function.Injective f) (y : N) :
+    f (f.indexInverse hf y) = f.range.index • y :=
+  apply_ofInjective_symm hf _
+
+/-- On the image of `f`, the index inverse is multiplication by the index. -/
+@[simp]
+theorem indexInverse_map (f : M →+ N) (hf : Function.Injective f) (x : M) :
+    f.indexInverse hf (f x) = f.range.index • x :=
+  hf (by rw [map_indexInverse, map_nsmul])
+
+/-- Composing a character with the index inverse multiplies its values on the image by
+the index. For integral characters this is the integral index multiple of the inverse dual. -/
+theorem comp_indexInverse_apply_map {A : Type*} [AddCommGroup A] (f : M →+ N)
+    (hf : Function.Injective f) (m : M →+ A) (x : M) :
+    m.comp (f.indexInverse hf) (f x) = f.range.index • m x := by
+  rw [comp_apply, indexInverse_map, map_nsmul]
+
 /-- Extend rational-algebra-valued characters through an injective additive map
 with finite-index image. Its inverse is precomposition with the embedding. -/
 def rationalDualEquiv (f : M →+ N) (hf : Function.Injective f) [f.range.FiniteIndex] :
@@ -43,12 +72,9 @@ def rationalDualEquiv (f : M →+ N) (hf : Function.Injective f) [f.range.Finite
   have restriction_apply (a : N →+ R) (x : M) : restriction a x = a (f x) := rfl
   let c := f.range.index
   have hc : (c : ℚ) ≠ 0 := by exact_mod_cast (f.range.index_ne_zero)
-  let g : N →+ M := (ofInjective hf).symm.toAddMonoidHom.comp
-    ((nsmulAddMonoidHom c).codRestrict f.range (fun y => f.range.nsmul_index_mem y))
-  have hfg (y : N) : f (g y) = c • y := apply_ofInjective_symm hf _
-  have hgf (x : M) : g (f x) = c • x := by
-    apply hf
-    simp [hfg]
+  let g : N →+ M := f.indexInverse hf
+  have hfg (y : N) : f (g y) = c • y := f.map_indexInverse hf y
+  have hgf (x : M) : g (f x) = c • x := f.indexInverse_map hf x
   refine (LinearEquiv.ofBijective restriction ⟨?_, ?_⟩).symm
   · intro a b hab
     ext y
@@ -100,5 +126,18 @@ theorem rationalDualEquiv_apply_of_map_eq_nsmul (f : M →+ N) (hf : Function.In
   have he : (k : ℚ) • f.rationalDualEquiv hf m y = m x := by
     rw [Nat.cast_smul_eq_nsmul, ← map_nsmul, ← h, rationalDualEquiv_apply_map]
   simpa only [inv_smul_smul₀ hk'] using congrArg (fun r : R => (k : ℚ)⁻¹ • r) he
+
+/-- The extension of an integral character `m` is `q⁻¹` times any integral character `m'` of
+the target with `m' ∘ f = q • m`. -/
+theorem rationalDualEquiv_intCast_comp (f : M →+ N) (hf : Function.Injective f)
+    [f.range.FiniteIndex] {m : M →+ ℤ} {m' : N →+ ℤ} {q : ℚ} (hq : q ≠ 0)
+    (h : ∀ x, (m' (f x) : ℚ) = q * m x) :
+    f.rationalDualEquiv hf ((Int.castAddHom R).comp m) = q⁻¹ • (Int.castAddHom R).comp m' := by
+  rw [rationalDualEquiv_eq_iff]
+  ext x
+  have hx : ((m' (f x) : ℤ) : R) = algebraMap ℚ R (q * m x) := by
+    rw [← h, map_intCast]
+  simp only [comp_apply, smul_apply, Int.coe_castAddHom, hx,
+    Algebra.smul_def, ← map_mul, inv_mul_cancel_left₀ hq, map_intCast]
 
 end AddMonoidHom
