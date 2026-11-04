@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Geometry.Manifold.IntegralAffine
-public import Mei.Geometry.ScatteringDiagram.FocusFocus.Exponent
+public import Mei.Geometry.ScatteringDiagram.FocusFocus.Exponent.Basic
 public import Mathlib.Geometry.Manifold.HasGroupoid
 
 /-!

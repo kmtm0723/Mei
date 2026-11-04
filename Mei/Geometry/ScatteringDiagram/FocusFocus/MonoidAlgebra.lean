@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.FocusFocus.Exponent
+public import Mei.Geometry.ScatteringDiagram.FocusFocus.Exponent.Basic
 public import Mei.RingTheory.Node.ScalarTower
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.LinearAlgebra.Pi
