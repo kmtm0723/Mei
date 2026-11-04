@@ -17,9 +17,6 @@ then compares any two independently supplied relative completions. This permits
 zero and noninjective maps, whose images may lose active walls and pure birth
 logarithms. The comparison supplies the diagram equivalence needed for finite
 and completed coefficient-field naturality.
-
-This connects relative completion with
-[probe transport](https://github.com/yuma-mizuno/TauCetiRoadmap/blob/mei/TauCetiRoadmap/ScatteringDiagrams/README.md#55-module-probes-and-affine-theta-transport).
 -/
 
 public noncomputable section
@@ -62,7 +59,8 @@ theorem completedMap_coefficientGradedLieHom_baseGradedLieHom
       apply LieHom.ext
       intro x
       simpa only [GradedLieHom.toLieHom_comp, LieHom.comp_apply,
-        GradedLieHom.coe_toLieHom, baseGradedLieHom_apply, coefficientGradedLieHom_apply] using
+        GradedLieHom.coe_toLieHom, baseGradedLieHom_apply, coefficientGradedLieHom_apply,
+        baseInclusion, LieAlgebra.SemiDirectSum.inr_eq_mk] using
         coefficientLieHom_baseInclusion d ℳ 𝒩 p ℒ f hf hequiv x)
   simpa only [GradedLieHom.completedMap_comp, MonoidHom.comp_apply] using
     DFunLike.congr_fun hc g
@@ -99,12 +97,14 @@ theorem probeWall_map_coefficientGradedLieHom (a : ℳ p) :
   rw [DirectedWall.map_label, probeWall_label, probeWall_label,
     GradedLieHom.completedMap_expToCompletion]
   congr 1
-  rw [coefficientGradedLieHom_apply, coefficientLieHom_moduleInclusion]
+  rw [coefficientGradedLieHom_apply]
+  simp only [moduleInclusion, LieAlgebra.SemiDirectSum.inl_eq_mk,
+    coefficientLieHom_moduleInclusion]
   congr 1
   apply (moduleCoefficientsEquiv d 𝒩 p).injective
   simp only [moduleCoefficientsEquiv_coefficientMap, LinearEquiv.apply_symm_apply]
   apply Subtype.ext
-  simp only [coe_shiftedCoefficientMap, coe_mappedProbeCoefficient]
+  simp only [PositiveDegrees.coe_shiftedCoefficientMap, coe_mappedProbeCoefficient]
 
 variable (B : DirectedDiagram (d := d) h H κ)
 
@@ -152,7 +152,7 @@ coefficient maps at every allowed endpoint. -/
 theorem map_extendedCoefficientField_of_isRelativeOutgoingCompletion
     (k : ℕ) (hBc : B.LevelConsistent k)
     (x : WallComplement (fun c : B.active k => (B.wall c).support)) :
-    quotientCoefficientMap d ℳ 𝒩 p f hf k
+    PositiveDegrees.quotientCoefficientMap d ℳ 𝒩 p f hf k
         (extendedCoefficientField d ℳ p ℒ H h h' P B k hBc x) =
       extendedCoefficientField d 𝒩 p ℒ H h h' P' B k hBc x := by
   exact map_extendedCoefficientField d ℳ 𝒩 p ℒ H h h' f hf hequiv P P' B k hBc
@@ -173,7 +173,7 @@ include hequiv in
 coefficient changes, without a separate diagram-equivalence hypothesis. -/
 theorem map_completedExtendedCoefficientField_of_isRelativeOutgoingCompletion
     (hBc : B.Consistent) (x : B.Point) :
-    completionCoefficientMap d ℳ 𝒩 p f hf
+    PositiveDegrees.completionCoefficientMap d ℳ 𝒩 p f hf
         (completedExtendedCoefficientField d ℳ p ℒ H h h' P B
           hP.isOutgoingCompletion.consistent hBc
           (map_chargeZeroGradedLieHom_equivalent_of_isRelativeOutgoingCompletion
