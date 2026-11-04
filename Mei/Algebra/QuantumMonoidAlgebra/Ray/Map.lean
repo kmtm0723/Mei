@@ -24,29 +24,6 @@ completed power series evaluation, and the scalar quantum dilogarithm map law.
 public section
 noncomputable section
 
-namespace Mei.AlgFiltration
-
-private theorem mapCompletion_aeval_of_eq
-    {R S A B : Type*} [CommRing R] [CommRing S] [Ring A] [Ring B]
-    [Algebra R A] [Algebra S B] (F : AlgFiltration A) (G : AlgFiltration B)
-    (φ : R →+* S) (ψ : A →+* B)
-    (hψ : ∀ r, ψ (algebraMap R A r) = algebraMap S B (φ r))
-    (l : ℕ → ℕ) (hl : Monotone l)
-    (hf : ∀ k, F.ideal (l k + 1) ≤ (G.ideal (k + 1)).comap ψ)
-    (h₁ : F.ideal 1 ≤ (G.ideal 1).comap ψ)
-    (M : F.completion →+* G.completion) (hM : M = F.mapCompletion G ψ l hl hf)
-    (x : F.completionIdeal 1) (y : G.completionIdeal 1) (hy : M x = y)
-    (H : PowerSeries R) : M (F.completedAeval x H) =
-      G.completedAeval y (PowerSeries.map φ H) := by
-  subst M
-  have he := F.mapCompletion_completedAeval G φ ψ hψ l hl hf h₁ x H
-  have hy' : (⟨F.mapCompletion G ψ l hl hf x,
-      F.mapCompletion_mem_first G ψ l hl hf h₁ x.property⟩ : G.completionIdeal 1) = y :=
-    Subtype.ext hy
-  exact he.trans (congrArg (fun z => G.completedAeval z (PowerSeries.map φ H)) hy')
-
-end Mei.AlgFiltration
-
 namespace Mei.QuantumMonoidAlgebra
 
 variable {R S Γ Γ' : Type*} [CommRing R] [CommRing S]

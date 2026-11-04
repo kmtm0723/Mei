@@ -40,7 +40,7 @@ abbrev completedRayAction (n : P) (hn : 0 < δ n) :
     (PowerSeries R)ˣ →* ((F).completion ≃ₐ[R] (F).completion) :=
   (F).completedSeriesAction (completedRayGenerator q β P δ hδ n hn)
 
-/-- On monomials, the ray automorphism multiplies by the scalar rescaling ratio. -/
+/-- For arbitrary bilinear forms, the ray action uses rescaling exponent `β(n,p) - β(p,n)`. -/
 theorem completedRayAction_monomial_skew (n p : P) (hn : 0 < δ n)
     (H : (PowerSeries R)ˣ) :
     completedRayAction q β P δ hδ n hn H ((F).toCompletion (positiveMonomial q β P p)) =
@@ -51,7 +51,7 @@ theorem completedRayAction_monomial_skew (n p : P) (hn : 0 < δ n)
   simp only [completedRayAction, AlgFiltration.completedSeriesAction_apply]
   exact completedRay_conj_skew q β P δ hδ n p hn H
 
-/-- On monomials, the ray automorphism multiplies by the scalar rescaling ratio. -/
+/-- Under `β.IsAlt`, the ray action on a monomial uses rescaling exponent `2β(n,p)`. -/
 theorem completedRayAction_monomial (hβ : β.IsAlt) (n p : P) (hn : 0 < δ n)
     (H : (PowerSeries R)ˣ) :
     completedRayAction q β P δ hδ n hn H ((F).toCompletion (positiveMonomial q β P p)) =

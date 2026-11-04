@@ -61,7 +61,8 @@ theorem coe_completedRayGenerator (n : P) (hn : 0 < δ n) :
     (completedRayGenerator q β P δ hδ n hn : (F).completion) =
       (F).toCompletion (positiveMonomial q β P n) := (rfl)
 
-/-- The formal quantum semiconjugacy holds in every positive coefficient subalgebra. -/
+/-- For arbitrary bilinear forms, positive monomial semiconjugacy uses
+exponent `β(n,p) - β(p,n)`. -/
 theorem positiveMonomial_semiconjBy_skew (n p : P) :
     SemiconjBy (positiveMonomial q β P p)
       (((q ^ (β n p - β p n) : Rˣ) : R) • positiveMonomial q β P n)
@@ -70,7 +71,7 @@ theorem positiveMonomial_semiconjBy_skew (n p : P) :
   simpa only [Subalgebra.coe_mul, Subalgebra.coe_smul, coe_positiveMonomial] using
     (monomial_semiconjBy_skew q β n p).eq
 
-/-- The formal quantum semiconjugacy holds in every positive coefficient subalgebra. -/
+/-- Under `β.IsAlt`, positive monomial semiconjugacy uses exponent `2β(n,p)`. -/
 theorem positiveMonomial_semiconjBy (hβ : β.IsAlt) (n p : P) :
     SemiconjBy (positiveMonomial q β P p)
       (((q ^ (2 * β n p) : Rˣ) : R) • positiveMonomial q β P n)
@@ -78,7 +79,8 @@ theorem positiveMonomial_semiconjBy (hβ : β.IsAlt) (n p : P) :
   simpa only [← hβ.neg_eq n p, sub_neg_eq_add, ← two_mul] using
     positiveMonomial_semiconjBy_skew q β P n p
 
-/-- Quantum semiconjugacy persists in the completion of the positive coefficient algebra. -/
+/-- For arbitrary bilinear forms, completed ray semiconjugacy uses
+exponent `β(n,p) - β(p,n)`. -/
 theorem completedRayGenerator_semiconjBy_skew (n p : P) (hn : 0 < δ n) :
     SemiconjBy ((F).toCompletion (positiveMonomial q β P p))
       (((q ^ (β n p - β p n) : Rˣ) : R) •
@@ -94,7 +96,7 @@ theorem completedRayGenerator_semiconjBy_skew (n p : P) (hn : 0 < δ n) :
   simpa only [SemiconjBy, AlgFiltration.toCompletionₐ_apply,
     coe_completedRayGenerator] using h
 
-/-- Quantum semiconjugacy persists in the completion of the positive coefficient algebra. -/
+/-- Under `β.IsAlt`, completed ray semiconjugacy uses exponent `2β(n,p)`. -/
 theorem completedRayGenerator_semiconjBy (hβ : β.IsAlt) (n p : P) (hn : 0 < δ n) :
     SemiconjBy ((F).toCompletion (positiveMonomial q β P p))
       (((q ^ (2 * β n p) : Rˣ) : R) •
@@ -103,7 +105,8 @@ theorem completedRayGenerator_semiconjBy (hβ : β.IsAlt) (n p : P) (hn : 0 < δ
   simpa only [← hβ.neg_eq n p, sub_neg_eq_add, ← two_mul] using
     completedRayGenerator_semiconjBy_skew q β P δ hδ n p hn
 
-/-- A completed quantum ray unit acts on each positive monomial by its rescaling ratio. -/
+/-- For arbitrary bilinear forms, completed ray conjugation uses
+exponent `β(n,p) - β(p,n)`. -/
 theorem completedRay_conj_skew (n p : P) (hn : 0 < δ n)
     (G : (PowerSeries R)ˣ) :
     (F).completedAeval (completedRayGenerator q β P δ hδ n hn) (G : PowerSeries R) *
@@ -117,7 +120,7 @@ theorem completedRay_conj_skew (n p : P) (hn : 0 < δ n)
   (F).completedAeval_conj _ _ _
     (completedRayGenerator_semiconjBy_skew q β P δ hδ n p hn) G
 
-/-- A completed quantum ray unit acts on each positive monomial by its rescaling ratio. -/
+/-- Under `β.IsAlt`, completed ray conjugation uses exponent `2β(n,p)`. -/
 theorem completedRay_conj (hβ : β.IsAlt) (n p : P) (hn : 0 < δ n)
     (G : (PowerSeries R)ˣ) :
     (F).completedAeval (completedRayGenerator q β P δ hδ n hn) (G : PowerSeries R) *
