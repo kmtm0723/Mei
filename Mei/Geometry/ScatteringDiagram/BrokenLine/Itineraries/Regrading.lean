@@ -219,57 +219,83 @@ theorem cutoffDecoratedRayRegradingMap_decoration
     (fun j => T (β.val.itinerary.get j)) (fun j => U (β.val.itinerary.get j))
     (fun j => hT (β.val.itinerary.get j)) β.val.realization.1.val a).symm
 
+/-- An injective degree map separates surviving cutoff rays. -/
+theorem cutoffDecoratedRayRegradingMap_injective : Function.Injective
+    (cutoffDecoratedRayRegradingMap d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q) := by
+  rintro ⟨⟨word, β, hβ, hmβ⟩, hb⟩ ⟨⟨word', γ, hγ, hmγ⟩, hc⟩ h
+  have hw := congrArg CutoffDecoratedRay.itinerary h
+  simp only [cutoffDecoratedRayRegradingMap_itinerary] at hw
+  -- Unfold the itinerary projection of the two explicit cutoff-ray constructors.
+  change word = word' at hw
+  subst word'
+  apply Subtype.ext
+  apply CutoffDecoratedRay.ext
+  · rfl
+  have hg := congrArg (fun z : Target => z.degreeItinerary) h
+  rw [cutoffDecoratedRayRegradingMap_degreeItinerary,
+    cutoffDecoratedRayRegradingMap_degreeItinerary] at hg
+  simp only [CutoffDecoratedRay.degreeItinerary_eq, List.map_ofFn] at hg
+  have hh : σ ∘ β.1.val = σ ∘ γ.1.val := by
+    have he := List.ofFn_injective hg
+    exact funext fun j => congrArg Prod.fst (congrFun he j)
+  exact heq_of_eq (DecoratedAdmissibleRay.ext_history
+    (funext fun j => hσ (congrFun hh j)))
+
+private theorem wordCoefficientEquiv_symm_history (word : List J) (β) :
+    σ ∘ ((wordCoefficientEquiv ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C Q word).symm β).val.1.val = β.1.val := by
+  have hh := wordCoefficientEquiv_history ℳ 𝓝 r σ hσ hr T U hT a v w hv
+    f c ε P W S C Q word ((wordCoefficientEquiv ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C Q word).symm β)
+  rw [Equiv.apply_symm_apply] at hh
+  exact hh.symm
+
+/-- Package a lifted word-specific realization using cutoff and positive-monoid reflection. -/
+private def liftCutoffRay (β : Target)
+    (α : DecoratedAdmissibleRay ℳ (fun j => T (β.itinerary.get j)) 0 a v
+      (fun j => f (β.itinerary.get j)) (fun j => c (β.itinerary.get j))
+      (fun j => ε (β.itinerary.get j)) (fun j => P (β.itinerary.get j)) W S C Q)
+    (hh : σ ∘ α.1.val = β.realization.1.val) : Source where
+  itinerary := β.itinerary
+  realization := α
+  degree_mem j := (hcut _).mpr
+    ((congrArg (fun q => q ∈ e.cutoff l) (congrFun hh j)).mpr (β.degree_mem j))
+  degree_sub_mem i j hij := (hpos _).mpr (by
+    have hs : σ (α.1.val i - α.1.val j) =
+        β.realization.1.val i - β.realization.1.val j :=
+      (map_sub σ _ _).trans (congrArg₂ (· - ·) (congrFun hh i) (congrFun hh j))
+    exact (congrArg (fun q => q ∈ e.monoid) hs).mpr (β.degree_sub_mem i j hij))
+
+/-- Every target cutoff ray lifts through the word-specific coefficient equivalence. -/
+theorem cutoffDecoratedRayRegradingMap_surjective : Function.Surjective
+    (cutoffDecoratedRayRegradingMap d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q) := by
+  intro β
+  let α := (wordCoefficientEquiv ℳ 𝓝 r σ hσ hr T U hT a v w hv
+    f c ε P W S C Q β.itinerary).symm β.realization
+  have hh : σ ∘ α.val.1.val = β.realization.1.val := wordCoefficientEquiv_symm_history ..
+  let γ : Source := liftCutoffRay d e ℳ 𝓝 r σ hr T U a v w f c ε P W S C
+    k l hcut hpos Q β α.val hh
+  refine ⟨⟨γ, by
+    simpa only [γ, liftCutoffRay, CutoffDecoratedRay.decoration_eq,
+      DecoratedAdmissibleRay.decoration_zero] using α.property⟩, ?_⟩
+  apply CutoffDecoratedRay.degreeItinerary_injective
+  rw [cutoffDecoratedRayRegradingMap_degreeItinerary]
+  simp only [CutoffDecoratedRay.degreeItinerary_eq, List.map_ofFn]
+  -- The lifted constructor keeps the target word; unfold it and `Prod.map` on each pair.
+  change List.ofFn (fun j => (σ (α.val.1.val j), β.itinerary.get j)) =
+    List.ofFn (fun j => (β.realization.1.val j, β.itinerary.get j))
+  exact congrArg List.ofFn (funext fun j => Prod.ext (congrFun hh j) rfl)
+
 /-- The regrading map is bijective on source rays whose final coefficient survives. -/
 theorem cutoffDecoratedRayRegradingMap_bijective : Function.Bijective
     (cutoffDecoratedRayRegradingMap d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
-      f c ε P W S C k l hcut hpos Q) := by
-  constructor
-  · rintro ⟨⟨word, β, hβ, hmβ⟩, hb⟩ ⟨⟨word', γ, hγ, hmγ⟩, hc⟩ h
-    have hw := congrArg CutoffDecoratedRay.itinerary h
-    simp only [cutoffDecoratedRayRegradingMap_itinerary] at hw
-    -- Unfold the itinerary projection of the two explicit cutoff-ray constructors.
-    change word = word' at hw
-    subst word'
-    apply Subtype.ext
-    apply CutoffDecoratedRay.ext
-    · rfl
-    have hg := congrArg (fun z : Target => z.degreeItinerary) h
-    rw [cutoffDecoratedRayRegradingMap_degreeItinerary,
-      cutoffDecoratedRayRegradingMap_degreeItinerary] at hg
-    simp only [CutoffDecoratedRay.degreeItinerary_eq, List.map_ofFn] at hg
-    have hh : σ ∘ β.1.val = σ ∘ γ.1.val := by
-      have he := List.ofFn_injective hg
-      exact funext fun j => congrArg Prod.fst (congrFun he j)
-    exact heq_of_eq (DecoratedAdmissibleRay.ext_history
-      (funext fun j => hσ (congrFun hh j)))
-  · intro β
-    let E := wordCoefficientEquiv ℳ 𝓝 r σ hσ hr T U hT a v w hv f c ε P W S C Q β.itinerary
-    let α := E.symm β.realization
-    have hh : σ ∘ α.val.1.val = β.realization.1.val := by
-      have he := wordCoefficientEquiv_history ℳ 𝓝 r σ hσ hr T U hT a v w hv
-        f c ε P W S C Q β.itinerary α
-      -- `E` names the word-specific equivalence, so its inverse law applies after folding.
-      change (E α).1.val = _ at he
-      rw [Equiv.apply_symm_apply] at he
-      exact he.symm
-    let γ : Source := ⟨β.itinerary, α.val,
-      fun j => (hcut _).mpr
-        ((congrArg (fun q => q ∈ e.cutoff l) (congrFun hh j)).mpr (β.degree_mem j)),
-      fun i j hij => (hpos _).mpr (by
-        have hs : σ (α.val.1.val i - α.val.1.val j) =
-            β.realization.1.val i - β.realization.1.val j :=
-          (map_sub σ _ _).trans (congrArg₂ (· - ·) (congrFun hh i) (congrFun hh j))
-        exact (congrArg (fun q => q ∈ e.monoid) hs).mpr (β.degree_sub_mem i j hij))⟩
-    refine ⟨⟨γ, by
-      simpa only [CutoffDecoratedRay.decoration_eq, DecoratedAdmissibleRay.decoration_zero]
-        using α.property⟩, ?_⟩
-    apply CutoffDecoratedRay.degreeItinerary_injective
-    rw [cutoffDecoratedRayRegradingMap_degreeItinerary]
-    simp only [CutoffDecoratedRay.degreeItinerary_eq, List.map_ofFn]
-    -- `γ` has exactly `β.itinerary`; unfold its realization and `Prod.map` on each pair.
-    change List.ofFn (fun j => (σ (α.val.1.val j), β.itinerary.get j)) =
-      List.ofFn (fun j => (β.realization.1.val j, β.itinerary.get j))
-    exact congrArg List.ofFn (funext fun j => Prod.ext (congrFun hh j) rfl)
+      f c ε P W S C k l hcut hpos Q) :=
+  ⟨cutoffDecoratedRayRegradingMap_injective d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q,
+    cutoffDecoratedRayRegradingMap_surjective d e ℳ 𝓝 r σ hσ hr T U hT a v w hv
+      f c ε P W S C k l hcut hpos Q⟩
 
 /-- Over all encounter words, regrading identifies exactly the source rays whose
 final coefficient survives with the target cutoff ray family. -/

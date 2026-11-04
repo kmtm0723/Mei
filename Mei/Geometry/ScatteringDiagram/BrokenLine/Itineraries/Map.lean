@@ -81,6 +81,7 @@ theorem cutoffDecoratedRayCoefficientEquiv_history
   have hh : HEq (idRegrading β).realization.1.val
       ((AddMonoidHom.id Γ) ∘ β.val.realization.1.val) :=
     cutoffDecoratedRayRegradingEquiv_history ..
+  -- The identity additive hom and composition reduce pointwise to the original history.
   exact hh
 
 /-- Specialization preserves the entire geometric ray, including its incoming tail. -/
