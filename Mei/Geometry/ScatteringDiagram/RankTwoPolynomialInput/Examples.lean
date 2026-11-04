@@ -6,12 +6,15 @@ Authors: Claude Code
 module
 
 public import Mei.Geometry.ScatteringDiagram.RankTwoPolynomialInput.Grouping
+public import Mei.Geometry.ScatteringDiagram.RankTwoPolynomialInput.Translation
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Hyperplane
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Uniqueness
 public import Mei.Algebra.PositiveDegrees.Examples
 
 /-!
-# A horizontal rank-two polynomial input
+# Examples of rank-two polynomial inputs
+
+## A horizontal line
 
 Take `L = M = ℤ²`, `π = id`, the even quadrant `P = 2ℕe₁ + ℕe₂` with `δ(a, b) = a + b`
 (`Mei.PositiveDegrees.Examples.evenOrthant`), and the horizontal incoming line `{y = 0}` with
@@ -26,7 +29,18 @@ own outgoing completion (`RankTwoPolynomialInput.Examples.isOutgoingCompletion`)
 independent variable `c` it is a positive wall representative
 (`RankTwoPolynomialInput.Examples.isPositiveWallRepresentative`).
 
-The input is an instance of Burcroff–Lee–Mou, *Positivity of generalized cluster scattering
+## Three concurrent lines
+
+The lines `{y = 0}`, `{x = 0}` and `{x = y}`, with wall functions `1 + c z^{2e₁}`, `1 + c z^{e₂}`
+and `1 + c z^{2e₁ + 2e₂}` on the same quadrant, are pairwise transverse
+(`RankTwoPolynomialInput.Examples.isTransverse_concurrentInput`) and all pass through the
+origin, so they are not in general position
+(`RankTwoPolynomialInput.Examples.not_isGenericOn_concurrentInput`). Translating the diagonal
+line to `{x - y = 1}` puts them in general position
+(`RankTwoPolynomialInput.Examples.isGenericOn_translate_concurrentInput`): the third coorientation
+is the difference of the first two.
+
+The inputs are instances of Burcroff–Lee–Mou, *Positivity of generalized cluster scattering
 diagrams*, Theorem 9.9 (arXiv:2503.03719v1). The consistency uses
 `DirectedDiagram.consistent_of_support_eq`.
 -/
@@ -183,5 +197,108 @@ theorem isPositiveWallRepresentative :
         (MvPolynomial.map (σ := horizontalInput.Variable) (Nat.castRingHom ℚ))).rangeS
       horizontalInput.projection :=
   horizontalInput.isPositiveWallRepresentative_incomingDiagram_variables h
+
+section Concurrent
+
+/-- The lines `{y = 0}`, `{x = 0}` and `{x = y}` of `ℤ²`, with the wall functions
+`1 + c z^{2e₁}`, `1 + c z^{e₂}` and `1 + c z^{2e₁ + 2e₂}`, on the even quadrant with the
+coordinate-sum degree. -/
+def concurrentInput : RankTwoPolynomialInput evenOrthant (ℤ × ℤ) (Fin 3) where
+  projection := AddMonoidHom.id _
+  projection_surjective := Function.surjective_id
+  finrank_eq_two := by simp
+  tangent := ![(1, 0), (0, 1), (1, 1)]
+  isPrimitive_tangent j := by
+    fin_cases j
+    · exact TauCeti.isPrimitive_def.mpr ⟨LinearMap.fst ℤ ℤ ℤ, rfl⟩
+    · exact TauCeti.isPrimitive_def.mpr ⟨LinearMap.snd ℤ ℤ ℤ, rfl⟩
+    · exact TauCeti.isPrimitive_def.mpr ⟨LinearMap.fst ℤ ℤ ℤ, rfl⟩
+  normal := ![LinearMap.snd ℤ ℤ ℤ, LinearMap.fst ℤ ℤ ℤ, LinearMap.fst ℤ ℤ ℤ - LinearMap.snd ℤ ℤ ℤ]
+  isPrimitive_normal j := by
+    fin_cases j
+    · exact TauCeti.isPrimitive_def.mpr ⟨Module.Dual.eval ℤ _ (0, 1), rfl⟩
+    · exact TauCeti.isPrimitive_def.mpr ⟨Module.Dual.eval ℤ _ (1, 0), rfl⟩
+    · exact TauCeti.isPrimitive_def.mpr ⟨Module.Dual.eval ℤ _ (1, 0), rfl⟩
+  normal_tangent j := by
+    fin_cases j <;> rfl
+  offset _ := 0
+  exponents j := {![(2, 0), (0, 1), (2, 2)] j}
+  mem_monoid_of_mem_exponents {j n} hn := by
+    obtain rfl := Finset.mem_singleton.mp hn
+    fin_cases j <;> simp
+  ne_zero_of_mem_exponents {j n} hn := by
+    obtain rfl := Finset.mem_singleton.mp hn
+    fin_cases j <;> simp
+  exists_projection_eq_of_mem_exponents {j n} hn := by
+    obtain rfl := Finset.mem_singleton.mp hn
+    fin_cases j
+    · exact ⟨2, two_pos, by simp⟩
+    · exact ⟨1, one_pos, by simp⟩
+    · exact ⟨2, two_pos, by simp⟩
+  finite_nontrivial _ := Set.toFinite _
+
+/-- The coorientations of the three lines are `y`, `x` and `x - y`. -/
+@[simp]
+theorem concurrentInput_normal :
+    concurrentInput.normal =
+      ![LinearMap.snd ℤ ℤ ℤ, LinearMap.fst ℤ ℤ ℤ, LinearMap.fst ℤ ℤ ℤ - LinearMap.snd ℤ ℤ ℤ] :=
+  (rfl)
+
+/-- The three lines pass through the origin. -/
+@[simp]
+theorem concurrentInput_offset (j : Fin 3) : concurrentInput.offset j = 0 := (rfl)
+
+/-- Distinct lines of the concurrent input are transverse. -/
+theorem isTransverse_concurrentInput {a b : Fin 3} (hab : a ≠ b) :
+    concurrentInput.IsTransverse a b := by
+  refine isTransverse_iff.mpr (LinearIndependent.pair_iff.mpr fun s t hst => ?_)
+  have h₁ := DFunLike.congr_fun hst ((1, 0) : ℤ × ℤ)
+  have h₂ := DFunLike.congr_fun hst ((0, 1) : ℤ × ℤ)
+  clear hst
+  fin_cases a <;> fin_cases b <;> simp_all
+
+/-- The cylinder normal of the diagonal line is the difference of the other two. -/
+theorem realCharacter_wallNormal_concurrentInput_two (x : ℝ × ℝ) :
+    h.realCharacter (concurrentInput.wallNormal 2) x =
+      h.realCharacter (concurrentInput.wallNormal 1) x -
+        h.realCharacter (concurrentInput.wallNormal 0) x := by
+  have hsub : concurrentInput.normal 2 = concurrentInput.normal 1 - concurrentInput.normal 0 := by
+    simp [concurrentInput_normal]
+  have hrel : (1 : ℤ) • concurrentInput.normal 2 =
+      (-1 : ℤ) • concurrentInput.normal 0 + (1 : ℤ) • concurrentInput.normal 1 := by
+    rw [one_smul, one_smul, neg_one_smul, hsub, sub_eq_neg_add]
+  have := realCharacter_wallNormal_of_smul_normal_eq (h := h) hrel x
+  push_cast at this
+  linarith
+
+/-- The three lines all pass through the origin, so they are not in general position. -/
+theorem not_isGenericOn_concurrentInput : ¬ concurrentInput.IsGenericOn h Set.univ := by
+  intro hgen
+  have h0 : (0 : ℝ × ℝ) ∈ concurrentInput.cylinder h 0 ∩ concurrentInput.cylinder h 1 ∩
+      concurrentInput.cylinder h 2 := by
+    simp
+  rw [hgen.inter_eq_empty trivial trivial trivial (isTransverse_concurrentInput (by decide))
+    (isTransverse_concurrentInput (by decide)) (isTransverse_concurrentInput (by decide))] at h0
+  exact h0
+
+/-- After translating the diagonal line to `{x - y = 1}`, the three lines are in general
+position. -/
+theorem isGenericOn_translate_concurrentInput :
+    (concurrentInput.translate ![0, 0, 1]).IsGenericOn h Set.univ := by
+  refine isGenericOn_iff.mpr fun a _ b _ c _ hab hac hbc => ?_
+  have hab := isTransverse_translate.mp hab
+  have hac := isTransverse_translate.mp hac
+  have hbc := isTransverse_translate.mp hbc
+  refine Set.eq_empty_of_forall_notMem fun x hx => ?_
+  simp only [Set.mem_inter_iff, mem_cylinder_translate, concurrentInput_offset, zero_add] at hx
+  have h₂ := realCharacter_wallNormal_concurrentInput_two h x
+  fin_cases a <;> fin_cases b <;> fin_cases c <;>
+    first
+    | exact hab.ne rfl
+    | exact hac.ne rfl
+    | exact hbc.ne rfl
+    | (simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val] at hx; linarith)
+
+end Concurrent
 
 end Mei.RankTwoPolynomialInput.Examples
