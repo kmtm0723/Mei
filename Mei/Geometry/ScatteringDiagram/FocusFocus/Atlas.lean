@@ -18,7 +18,7 @@ the nonnegative vertical ray. The upper chart crosses that ray and sends
 is the integral shear `(u,v) ↦ (u,v-u)`; on the upper right it is the identity.
 Thus the chamber coordinates agree across the lower slab and differ by the
 specified shear across the upper slab. Both chart domains are preconnected
-(`isPreconnected_source`), while their overlap has two components.
+(`isPreconnected_source`).
 
 `chartedSpace` and `hasGroupoid` equip the actual punctured plane with this
 integral-affine structure. The charted-space definition is explicit, so a caller
