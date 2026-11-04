@@ -351,6 +351,23 @@ theorem map_homogeneousHistory_of_injective (hσ : Function.Injective σ) {n : �
     homogeneousHistory_eq_pathOfFn 𝓝 U (fun j => j)]
   exact h
 
+/-- Along an injective regrading, every segment decoration commutes with an
+intertwining coefficient map, including the incoming segment. -/
+theorem map_homogeneousHistoryStage_of_injective (hσ : Function.Injective σ) {n : ℕ}
+    (T : Fin n → Module.End R M) (U : Fin n → Module.End R N)
+    (hT : ∀ j, r.comp (T j) = (U j).comp r) (p : Fin n → ι) (a : M)
+    (j : Fin (n + 1)) :
+    r (homogeneousHistoryStage ℳ T p j a) =
+      homogeneousHistoryStage 𝓝 U (σ ∘ p) j (r a) := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    refine Fin.cases ?_ (fun j => ?_) j
+    · simpa only [homogeneousHistoryStage_zero] using
+        map_homogeneousHistory_of_injective ℳ 𝓝 r σ hr hσ T U hT p a
+    · exact ih (fun j => T j.succ) (fun j => U j.succ) (fun j => hT j.succ)
+        (fun j => p j.succ) j
+
 end Regrading
 
 end Mei
