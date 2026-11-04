@@ -43,21 +43,20 @@ private theorem shiftedRayAction_sub_mem_coordinates (n : d.monoid)
     shiftedRayAction q β d n hn p H (positiveCompletionShiftEquiv q β d p b) -
         positiveCompletionShiftEquiv q β d p b ∈
       (d.shiftedFiltration (grade q β) p).completedFiltration.submodule (k + 1) := by
-  let e := positiveCompletionShiftEquiv q β d p
   let x := completedRayGenerator q β d.monoid d.degree (fun _ h => d.degree_nonneg h) n hn
   let c : R := ((q ^ (β n p - β p n) : Rˣ) : R)
   have hd := (F).completedTwistedSeriesAction_sub_mem x c H k hb
   have hmap := (positiveCompletionShiftEquiv_mem_iff q β d p (k + 1)
     ((F).completedTwistedSeriesAction x c H b - b)).mpr hd
-  have hc : shiftedRayAction q β d n hn p H (e b) =
-      e ((F).completedTwistedSeriesAction x c H b) := by
+  have hc : shiftedRayAction q β d n hn p H (positiveCompletionShiftEquiv q β d p b) =
+      positiveCompletionShiftEquiv q β d p ((F).completedTwistedSeriesAction x c H b) := by
     simpa only [AlgFiltration.completedTwistedSeriesAction_apply] using
       shiftedRayAction_coordinates_skew q β d n hn p H b
-  have heq : e ((F).completedTwistedSeriesAction x c H b - b) =
-      shiftedRayAction q β d n hn p H (e b) - e b :=
-    (e.map_sub _ _).trans (congrArg (fun u => u - e b) hc.symm)
-  change e ((F).completedTwistedSeriesAction x c H b - b) ∈
-    (d.shiftedFiltration (grade q β) p).completedFiltration.submodule (k + 1) at hmap
+  have heq : positiveCompletionShiftEquiv q β d p ((F).completedTwistedSeriesAction x c H b - b) =
+      shiftedRayAction q β d n hn p H (positiveCompletionShiftEquiv q β d p b) -
+        positiveCompletionShiftEquiv q β d p b :=
+    ((positiveCompletionShiftEquiv q β d p).map_sub _ _).trans
+      (congrArg (fun u => u - positiveCompletionShiftEquiv q β d p b) hc.symm)
   rwa [heq] at hmap
 
 /-- A ray action on an arbitrary translate is the identity modulo the next relative order. -/

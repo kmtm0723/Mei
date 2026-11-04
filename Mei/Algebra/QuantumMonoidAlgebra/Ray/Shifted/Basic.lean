@@ -96,20 +96,6 @@ theorem shiftedRayAction_zero (n : d.monoid)
   simpa only [h₀, completedRayAction, AlgFiltration.completedSeriesAction_apply] using
     shiftedRayAction_coordinates_skew q β d n hn 0 H a
 
-private theorem positiveCompletionShiftEquiv_one (p : Γ) :
-    positiveCompletionShiftEquiv q β d p (1 : (F).completion) =
-      (d.shiftedFiltration (grade q β) p).of
-        (shiftedMonomial q β d.monoid p 0) := by
-  have h := positiveCompletionShiftEquiv_toCompletion q β d p
-    (1 : positiveSubalgebra q β d.monoid)
-  have h₁ := congrArg (positiveCompletionShiftEquiv q β d p) (F).toCompletion.map_one
-  have hm : positiveShiftEquiv q β d p (1 : positiveSubalgebra q β d.monoid) =
-      shiftedMonomial q β d.monoid p 0 := by
-    apply Subtype.ext
-    simp only [coe_positiveShiftEquiv, Subalgebra.coe_one, mul_one,
-      coe_shiftedMonomial, ZeroMemClass.coe_zero, add_zero]
-  exact h₁.symm.trans (h.trans (congrArg (d.shiftedFiltration (grade q β) p).of hm))
-
 /-- The relative-zero monomial transforms by the evaluated ray ratio, for arbitrary
 bilinear forms and even negative ambient shifts. -/
 theorem shiftedRayAction_base_monomial (n : d.monoid)
