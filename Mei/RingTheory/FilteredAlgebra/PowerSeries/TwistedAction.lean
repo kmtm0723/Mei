@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mei.RingTheory.FilteredAlgebra.PowerSeries.Action
+public import Mei.RingTheory.FilteredAlgebra.PowerSeries.Map
 public import Mei.RingTheory.FilteredAlgebra.PowerSeries.Semiconj
 
 /-!
