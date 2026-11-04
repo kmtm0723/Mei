@@ -6,15 +6,14 @@ Authors: Claude
 module
 
 public import Mathlib.RingTheory.DualNumber
-public import Mathlib.RingTheory.Nilpotent.Exp
+public import Mei.RingTheory.TrivSqZeroExt.Exp
 public import TauCeti.RingTheory.Nilpotent.Exp
 
 /-!
-# Nilpotent exponentials in trivial square-zero extensions
+# Nilpotent exponentials in the dual numbers
 
-In a trivial square-zero extension `TrivSqZeroExt R M` over `ℚ`, Mathlib's finite exponential
-`IsNilpotent.exp` of `inr m` is `1 + inr m`; in particular `exp ε = 1 + ε` in the dual numbers
-`R[ε]`.
+In the dual numbers `R[ε]` over `ℚ`, Mathlib's finite exponential `IsNilpotent.exp` of `ε` is
+`1 + ε`.
 
 Over a nontrivial `ℚ`-algebra `R`, for instance `R = ℚ` with `ℚ[ε] ≅ ℚ[X]/(X²)`, the unit
 `exp ε` of `R[ε]` is not `1`, yet conjugation by it fixes every element of `R[ε]`, since `ε` is
@@ -22,12 +21,12 @@ central.
 
 ## Main results
 
-* `IsNilpotent.exp_inr`, `IsNilpotent.exp_eps`: `exp (inr m) = 1 + inr m` and `exp ε = 1 + ε`.
+* `IsNilpotent.exp_eps`: `exp ε = 1 + ε`.
 * `DualNumber.nilpotentExpUnit_eps_ne_one`: the unit `exp ε` is not `1`.
 * `DualNumber.toConjAct_nilpotentExpUnit_eps_smul`: conjugation by `exp ε` is the identity.
 
-These are the algebraic counterparts of Mathlib's `TrivSqZeroExt.exp_inr` and
-`DualNumber.exp_eps` for the analytic exponential.
+The first is the algebraic counterpart of Mathlib's `DualNumber.exp_eps` for the analytic
+exponential.
 -/
 
 public section
@@ -36,14 +35,7 @@ open TrivSqZeroExt DualNumber
 
 namespace IsNilpotent
 
-variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M]
-  [SMulCommClass R Rᵐᵒᵖ M] [Module ℚ R] [Module ℚ M]
-
-/-- The finite exponential of `inr m` in a trivial square-zero extension is `1 + inr m`. -/
-@[simp]
-theorem exp_inr (m : M) : exp (inr m : TrivSqZeroExt R M) = 1 + inr m := by
-  rw [exp_eq_sum (k := 2) (by rw [sq, inr_mul_inr])]
-  simp [Finset.sum_range_succ]
+variable {R : Type*} [Ring R] [Module ℚ R]
 
 /-- The finite exponential of `ε` in the dual numbers is `1 + ε`. -/
 @[simp]
