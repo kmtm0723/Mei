@@ -7,6 +7,7 @@ module
 
 public import Mei.Algebra.QuantumMonoidAlgebra.Ray.Shifted.Quotient
 public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.Inclusion
+public import Mei.Algebra.Group.Action.Semiconj
 
 /-!
 # Quantum ray actions respect inclusions of shifted supports
@@ -24,11 +25,6 @@ noncomputable section
 
 namespace Mei.QuantumMonoidAlgebra
 
-private theorem mul_twisted_factors {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
-    (r : R) (u v w a b : A) (h : v * u = u * w) :
-    r • (u * (w * a * b)) = v * (r • (u * a)) * b := by
-  simp only [mul_smul_comm, smul_mul_assoc, ← mul_assoc, h]
-
 variable {R Γ : Type*} [CommRing R] [AddCommGroup Γ]
   (q : Rˣ) (β : LinearMap.BilinForm ℤ Γ) (d : PositiveDegrees Γ)
 
@@ -39,6 +35,8 @@ private local instance : Algebra R (positiveSubalgebra q β d.monoid) := inferIn
 private local instance : Ring (F).completion := inferInstance
 private local instance : Semiring (F).completion := (inferInstance : Ring (F).completion).toSemiring
 private local instance : Monoid (F).completion := (inferInstance : Ring (F).completion).toMonoid
+private local instance : Semigroup (F).completion :=
+  (inferInstance : Ring (F).completion).toSemigroup
 private local instance : Mul (F).completion := ⟨(inferInstance : Ring (F).completion).mul⟩
 private local instance : Algebra R (F).completion := inferInstance
 private local instance : Module R (F).completion := inferInstance
@@ -77,11 +75,11 @@ private theorem inclusion_action_coordinates
       (F).completedAeval
         (completedRayGenerator q β d.monoid d.degree (fun _ h => d.degree_nonneg h) n hn) G)
     hres)
-  have hm := mul_twisted_factors
-    (((q ^ β s (p - s))⁻¹ : Rˣ) : R) _ _ _ a
+  have hm := SemiconjBy.smul_mul_mul (R := R) (A := (F).completion) he'.symm
+    (((q ^ β s (p - s))⁻¹ : Rˣ) : R) a
     ((F).completedAeval
       (completedRayGenerator q β d.monoid d.degree (fun _ h => d.degree_nonneg h) n hn)
-      (↑(H⁻¹) : PowerSeries R)) he'
+      (↑(H⁻¹) : PowerSeries R))
   -- Express the inclusion as multiplication by the shift monomial and commute
   -- the twisted ray factor across that monomial using semiconjugacy.
   calc
