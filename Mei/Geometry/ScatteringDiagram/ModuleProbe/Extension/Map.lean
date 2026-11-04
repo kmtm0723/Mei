@@ -127,17 +127,13 @@ theorem map_extendedCoefficientField (k : ℕ) (hBc : B.LevelConsistent k)
       extendedCoefficientField d 𝒩 p ℒ H h h' D' B k hBc x := by
   let T := (coefficientArrangement d ℳ p ℒ H h h' D k).union
     (coefficientArrangement d 𝒩 p ℒ H h h' D' k)
-  let := h.finiteDimensional
-  have hopen : IsOpen {z : V | ∀ c : B.active k, z ∉ (B.wall c).support} := by
-    simpa only [ofPred_forall, compl_def] using isOpen_iInter_of_finite
-      (fun c : B.active k => (B.wall c).isConvexPolyhedron.isClosed.isOpen_compl)
-  obtain ⟨z, hzB, hzT⟩ := T.dense_isGeneric.inter_open_nonempty _ hopen ⟨x.val, x.notMem⟩
+  obtain ⟨zB, hzT⟩ := exists_generic_allowed (d := d) (ℒ := ℒ) (H := H)
+    (h := h) (B := B) k T x
   obtain ⟨hz, hz'⟩ := ExceptionalArrangement.isGeneric_union.mp hzT
-  let zB : WallComplement (fun c : B.active k => (B.wall c).support) := ⟨z, hzB⟩
   rw [extendedCoefficientField_eq_action d ℳ p ℒ H h h' D B k hBc hD hB x zB hz,
     extendedCoefficientField_eq_action d 𝒩 p ℒ H h h' D' B k hBc hD' hB' x zB hz',
     quotientCoefficientMap_truncatedBCHAction d ℳ 𝒩 p ℒ f hf hequiv,
-    map_coefficientField d ℳ 𝒩 p ℒ H h h' f hf hequiv D D' k hDD' z hz hz']
+    map_coefficientField d ℳ 𝒩 p ℒ H h h' f hf hequiv D D' k hDD' zB.val hz hz']
 
 /-- The completed field commutes with coefficient maps for consistent probe diagrams
 with the stated coefficient and base-cylinder equivalences. -/
