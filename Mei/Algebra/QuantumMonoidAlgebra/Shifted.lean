@@ -52,11 +52,13 @@ def shiftedMonomialEquiv :
       monomial_mul_mem_shiftedSubmodule q β P (-p) (p + s) y.property⟩
   left_inv x := by
     apply Subtype.ext
+    -- Unfold the nested subtype to expose multiplication by the inverse unit.
     change (↑(monomialUnit q β p)⁻¹ : QuantumMonoidAlgebra q β) *
       ((monomialUnit q β p : QuantumMonoidAlgebra q β) * x) = x
     rw [← mul_assoc, Units.inv_mul, one_mul]
   right_inv y := by
     apply Subtype.ext
+    -- Unfold the nested subtype to expose multiplication by the unit and its inverse.
     change (monomialUnit q β p : QuantumMonoidAlgebra q β) *
       ((↑(monomialUnit q β p)⁻¹ : QuantumMonoidAlgebra q β) * y) = y
     rw [← mul_assoc, Units.mul_inv, one_mul]
@@ -69,6 +71,7 @@ theorem coe_shiftedMonomialEquiv
     (x : shiftedSubmodule (grade q β) P s) :
     (shiftedMonomialEquiv q β P p s x : QuantumMonoidAlgebra q β) =
       monomial q β p * x := by
+  -- Unfold the LinearEquiv application and subtype value to rewrite the defining unit.
   change (monomialUnit q β p : QuantumMonoidAlgebra q β) * x = _
   rw [coe_monomialUnit]
 
@@ -78,6 +81,7 @@ theorem coe_shiftedMonomialEquiv_symm
     (y : shiftedSubmodule (grade q β) P (p + s)) :
     ((shiftedMonomialEquiv q β P p s).symm y : QuantumMonoidAlgebra q β) =
       ((q ^ β p p : Rˣ) : R) • (monomial q β (-p) * y) := by
+  -- Unfold the inverse LinearEquiv application and subtype value to rewrite its unit.
   change (↑(monomialUnit q β p)⁻¹ : QuantumMonoidAlgebra q β) * y = _
   rw [coe_monomialUnit_inv, smul_mul_assoc]
 
