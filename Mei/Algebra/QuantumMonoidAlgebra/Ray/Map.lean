@@ -79,7 +79,7 @@ theorem mapPositiveCompletionOfDegree_completedRayAeval (n : P) (hn : 0 < δ n)
   have h₁ : (F).ideal 1 ≤ ((G).ideal 1).comap ψ :=
     positiveMap_ideal_le_of_degree φ f h P P' hP δ δ' hδ hδ' 1 1
       (fun n hn hd => by have := hpos n hn (by omega); omega)
-  exact (F).mapCompletion_aeval_of_eq G φ ψ (positiveMap_algebraMap φ f h P P' hP)
+  exact (F).mapCompletion_completedAeval_of_eq G φ ψ (positiveMap_algebraMap φ f h P P' hP)
     l hl (fun k => positiveMap_ideal_le_of_degree φ f h P P' hP δ δ' hδ hδ' (l k + 1) (k + 1)
       (fun n hn hd => by have := hcut k n hn (by omega); omega)) h₁ Ψ
     (mapPositiveCompletionOfDegree_eq_generic φ f h P P' hP δ δ' hδ hδ' l hl hcut)
