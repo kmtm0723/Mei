@@ -37,6 +37,34 @@ theorem coefficientOrigin_eq_neg_sum (s : Multiset d.monoid) :
     d.coefficientOrigin s = -(s.sum : d.monoid) := (rfl)
 
 omit [DecidableEq Γ] in
+/-- The chart indexed by the empty multiset contains the zero origin. -/
+theorem zero_coefficientOrigin_mem :
+    (0 : Γ) - d.coefficientOrigin (0 : Multiset d.monoid) ∈ d.monoid := by
+  rw [coefficientOrigin_eq_neg_sum]
+  simp
+
+omit [DecidableEq Γ] in
+/-- Adding chart indices adds their origins. -/
+theorem coefficientOrigin_add (s t : Multiset d.monoid) :
+    d.coefficientOrigin (s + t) = d.coefficientOrigin s + d.coefficientOrigin t := by
+  simp only [coefficientOrigin_eq_neg_sum, Multiset.sum_add, AddSubmonoid.coe_add, neg_add]
+
+omit [DecidableEq Γ] in
+/-- Adding two supported differences gives the difference of the corresponding sums. -/
+theorem sub_add_mem {p q a b : Γ} (hp : p - a ∈ d.monoid) (hq : q - b ∈ d.monoid) :
+    p + q - (a + b) ∈ d.monoid := by
+  simpa only [add_sub_add_comm] using d.monoid.add_mem hp hq
+
+omit [DecidableEq Γ] in
+/-- The sum of two supported origins belongs to the sum chart. -/
+theorem add_sub_coefficientOrigin_mem {p q : Γ} {s t : Multiset d.monoid}
+    (hp : p - d.coefficientOrigin s ∈ d.monoid)
+    (hq : q - d.coefficientOrigin t ∈ d.monoid) :
+    p + q - d.coefficientOrigin (s + t) ∈ d.monoid := by
+  rw [coefficientOrigin_add]
+  exact d.sub_add_mem hp hq
+
+omit [DecidableEq Γ] in
 /-- A larger positive multiset defines a containing translate. -/
 theorem coefficientOrigin_sub_mem {s t : Multiset d.monoid} (h : s ≤ t) :
     d.coefficientOrigin s - d.coefficientOrigin t ∈ d.monoid := by
@@ -67,7 +95,8 @@ theorem coefficientInclusion_eq (s t : Multiset d.monoid) (h : s ≤ t) :
     d.coefficientInclusion ℳ s t h =
       d.shiftedCompletedInclusion ℳ _ _ (d.coefficientOrigin_sub_mem h) := (rfl)
 
-/-- Coefficients supported in some negatively positive translate, as a module direct limit. -/
+/-- Coefficients of the direct limit of completed shifted coefficient modules over translates
+by minus the sum of a finite multiset of positive degrees. -/
 abbrev ShiftedDirectLimit :=
   Module.DirectLimit (fun s : Multiset d.monoid => d.ShiftedCoefficients ℳ (d.coefficientOrigin s))
     (fun s t h => d.coefficientInclusion ℳ s t h)
@@ -148,26 +177,11 @@ theorem toShiftedDirectLimitOfChart_injective (p : Γ) (s : Multiset d.monoid)
     (d.shiftedCompletedInclusion_injective ℳ p (d.coefficientOrigin s) hp)
 
 omit [DirectSum.Decomposition ℳ] in
-/-- The embedding of an origin is independent of which containing chart is used. -/
-theorem toShiftedDirectLimitOfChart_eq (p : Γ) (s t : Multiset d.monoid)
-    (hs : p - d.coefficientOrigin s ∈ d.monoid)
-    (ht : p - d.coefficientOrigin t ∈ d.monoid) (x : d.ShiftedCoefficients ℳ p) :
-    d.toShiftedDirectLimitOfChart ℳ p s hs x =
-      d.toShiftedDirectLimitOfChart ℳ p t ht x := by
-  have hsu : s ≤ s + t := le_add_right le_rfl
-  have htu : t ≤ s + t := le_add_left le_rfl
-  have hu : p - d.coefficientOrigin (s + t) ∈ d.monoid := by
-    have h := d.monoid.add_mem hs (d.coefficientOrigin_sub_mem hsu)
-    simpa only [sub_add_sub_cancel] using h
-  have hf (v : Multiset d.monoid) (hv : v ≤ s + t)
-      (hpv : p - d.coefficientOrigin v ∈ d.monoid) :
-      d.toShiftedDirectLimitOfChart ℳ p v hpv x =
-        d.toShiftedDirectLimitOfChart ℳ p (s + t) hu x := by
-    simp only [toShiftedDirectLimitOfChart, LinearMap.comp_apply]
-    rw [← d.toShiftedDirectLimit_inclusion ℳ hv]
-    congr 1
-    exact d.shiftedCompletedInclusion_trans ℳ p (d.coefficientOrigin v) hpv
-      (d.coefficientOrigin (s + t)) (d.coefficientOrigin_sub_mem hv) hu x
-  exact (hf s hsu hs).trans (hf t htu ht).symm
+/-- A canonical chart inclusion is the arbitrary-origin inclusion at its own origin. -/
+theorem toShiftedDirectLimit_eq_ofChart (s : Multiset d.monoid)
+    (x : d.ShiftedCoefficients ℳ (d.coefficientOrigin s)) :
+    d.toShiftedDirectLimit ℳ s x =
+      d.toShiftedDirectLimitOfChart ℳ (d.coefficientOrigin s) s (by simp) x := by
+  rw [toShiftedDirectLimitOfChart_apply, shiftedCompletedInclusion_refl]
 
 end Mei.PositiveDegrees
