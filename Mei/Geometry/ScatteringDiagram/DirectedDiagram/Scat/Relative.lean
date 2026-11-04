@@ -21,7 +21,9 @@ logarithms in the kernel of `π`.
 
 `exists_isRelativeOutgoingCompletion` packages `exists_relativeOutgoingCompletion`: every
 relative input has a relative outgoing completion, whose image under `π` is equivalent to the
-quotient diagram. Any two relative outgoing completions of equivalent quotient diagrams and
+quotient diagram. The image of every such completion is the quotient class
+(`IsRelativeOutgoingCompletion.map_equivalent`), with no freeness assumption on the degree group.
+Any two relative outgoing completions of equivalent quotient diagrams and
 equivalent ideal inputs are equivalent (`IsRelativeOutgoingCompletion.equivalent_of_equivalent`),
 with the finite-order form `projection_relativeScat_eq_of_levelEquivalent`. Hence the
 relative scattering class `relativeScat` is well defined, depends only on the equivalence
@@ -102,6 +104,36 @@ theorem map_append_map_equivalent (hsπ : ∀ x, π (sec x) = x)
   simpa only [map_map_section hsπ] using
     ((G.map sec hs).map π hπ).append_levelEquivalent_left (W.map π hπ) (k := k)
       fun j => by simp [hker j]
+
+/-- Projecting any relative outgoing completion recovers its quotient diagram.
+Only the splitting identity and the vanishing of the ideal input labels are
+required: consistency and full-hyperplane hypotheses are needed to construct a
+completion, not to identify the image of one already supplied. -/
+theorem IsRelativeOutgoingCompletion.map_equivalent {η : Type*}
+    {F : DirectedDiagram (d := d) h H ((ι ⊕ κ) ⊕ η)}
+    (hF : IsRelativeOutgoingCompletion π sec hs G W F)
+    (hsπ : ∀ x, π (sec x) = x)
+    (hker : ∀ j, π.completedMap (W.wall j).label = 1) :
+    (F.map π hπ).Equivalent G := by
+  refine Equivalent.trans ?_ (map_append_map_equivalent (hπ := hπ) (hs := hs)
+    (G := G) hsπ hker)
+  apply (equivalent_iff _ _).mpr
+  intro k
+  have hactive : (F.map π hπ).active k ⊆ Set.range
+      (Sum.inl : ι ⊕ κ → (ι ⊕ κ) ⊕ η) := by
+    rintro (j | j) hj
+    · exact ⟨j, rfl⟩
+    · obtain ⟨l, hl⟩ := hF.hasPureBirthLog j
+      obtain ⟨n, -, -, z, -, hπz, hlabel, -⟩ := DirectedWall.hasPureBirthLog_def.mp hl
+      refine ((mem_active _ _ _).mp hj ?_).elim
+      rw [map_wall, DirectedWall.map_label, hlabel, GradedLieHom.completedMap_expToCompletion,
+        hπz, PositiveDegrees.expToCompletion_zero, map_one]
+  exact ((F.map π hπ).levelEquivalent_restrict hactive).trans
+    ((Refinement.ofEquiv
+      (Equiv.ofInjective (Sum.inl : ι ⊕ κ → (ι ⊕ κ) ⊕ η) Sum.inl_injective)
+      (fun j => by
+        rw [restrict_wall, Equiv.ofInjective_apply, map_wall, map_wall,
+          hF.isOutgoingCompletion.wall_inl])).levelEquivalent k)
 
 section Existence
 
