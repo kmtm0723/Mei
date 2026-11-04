@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Geometry.Convex.Sweep.Cylinder.Admissible
-public import Mei.Geometry.ScatteringDiagram.BrokenLine.CoefficientMap
+public import Mei.Geometry.ScatteringDiagram.BrokenLine.Coefficient.Map
 
 /-!
 # Decorated cylinder lifts and weighted projection

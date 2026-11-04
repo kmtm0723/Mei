@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.BrokenLine.CoefficientMap
+public import Mei.Geometry.ScatteringDiagram.BrokenLine.Coefficient.Map
 
 /-!
 # Coefficient embeddings of decorated ray fibers
@@ -55,15 +55,6 @@ private theorem regrade_velocity (p : Fin n → Γ) (j : Fin (n + 1)) :
     v (Fin.snoc (α := fun _ => Γ) p p₀ j) =
       w (Fin.snoc (α := fun _ => Δ) (σ ∘ p) (σ p₀) j) := by
   rw [hv, ← Function.comp_apply (f := σ), Fin.comp_snoc]
-
-/-- At a fixed endpoint and itinerary, the degree history determines the entire
-admissible decorated ray, including its encounter parameters and incoming tail. -/
-theorem DecoratedAdmissibleRay.ext_history {β γ : Source} (h : β.1.val = γ.1.val) : β = γ := by
-  obtain ⟨p, β⟩ := β
-  obtain ⟨q, γ⟩ := γ
-  have hpq : p = q := Subtype.ext h
-  subst q
-  exact congrArg (Sigma.mk p) (Subsingleton.elim β γ)
 
 /-- An injective regrading identifies the rays whose final coefficient
 survives with all target rays. The geometric source and obstacle data are fixed. -/
