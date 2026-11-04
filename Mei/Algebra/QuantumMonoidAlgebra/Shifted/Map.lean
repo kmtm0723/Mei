@@ -8,6 +8,7 @@ module
 public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.Completion
 public import Mei.Algebra.QuantumMonoidAlgebra.Completion
 public import Mei.LinearAlgebra.LinearEquiv.RingHom
+public import Mei.Logic.Function.Cast
 
 /-!
 # Scalar and exponent transport of shifted quantum coefficients
@@ -182,12 +183,6 @@ theorem transition_mapShiftedQuotient {k l : ℕ} (hkl : k ≤ l)
   obtain ⟨b, rfl⟩ := (S₀).projection_surjective (T.modulus l) a
   simp only [mapShiftedQuotient_projection, ModuleFiltration.transition_projection]
 
-private theorem cast_indexed_apply {ι : Type*} {A B : ι → Type*}
-    (f : ∀ i, A i → B i) {i j : ι} (hij : i = j) (x : A i) :
-    cast (congrArg B hij) (f i x) = f j (cast (congrArg A hij) x) := by
-  subst j
-  rfl
-
 /-- Identity scalar and exponent transport fixes every shifted completed coefficient. -/
 @[simp]
 theorem mapShiftedCompletion_id (x : d.ShiftedCoefficients (grade q β) p) :
@@ -202,7 +197,7 @@ theorem mapShiftedCompletion_id (x : d.ShiftedCoefficients (grade q β) p) :
   have hc (z : (F).completion) :
       C (positiveCompletionShiftEquiv q β d ((PositiveDegreeMap.id d) p) z) =
         positiveCompletionShiftEquiv q β d p z := by
-    simpa only [cast_eq] using cast_indexed_apply
+    simpa only [cast_eq] using Function.cast_apply
       (fun r => (positiveCompletionShiftEquiv q β d r : (F).completion → _))
       (PositiveDegreeMap.id_apply (d := d) p) z
   have hi := RingHom.congr_fun (mapPositiveCompletion_id (q := q) (β := β) d) b
@@ -224,11 +219,11 @@ theorem mapShiftedQuotient_id (k : ℕ)
       (PositiveDegreeMap.id_modulus (d := d) k).symm)
       ((d.shiftedFiltration (grade q β) p).projection k a) =
       (d.shiftedFiltration (grade q β) p).projection ((PositiveDegreeMap.id d).modulus k) a := by
-    simpa only [cast_eq] using cast_indexed_apply
+    simpa only [cast_eq] using Function.cast_apply
       (fun j => ((d.shiftedFiltration (grade q β) p).projection j : (S₀).completion → _))
       (PositiveDegreeMap.id_modulus (d := d) k).symm a
   rw [hc, mapShiftedQuotient_projection]
-  exact (cast_indexed_apply
+  exact (Function.cast_apply
     (fun r => ((d.shiftedFiltration (grade q β) r).projection k :
       d.ShiftedCoefficients (grade q β) r → _)) (PositiveDegreeMap.id_apply (d := d) p) _).trans
         (congrArg ((d.shiftedFiltration (grade q β) p).projection k)
@@ -257,7 +252,7 @@ theorem mapShiftedCompletion_comp (x : d.ShiftedCoefficients (grade q β) p) :
   have h₂ : C (positiveCompletionShiftEquiv q'' β'' a ((T'.comp T) p)
       (mapPositiveCompletion d a (T'.comp T) (ψ.comp φ) hc b)) =
       Z (mapPositiveCompletion d a (T'.comp T) (ψ.comp φ) hc b) := by
-    simpa only [cast_eq] using cast_indexed_apply
+    simpa only [cast_eq] using Function.cast_apply
       (fun r => (positiveCompletionShiftEquiv q'' β'' a r :
         (positiveFiltration q'' β'' a.monoid a.degree
           (fun _ hu => a.degree_nonneg hu)).completion → _))
@@ -293,12 +288,12 @@ theorem mapShiftedQuotient_comp (k : ℕ)
       (PositiveDegreeMap.comp_modulus T' T k).symm)
       ((d.shiftedFiltration (grade q β) p).projection (T.modulus (T'.modulus k)) b) =
       (d.shiftedFiltration (grade q β) p).projection ((T'.comp T).modulus k) b := by
-    simpa only [cast_eq] using cast_indexed_apply
+    simpa only [cast_eq] using Function.cast_apply
       (fun j => ((d.shiftedFiltration (grade q β) p).projection j : (S₀).completion → _))
       (PositiveDegreeMap.comp_modulus T' T k).symm b
   have h₁ := congrArg (fun z => C (m z)) hs
   have h₂ := congrArg C (mapShiftedQuotient_projection d a (T'.comp T) (ψ.comp φ) hc p k b)
-  have h₃ := cast_indexed_apply
+  have h₃ := Function.cast_apply
     (fun r => ((a.shiftedFiltration (grade q'' β'') r).projection k :
       a.ShiftedCoefficients (grade q'' β'') r → _))
     (PositiveDegreeMap.comp_apply T' T p)
