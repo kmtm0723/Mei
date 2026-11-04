@@ -5,9 +5,8 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.Affine.Span
 public import Mei.Geometry.Convex.Polyhedron.Rational.Map
-public import Mei.Geometry.ScatteringDiagram.DirectedWall.Basic
+public import Mei.Geometry.ScatteringDiagram.DirectedWall.Pushforward
 public import Mei.Geometry.ScatteringDiagram.WallSpace.CoordinateChange
 
 /-!
@@ -19,7 +18,9 @@ Supports move by the affine map, normals by the inverse tangent map, primitive
 rays by the degree isomorphism and labels by the completed group isomorphism.
 The linear part transports the spatial velocity and preserves incomingness and
 outgoingness. Translation vectors and changes of the positive degree function
-are allowed, including walls with zero spatial velocity.
+are allowed, including walls with zero spatial velocity. This transport is the
+pushforward along `DirectedWall.Pushforward.ofCoordinateChange`, whose normal
+comparison scalars are all one.
 
 The construction combines `Mei.DirectedWallSpaces.CoordinateChange` and its
 `completedMap_mem_wallGroup_iff` with the existing integral affine image of
@@ -75,6 +76,63 @@ theorem realCharacter_comp_tangentEquiv_symm
 
 end DirectedWallSpaces.CoordinateChange
 
+/-- Compatible spatial and algebraic coordinate changes, with inverse-dual normals. -/
+def DirectedWall.Pushforward.ofCoordinateChange (e : Toric.IntegralAffineEquiv h h')
+    (E : DirectedWallSpaces.CoordinateChange (d := d) (e := d') H H')
+    (hE : E.tangentEquiv = e.latticeEquiv) : DirectedWall.Pushforward d d' h h' H H' where
+  degreeMap := E.degreeMap
+  lieHom := E.gradedLieHom
+  rayMap := E.rayEquiv
+  mem_rayDegrees_rayMap w n hn := by
+    rw [E.degreeMap_apply]
+    exact (E.mem_rayDegrees_rayEquiv w n).mpr hn
+  normalMap m := m.comp E.tangentEquiv.symm
+  wall_mem n _ m x hx := by
+    rw [E.gradedLieHom_apply, E.degreeMap_apply]
+    exact (E.wall_mem_iff n m x).mpr hx
+  spatialMap := e.toContinuousAffineEquiv
+  map_direction n _ := by
+    rw [Toric.IntegralAffineEquiv.toContinuousAffineEquiv_toAffineEquiv, E.degreeMap_apply,
+      ← E.map_direction, hE, e.map_lattice]
+  realCharacter_normalMap m := ⟨1, one_pos, by
+    rw [E.realCharacter_comp_tangentEquiv_symm e hE]
+    ext v
+    simp⟩
+
+section ofCoordinateChange
+
+variable (e : Toric.IntegralAffineEquiv h h')
+  (E : DirectedWallSpaces.CoordinateChange (d := d) (e := d') H H')
+  (hE : E.tangentEquiv = e.latticeEquiv)
+
+/-- The degree map of a coordinate change is its degree isomorphism. -/
+@[simp]
+theorem DirectedWall.Pushforward.ofCoordinateChange_degreeMap :
+    (Pushforward.ofCoordinateChange e E hE).degreeMap = E.degreeMap := (rfl)
+
+/-- The Lie map of a coordinate change has the values of its graded Lie map. -/
+@[simp]
+theorem DirectedWall.Pushforward.ofCoordinateChange_lieHom_apply (x : L) :
+    (Pushforward.ofCoordinateChange e E hE).lieHom x = E.gradedLieHom x := (rfl)
+
+/-- The ray map of a coordinate change is its ray equivalence. -/
+@[simp]
+theorem DirectedWall.Pushforward.ofCoordinateChange_rayMap (w : SupportedRay d) :
+    (Pushforward.ofCoordinateChange e E hE).rayMap w = E.rayEquiv w := (rfl)
+
+/-- The normal map of a coordinate change is the inverse-dual map. -/
+@[simp]
+theorem DirectedWall.Pushforward.ofCoordinateChange_normalMap (m : Λ →+ ℤ) :
+    (Pushforward.ofCoordinateChange e E hE).normalMap m =
+      m.comp (E.tangentEquiv.symm : Λ' →+ Λ) := (rfl)
+
+/-- The spatial map of a coordinate change is the integral affine equivalence. -/
+@[simp]
+theorem DirectedWall.Pushforward.ofCoordinateChange_spatialMap :
+    (Pushforward.ofCoordinateChange e E hE).spatialMap = e.toContinuousAffineEquiv := (rfl)
+
+end ofCoordinateChange
+
 namespace DirectedWall
 
 variable [Algebra ℚ R]
@@ -89,6 +147,12 @@ variable [Algebra ℚ R]
   (e : Toric.IntegralAffineEquiv h h')
   (E : DirectedWallSpaces.CoordinateChange (d := d) (e := d') H H')
   (hE : E.tangentEquiv = e.latticeEquiv)
+
+/-- The Lie map of a coordinate change has the completed map of its graded Lie map. -/
+@[simp]
+theorem Pushforward.ofCoordinateChange_lieHom_completedMap :
+    (Pushforward.ofCoordinateChange e E hE).lieHom.completedMap = E.gradedLieHom.completedMap :=
+  (rfl)
 
 /-- Transport all directed wall data through compatible spatial and algebraic
 coordinate changes. The two positive degree functions need not agree. -/
@@ -135,6 +199,19 @@ theorem image_support : (W.image e E hE).support = e '' W.support := (rfl)
 @[simp]
 theorem image_label : (W.image e E hE).label = E.completedEquiv W.label := (rfl)
 
+/-- Coordinate changes of directed walls are pushforwards. -/
+@[simp]
+theorem pushforward_ofCoordinateChange :
+    W.pushforward (Pushforward.ofCoordinateChange e E hE) = W.image e E hE := by
+  apply DirectedWall.ext
+  · rw [pushforward_normal, image_normal, Pushforward.ofCoordinateChange_normalMap]
+  · rw [pushforward_ray, image_ray, Pushforward.ofCoordinateChange_rayMap]
+  · rw [pushforward_support, image_support, Pushforward.ofCoordinateChange_spatialMap]
+    ext
+    simp
+  · rw [pushforward_label, image_label, E.completedEquiv_apply,
+      Pushforward.ofCoordinateChange_lieHom_completedMap]
+
 /-- Evaluating the transported real normal on a transported vector preserves its value. -/
 theorem realCharacter_image_normal (v : V) :
     h'.realCharacter (W.image e E hE).normal (e.toAffineEquiv.linear v) =
@@ -179,14 +256,12 @@ theorem direction_image : (W.image e E hE).direction = e.toAffineEquiv.linear W.
 /-- Incomingness is preserved and reflected by affine coordinate changes. -/
 @[simp]
 theorem incoming_image_iff : (W.image e E hE).Incoming ↔ W.Incoming := by
-  rw [incoming_iff, ← mem_recessionCone, geometricDirection_image, image_support,
-    e.toAffineEquiv.linear_mem_recessionCone_image, mem_recessionCone, ← incoming_iff]
+  rw [← pushforward_ofCoordinateChange, incoming_pushforward_iff]
 
 /-- Outgoingness is preserved and reflected by affine coordinate changes. -/
 @[simp]
 theorem outgoing_image_iff : (W.image e E hE).Outgoing ↔ W.Outgoing := by
-  simp only [outgoing_iff, geometricDirection_image, image_support,
-    e.toAffineEquiv.linear_mem_recessionCone_image]
+  rw [← pushforward_ofCoordinateChange, outgoing_pushforward_iff]
 
 /-- Identity coordinate changes leave every wall datum unchanged. -/
 @[simp]

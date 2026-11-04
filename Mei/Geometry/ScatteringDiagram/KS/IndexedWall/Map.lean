@@ -23,8 +23,7 @@ Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*, §1
 (arXiv:1411.1394v2). The construction uses
 `GradedLieHom.completedMap_mem_completedRaySubgroup` and
 `GradedLieHom.hasFiniteSupport_completedMap`. The product calculation uses
-`Quiver.Path.map_wallPathProduct_restrict`, as in
-`DirectedDiagram.levelPathProduct_mapPathPrefunctor`.
+`Quiver.Path.map_wallPathProduct_restrict`.
 -/
 
 public section
