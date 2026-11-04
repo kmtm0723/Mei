@@ -82,13 +82,16 @@ private theorem inclusion_action_coordinates
     ((F).completedAeval
       (completedRayGenerator q β d.monoid d.degree (fun _ h => d.degree_nonneg h) n hn)
       (↑(H⁻¹) : PowerSeries R)) he'
-  exact (congrArg (d.shiftedCompletedInclusion (grade q β) p s hps)
-    (shiftedRayAction_coordinates_skew q β d n hn p H a)).trans
-      ((shiftedCompletedInclusion_positiveCompletionShiftEquiv q β d p s hps _).trans
-        ((congrArg (positiveCompletionShiftEquiv q β d s) hm).trans
-          ((shiftedRayAction_coordinates_skew q β d n hn s H _).symm.trans
-            (congrArg (shiftedRayAction q β d n hn s H)
-              (shiftedCompletedInclusion_positiveCompletionShiftEquiv q β d p s hps a)).symm)))
+  -- Express the inclusion as multiplication by the shift monomial and commute
+  -- the twisted ray factor across that monomial using semiconjugacy.
+  calc
+    _ = _ := congrArg (d.shiftedCompletedInclusion (grade q β) p s hps)
+      (shiftedRayAction_coordinates_skew q β d n hn p H a)
+    _ = _ := shiftedCompletedInclusion_positiveCompletionShiftEquiv q β d p s hps _
+    _ = _ := congrArg (positiveCompletionShiftEquiv q β d s) hm
+    _ = _ := (shiftedRayAction_coordinates_skew q β d n hn s H _).symm
+    _ = _ := (congrArg (shiftedRayAction q β d n hn s H)
+      (shiftedCompletedInclusion_positiveCompletionShiftEquiv q β d p s hps a)).symm
 
 /-- Ray actions commute with inclusions for arbitrary completed shifted coefficients. -/
 theorem shiftedCompletedInclusion_shiftedRayAction
@@ -99,14 +102,15 @@ theorem shiftedCompletedInclusion_shiftedRayAction
       shiftedRayAction q β d n hn s H
         (d.shiftedCompletedInclusion (grade q β) p s hps a) := by
   have he := (positiveCompletionShiftEquiv q β d p).apply_symm_apply a
-  have hl := congrArg (fun z : d.ShiftedCoefficients (grade q β) p =>
-    d.shiftedCompletedInclusion (grade q β) p s hps
-      (shiftedRayAction q β d n hn p H z)) he
-  have hr := congrArg (fun z : d.ShiftedCoefficients (grade q β) p =>
-    shiftedRayAction q β d n hn s H
-      (d.shiftedCompletedInclusion (grade q β) p s hps z)) he
-  exact hl.symm.trans ((inclusion_action_coordinates q β d n hn p s hps H
-    ((positiveCompletionShiftEquiv q β d p).symm a)).trans hr)
+  calc
+    _ = _ := (congrArg (fun z : d.ShiftedCoefficients (grade q β) p =>
+      d.shiftedCompletedInclusion (grade q β) p s hps (shiftedRayAction q β d n hn p H z))
+      he).symm
+    _ = _ := inclusion_action_coordinates q β d n hn p s hps H
+      ((positiveCompletionShiftEquiv q β d p).symm a)
+    _ = _ := congrArg (fun z : d.ShiftedCoefficients (grade q β) p =>
+      shiftedRayAction q β d n hn s H
+        (d.shiftedCompletedInclusion (grade q β) p s hps z)) he
 
 /-- For a nonnegative shift, the natural positive inclusion intertwines the algebra ray action. -/
 theorem shiftedToPositiveCompletion_shiftedRayAction
@@ -123,11 +127,13 @@ theorem shiftedToPositiveCompletion_shiftedRayAction
       (shiftedToPositiveCompletion_apply q β d p z)).trans
       ((positiveCompletionShiftEquiv q β d 0).apply_symm_apply _)
   apply (positiveCompletionShiftEquiv q β d 0).injective
-  exact (hi _).trans
-    ((shiftedCompletedInclusion_shiftedRayAction q β d n hn p 0
-      (by simpa only [sub_zero] using p.property) H a).trans
-      ((congrArg (shiftedRayAction q β d n hn 0 H) (hi a).symm).trans
-        (shiftedRayAction_zero q β d n hn H (shiftedToPositiveCompletion q β d p a))))
+  -- Compare at origin zero, where the shifted action is the positive algebra action.
+  calc
+    _ = _ := hi _
+    _ = _ := shiftedCompletedInclusion_shiftedRayAction q β d n hn p 0
+      (by simpa only [sub_zero] using p.property) H a
+    _ = _ := congrArg (shiftedRayAction q β d n hn 0 H) (hi a).symm
+    _ = _ := shiftedRayAction_zero q β d n hn H (shiftedToPositiveCompletion q β d p a)
 
 /-- Reverse ray crossings also commute with inclusions of translated supports. -/
 theorem shiftedCompletedInclusion_shiftedRayAction_symm
@@ -152,7 +158,7 @@ theorem shiftedToPositiveCompletion_shiftedRayAction_symm
 
 /-- At each common relative cutoff, finite ray actions commute with support inclusions. -/
 @[simp]
-theorem shiftedQuotientInclusion_shiftedRayQuotientAction
+theorem shiftedQuotientMap_shiftedRayQuotientAction
     (n : d.monoid) (hn : 0 < d.degree n) (p s : Γ) (hps : p - s ∈ d.monoid)
     (k : ℕ) (H : (PowerSeries R)ˣ)
     (a : (d.shiftedFiltration (grade q β) p).quotient k) :
@@ -166,7 +172,7 @@ theorem shiftedQuotientInclusion_shiftedRayQuotientAction
 
 /-- Reverse finite ray crossings commute with inclusions at the same relative cutoff. -/
 @[simp]
-theorem shiftedQuotientInclusion_shiftedRayQuotientAction_symm
+theorem shiftedQuotientMap_shiftedRayQuotientAction_symm
     (n : d.monoid) (hn : 0 < d.degree n) (p s : Γ) (hps : p - s ∈ d.monoid)
     (k : ℕ) (H : (PowerSeries R)ˣ)
     (a : (d.shiftedFiltration (grade q β) p).quotient k) :
@@ -175,6 +181,6 @@ theorem shiftedQuotientInclusion_shiftedRayQuotientAction_symm
       (shiftedRayQuotientAction q β d n hn s k H).symm
         (d.shiftedQuotientMap (grade q β) p s hps k a) := by
   simpa only [shiftedRayQuotientAction_inv] using
-    shiftedQuotientInclusion_shiftedRayQuotientAction q β d n hn p s hps k (H⁻¹) a
+    shiftedQuotientMap_shiftedRayQuotientAction q β d n hn p s hps k (H⁻¹) a
 
 end Mei.QuantumMonoidAlgebra

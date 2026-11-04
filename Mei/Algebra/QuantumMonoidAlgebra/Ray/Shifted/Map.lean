@@ -12,9 +12,7 @@ public import Mei.Algebra.QuantumMonoidAlgebra.Ray.Shifted.Quotient
 # Naturality of shifted quantum ray actions
 
 Compatible scalar and positive degree maps intertwine shifted ray actions and
-reverse crossings at every ambient origin. The proof reuses the scalar-change
-naturality of the generic completed twisted series action and positive completion
-transport; it does not require either map to be injective. Finite actions are
+reverse crossings at every ambient origin. Neither map needs to be injective. Finite actions are
 intertwined at the source cutoff specified by the degree map modulus. The ray
 character uses the skew part of the bilinear form, so neither form needs to be alternating.
 -/
@@ -81,15 +79,6 @@ theorem mappedRay_degree_pos (n : d.monoid) (hn : 0 < d.degree n) :
   intro hz
   simp only [hz, map_zero, lt_self_iff_false] at hn
 
-include h in
-/-- Factor-set compatibility preserves the doubled-pairing scalar
-used in alternating ray formulas. -/
-theorem map_shiftedRay_character (n p : Γ) :
-    φ (((q ^ (2 * β n p) : Rˣ) : R)) = ((q' ^ (2 * β' (T n) (T p)) : Sˣ) : S) := by
-  have hc := congrArg Units.val (h (n + n) p)
-  simpa only [map_add, PositiveDegreeMap.map_add, LinearMap.add_apply, two_mul,
-    Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass] using hc
-
 private theorem positiveMap_firstIdeal_le : (F).ideal 1 ≤ ((G).ideal 1).comap ψ :=
   positiveMap_ideal_le_of_degree φ T.toAddMonoidHom h d.monoid e.monoid
       (fun _ hn => T.map_mem hn) d.degree e.degree
@@ -142,20 +131,6 @@ private theorem mapPositiveCompletion_twistedRay_of_character (n : d.monoid) (hn
     (mapPositiveCompletion_apply_eq d e T φ h a)
   exact hi.trans (ht.trans ho.symm)
 
-/-- Positive completion transport intertwines twisted actions at a quantum ray generator. -/
-theorem mapPositiveCompletion_twistedRay (n : d.monoid) (hn : 0 < d.degree n)
-    (p : Γ) (H : (PowerSeries R)ˣ) (a : (F).completion) :
-    Ψ ((F).completedTwistedSeriesAction
-      (completedRayGenerator q β d.monoid d.degree (fun _ h => d.degree_nonneg h) n hn)
-      (((q ^ (2 * β n p) : Rˣ) : R)) H a) =
-    (G).completedTwistedSeriesAction
-      (completedRayGenerator q' β' e.monoid e.degree (fun _ h => e.degree_nonneg h)
-        ⟨T n, T.map_mem n.property⟩ (mappedRay_degree_pos d e T n hn))
-      (((q' ^ (2 * β' (T n) (T p)) : Sˣ) : S))
-      (Units.map (PowerSeries.map φ).toMonoidHom H) (Ψ a) :=
-  mapPositiveCompletion_twistedRay_of_character d e T φ h n hn _ _
-    (map_shiftedRay_character d e T φ h n p) H a
-
 /-- Positive transport intertwines ray twists given by arbitrary bilinear commutation characters. -/
 theorem mapPositiveCompletion_twistedRay_skew (n : d.monoid) (hn : 0 < d.degree n)
     (p : Γ) (H : (PowerSeries R)ˣ) (a : (F).completion) :
@@ -198,7 +173,13 @@ private theorem map_action_coordinates
   have hc := congrArg (shiftedRayAction q' β' e ⟨T n, T.map_mem n.property⟩
     (mappedRay_degree_pos d e T n hn) (T p) (Units.map (PowerSeries.map φ).toMonoidHom H))
     (mapShiftedCompletion_coordinates d e T φ h p a)
-  exact hi.trans (hm.trans (he.trans (ho.symm.trans hc.symm)))
+  -- Change to positive coordinates, transport the twist, then return to the target shift.
+  calc
+    _ = _ := hi
+    _ = _ := hm
+    _ = _ := he
+    _ = _ := ho.symm
+    _ = _ := hc.symm
 
 /-- Scalar and exponent maps intertwine quantum ray actions on every shifted coefficient. -/
 theorem mapShiftedCompletion_shiftedRayAction
@@ -210,14 +191,15 @@ theorem mapShiftedCompletion_shiftedRayAction
       (Units.map (PowerSeries.map φ).toMonoidHom H)
       (mapShiftedCompletion d e T φ h p a) := by
   have he := (positiveCompletionShiftEquiv q β d p).apply_symm_apply a
-  have hl := congrArg (fun z => mapShiftedCompletion d e T φ h p
-    (shiftedRayAction q β d n hn p H z)) he
-  have hr := congrArg (fun z => shiftedRayAction q' β' e ⟨T n, T.map_mem n.property⟩
-    (mappedRay_degree_pos d e T n hn) (T p)
-    (Units.map (PowerSeries.map φ).toMonoidHom H)
-    (mapShiftedCompletion d e T φ h p z)) he
-  exact hl.symm.trans ((map_action_coordinates d e T φ h n hn p H
-    ((positiveCompletionShiftEquiv q β d p).symm a)).trans hr)
+  calc
+    _ = _ := (congrArg (fun z => mapShiftedCompletion d e T φ h p
+      (shiftedRayAction q β d n hn p H z)) he).symm
+    _ = _ := map_action_coordinates d e T φ h n hn p H
+      ((positiveCompletionShiftEquiv q β d p).symm a)
+    _ = _ := congrArg (fun z => shiftedRayAction q' β' e ⟨T n, T.map_mem n.property⟩
+      (mappedRay_degree_pos d e T n hn) (T p)
+      (Units.map (PowerSeries.map φ).toMonoidHom H)
+      (mapShiftedCompletion d e T φ h p z)) he
 
 /-- The same coefficient transport intertwines reverse quantum wall crossings. -/
 theorem mapShiftedCompletion_shiftedRayAction_symm
