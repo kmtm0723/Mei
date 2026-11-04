@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.FocusFocus.Terminal.FiniteInput
+public import Mei.Geometry.ScatteringDiagram.FocusFocus.Terminal
 public import Mei.Geometry.ScatteringDiagram.FocusFocus.Comparison.Basic
 public import Mei.LinearAlgebra.CommonLift
 
@@ -16,11 +16,10 @@ The face component of the faithful chamber Laurent comparison is the inverse
 slab algebra dictionary. Every total nodal terminal lift therefore has an
 explicit preimage in the original truncated slab. If its two chamber values
 are the images of specified chamber maps, their common lift reflects uniquely.
-We apply this to the actual finite weighted terminal evaluations.
+This includes the actual finite weighted terminal evaluations.
 
 Only the total chamber maps require a common face lift. No preimages of separate
-binomial branches are needed. We use the existing common-lift reflection theorem
-and correspondence comparison, retaining the original coefficient scalar action.
+binomial branches are needed. All maps retain the original coefficient scalar action.
 -/
 
 public noncomputable section
@@ -114,9 +113,8 @@ private theorem comparison_unique (L L' : H →ₗ[K] A)
       (chamberLaurentComparison K k).middle.comp L') : L = L' :=
   (LinearMap.cancel_left (comparison_middle_injective K k)).mp h
 
-/-- Total chamber maps whose Laurent images have the prescribed nodal common
-lift reflect uniquely to the actual truncated slab. The resulting face map is
-also required to be the specified preimage of that target lift. -/
+/-- A nodal common lift determines a unique truncated slab map with the two
+specified chamber components and with middle component equal to the nodal lift. -/
 theorem existsUnique_chamberCommonLift_of_laurent
     (l : H →ₗ[K] SlabNode τ)
     (βL : H →ₗ[K] TruncatedExponentChamber K k 1)
@@ -142,10 +140,8 @@ variable {ι : Type*}
   (α : ι → H →ₗ[AdjoinRoot (Polynomial.X ^ (k + 1) : Polynomial K)]
     AdjoinRoot (Polynomial.X ^ (k + 1) : Polynomial K))
 
-/-- The actual mixed finite terminal evaluations reflect to one common lift in
-the original chamber coefficient diagram whenever the total evaluations are
-the Laurent images of the given chamber maps. Its face preimage is specified
-by the existing slab dictionary, including tangential and constant records. -/
+/-- Finite terminal evaluations determine a unique truncated slab map with the
+specified chamber components and middle component equal to the total theta lift. -/
 theorem existsUnique_slabTerminalFinite_chamberLift
     {v : ℝ} {L U : ℝ × ℝ}
     (hL : L ∈ slabTerminalFiniteDomain s n b v)
