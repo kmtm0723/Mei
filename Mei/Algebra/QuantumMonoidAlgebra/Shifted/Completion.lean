@@ -133,6 +133,8 @@ theorem projection_positiveCompletionShiftEquiv_of_projection (p : Γ)
   simp only [positiveCompletionShiftEquiv, LinearEquiv.trans_apply,
     ModuleFiltration.projection_completionEquiv,
     AlgFiltration.projection_moduleCompletionEquiv_symm, hb]
+  -- The quotient linear maps send mk to mk by definition; the ideal and submodule
+  -- quotients here use the same underlying quotient type and constructor.
   rfl
 
 end Mei.QuantumMonoidAlgebra
