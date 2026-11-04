@@ -110,8 +110,11 @@ theorem groupLabel_map (g : κ) (k : ℕ) :
   have hs : ∀ j ∈ s, G.group j = g := fun j hj => (Finset.mem_filter.mp hj).2
   have hact : ∀ j ∈ D.active k, G.group j = g → j ∈ s := fun j hj hg =>
     Finset.mem_filter.mpr ⟨(Set.toFinite _).mem_toFinset.mpr hj, hg⟩
+  have hsub : (D.map f hf).active k ⊆ D.active k := by
+    rw [← D.pushforward_ofFixedDegree f hf]
+    exact D.active_pushforward_subset _ k (by simp)
   rw [(G.map f hf).groupLabel_eq_noncommProd g k s (fun j hj => by simpa using hs j hj)
-      fun j hj hg => hact j (D.active_map_subset f hf k hj) (by simpa using hg),
+      fun j hj hg => hact j (hsub hj) (by simpa using hg),
     G.groupLabel_eq_noncommProd g k s hs hact]
   refine (Finset.noncommProd_congr rfl (fun j _ => ?_) _).trans
     (Finset.map_noncommProd s _ _ _).symm
