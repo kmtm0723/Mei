@@ -61,6 +61,20 @@ def principalEmbedding : D.unfrozen →ₗ[ℤ] (Module.Dual ℤ D.sublattice ×
 theorem principalEmbedding_apply (n : D.unfrozen) :
     D.principalEmbedding n = (D.principalCharacter n, n) := (rfl)
 
+/-- For the zero form the principal character vanishes. -/
+theorem principalCharacter_eq_zero_of_form_eq_zero (hform : D.form = 0) :
+    D.principalCharacter = 0 := by
+  ext n m
+  apply Int.cast_injective (α := ℚ)
+  simp [hform]
+
+/-- For the zero form the principal lift is `r(n) = (0, n)`: its projection
+`ρ(r(n)) = p₁*(n)` to the character lattice is zero. -/
+theorem principalEmbedding_eq_of_form_eq_zero (hform : D.form = 0) (n : D.unfrozen) :
+    D.principalEmbedding n = (0, n) := by
+  rw [principalEmbedding_apply, D.principalCharacter_eq_zero_of_form_eq_zero hform,
+    LinearMap.zero_apply]
+
 /-- The principal lift loses no exponents, including degrees in the radical. -/
 theorem principalEmbedding_injective : Function.Injective D.principalEmbedding :=
   fun _ _ h => congrArg Prod.snd h

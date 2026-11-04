@@ -6,7 +6,7 @@ Authors: Claude Code
 module
 
 public import Mei.Geometry.ScatteringDiagram.Skew.PolynomialInput.Basic
-public import Mei.Geometry.ScatteringDiagram.Skew.Principal
+public import Mei.Geometry.ScatteringDiagram.Skew.Principal.Basic
 public import Mei.Algebra.PositiveDegrees.Basis
 public import Mathlib.Data.Nat.Cast.Field
 

@@ -32,11 +32,13 @@ direction. Hence a segment crossing only that germ has the projection of the gro
 its path product (`FunctionWallGrouping.levelPathProduct_toPath_eq_projection_label`).
 
 For an action `σ` of the completed group on the completion of a filtered monoid algebra
-`R[Q]`, a unit `f` is a *wall function* of a group when its label acts on every
+`A[Q]`, a unit `f` is a *wall function* of a group when its label acts on every
 monomial `z^p` by multiplication by `f^(ν(ρ p))`, where `ν` is the group's normal
-(`FunctionWallGrouping.IsWallFunction`). We require an invertible monomial of normal
+(`FunctionWallGrouping.IsWallFunction`). The coefficient ring `A` is any algebra over the
+scalars `R` of the Lie algebra; for instance `R = ℚ` when tropical vertex coefficients are
+compared along a change of coefficient ring. We require an invertible monomial of normal
 weight one for each nonempty group, so that this action uniquely determines `f`. For a chosen
-positive subsemiring `P ⊆ R[Q]`,
+positive subsemiring `P ⊆ A[Q]`,
 a grouping is positive if every group has a wall function that is positive in the sense
 of `AlgFiltration.IsPositive`, and a diagram is a *positive wall representative* if it
 admits a positive grouping (`DirectedDiagram.IsPositiveWallRepresentative`). Walls in
@@ -269,7 +271,8 @@ section WallFunction
 
 open AddMonoidAlgebra
 
-variable {Q : AddSubmonoid Γ} {F : AlgFiltration (AddMonoidAlgebra R Q)}
+variable {A : Type*} [CommRing A] [Algebra R A]
+  {Q : AddSubmonoid Γ} {F : AlgFiltration (AddMonoidAlgebra A Q)}
   (σ : d.completedBCHGroup ℒ →* (F.completion ≃ₐ[R] F.completion))
 
 /-- A unit `f` is a wall function of the group `g` for the action `σ` when the label of `g`
@@ -278,8 +281,8 @@ normal of the walls of `g`. Each such normal must admit a monomial of weight one
 whose image in the completion is invertible; this lets the action recover `f`. -/
 def IsWallFunction (g : κ) (f : F.completionˣ) : Prop :=
   ∀ j, G.group j = g →
-    (∃ p : Q, (D.wall j).normal (ρ p) = 1 ∧ IsUnit (F.toCompletion (single p (1 : R)))) ∧
-    ∀ (p : Q) (c : R),
+    (∃ p : Q, (D.wall j).normal (ρ p) = 1 ∧ IsUnit (F.toCompletion (single p (1 : A)))) ∧
+    ∀ (p : Q) (c : A),
     σ (G.label g) (F.toCompletion (single p c)) =
       ((f ^ (D.wall j).normal (ρ p) : F.completionˣ) : F.completion) *
         F.toCompletion (single p c)
@@ -287,8 +290,8 @@ def IsWallFunction (g : κ) (f : F.completionˣ) : Prop :=
 /-- The defining monomial action of a wall function. -/
 theorem isWallFunction_iff (g : κ) (f : F.completionˣ) :
     G.IsWallFunction σ g f ↔ ∀ j, G.group j = g →
-      (∃ p : Q, (D.wall j).normal (ρ p) = 1 ∧ IsUnit (F.toCompletion (single p (1 : R)))) ∧
-      ∀ (p : Q) (c : R),
+      (∃ p : Q, (D.wall j).normal (ρ p) = 1 ∧ IsUnit (F.toCompletion (single p (1 : A)))) ∧
+      ∀ (p : Q) (c : A),
       σ (G.label g) (F.toCompletion (single p c)) =
         ((f ^ (D.wall j).normal (ρ p) : F.completionˣ) : F.completion) *
           F.toCompletion (single p c) := Iff.rfl
@@ -304,7 +307,7 @@ theorem IsWallFunction.unique {g : κ} {f f' : F.completionˣ}
     (((G.isWallFunction_iff σ g f').mp hf' j hj).2 p 1)
   exact Units.ext (hu.mul_right_cancel (by simpa only [hp, zpow_one] using he))
 
-variable (P : Subsemiring (AddMonoidAlgebra R Q))
+variable (P : Subsemiring (AddMonoidAlgebra A Q))
 
 /-- A grouping is positive when every group has a wall function positive for `P`. -/
 def IsPositive : Prop :=
@@ -336,9 +339,10 @@ end FunctionWallGrouping
 
 section WallFunction
 
-variable {Q : AddSubmonoid Γ} {F : AlgFiltration (AddMonoidAlgebra R Q)}
+variable {A : Type*} [CommRing A] [Algebra R A]
+  {Q : AddSubmonoid Γ} {F : AlgFiltration (AddMonoidAlgebra A Q)}
   (σ : d.completedBCHGroup ℒ →* (F.completion ≃ₐ[R] F.completion))
-  (P : Subsemiring (AddMonoidAlgebra R Q)) (π : Γ →+ M)
+  (P : Subsemiring (AddMonoidAlgebra A Q)) (π : Γ →+ M)
 
 /-- A positive wall representative: a directed diagram admitting a function-wall grouping
 all of whose wall functions are positive for `P`, for the coefficient action `σ` and
