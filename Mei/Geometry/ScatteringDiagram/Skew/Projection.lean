@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Geometry.ScatteringDiagram.Skew.WallSpace.Basic
+public import Mei.Geometry.ScatteringDiagram.Skew.WallSpace.Ray
 public import Mei.Geometry.ScatteringDiagram.WallSpace.Projection
 
 /-!
@@ -17,7 +18,8 @@ positive degree function are retained, so radical degrees remain present even
 though their projected spatial direction is zero. The projected integral normal
 pulls back to the principal normal. Eligible normals carry the entire homogeneous
 skew piece, and the completed wall groups are exactly the principal cylinder wall
-groups for the pulled back normals.
+groups for the pulled back normals. At the normalized projected normal of a supported
+ray, the completed wall group is the whole completed ray subgroup.
 
 We reuse `SkewLatticeDatum.principalWallSpaces` and
 `DirectedWallSpaces.project`. The principal and projected realizations follow
@@ -100,5 +102,13 @@ theorem projectedPrincipalWallSpaces_wallGroup (w : SupportedRay d) (m : M° →
   simp only [DirectedWallSpaces.mem_wallGroup,
     DirectedWallSpaces.mem_truncatedRayLieSubalgebra, DirectedWallSpaces.raySubmodule_def,
     D.projectedPrincipalWallSpaces_wall_eq]
+
+/-- At the normalized projected normal `κ(n)⟨n,-⟩` of a supported primitive generator, the
+projected wall group is the whole supported ray group, including at radical degrees. -/
+theorem projectedPrincipalWallSpaces_wallGroup_eq_completedRaySubgroup (w : SupportedRay d) :
+    (D.projectedPrincipalWallSpaces (R := R) d).wallGroup w
+        (D.projectedPrincipalNormal w.generator).toAddMonoidHom = d.completedRaySubgroup ℒ w := by
+  rw [projectedPrincipalWallSpaces_wallGroup, projectedPrincipalNormal_comp_fst,
+    principalWallSpaces_wallGroup_eq_completedRaySubgroup]
 
 end Mei.SkewLatticeDatum

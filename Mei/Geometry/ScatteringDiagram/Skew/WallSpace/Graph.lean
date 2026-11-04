@@ -21,9 +21,10 @@ spatial map by `DirectedWall.cylinder`. The integral normals and wall
 coefficients are those of the original unfrozen-indexed wall spaces. Degrees
 outside the graph carry zero spaces, and radical degrees survive projection.
 
-The graph BCH equivalence identifies the completed wall groups. The fixed-degree
-principal Lie embedding preserves the graph wall spaces, allowing these labels
-to act through the formal tropical vertex realization.
+The graph BCH equivalence identifies the completed wall groups; at the normalized projected
+normal of a supported ray, the projected graph wall group is the graph image of the whole
+supported ray group. The fixed-degree principal Lie embedding preserves the graph wall
+spaces, allowing these labels to act through the formal tropical vertex realization.
 
 The principal realization follows Gross–Hacking–Keel–Kontsevich, *Canonical bases
 for cluster algebras*, §1 and Appendix B, arXiv:1411.1394v2. We reuse
@@ -136,5 +137,16 @@ theorem map_projectedPrincipalGraphWallGroup (w : SupportedRay d) (m : M° →+ 
         (w.graph D.principalCharacter.toAddMonoidHom) m := by
   rw [DirectedWallSpaces.project_wallGroup, D.projectedPrincipalWallSpaces_wallGroup,
     D.map_principalGraphWallGroup]
+
+/-- At the normalized projected normal of a supported ray, the projected graph wall group is
+the graph image of the whole supported ray group. -/
+theorem map_completedRaySubgroup_eq_projectedPrincipalGraphWallGroup (w : SupportedRay d) :
+    (d.completedRaySubgroup ℒ w).map
+        (d.graphBCHGroupEquiv ℒ D.principalCharacter.toAddMonoidHom).toMonoidHom =
+      (D.projectedPrincipalGraphWallSpaces (R := R) d).wallGroup
+        (w.graph D.principalCharacter.toAddMonoidHom)
+        (D.projectedPrincipalNormal w.generator).toAddMonoidHom := by
+  rw [← D.map_projectedPrincipalGraphWallGroup,
+    D.projectedPrincipalWallSpaces_wallGroup_eq_completedRaySubgroup]
 
 end Mei.SkewLatticeDatum
