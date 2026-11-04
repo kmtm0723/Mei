@@ -120,19 +120,22 @@ variable {Γ R ι : Type*} {L : Type u} [AddCommGroup Γ] [CommRing R] [Algebra 
 
 /-- Transport a directed diagram along the coordinate swap of the plane. -/
 def swapImage : DirectedDiagram (d := d) h (H.mapTangent AddEquiv.prodComm) ι :=
-  D.image (Toric.IntegralAffineEquiv.swap h)
-    (DirectedWallSpaces.CoordinateChange.ofTangentEquiv H AddEquiv.prodComm) (by simp)
+  D.pushforward (DirectedWall.Pushforward.ofCoordinateChange (Toric.IntegralAffineEquiv.swap h)
+    (DirectedWallSpaces.CoordinateChange.ofTangentEquiv H AddEquiv.prodComm) (by simp))
 
 /-- Transport the points and paths of a directed diagram along the coordinate swap. -/
 def swapPathImage : D.Point ⥤q D.swapImage.Point :=
-  D.pathImage (Toric.IntegralAffineEquiv.swap h)
-    (DirectedWallSpaces.CoordinateChange.ofTangentEquiv H AddEquiv.prodComm) (by simp)
+  D.pathPushforward _
 
+open DirectedWallSpaces in
 /-- The coordinate swap does not change path products: the completed product along a
 path and along its swapped path agree, although the swap reverses orientation. -/
 theorem pathProduct_swapImage {x y : D.Point} (p : Quiver.Path x y) :
-    D.swapImage.pathProduct (D.swapPathImage.mapPath p) = D.pathProduct p := by
-  exact (D.pathProduct_image _ _ _ p).trans (by simp)
+    D.swapImage.pathProduct (D.swapPathImage.mapPath p) = D.pathProduct p :=
+  calc
+    _ = (CoordinateChange.ofTangentEquiv H AddEquiv.prodComm).gradedLieHom.completedMap
+        (D.pathProduct p) := D.pathProduct_pushforward _ p
+    _ = D.pathProduct p := by rw [← CoordinateChange.completedEquiv_apply]; simp
 
 end Mei.DirectedDiagram
 

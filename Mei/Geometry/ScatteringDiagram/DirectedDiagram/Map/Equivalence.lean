@@ -57,14 +57,14 @@ theorem levelEquivalent_map_iff_of_injective (k : ℕ)
     (hinj : Function.Injective (f.truncatedMap k (a := k) (by simp))) :
     (D.map f hf).LevelEquivalent (E.map f hf) k ↔ D.LevelEquivalent E k := by
   refine ⟨?_, fun hDE => hDE.map f hf⟩
-  intro hDE
-  rw [levelEquivalent_def] at hDE ⊢
-  intro x y x' y' p q hpq
+  rw [← pushforward_ofFixedDegree, ← pushforward_ofFixedDegree, levelEquivalent_def,
+    levelEquivalent_def]
+  intro hDE x y x' y' p q hpq
   apply LieHom.bchGroupMap_injective hinj
-  rw [← D.levelPathProduct_mapPathPrefunctor f hf k,
-    ← E.levelPathProduct_mapPathPrefunctor f hf k]
+  refine (D.levelPathProduct_pushforward (.ofFixedDegree f hf) k (by simp) p).symm.trans
+    (Eq.trans ?_ (E.levelPathProduct_pushforward (.ofFixedDegree f hf) k (by simp) q))
   apply hDE
-  simpa only [vertices_mapPathPrefunctor] using hpq
+  simpa [Prefunctor.vertices_mapPath, Function.comp_def] using hpq
 
 /-- Equivalent directed presentations remain equivalent after changing coefficients,
 even if they have different index types and different active supports. -/

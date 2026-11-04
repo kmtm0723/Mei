@@ -31,7 +31,7 @@ wall is transported along admissible paths for any outgoing completion of the ba
 This is the transport of coefficients obtained from the module probe in Mandel,
 *Scattering diagrams, theta functions, and refined tropical curve counts*, §3.3.3
 (arXiv:1503.06183v5). It combines `ModuleProbe.verticalCoefficient_eq_action_of_paths`
-with the charge-zero comparison `DirectedDiagram.levelPathProduct_mapPathPrefunctor` and
+with the charge-zero comparison `DirectedDiagram.levelPathProduct_pushforward` and
 `ModuleProbe.levelTransport_cylinderDiagram`.
 -/
 
@@ -76,29 +76,34 @@ theorem baseBCHProjection_levelPathProduct (k : ℕ)
     {x y : WallComplement (fun c : B.active k => (B.wall c).support)}
     (γ : AdmissiblePLPath x y) (ha : a.val.1 = x.val) (hb : b.val.1 = y.val) :
     (π k).bchGroupMap (D.levelPathProduct k r) = B.levelPathProduct k γ := by
-  let f := chargeZeroGradedLieHom d ℳ p ℒ
-  let hf := chargeZeroGradedLieHom_mem_wall d ℳ p ℒ H
+  let P := DirectedWall.Pushforward.ofFixedDegree (h := h.prod h')
+    (chargeZeroGradedLieHom d ℳ p ℒ) (chargeZeroGradedLieHom_mem_wall d ℳ p ℒ H)
+  rw [← D.pushforward_ofFixedDegree] at hD₀ hB
   have hC := hB.consistent hD₀
   have hBc := (cylinderDiagram_levelConsistent_iff d ℳ p ℒ H h h' B k).mp hC
   let x' := (cylinderPathLift d ℳ p ℒ H h h' B k a.val.2).obj x
   let y' := (cylinderPathLift d ℳ p ℒ H h h' B k b.val.2).obj y
-  have hx' : ((D.mapPathPrefunctor f hf k).obj a).val = x'.val := by
-    simp [x', ← ha]
-  have hy' : ((D.mapPathPrefunctor f hf k).obj b).val = y'.val := by
-    simp [y', ← hb]
+  have hx' : ((D.levelPathPushforward P k (by simp [P])).obj a).val = x'.val := by
+    simp [P, x', ← ha]
+  have hy' : ((D.levelPathPushforward P k (by simp [P])).obj b).val = y'.val := by
+    simp [P, y', ← hb]
+  have hr : (D.pushforward P).levelPathProduct k
+      ((D.levelPathPushforward P k (by simp [P])).mapPath r) =
+      ((chargeZeroGradedLieHom d ℳ p ℒ).truncatedMap (a := k) k (by simp)).bchGroupMap
+        (D.levelPathProduct k r) :=
+    D.levelPathProduct_pushforward P k _ r
   have hpx : (cylinderPathProjection d ℳ p ℒ H h h' B k).obj x' = x :=
     WallComplement.ext (by simp [x'])
   have hpy : (cylinderPathProjection d ℳ p ℒ H h h' B k).obj y' = y :=
     WallComplement.ext (by simp [y'])
   apply LieHom.bchGroupMap_injective
     (Function.LeftInverse.injective (baseQuotientProjection_base d ℳ p ℒ k))
-  have he := ((D.map f hf).levelTransport_eq_levelPathProduct hD₀
-    ((D.mapPathPrefunctor f hf k).mapPath r)).symm.trans
+  have he := ((D.pushforward P).levelTransport_eq_levelPathProduct hD₀
+    ((D.levelPathPushforward P k (by simp [P])).mapPath r)).symm.trans
     ((hB.levelTransport_eq hD₀ hC hx' hy').trans
       (levelTransport_cylinderDiagram d ℳ p ℒ H h h' B hBc x' y'))
-  rw [hpx, hpy, B.levelTransport_eq_levelPathProduct hBc γ,
-    D.levelPathProduct_mapPathPrefunctor, truncatedMap_chargeZeroGradedLieHom,
-    LieHom.bchGroupMap_comp] at he
+  rw [hpx, hpy, B.levelTransport_eq_levelPathProduct hBc γ, hr,
+    truncatedMap_chargeZeroGradedLieHom, LieHom.bchGroupMap_comp] at he
   exact he
 
 omit [LieAlgebra ℚ L] [IsScalarTower ℚ R L] in

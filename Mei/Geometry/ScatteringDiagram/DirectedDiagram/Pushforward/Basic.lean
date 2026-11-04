@@ -19,8 +19,7 @@ target order `k`, paths are pushed forward from any source cutoff `a` covering t
 modulus: first the walls whose labels die at order `k` are forgotten, then the path is
 moved by the spatial affine equivalence. The finite path product is carried by the
 truncated BCH homomorphism, and common all-order paths give naturality of completed
-path products. The path maps and these identities are transported to any diagram equal
-to the pushforward.
+path products.
 
 Image normals are only positive rational multiples of the inverse-dual normals, as for
 tropical pairings of finite-index lattices; positive rescaling of normals does not change
@@ -273,67 +272,6 @@ theorem pathProduct_pushforward {x y : D.Point} (p : Quiver.Path x y) :
   rw [projection_pathProduct, P.lieHom.projection_completedMap, projection_pathProduct]
   exact hp.trans (D.levelPathProduct_pushforward P k le_rfl
     ((CommonWallComplement.projectionPrefunctor (P.degreeMap.modulus k)).mapPath p))
-
-section OfEq
-
-variable {D P} {D' : DirectedDiagram (d := d') h' H' ι} (hD' : D.pushforward P = D')
-
-/-- Finite path pushforward into a diagram equal to the pushforward, transported along the
-equality. -/
-def levelPathPushforwardOfEq (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a) :
-    WallComplement (fun j : D.active a => (D.wall j).support) ⥤q
-      WallComplement (fun j : D'.active k => (D'.wall j).support) :=
-  hD' ▸ D.levelPathPushforward P k ha
-
-/-- The transported finite path map sends each vertex to its spatial image. -/
-@[simp]
-theorem levelPathPushforwardOfEq_obj_val (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a)
-    (x : WallComplement (fun j : D.active a => (D.wall j).support)) :
-    ((levelPathPushforwardOfEq hD' k ha).obj x).val = P.spatialMap x.val := by
-  subst hD'
-  exact D.levelPathPushforward_obj_val P k ha x
-
-/-- The transported finite path map preserves reversal. -/
-instance (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a) :
-    (levelPathPushforwardOfEq hD' k ha).MapReverse where
-  map_reverse' _ := PLift.ext (Subsingleton.elim _ _)
-
-/-- `levelPathProduct_pushforward` for a diagram equal to the pushforward. -/
-@[simp]
-theorem levelPathProduct_levelPathPushforwardOfEq (k : ℕ) {a : ℕ}
-    (ha : P.degreeMap.modulus k ≤ a)
-    {x y : WallComplement (fun j : D.active a => (D.wall j).support)}
-    (p : AdmissiblePLPath x y) :
-    D'.levelPathProduct k ((levelPathPushforwardOfEq hD' k ha).mapPath p) =
-      (P.lieHom.truncatedMap k ha).bchGroupMap (D.levelPathProduct a p) := by
-  subst hD'
-  exact D.levelPathProduct_pushforward P k ha p
-
-/-- All-order path pushforward into a diagram equal to the pushforward, transported along
-the equality. -/
-def pathPushforwardOfEq : D.Point ⥤q D'.Point :=
-  hD' ▸ D.pathPushforward P
-
-/-- The transported all-order path map sends each point to its spatial image. -/
-@[simp]
-theorem pathPushforwardOfEq_obj_val (x : D.Point) :
-    ((pathPushforwardOfEq hD').obj x).val = P.spatialMap x.val := by
-  subst hD'
-  exact D.pathPushforward_obj_val P x
-
-/-- The transported all-order path map preserves reversal. -/
-instance : (pathPushforwardOfEq hD').MapReverse where
-  map_reverse' _ := PLift.ext (Subsingleton.elim _ _)
-
-/-- `pathProduct_pushforward` for a diagram equal to the pushforward. -/
-@[simp]
-theorem pathProduct_pathPushforwardOfEq {x y : D.Point} (p : Quiver.Path x y) :
-    D'.pathProduct ((pathPushforwardOfEq hD').mapPath p) =
-      P.lieHom.completedMap (D.pathProduct p) := by
-  subst hD'
-  exact D.pathProduct_pushforward P p
-
-end OfEq
 
 section Composition
 

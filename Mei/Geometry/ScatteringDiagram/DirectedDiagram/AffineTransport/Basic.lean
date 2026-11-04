@@ -13,12 +13,11 @@ public import Mei.Geometry.ScatteringDiagram.DirectedWall.AffineTransport
 
 Compatible spatial and algebraic coordinate changes transport a directed diagram,
 preserving finite activity, incomingness and outgoingness. The degree functions
-may differ: at target order `k`, paths are transported from any source cutoff
-covering the coordinate change's modulus. The finite path product is carried by
-the corresponding truncated BCH homomorphism, even when some source walls vanish.
-Common all-order paths then give naturality of the completed path product.
+may differ.
 
-Diagram transport is the pushforward along `DirectedWall.Pushforward.ofCoordinateChange`.
+Diagram transport is the pushforward along `DirectedWall.Pushforward.ofCoordinateChange`,
+so paths and their products are transported by the pushforward path maps: at target
+order `k`, from any source cutoff covering the coordinate change's modulus.
 Repeated and coincident walls retain their indices; translations and
 orientation-reversing affine equivalences are allowed.
 -/
@@ -134,67 +133,5 @@ theorem imageEquiv_apply : imageEquiv e E hE D = D.image e E hE := (rfl)
 @[simp]
 theorem imageEquiv_symm_apply (D' : DirectedDiagram (d := d') h' H' ι) :
     (imageEquiv (ι := ι) e E hE).symm D' = D'.image e.symm E.symm (by simp [hE]) := (rfl)
-
-/-- A target-active label was active at any source order covering the modulus. -/
-theorem active_image_subset (k : ℕ) {a : ℕ} (ha : E.degreeMap.modulus k ≤ a) :
-    (D.image e E hE).active k ⊆ D.active a := by
-  rw [← pushforward_ofCoordinateChange]
-  exact D.active_pushforward_subset _ k ha
-
-/-- Restrict a source path to the target-active indices and then apply the spatial
-affine map: the pushforward path map along `DirectedWall.Pushforward.ofCoordinateChange`.
-The source cutoff can be any bound for the prescribed modulus. -/
-def levelPathImage (k : ℕ) {a : ℕ} (ha : E.degreeMap.modulus k ≤ a) :
-    WallComplement (fun j : D.active a => (D.wall j).support) ⥤q
-      WallComplement (fun j : (D.image e E hE).active k =>
-        ((D.image e E hE).wall j).support) :=
-  levelPathPushforwardOfEq (D.pushforward_ofCoordinateChange e E hE) k ha
-
-/-- The finite path map sends each vertex to its actual affine image. -/
-@[simp]
-theorem levelPathImage_obj_val (k : ℕ) {a : ℕ} (ha : E.degreeMap.modulus k ≤ a)
-    (x : WallComplement (fun j : D.active a => (D.wall j).support)) :
-    ((D.levelPathImage e E hE k ha).obj x).val = e x.val :=
-  (levelPathPushforwardOfEq_obj_val _ k ha x).trans (e.toContinuousAffineEquiv_apply x.val)
-
-/-- Finite path transport preserves reversal of segments and polygonal paths. -/
-instance (k : ℕ) {a : ℕ} (ha : E.degreeMap.modulus k ≤ a) :
-    (D.levelPathImage e E hE k ha).MapReverse where
-  map_reverse' _ := PLift.ext (Subsingleton.elim _ _)
-
-/-- Finite directed transport is natural under affine coordinate changes, using
-the truncated BCH map at any source cutoff covering the target modulus. -/
-@[simp]
-theorem levelPathProduct_image (k : ℕ) {a : ℕ} (ha : E.degreeMap.modulus k ≤ a)
-    {x y : WallComplement (fun j : D.active a => (D.wall j).support)}
-    (p : AdmissiblePLPath x y) :
-    (D.image e E hE).levelPathProduct k ((D.levelPathImage e E hE k ha).mapPath p) =
-      (E.gradedLieHom.truncatedMap k ha).bchGroupMap (D.levelPathProduct a p) :=
-  levelPathProduct_levelPathPushforwardOfEq _ k ha p
-
-/-- Transport a common all-order path: the pushforward path map along
-`DirectedWall.Pushforward.ofCoordinateChange`. Each target admissibility condition uses
-the source condition at its prescribed cutoff modulus. -/
-def pathImage : D.Point ⥤q (D.image e E hE).Point :=
-  pathPushforwardOfEq (D.pushforward_ofCoordinateChange e E hE)
-
-/-- All-order allowed points move by the spatial affine equivalence. -/
-@[simp]
-theorem pathImage_obj_val (x : D.Point) :
-    ((D.pathImage e E hE).obj x).val = e x.val :=
-  (pathPushforwardOfEq_obj_val _ x).trans (e.toContinuousAffineEquiv_apply x.val)
-
-/-- All-order affine path transport preserves reversal. -/
-instance : (D.pathImage e E hE).MapReverse where
-  map_reverse' _ := PLift.ext (Subsingleton.elim _ _)
-
-/-- Affine coordinate changes carry completed directed path products through the
-completed BCH group isomorphism, even when the degree functions differ. -/
-@[simp]
-theorem pathProduct_image {x y : D.Point} (p : Quiver.Path x y) :
-    (D.image e E hE).pathProduct ((D.pathImage e E hE).mapPath p) =
-      E.completedEquiv (D.pathProduct p) := by
-  rw [E.completedEquiv_apply]
-  exact pathProduct_pathPushforwardOfEq _ p
 
 end Mei.DirectedDiagram
