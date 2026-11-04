@@ -216,6 +216,29 @@ theorem rayVector_mem_unfrozen_inf_sublattice {n : N} (hn : n ∈ D.unfrozen) :
       (K := D.unfrozen.toAddSubgroup) D.unfrozen_saturated hn,
     (D.sublattice.toAddSubgroup.rayVector n).property⟩
 
+/-- An additive function on `N_uf` with values in a field of characteristic zero takes the
+value `κ(n)` times its value at `n` on the normalized vector `κ(n)n ∈ N_uf ∩ N°`. -/
+theorem map_rayVector_unfrozen {K : Type*} [Field K] [CharZero K]
+    (g : D.unfrozen →+ K) (n : D.unfrozen) :
+    g ⟨D.sublattice.toAddSubgroup.rayVector n,
+        (D.rayVector_mem_unfrozen_inf_sublattice n.property).1⟩ =
+      (D.sublattice.toAddSubgroup.rayIndex (n : N) : K) * g n := by
+  set κ := D.sublattice.toAddSubgroup.rayIndex (n : N)
+  have he : ((κ.den : ℤ) • (⟨D.sublattice.toAddSubgroup.rayVector n,
+      (D.rayVector_mem_unfrozen_inf_sublattice n.property).1⟩ : D.unfrozen)) = κ.num • n :=
+    Subtype.ext (by simpa using D.sublattice.toAddSubgroup.den_rayIndex_zsmul_rayVector n)
+  have hg := congrArg g he
+  simp only [map_zsmul, zsmul_eq_mul] at hg
+  have hden : (κ.den : K) ≠ 0 := by exact_mod_cast κ.den_ne_zero
+  rw [show (κ : K) = κ.num / κ.den from Rat.cast_def κ, div_mul_eq_mul_div, eq_div_iff hden,
+    mul_comm]
+  exact_mod_cast hg
+
+/-- A nonzero unfrozen vector has positive ray index. -/
+theorem rayIndex_unfrozen_pos {n : D.unfrozen} (hn : n ≠ 0) :
+    0 < D.sublattice.toAddSubgroup.rayIndex (n : N) :=
+  D.sublattice.toAddSubgroup.rayIndex_pos fun h0 => hn (Subtype.ext h0)
+
 /-- Pairing with the normalized lattice vector multiplies the form by the ray index. -/
 theorem form_rayVector (a n : N) :
     D.form a (D.sublattice.toAddSubgroup.rayVector n : N) =

@@ -6,6 +6,8 @@ Authors: Codex
 module
 
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
+public import Mathlib.LinearAlgebra.Basis.VectorSpace
+public import Mathlib.LinearAlgebra.Projection
 
 /-!
 # Directions of affine spans under affine maps
@@ -16,6 +18,12 @@ without requiring an invertible map or a nonempty set.
 A linear map whose kernel contains the direction of a set is constant on it.
 Adding unrestricted coordinates preserves and reflects equality of affine spans.
 For nonempty sets it also preserves and reflects equality of their directions.
+
+Over a division ring, a surjective linear map `A : V → V'` is the first coordinate of a linear
+equivalence `V ≃ V' × ker A`, which carries the preimage `A⁻¹(S)` to the cylinder
+`S × ker A`. Hence the direction of the affine span of a nonempty preimage is the preimage of
+the direction. The splitting uses Mathlib's `LinearMap.equivProdOfSurjectiveOfIsCompl` and
+`Submodule.projectionOnto`.
 -/
 
 public section
@@ -95,3 +103,71 @@ theorem direction_affineSpan_prod_univ_eq_iff {s t : Set P}
 
 end Prod
 end Mei
+
+namespace LinearMap
+
+open Set
+
+variable {K V V' : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
+  [AddCommGroup V'] [Module K V'] (A : V →ₗ[K] V') (hA : Function.Surjective A)
+
+/-- A surjective linear map is the first coordinate of a linear equivalence with the product
+of its target and its kernel. The kernel coordinate is the projection along a chosen
+complement. -/
+noncomputable def prodKerEquiv : V ≃ₗ[K] V' × LinearMap.ker A :=
+  A.equivProdOfSurjectiveOfIsCompl
+    (Submodule.projectionOnto (LinearMap.ker A)
+      (Submodule.exists_isCompl (LinearMap.ker A)).choose
+      (Submodule.exists_isCompl (LinearMap.ker A)).choose_spec)
+    (LinearMap.range_eq_top.mpr hA) (Submodule.range_projectionOnto _)
+    (by
+      rw [Submodule.ker_projectionOnto]
+      exact (Submodule.exists_isCompl (LinearMap.ker A)).choose_spec)
+
+/-- The first coordinate of the splitting is the surjection itself. -/
+@[simp]
+theorem prodKerEquiv_apply_fst (x : V) : (A.prodKerEquiv hA x).1 = A x := (rfl)
+
+/-- The first coordinate of the inverse splitting is recovered by the surjection. -/
+@[simp]
+theorem apply_prodKerEquiv_symm (z : V' × LinearMap.ker A) :
+    A ((A.prodKerEquiv hA).symm z) = z.1 := by
+  rw [← prodKerEquiv_apply_fst A hA, LinearEquiv.apply_symm_apply]
+
+/-- The splitting carries the preimage of a set to the cylinder over that set. -/
+theorem image_prodKerEquiv_preimage (S : Set V') :
+    A.prodKerEquiv hA '' (A ⁻¹' S) = S ×ˢ (univ : Set (LinearMap.ker A)) := by
+  ext z
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    exact ⟨by simpa using hx, mem_univ _⟩
+  · intro hz
+    exact ⟨(A.prodKerEquiv hA).symm z, by simpa using hz.1,
+      (A.prodKerEquiv hA).apply_symm_apply z⟩
+
+/-- The inverse splitting carries the cylinder over a set to its preimage. -/
+theorem image_prodKerEquiv_symm_prod_univ (S : Set V') :
+    (A.prodKerEquiv hA).symm '' (S ×ˢ (univ : Set (LinearMap.ker A))) = A ⁻¹' S := by
+  rw [← A.image_prodKerEquiv_preimage hA S]
+  exact (A.prodKerEquiv hA).toEquiv.symm_image_image _
+
+include hA in
+/-- The supporting direction of a preimage of a nonempty set under a linear surjection is
+the preimage of the original supporting direction. -/
+theorem direction_affineSpan_preimage {S : Set V'} (hS : S.Nonempty) :
+    (affineSpan K (A ⁻¹' S)).direction = (affineSpan K S).direction.comap A := by
+  have he := AffineMap.direction_affineSpan_image
+    (A.prodKerEquiv hA).symm.toLinearMap.toAffineMap (S ×ˢ (univ : Set (LinearMap.ker A)))
+  rw [LinearMap.coe_toAffineMap, LinearEquiv.coe_coe, A.image_prodKerEquiv_symm_prod_univ hA,
+    Mei.direction_affineSpan_prod_univ hS] at he
+  rw [he]
+  ext v
+  simp only [Submodule.mem_map, Submodule.mem_comap, Submodule.mem_prod, Submodule.mem_top,
+    and_true, LinearMap.toAffineMap_linear, LinearEquiv.coe_coe]
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    simpa using hz
+  · intro hv
+    exact ⟨A.prodKerEquiv hA v, by simpa using hv, by simp⟩
+
+end LinearMap
