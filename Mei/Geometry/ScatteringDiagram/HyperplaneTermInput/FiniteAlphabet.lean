@@ -109,8 +109,9 @@ theorem projection_finiteAlphabetLift {x : M × (E → ℤ)}
 /-- An input on the finite alphabet lifted along `τ`: the same hyperplanes, with exponents
 `τ x_α`. -/
 def liftFiniteAlphabet : HyperplaneTermInput f π ι E :=
-  I.map (PositiveDegrees.finiteAlphabetLift m hτ hτ0) fun _ hx =>
-    projection_finiteAlphabetLift hτ hτ0 hπ hx
+  I.map (PositiveDegrees.finiteAlphabetLift m hτ hτ0) (AddMonoidHom.id M)
+    (fun _ hx => projection_finiteAlphabetLift hτ hτ0 hπ hx) I.normal
+    fun _ => AddMonoidHom.comp_id _
 
 /-- The lifted input has the hyperplane normals of the input. -/
 @[simp]
@@ -149,8 +150,9 @@ local notation "Pτ" => Pushforward.ofFiniteAlphabetLift (R := R) (g := g) hτ h
 /-- The lifted input is the input mapped along the degree map of the pushforward data. -/
 theorem map_ofFiniteAlphabetLift_degreeMap
     (hPT : ∀ x ∈ (PositiveDegrees.finiteAlphabet m).monoid,
-      π ((Pτ).degreeMap x) = AddMonoidHom.fst M (E → ℤ) x) :
-    I.map (Pτ).degreeMap hPT = I.liftFiniteAlphabet hτ hτ0 hπ := by
+      π ((Pτ).degreeMap x) = AddMonoidHom.id M (AddMonoidHom.fst M (E → ℤ) x)) :
+    I.map (Pτ).degreeMap (AddMonoidHom.id M) hPT I.normal (fun _ => AddMonoidHom.comp_id _) =
+      I.liftFiniteAlphabet hτ hτ0 hπ := by
   rw [liftFiniteAlphabet]
   exact map_congr fun α => by rw [Pushforward.ofFiniteAlphabetLift_degreeMap]
 
@@ -162,14 +164,14 @@ theorem diagram_pushforward_ofFiniteAlphabetLift_equivalent :
     ((I.diagram g c).pushforward (Pτ)).Equivalent
       ((I.liftFiniteAlphabet hτ hτ0 hπ).diagram g c) := by
   have hPT : ∀ x ∈ (PositiveDegrees.finiteAlphabet m).monoid,
-      π ((Pτ).degreeMap x) = AddMonoidHom.fst M (E → ℤ) x := fun x hx => by
+      π ((Pτ).degreeMap x) = AddMonoidHom.id M (AddMonoidHom.fst M (E → ℤ) x) := fun x hx => by
     rw [Pushforward.ofFiniteAlphabetLift_degreeMap]
     exact projection_finiteAlphabetLift hτ hτ0 hπ hx
   rw [← I.map_ofFiniteAlphabetLift_degreeMap hτ hτ0 hπ g hPT]
-  refine I.diagram_pushforward_equivalent (Pτ) (fun y μ hy => ?_) hPT c
-    (Pushforward.ofFiniteAlphabetLift_normalMap hτ hτ0 hπ)
-    (Pushforward.ofFiniteAlphabetLift_spatialMap hτ hτ0 hπ)
-  rw [Pushforward.coe_ofFiniteAlphabetLift_lieHom_of_homogeneous hτ hτ0 hπ y μ hy,
+  refine I.diagram_pushforward_equivalent _ _ _ (Pτ) (fun _ _ y hy => ?_) hPT c
+    (fun _ => Pushforward.ofFiniteAlphabetLift_normalMap hτ hτ0 hπ _)
+    (fun _ _ => by simp)
+  rw [Pushforward.coe_ofFiniteAlphabetLift_lieHom_of_homogeneous hτ hτ0 hπ y _ hy,
     Pushforward.ofFiniteAlphabetLift_degreeMap, finiteAlphabetLift_apply]
 
 /-- Pushing forward the scattering class of an input on the finite alphabet along the finite
