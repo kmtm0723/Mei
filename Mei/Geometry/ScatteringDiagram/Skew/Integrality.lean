@@ -8,7 +8,6 @@ module
 public import Mei.Geometry.ScatteringDiagram.Skew.Dilogarithm
 public import Mei.RingTheory.FilteredAlgebra.Positive.PowerSeries
 import Mei.Algebra.Lie.Skew.Grouping
-import Mei.Data.List.Chain
 import Mei.Geometry.ScatteringDiagram.Skew.Coefficient.Positive
 import Mei.LinearAlgebra.SesquilinearForm.Alternating
 import Mei.RingTheory.PowerSeries.Log
@@ -598,9 +597,7 @@ theorem exists_nodup_prod_eq_and_intCast_mul_rayIndex_of_isChain [Module.Free �
           s * D.sublattice.toAddSubgroup.rayIndex (deg i) := by
   classical
   have hpw : l.Pairwise fun i j => 0 ≤ βℚ (deg i) (deg j) :=
-    hl.pairwise_of_forall_mem (p := fun i => deg i ∈ AddSubmonoid.closure {x, y}) hxy
-      fun _ b _ ha hb hc hab hbc =>
-        LinearMap.IsAlt.nonneg_trans_of_mem_closure_pair hβℚ ha hb hc (hdeg0 b) hab hbc
+    LinearMap.IsAlt.pairwise_of_isChain_of_mem_closure_pair hβℚ deg hxy (fun i _ => hdeg0 i) hl
   -- Summing the exponents of the factors of one degree sums their series.
   have hsum (L : List ι) :
       (L.map fun j => c j • negDilogNeg ℚ).sum = (L.map c).sum • negDilogNeg ℚ := by
