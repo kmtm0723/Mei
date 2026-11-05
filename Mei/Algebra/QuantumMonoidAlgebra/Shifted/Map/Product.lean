@@ -11,10 +11,9 @@ public import Mei.RingTheory.GradedAlgebra.Shifted.Basic
 /-!
 # Multiplicativity of shifted quantum coefficient transport
 
-Finite quotient representatives prove that compatible scalar and exponent maps
-preserve shifted products for arbitrary bilinear forms. Unlike formulas using
-alternating monomial conjugations, this argument uses only multiplicativity of
-the ambient quantum algebra map. Neither exponent nor scalar injectivity is needed.
+Compatible scalar and degree maps preserve finite-quotient and completed shifted
+products for arbitrary bilinear forms. Neither scalar nor exponent injectivity
+is required.
 -/
 
 public section
@@ -30,10 +29,12 @@ variable {R S Γ Γ' : Type*} [CommRing R] [CommRing S]
   (h : ∀ p r, Units.map φ.toMonoidHom (q ^ β p r) = q' ^ β' (T p) (T r))
 
 private local instance : Ring (QuantumMonoidAlgebra q β) := inferInstance
+private local instance : Semigroup (QuantumMonoidAlgebra q β) := inferInstance
 private local instance : Algebra R (QuantumMonoidAlgebra q β) := inferInstance
 private local instance : AddCommGroup (QuantumMonoidAlgebra q β) := inferInstance
 private local instance : Module R (QuantumMonoidAlgebra q β) := inferInstance
 private local instance : Ring (QuantumMonoidAlgebra q' β') := inferInstance
+private local instance : Semigroup (QuantumMonoidAlgebra q' β') := inferInstance
 private local instance : Algebra S (QuantumMonoidAlgebra q' β') := inferInstance
 private local instance : AddCommGroup (QuantumMonoidAlgebra q' β') := inferInstance
 private local instance : Module S (QuantumMonoidAlgebra q' β') := inferInstance
@@ -131,6 +132,24 @@ private theorem cast_shiftedQuotient_mk {p r : Γ'} (hpr : p = r) (k : ℕ)
   subst r
   rfl
 
+private theorem mapShiftedQuotient_mul_mk (p r : Γ) (k : ℕ)
+    (a : shiftedSubmodule (grade q β) d.monoid p)
+    (b : shiftedSubmodule (grade q β) d.monoid r) :
+    cast (congrArg (fun u => (e.shiftedFiltration (grade q' β') u).quotient k)
+        (map_add T.toAddMonoidHom p r))
+      (mapShiftedQuotient d e T φ h (p + r) k
+        (d.shiftedQuotientMul (grade q β) p r (T.modulus k)
+          (Submodule.Quotient.mk a) (Submodule.Quotient.mk b))) =
+      e.shiftedQuotientMul (grade q' β') (T p) (T r) k
+        (mapShiftedQuotient d e T φ h p k (Submodule.Quotient.mk a))
+        (mapShiftedQuotient d e T φ h r k (Submodule.Quotient.mk b)) := by
+  simp only [PositiveDegrees.shiftedQuotientMul_mk, mapShiftedQuotient_mk]
+  rw [cast_shiftedQuotient_mk e (map_add T.toAddMonoidHom p r) k
+    (mapShiftedSupport d e T φ h (p + r) (shiftedMul (grade q β) d.monoid p r a b))]
+  exact congrArg (fun z : shiftedSubmodule (grade q' β') e.monoid (T p + T r) =>
+    (Submodule.Quotient.mk z : (e.shiftedFiltration (grade q' β') (T p + T r)).quotient k))
+      (mapShiftedSupport_mul d e T φ h p r a b)
+
 /-- Finite product transport needs no alternation hypothesis on either bilinear form. -/
 theorem mapShiftedQuotient_mul (p r : Γ) (k : ℕ)
     (x : (d.shiftedFiltration (grade q β) p).quotient (T.modulus k))
@@ -138,71 +157,56 @@ theorem mapShiftedQuotient_mul (p r : Γ) (k : ℕ)
     cast (congrArg (fun u => (e.shiftedFiltration (grade q' β') u).quotient k)
         (map_add T.toAddMonoidHom p r))
       (mapShiftedQuotient d e T φ h (p + r) k
-        ((ModuleFiltration.quotientBilinear (d.shiftedFiltration (grade q β) p)
-        (d.shiftedFiltration (grade q β) r)
-        (d.shiftedFiltration (grade q β) (p + r))
-        (shiftedMul (grade q β) d.monoid p r)
-        (fun _ _ _ _ => d.shiftedMul_mem_shiftedFiltration (grade q β) p r)) (T.modulus k) x y)) =
-      (ModuleFiltration.quotientBilinear (e.shiftedFiltration (grade q' β') (T p))
-        (e.shiftedFiltration (grade q' β') (T r))
-        (e.shiftedFiltration (grade q' β') ((T p) + (T r)))
-        (shiftedMul (grade q' β') e.monoid (T p) (T r))
-        (fun _ _ _ _ => e.shiftedMul_mem_shiftedFiltration (grade q' β') (T p) (T r))) k
+        (d.shiftedQuotientMul (grade q β) p r (T.modulus k) x y)) =
+      e.shiftedQuotientMul (grade q' β') (T p) (T r) k
         (mapShiftedQuotient d e T φ h p k x) (mapShiftedQuotient d e T φ h r k y) := by
-  let ax := ((d.shiftedFiltration (grade q β) p).submodule
-    (T.modulus k + 1)).mkQ_surjective x
-  let by' := ((d.shiftedFiltration (grade q β) r).submodule
-    (T.modulus k + 1)).mkQ_surjective y
-  let a := Classical.choose ax
-  let b := Classical.choose by'
-  have ha : Submodule.Quotient.mk a = x := Classical.choose_spec ax
-  have hb : Submodule.Quotient.mk b = y := Classical.choose_spec by'
+  -- Exists.elim retains typed quotient equalities without substituting through the cast tower.
+  refine (((d.shiftedFiltration (grade q β) p).submodule
+    (T.modulus k + 1)).mkQ_surjective x).elim fun a ha => ?_
+  refine (((d.shiftedFiltration (grade q β) r).submodule
+    (T.modulus k + 1)).mkQ_surjective y).elim fun b hb => ?_
   let C := cast (congrArg (fun u => (e.shiftedFiltration (grade q' β') u).quotient k)
     (map_add T.toAddMonoidHom p r))
-  have hm : C (mapShiftedQuotient d e T φ h (p + r) k
-        ((ModuleFiltration.quotientBilinear (d.shiftedFiltration (grade q β) p)
-        (d.shiftedFiltration (grade q β) r)
-        (d.shiftedFiltration (grade q β) (p + r))
-        (shiftedMul (grade q β) d.monoid p r)
-        (fun _ _ _ _ => d.shiftedMul_mem_shiftedFiltration (grade q β) p r)) (T.modulus k)
-          (Submodule.Quotient.mk a) (Submodule.Quotient.mk b))) =
-      (ModuleFiltration.quotientBilinear (e.shiftedFiltration (grade q' β') (T p))
-        (e.shiftedFiltration (grade q' β') (T r))
-        (e.shiftedFiltration (grade q' β') ((T p) + (T r)))
-        (shiftedMul (grade q' β') e.monoid (T p) (T r))
-        (fun _ _ _ _ => e.shiftedMul_mem_shiftedFiltration (grade q' β') (T p) (T r))) k
-        (mapShiftedQuotient d e T φ h p k (Submodule.Quotient.mk a))
-        (mapShiftedQuotient d e T φ h r k (Submodule.Quotient.mk b)) := by
-    simp only [C, ModuleFiltration.quotientBilinear_mk, mapShiftedQuotient_mk]
-    rw [cast_shiftedQuotient_mk e (map_add T.toAddMonoidHom p r) k
-      (mapShiftedSupport d e T φ h (p + r) (shiftedMul (grade q β) d.monoid p r a b))]
-    exact congrArg (fun z : shiftedSubmodule (grade q' β') e.monoid (T p + T r) =>
-      (Submodule.Quotient.mk z : (e.shiftedFiltration (grade q' β') (T p + T r)).quotient k))
-        (mapShiftedSupport_mul d e T φ h p r a b)
   have hl := congrArg₂ (fun u v => C (mapShiftedQuotient d e T φ h (p + r) k
-    ((ModuleFiltration.quotientBilinear (d.shiftedFiltration (grade q β) p)
-        (d.shiftedFiltration (grade q β) r)
-        (d.shiftedFiltration (grade q β) (p + r))
-        (shiftedMul (grade q β) d.monoid p r)
-        (fun _ _ _ _ => d.shiftedMul_mem_shiftedFiltration (grade q β) p r))
-        (T.modulus k) u v))) ha hb
-  have hr := congrArg₂ (fun u v =>
-    (ModuleFiltration.quotientBilinear (e.shiftedFiltration (grade q' β') (T p))
-        (e.shiftedFiltration (grade q' β') (T r))
-        (e.shiftedFiltration (grade q' β') ((T p) + (T r)))
-        (shiftedMul (grade q' β') e.monoid (T p) (T r))
-        (fun _ _ _ _ => e.shiftedMul_mem_shiftedFiltration (grade q' β') (T p) (T r))) k
+    (d.shiftedQuotientMul (grade q β) p r (T.modulus k) u v))) ha hb
+  have hr := congrArg₂ (fun u v => e.shiftedQuotientMul (grade q' β') (T p) (T r) k
     (mapShiftedQuotient d e T φ h p k u) (mapShiftedQuotient d e T φ h r k v)) ha hb
-  exact hl.symm.trans (hm.trans hr)
+  calc
+    _ = _ := hl.symm
+    _ = _ := mapShiftedQuotient_mul_mk d e T φ h p r k a b
+    _ = _ := hr
 
 private theorem projection_cast_completed {p r : Γ'} (hpr : p = r) (k : ℕ)
     (x : e.ShiftedCoefficients (grade q' β') p) :
     (e.shiftedFiltration (grade q' β') r).projection k
         (cast (congrArg (e.ShiftedCoefficients (grade q' β')) hpr) x) =
       cast (congrArg (fun u => (e.shiftedFiltration (grade q' β') u).quotient k) hpr)
-        ((e.shiftedFiltration (grade q' β') p).projection k x) := by
+        ((e.shiftedFiltration (grade q' β') p).projection k x) :=
+by
+  -- Projection is indexed by the same degree; equality elimination identifies both carriers.
   subst r
   rfl
+
+private theorem exists_mapShiftedSupport_projection (p : Γ) (k : ℕ)
+    (x : d.ShiftedCoefficients (grade q β) p) :
+    ∃ a : shiftedSubmodule (grade q β) d.monoid p,
+      (Submodule.Quotient.mk a : (d.shiftedFiltration (grade q β) p).quotient (T.modulus k)) =
+        (d.shiftedFiltration (grade q β) p).projection (T.modulus k) x ∧
+      (Submodule.Quotient.mk (mapShiftedSupport d e T φ h p a) :
+          (e.shiftedFiltration (grade q' β') (T p)).quotient k) =
+        (e.shiftedFiltration (grade q' β') (T p)).projection k
+          (mapShiftedCompletion d e T φ h p x) := by
+  refine (((d.shiftedFiltration (grade q β) p).submodule
+    (T.modulus k + 1)).mkQ_surjective
+      ((d.shiftedFiltration (grade q β) p).projection (T.modulus k) x)).elim fun a ha => ?_
+  refine ⟨a, ha, ?_⟩
+  calc
+    _ = mapShiftedQuotient d e T φ h p k (Submodule.Quotient.mk a) :=
+      (mapShiftedQuotient_mk d e T φ h p k a).symm
+    _ = mapShiftedQuotient d e T φ h p k
+        ((d.shiftedFiltration (grade q β) p).projection (T.modulus k) x) :=
+      congrArg (mapShiftedQuotient d e T φ h p k) ha
+    _ = _ := mapShiftedQuotient_projection d e T φ h p k x
 
 /-- Completed product transport holds for arbitrary compatible bilinear forms. -/
 theorem mapShiftedCompletion_mul (p r : Γ)
@@ -221,28 +225,10 @@ theorem mapShiftedCompletion_mul (p r : Γ)
     (mapShiftedCompletion d e T φ h (p + r) (d.shiftedCompletionMul (grade q β) p r x y))
   have h₁ := congrArg C (mapShiftedQuotient_projection d e T φ h (p + r) k
     (d.shiftedCompletionMul (grade q β) p r x y))
-  let hx := ((d.shiftedFiltration (grade q β) p).submodule
-    (T.modulus k + 1)).mkQ_surjective
-      ((d.shiftedFiltration (grade q β) p).projection (T.modulus k) x)
-  let hy := ((d.shiftedFiltration (grade q β) r).submodule
-    (T.modulus k + 1)).mkQ_surjective
-      ((d.shiftedFiltration (grade q β) r).projection (T.modulus k) y)
-  let a := Classical.choose hx
-  let b := Classical.choose hy
-  have ha : Submodule.Quotient.mk a =
-      (d.shiftedFiltration (grade q β) p).projection (T.modulus k) x :=
-    Classical.choose_spec hx
-  have hb : Submodule.Quotient.mk b =
-      (d.shiftedFiltration (grade q β) r).projection (T.modulus k) y :=
-    Classical.choose_spec hy
-  have ha' := (mapShiftedQuotient_mk d e T φ h p k a).symm.trans
-    ((congrArg (mapShiftedQuotient d e T φ h p k) ha).trans
-      (mapShiftedQuotient_projection d e T φ h p k x))
-  have hb' := (mapShiftedQuotient_mk d e T φ h r k b).symm.trans
-    ((congrArg (mapShiftedQuotient d e T φ h r k) hb).trans
-      (mapShiftedQuotient_projection d e T φ h r k y))
+  refine (exists_mapShiftedSupport_projection d e T φ h p k x).elim fun a ha => ?_
+  refine (exists_mapShiftedSupport_projection d e T φ h r k y).elim fun b hb => ?_
   have h₂ := congrArg (fun z => C (mapShiftedQuotient d e T φ h (p + r) k z))
-    (d.projection_shiftedCompletionMul (grade q β) p r (T.modulus k) x y a b ha hb)
+    (d.projection_shiftedCompletionMul (grade q β) p r (T.modulus k) x y a b ha.1 hb.1)
   have h₃ := congrArg C (mapShiftedQuotient_mk d e T φ h (p + r) k
     (shiftedMul (grade q β) d.monoid p r a b))
   have h₄ := cast_shiftedQuotient_mk e (map_add T.toAddMonoidHom p r) k
@@ -253,7 +239,14 @@ theorem mapShiftedCompletion_mul (p r : Γ)
     (mapShiftedSupport_mul d e T φ h p r a b)
   have h₆ := e.projection_shiftedCompletionMul (grade q' β') (T p) (T r) k
     (mapShiftedCompletion d e T φ h p x) (mapShiftedCompletion d e T φ h r y)
-    (mapShiftedSupport d e T φ h p a) (mapShiftedSupport d e T φ h r b) ha' hb'
-  exact h₀.trans (h₁.symm.trans (h₂.trans (h₃.trans (h₄.trans (h₅.trans h₆.symm)))))
+    (mapShiftedSupport d e T φ h p a) (mapShiftedSupport d e T φ h r b) ha.2 hb.2
+  calc
+    _ = _ := h₀
+    _ = _ := h₁.symm
+    _ = _ := h₂
+    _ = _ := h₃
+    _ = _ := h₄
+    _ = _ := h₅
+    _ = _ := h₆.symm
 
 end Mei.QuantumMonoidAlgebra
