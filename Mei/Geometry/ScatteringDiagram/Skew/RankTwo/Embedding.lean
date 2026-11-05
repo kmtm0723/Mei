@@ -155,6 +155,20 @@ theorem coefficientForm_planeDegree (q q' : PlaneDegree (D.planeWeight d x y)) :
       βℚ x.1 y.1 * E.coefficientForm ℚ q.vec q'.vec := by
   rw [coe_planeDegree, coe_planeDegree, coefficientForm_planeHom]
 
+/-- If `{x, y} ≠ 0`, distinct plane degrees `(a, b)` give distinct degrees `a x + b y`. -/
+theorem planeDegree_injective (hxy : βℚ x.1 y.1 ≠ 0) :
+    Function.Injective (D.planeDegree d x y) := by
+  intro q q' h
+  have hdet (r : PlaneDegree (D.planeWeight d x y)) : q.det r = q'.det r := by
+    have h' := congrArg (fun n : D.NonzeroDegree d => βℚ n.1 (D.planeDegree d x y r).1) h
+    simp only [coefficientForm_planeDegree, PlaneDegree.coefficientForm_det] at h'
+    exact_mod_cast mul_left_cancel₀ hxy h'
+  have h₁ := hdet (PlaneDegree.e₁ _)
+  have h₂ := hdet (PlaneDegree.e₂ _)
+  simp only [PlaneDegree.det_eq, PlaneDegree.e₁_fst, PlaneDegree.e₁_snd, PlaneDegree.e₂_fst,
+    PlaneDegree.e₂_snd, mul_zero, mul_one, zero_sub, sub_zero, neg_inj] at h₁ h₂
+  exact PlaneDegree.ext (Subtype.ext (Prod.ext h₂ h₁))
+
 section Transport
 
 /-- The skew form of the plane is `{x, y}⁻¹` times that of `D` on the images. -/

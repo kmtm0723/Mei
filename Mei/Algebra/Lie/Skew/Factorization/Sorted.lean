@@ -6,6 +6,7 @@ Authors: Claude Code
 module
 
 public import Mei.Algebra.Lie.Skew.Factorization.Basic
+public import Mei.Algebra.Lie.Skew.Factorization.Completion
 public import Mei.Algebra.Lie.Skew.Grouping
 public import Mei.Data.List.InsertionSort
 public import Mei.Data.List.Replicate
@@ -20,6 +21,11 @@ in index order by an insertion sort. The sort only swaps factors with vanishing 
 commute (`SkewLieAlgebra.commute_rayExp_of_eq_zero`), provided the index order places a pair
 with positive pairing in that order. The result is the finite product `orderedDilogProduct`
 with the multiplicity of each index times its exponent.
+
+Consequently, if a completed label agrees at every order with a sorted product of factors
+`Ψ[mᵢ]^{eᵢ}`, the lists chosen separately at each order, then it is the completed ordered
+product `∏ᵢ Ψ[mᵢ]^{sᵢ eᵢ}` over all indices, for unique natural numbers `sᵢ` when the `eᵢ` are
+nonzero (`SkewLieAlgebra.existsUnique_orderedProd_rayExp_nsmul_smul_negDilogNeg`).
 -/
 
 public noncomputable section
@@ -82,5 +88,38 @@ theorem exists_prod_rayExp_eq_orderedDilogProduct (hinj : Function.Injective m)
     orderedDilogProduct_eq_of_subset β hβ m hm hm0 hsupp a fun i _ hi =>
       Finsupp.notMem_support_iff.mp hi,
     orderedDilogProduct_def, ← hMfin, hMsort]
+
+/-- **Sorted factorizations at every order assemble.** Let the index order be compatible with the
+pairing, `i ≤ j` whenever `β(mᵢ, mⱼ) > 0`, on distinct degrees, and fix nonzero exponents
+`e : ι → R`. Suppose that at every order `k` the label `g` agrees with a product of factors
+`Ψ[mᵢ]^{eᵢ}` over a list of indices in which `β(mᵢ, mⱼ) ≥ 0` whenever `i` precedes `j`, the list
+being chosen separately at each order. Then `g` is the completed ordered product
+`∏ᵢ Ψ[mᵢ]^{sᵢ eᵢ}` over all indices for exactly one family of natural numbers `sᵢ`; `sᵢ` is the
+multiplicity of `i` in the list chosen at the order `deg mᵢ`. -/
+theorem existsUnique_orderedProd_rayExp_nsmul_smul_negDilogNeg (hinj : Function.Injective m)
+    (hord : ∀ i j, 0 < β (m i) (m j) → i ≤ j) (e : ι → R)
+    (he : ∀ i, e i ≠ 0) (g : d.completedBCHGroup (positiveGrading β hβ d))
+    (hfact : ∀ k : ℕ, ∃ l : List ι, l.Pairwise (fun i j => 0 ≤ β (m i) (m j)) ∧
+      CompletedGroup.projection k
+          (l.map fun i => rayExp β hβ (hm i) (hm0 i) (e i • negDilogNeg R)).prod =
+        CompletedGroup.projection k g) :
+    ∃! s : ι → ℕ, CompletedGroup.orderedProd
+        (fun i => rayExp β hβ (hm i) (hm0 i) ((s i • e i) • negDilogNeg R))
+        (hasFiniteSupport_rayExp_smul_negDilogNeg β hβ m hm hm0 hinj fun i => s i • e i) = g := by
+  choose l hl hlg using hfact
+  choose a ha hprod using fun k =>
+    exists_prod_rayExp_eq_orderedDilogProduct β hβ m hm hm0 hinj hord e (l k) (hl k)
+  obtain ⟨c, hc, huniq⟩ := existsUnique_orderedProd_rayExp_smul_negDilogNeg β hβ m hm hm0 hinj g
+    fun k => ⟨a k, by rw [← hprod, hlg]⟩
+  -- The assembled exponent at `i` is read off from the list chosen at the order `deg mᵢ`.
+  have hcs (i : ι) : c i = (l (d.degree (m i)).toNat).count i • e i := by
+    rw [← ha]
+    exact eq_of_orderedProd_rayExp_smul_negDilogNeg_eq β hβ m hm hm0 hinj c (a _) hc
+      (by rw [← hprod, hlg]) i (Int.self_le_toNat _)
+  obtain rfl : c = fun i => (l (d.degree (m i)).toNat).count i • e i := funext hcs
+  refine ⟨_, hc, fun s hs => funext fun i => ?_⟩
+  have h := congrFun (huniq (fun i => s i • e i) hs) i
+  simp only [← Nat.cast_smul_eq_nsmul ℚ] at h
+  exact_mod_cast smul_left_injective ℚ (he i) h
 
 end Mei.SkewLieAlgebra

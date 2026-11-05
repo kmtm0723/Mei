@@ -51,30 +51,6 @@ theorem hasFiniteSupport_dilogPow (c : PlaneDegree w → ℚ) :
   simpa only [dilogPow_def] using SkewLieAlgebra.hasFiniteSupport_rayExp_smul_negDilogNeg β hβ
     PlaneDegree.vec PlaneDegree.mem PlaneDegree.ne_zero PlaneDegree.vec_injective c
 
-/-- At every order, a product of normalized positive factors is a finite product, in the angular
-order, of unit factors with multiplicities. -/
-private theorem exists_finsupp_projection_orderedDilogProduct_eq (l : List (PlaneDegree w × ℕ))
-    (k : ℕ) :
-    ∃ a : PlaneDegree w →₀ ℚ, (∀ m, ∃ s : ℕ, a m = s * rayIndex m.vec) ∧
-      CompletedGroup.projection k (SkewLieAlgebra.orderedDilogProduct β hβ PlaneDegree.vec
-          PlaneDegree.mem PlaneDegree.ne_zero a.support a) =
-        CompletedGroup.projection k
-          (l.map fun p => dilogPow p.1 (p.2 * rayIndex p.1.vec)).prod := by
-  obtain ⟨l', hchain, -, hprod⟩ := exists_isChain_projection_prod_pow_eq k l
-  have hpw : l'.Pairwise fun a b => 0 ≤ E.coefficientForm ℚ a.vec b.vec :=
-    hchain.pairwise_of_forall_mem (p := fun _ => True) (fun _ _ => trivial)
-      fun a b c _ _ _ hab hbc => LinearMap.IsAlt.nonneg_trans_of_mem_closure_pair
-        (E.isAlt_coefficientForm ℚ) a.vec_mem_closure b.vec_mem_closure c.vec_mem_closure
-        b.ne_zero hab hbc
-  obtain ⟨a, ha, hl'⟩ := SkewLieAlgebra.exists_prod_rayExp_eq_orderedDilogProduct β hβ
-    PlaneDegree.vec PlaneDegree.mem PlaneDegree.ne_zero PlaneDegree.vec_injective
-    (fun _ _ => PlaneDegree.le_of_coefficientForm_pos) (fun m => rayIndex m.vec) l' hpw
-  refine ⟨a, fun m => ⟨l'.count m, by rw [ha, nsmul_eq_mul]⟩, ?_⟩
-  have hunit : (unitFactor : PlaneDegree w → Label w) = fun m =>
-      SkewLieAlgebra.rayExp β hβ m.mem m.ne_zero (rayIndex m.vec • PowerSeries.negDilogNeg ℚ) :=
-    funext fun m => by rw [unitFactor_def, dilogPow_def]
-  rw [← hl', ← hprod, hunit]
-
 /-- **Positive ordering in the standard plane, to all orders.** A finite product of normalized
 positive factors `Ψ[m]^{s κ(m)}`, `s ∈ ℕ`, of plane degrees equals, for exactly one family of
 natural numbers `s'`, the ordered product `∏ₘ Ψ[m]^{s'(m) κ(m)}` over all plane degrees in the
@@ -85,21 +61,22 @@ theorem existsUnique_orderedProd_dilogPow (l : List (PlaneDegree w × ℕ)) :
       CompletedGroup.orderedProd (fun m => dilogPow m (s m * rayIndex m.vec))
           (hasFiniteSupport_dilogPow fun m => s m * rayIndex m.vec) =
         (l.map fun p => dilogPow p.1 (p.2 * rayIndex p.1.vec)).prod := by
-  choose a ha hk using exists_finsupp_projection_orderedDilogProduct_eq l
-  obtain ⟨c, hc, huniq⟩ := SkewLieAlgebra.existsUnique_orderedProd_rayExp_smul_negDilogNeg β hβ
-    PlaneDegree.vec PlaneDegree.mem PlaneDegree.ne_zero PlaneDegree.vec_injective
-    (l.map fun p => dilogPow p.1 (p.2 * rayIndex p.1.vec)).prod fun k => ⟨a k, hk k⟩
-  -- The assembled exponents agree with those of the factorization at order `deg m`.
-  have hcs : ∀ m : PlaneDegree w, ∃ s : ℕ, c m = s * rayIndex m.vec := fun m => by
-    obtain ⟨s, hs⟩ := ha m.deg m
-    exact ⟨s, (SkewLieAlgebra.eq_of_orderedProd_rayExp_smul_negDilogNeg_eq β hβ
-      PlaneDegree.vec PlaneDegree.mem PlaneDegree.ne_zero PlaneDegree.vec_injective c (a m.deg)
-      hc (hk m.deg) m m.deg_eq_degree.ge).trans hs⟩
-  choose s hs using hcs
-  obtain rfl : c = fun m => s m * rayIndex m.vec := funext hs
-  refine ⟨s, by simpa only [dilogPow_def] using hc, fun s' hs' => funext fun m => ?_⟩
-  have h := congrFun (huniq (fun m => s' m * rayIndex m.vec)
-    (by simpa only [dilogPow_def] using hs')) m
-  exact_mod_cast mul_right_cancel₀ m.rayIndex_pos.ne' h
+  -- At every order, the ordered unit factors of the finite-order ordering form a sorted list.
+  have hfact (k : ℕ) : ∃ l' : List (PlaneDegree w),
+      l'.Pairwise (fun a b => 0 ≤ β a.vec b.vec) ∧
+      CompletedGroup.projection k (l'.map fun m => SkewLieAlgebra.rayExp β hβ m.mem m.ne_zero
+          (rayIndex m.vec • PowerSeries.negDilogNeg ℚ)).prod =
+        CompletedGroup.projection k
+          (l.map fun p => dilogPow p.1 (p.2 * rayIndex p.1.vec)).prod := by
+    obtain ⟨l', hchain, -, hprod⟩ := exists_isChain_projection_prod_pow_eq k l
+    refine ⟨l', LinearMap.IsAlt.pairwise_of_isChain_of_mem_closure_pair hβ PlaneDegree.vec
+      (fun m _ => m.vec_mem_closure) (fun m _ => m.ne_zero) hchain, ?_⟩
+    simpa only [show (unitFactor : PlaneDegree w → Label w) = fun m => dilogPow m (rayIndex m.vec)
+      from funext unitFactor_def, dilogPow_def] using hprod
+  simpa only [dilogPow_def, nsmul_eq_mul] using
+    SkewLieAlgebra.existsUnique_orderedProd_rayExp_nsmul_smul_negDilogNeg β hβ PlaneDegree.vec
+      PlaneDegree.mem PlaneDegree.ne_zero PlaneDegree.vec_injective
+      (fun _ _ => PlaneDegree.le_of_coefficientForm_pos) (fun m => rayIndex m.vec)
+      (fun m => m.rayIndex_pos.ne') _ hfact
 
 end Mei.StandardPlane
