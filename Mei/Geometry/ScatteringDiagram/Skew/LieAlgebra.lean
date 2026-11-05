@@ -15,8 +15,8 @@ A rational skew lattice form gives a coefficient-valued alternating form on the
 unfrozen lattice over every commutative rational algebra. Its skew Lie algebra
 retains a free generator at every unfrozen exponent, including radical degrees.
 The generic positive grading and abelian-ray instances apply to any positive
-monoid on this lattice; no adapted basis or nondegeneracy is required. For the
-zero form, every positive part is abelian.
+monoid on this lattice; no adapted basis or nondegeneracy is required. If the form vanishes
+on the unfrozen sublattice, in particular for the zero form, every positive part is abelian.
 
 The bracket convention is `[X_n, X_m] = {m,n} X_(n+m)`, as in
 Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*, §1 and
@@ -50,10 +50,10 @@ theorem isAlt_coefficientForm : (D.coefficientForm R).IsAlt := by
 Its positive part is `SkewLieAlgebra.positiveLieAlgebra` for the chosen positive degrees. -/
 abbrev skewLieAlgebra := SkewLieAlgebra (D.coefficientForm R) (D.isAlt_coefficientForm R)
 
-/-- For the zero form, the positive skew Lie algebra is abelian, at every choice of
-positive degrees. -/
-theorem isLieAbelian_positiveLieAlgebra_of_form_eq_zero {d : PositiveDegrees D.unfrozen}
-    (hform : D.form = 0) :
+/-- If the form vanishes on the unfrozen sublattice, the positive skew Lie algebra is abelian,
+at every choice of positive degrees. Pairings with frozen vectors are unrestricted. -/
+theorem isLieAbelian_positiveLieAlgebra_of_forall_form_eq_zero {d : PositiveDegrees D.unfrozen}
+    (hform : ∀ n m : D.unfrozen, D.form n m = 0) :
     IsLieAbelian
       (SkewLieAlgebra.positiveLieAlgebra (D.coefficientForm R) (D.isAlt_coefficientForm R) d) := by
   have hβ : D.coefficientForm R = 0 := by

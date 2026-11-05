@@ -220,6 +220,14 @@ theorem adaptedPolynomialInput_normal (i : B.unfrozenIndex) :
       (D.principalNormal (B.unfrozenBasis i)).toAddMonoidHom := by
   simp [adaptedPolynomialInput]
 
+/-- The coorientations of the input walls are primitive. -/
+theorem isPrimitive_adaptedPolynomialInput_normal (i : B.unfrozenIndex) :
+    TauCeti.IsPrimitive ((B.adaptedPolynomialInput (V := V) ℓ a h).wall i).normal := by
+  have := Module.Free.of_basis B.sublatticeBasis
+  have hν := ((addMonoidHomLequivInt (B := ℤ) ℤ).symm.isPrimitive_iff).mpr
+    (D.isPrimitive_principalNormal (B.unfrozenBasis.ne_zero i))
+  rwa [addMonoidHomLequivInt_symm_apply, ← B.adaptedPolynomialInput_normal ℓ a h i] at hν
+
 /-- The wall's associated degree ray is the principal ray through `r(eᵢ)`. -/
 @[simp]
 theorem adaptedPolynomialInput_ray (i : B.unfrozenIndex) :
