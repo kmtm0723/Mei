@@ -34,16 +34,16 @@ instance of Burcroff–Lee–Mou, *Positivity of generalized cluster scattering 
 Theorem 9.9 (arXiv:2503.03719v1). The consistency uses
 `DirectedDiagram.consistent_of_support_eq`.
 
-The wall function on the line does not depend on the representative. Every point `θ` of the line
-is regular, so with a direction `v` crossing the line negatively it is a crossing germ of the
-group of the line at every order
+Matched groups of other representatives have the same wall function on the line. Every point
+`θ` of the line is regular, so with a direction `v` crossing the line negatively it is a
+crossing germ of the group of the line at every order
 (`RankTwoPolynomialInput.Examples.isCrossingGerm_incomingGrouping`).
 Let `E` be any diagram equivalent to the incoming diagram, and let a grouping of `E` have a group
 with crossing germs at `θ` and `v` at every order, containing a wall with the same normal. Then
 every wall function of that group is `1 + c z^{2e₁}`, with coefficients in `ℕ[c]`
 (`RankTwoPolynomialInput.Examples.eq_completedInitialFunction_of_equivalent`), by
 `DirectedDiagram.FunctionWallGrouping.IsWallFunction.eq_of_equivalent` and
-`DirectedDiagram.FunctionWallGrouping.IsPositive.isPositive_of_equivalent`.
+`DirectedDiagram.FunctionWallGrouping.IsWallFunction.isPositive_of_equivalent`.
 
 ## Enlarging the positive degrees
 
@@ -247,12 +247,13 @@ section Representatives
 local notation "Fc" => TropicalVertexCoefficientAction.filtration
   (R := MvPolynomial horizontalInput.Variable ℚ) evenOrthant (⊤ : AddSubmonoid (ℤ × ℤ))
 
-/-- **The wall function of the horizontal line in every representative.** Let `E` be any
+/-- **The wall function of the horizontal line in matched representatives.** Let `E` be any
 directed diagram equivalent to the incoming diagram of the horizontal input over `ℚ[c]`, that
 is, any representative of its completed class. Let `G'` be a grouping of `E` whose group `g'`
 has, at every order, a crossing germ at a point `θ` of the line and a direction `v` pairing
 negatively with its normal, and which contains a wall cooriented by the second coordinate. Then
-every wall function of `g'` is `1 + c z^{2e₁}`, and it has coefficients in `ℕ[c]`. -/
+every wall function of `g'` is `1 + c z^{2e₁}`, and it has coefficients in `ℕ[c]`. The crossing
+germs of `g'` and its wall with that normal are hypotheses. -/
 theorem eq_completedInitialFunction_of_equivalent {ι' κ' : Type*}
     {E : DirectedDiagram (d := evenOrthant) h
       (tropicalVertexWallSpaces (R := MvPolynomial horizontalInput.Variable ℚ) evenOrthant ρ) ι'}
@@ -280,9 +281,9 @@ theorem eq_completedInitialFunction_of_equivalent {ι' κ' : Type*}
     rw [incomingDiagram_normal, hν]
   refine ⟨((horizontalInput.isWallFunction_incomingGrouping h MvPolynomial.X ⊤ () (hQ ())
     ).eq_of_equivalent hDE hgerm' hf' (by simp) hj' hν').symm, ?_⟩
-  exact (horizontalInput.isPositive_incomingGrouping h MvPolynomial.X ⊤ hQ _
-    fun v => ⟨MvPolynomial.X v, MvPolynomial.map_X _ v⟩).isPositive_of_equivalent hDE hgerm'
-      (by simp) hj' hν' hf'
+  exact hf'.isPositive_of_equivalent (horizontalInput.isPositive_incomingGrouping h
+    MvPolynomial.X ⊤ hQ _ fun v => ⟨MvPolynomial.X v, MvPolynomial.map_X _ v⟩) hDE hgerm'
+      (by simp) hj' hν'
 
 end Representatives
 

@@ -34,11 +34,13 @@ the group has the function-wall label `exp(log(f₀) ∂_n)`, that `q n = r` and
 normal `n'` with `n' ∘ t = q n • n`, for instance `ν n`. The proof applies
 `Mei.DirectedWall.Pushforward.ofFiniteIndex_lieHom_completedMap_completedBCHExp_completedLog` to
 the group label. Crossing germs of a group are carried to crossing germs of the pushed group by
-the spatial map (`FunctionWallGrouping.IsCrossingGerm.pushforward`). Hence every representative
-of the pushed class with a group on the image germ has the same label `exp(log(f₁) ∂_{n'})`
+the spatial map (`FunctionWallGrouping.IsCrossingGerm.pushforward`). Hence a diagram equivalent
+to the pushforward has the same label `exp(log(f₁) ∂_{n'})` on any group whose crossing germs at
+every order are the images of crossing germs of the source group
 (`FunctionWallGrouping.label_eq_of_equivalent_pushforward_ofFiniteIndex`), by
-`FunctionWallGrouping.label_eq_of_equivalent`. That a representative over the source lattice has
-a group with label `exp(log(f₀) ∂_n)` and `T_* f₀ = f₁ ^ r` is a hypothesis. The lattice change
+`FunctionWallGrouping.label_eq_of_equivalent`. The source group and its label
+`exp(log(f₀) ∂_n)` with `T_* f₀ = f₁ ^ r`, and the crossing germs of both groups, are
+hypotheses. The lattice change
 is motivated by Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*,
 Theorem 9.5 (arXiv:2503.03719v1).
 
@@ -399,14 +401,14 @@ theorem label_pushforward_ofFiniteIndex (hπ : ∀ x ∈ d.monoid, π' ((P).degr
     T t ht hρ ν q hq hν n hn' hr f₀ f₁ hf
 
 include hr in
-/-- **Transport of a group label to every representative of the pushed class.** Under the
+/-- **Transport of a group label to matched groups of equivalent diagrams.** Under the
 hypotheses of `FunctionWallGrouping.label_pushforward_ofFiniteIndex`, let `E` be any diagram
 equivalent to the finite-index pushforward of `D`, with a function-wall grouping `G'`. Suppose
 that at every order `k` there is a crossing germ of `g` at the source order `T.modulus k`, at a
 point `θ` and a direction `v`, and a crossing germ of the group `g'` of `G'` at order `k`, at the
 images `A θ` and `A v` under the spatial map `A`. Then `g'` has the function-wall label
-`exp(log(f₁) ∂_{n'})`, where `T_* f₀ = f₁ ^ r`. Thus every representative of the pushed class
-carries on such a germ the label of an `r`-th root `f₁` of `T_* f₀`. -/
+`exp(log(f₁) ∂_{n'})`, the label of an `r`-th root `f₁` of `T_* f₀`. The crossing germs are
+hypotheses. -/
 theorem label_eq_of_equivalent_pushforward_ofFiniteIndex
     (hπ : ∀ x ∈ d.monoid, π' ((P).degreeMap x) = π x)
     (hprim : ∀ j, TauCeti.IsPrimitive ((P).normalMap (D.wall j).normal))

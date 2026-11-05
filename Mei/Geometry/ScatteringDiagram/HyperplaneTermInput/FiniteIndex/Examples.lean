@@ -40,14 +40,16 @@ normals stay primitive under `primitiveLatticeChangeNormal`, and one of its grou
 of `(1 + a z^{(1,1)})²` with normal `n°`, then the pushed group has the label of `1 + a z^{(1,1)}`
 with normal `n°` over `½M₀` (`diagonal_label_pushforward`); the grouping and the label are
 hypotheses. If the diagram over `M` represents the scattering class over `M`, the same label is
-carried by every representative of the scattering class over `½M₀` on a group whose crossing
-germs are the images of those of the diagonal group (`diagonal_label_of_toClass_eq`), by
+carried by any representative of the scattering class over `½M₀` on a group whose crossing
+germs at every order are the images of crossing germs of the diagonal group
+(`diagonal_label_of_toClass_eq`); these crossing germs are hypotheses. This uses
 `DirectedDiagram.FunctionWallGrouping.label_eq_of_equivalent_pushforward_ofFiniteIndex`.
 
 So for this lattice the file proves: the pushforward of the ray presentation of the lines, the
 pushforward of their scattering class and of its representatives, the transport of a given
-function-wall label on the diagonal, and its comparison with the groups of all representatives
-over `½M₀` on the image germs. It does not compute the scattering class.
+function-wall label on the diagonal, and its comparison with groups of representatives over
+`½M₀` that are matched with it by crossing germs. It does not compute the scattering class, and
+it does not prove that matched crossing germs exist.
 
 The lattice change is motivated by Burcroff–Lee–Mou, *Positivity of generalized cluster
 scattering diagrams*, Theorem 9.5 (arXiv:2503.03719v1).
@@ -370,7 +372,7 @@ theorem diagonal_label_pushforward {κ M κ' : Type*} [AddCommGroup M] {π : ℤ
       exact diagonalNormal_latticeChange x)
     (r := 2) (by simp) _ _ _ _ hg (completedTropicalTangentMap_squaredDiagonalFunction _ a)
 
-/-- **The diagonal label in every representative over `½M₀`.** Let `D` represent the scattering
+/-- **The diagonal label in matched representatives over `½M₀`.** Let `D` represent the scattering
 class of the lines over `M`, with a function-wall grouping whose normals stay primitive under
 `primitiveLatticeChangeNormal`, and let its group `g` have the function-wall label of
 `(1 + a z^{(1,1)})²` with normal `n°`. Let `E` be any representative of the scattering class of

@@ -23,19 +23,22 @@ Equivalent diagrams have equal combined labels at common regular points
 (`DirectedDiagram.LevelEquivalent.combinedLabel_eq`). Hence, if `D` and `E` are equivalent at
 order `k` and groupings `G` of `D` and `G'` of `E` have crossing germs for groups `g` and `g'`
 at the same `θ` and `v`, then `g` and `g'` have the same group label at order `k`
-(`FunctionWallGrouping.IsCrossingGerm.groupLabel_eq`). For equivalent diagrams with common
-crossing germs at all orders, the completed group labels agree
-(`FunctionWallGrouping.label_eq_of_equivalent`), and so do the wall functions when some walls
-of the two groups have the same normal (`FunctionWallGrouping.IsWallFunction.eq_of_equivalent`).
-Thus the wall function of a completed class on a common crossing germ does not depend on the
-representative. In particular a group of any representative, matched by crossing germs and a
-common normal with a group of a positive grouping, has a positive wall function
-(`FunctionWallGrouping.IsPositive.isPositive_of_equivalent`).
+(`FunctionWallGrouping.IsCrossingGerm.groupLabel_eq`). If `D` and `E` are equivalent and the two
+groups have common crossing germs at every order, their completed group labels agree
+(`FunctionWallGrouping.label_eq_of_equivalent`). If moreover a wall of `g` and a wall of `g'`
+have the same normal, the wall functions of the two groups agree
+(`FunctionWallGrouping.IsWallFunction.eq_of_equivalent`), and a wall function of `g'` is positive
+when `g` belongs to a positive grouping
+(`FunctionWallGrouping.IsWallFunction.isPositive_of_equivalent`).
 
-These statements make precise "the wall function on a ray" of a consistent completion, as used
-for the grouped wall functions of Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster
-algebras*, §1.1 (arXiv:1411.1394v2), and in Burcroff–Lee–Mou, *Positivity of generalized cluster
-scattering diagrams*, Theorem 9.5 (arXiv:2503.03719v1). The comparison of combined labels is
+The common crossing germs and the common normal are hypotheses of these statements. This file
+does not prove that they exist, for instance that a generic point of a ray of a completion is
+regular at every order, or that some grouping of a given representative exhausts the walls
+through it. Under these hypotheses, the statements compare the grouped wall functions of
+Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*, §1.1
+(arXiv:1411.1394v2), between two representatives of one completed class, as needed for the
+wall functions on rays in Burcroff–Lee–Mou, *Positivity of generalized cluster scattering
+diagrams*, Theorem 9.5 (arXiv:2503.03719v1). The comparison of combined labels is
 `DirectedDiagram.LevelEquivalent.combinedLabel_eq`.
 -/
 
@@ -140,17 +143,16 @@ theorem IsWallFunction.eq_of_equivalent {f f' : F.completionˣ} (hDE : D.Equival
     (hν : (D.wall j).normal = (E.wall j').normal) : f = f' :=
   hf.eq_of_label_eq hf' (label_eq_of_equivalent hDE hgerm) hj hj' hν
 
-/-- **Positivity does not depend on the representative.** Let `G` be a positive grouping of
-`D`, and let `E` be equivalent to `D`. Suppose that at every order the groups `g` of `G` and
-`g'` of a grouping `G'` of `E` have crossing germs at a common point and direction, and that
-some wall of `g` and some wall of `g'` have the same normal. Then every wall function of `g'`
-is positive. -/
-theorem IsPositive.isPositive_of_equivalent {P : Subsemiring (AddMonoidAlgebra A Q)}
-    (hG : G.IsPositive σ P) (hDE : D.Equivalent E)
+/-- **Positivity of matched wall functions.** Let `G` be a positive grouping of `D`, and let `E`
+be equivalent to `D`. Suppose that at every order the groups `g` of `G` and `g'` of a grouping
+`G'` of `E` have crossing germs at a common point and direction, and that some wall of `g` and
+some wall of `g'` have the same normal. Then every wall function of `g'` is positive. -/
+theorem IsWallFunction.isPositive_of_equivalent {P : Subsemiring (AddMonoidAlgebra A Q)}
+    {f' : F.completionˣ} (hf' : G'.IsWallFunction σ g' f') (hG : G.IsPositive σ P)
+    (hDE : D.Equivalent E)
     (hgerm : ∀ k, ∃ θ v, G.IsCrossingGerm g k θ v ∧ G'.IsCrossingGerm g' k θ v)
     {j : ι} {j' : ι'} (hj : G.group j = g) (hj' : G'.group j' = g')
-    (hν : (D.wall j).normal = (E.wall j').normal) {f' : F.completionˣ}
-    (hf' : G'.IsWallFunction σ g' f') : F.IsPositive P f' := by
+    (hν : (D.wall j).normal = (E.wall j').normal) : F.IsPositive P f' := by
   obtain ⟨f, hf, hpos⟩ := (G.isPositive_iff σ P).mp hG g
   rwa [← hf.eq_of_equivalent hDE hgerm hf' hj hj' hν]
 
