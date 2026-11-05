@@ -34,6 +34,17 @@ instance of Burcroff–Lee–Mou, *Positivity of generalized cluster scattering 
 Theorem 9.9 (arXiv:2503.03719v1). The consistency uses
 `DirectedDiagram.consistent_of_support_eq`.
 
+The wall function on the line does not depend on the representative. Every point `θ` of the line
+is regular, so with a direction `v` crossing the line negatively it is a crossing germ of the
+group of the line at every order
+(`RankTwoPolynomialInput.Examples.isCrossingGerm_incomingGrouping`).
+Let `E` be any diagram equivalent to the incoming diagram, and let a grouping of `E` have a group
+with crossing germs at `θ` and `v` at every order, containing a wall with the same normal. Then
+every wall function of that group is `1 + c z^{2e₁}`, with coefficients in `ℕ[c]`
+(`RankTwoPolynomialInput.Examples.eq_completedInitialFunction_of_equivalent`), by
+`DirectedDiagram.FunctionWallGrouping.IsWallFunction.eq_of_equivalent` and
+`DirectedDiagram.FunctionWallGrouping.IsPositive.isPositive_of_equivalent`.
+
 ## Enlarging the positive degrees
 
 The identity of `ℤ²` is a positive degree map from the even quadrant to the quadrant
@@ -213,6 +224,67 @@ theorem isPositiveWallRepresentative :
         (MvPolynomial.map (σ := horizontalInput.Variable) (Nat.castRingHom ℚ))).rangeS
       horizontalInput.projection :=
   horizontalInput.isPositiveWallRepresentative_incomingDiagram_variables h
+
+/-- The horizontal line has offset zero. -/
+@[simp]
+theorem horizontalInput_offset (j : Unit) : horizontalInput.offset j = 0 := (rfl)
+
+/-- A point `θ` of the horizontal line and a direction `v` pairing negatively with its normal
+form a crossing germ of the group of the line at every order. -/
+theorem isCrossingGerm_incomingGrouping {θ v : ℝ × ℝ}
+    (hθ : h.realCharacter (horizontalInput.wallNormal ()) θ = 0)
+    (hv : h.realCharacter (horizontalInput.wallNormal ()) v < 0) (k : ℕ) :
+    (horizontalInput.incomingGrouping h c).IsCrossingGerm () k θ v where
+  notMem_singularSupport :=
+    (horizontalInput.incomingDiagram h c).notMem_singularSupport_of_support_eq (j₀ := default)
+      (c := 0) (by simp) (fun j => by rw [Unique.eq_default j]) k θ
+  mem_support_iff j := by simp [hθ]
+  realCharacter_normal_neg j _ := by simpa using hv
+
+section Representatives
+
+/-- The completed coefficients `ℚ[c][[ℤ²]]` of the horizontal input over the even quadrant. -/
+local notation "Fc" => TropicalVertexCoefficientAction.filtration
+  (R := MvPolynomial horizontalInput.Variable ℚ) evenOrthant (⊤ : AddSubmonoid (ℤ × ℤ))
+
+/-- **The wall function of the horizontal line in every representative.** Let `E` be any
+directed diagram equivalent to the incoming diagram of the horizontal input over `ℚ[c]`, that
+is, any representative of its completed class. Let `G'` be a grouping of `E` whose group `g'`
+has, at every order, a crossing germ at a point `θ` of the line and a direction `v` pairing
+negatively with its normal, and which contains a wall cooriented by the second coordinate. Then
+every wall function of `g'` is `1 + c z^{2e₁}`, and it has coefficients in `ℕ[c]`. -/
+theorem eq_completedInitialFunction_of_equivalent {ι' κ' : Type*}
+    {E : DirectedDiagram (d := evenOrthant) h
+      (tropicalVertexWallSpaces (R := MvPolynomial horizontalInput.Variable ℚ) evenOrthant ρ) ι'}
+    (hDE : (horizontalInput.incomingDiagram h MvPolynomial.X).Equivalent E)
+    (G' : E.FunctionWallGrouping horizontalInput.projection κ') {g' : κ'} {θ v : ℝ × ℝ}
+    (hθ : h.realCharacter (horizontalInput.wallNormal ()) θ = 0)
+    (hv : h.realCharacter (horizontalInput.wallNormal ()) v < 0)
+    (hgerm : ∀ k, G'.IsCrossingGerm g' k θ v) {j' : ι'} (hj' : G'.group j' = g')
+    (hν : (E.wall j').normal = horizontalInput.wallNormal ())
+    {f' : (Fc).completionˣ}
+    (hf' : G'.IsWallFunction ((Fc).completedBCHAction evenOrthant
+      (tropicalVertexGrading (R := MvPolynomial horizontalInput.Variable ℚ) evenOrthant ρ)) g' f') :
+    f' = horizontalInput.completedInitialFunction MvPolynomial.X ⊤ () ∧
+      (Fc).IsPositive (AddMonoidAlgebra.mapRingHom (⊤ : AddSubmonoid (ℤ × ℤ))
+        (MvPolynomial.map (σ := horizontalInput.Variable) (Nat.castRingHom ℚ))).rangeS f' := by
+  have hQ (i : Unit) : ∃ p : ℤ × ℤ, horizontalInput.wallNormal i p = 1 ∧
+      p ∈ (⊤ : AddSubmonoid (ℤ × ℤ)) ∧ -p ∈ (⊤ : AddSubmonoid (ℤ × ℤ)) :=
+    (horizontalInput.exists_wallNormal_eq_one i).imp fun _ hp => ⟨hp, trivial, trivial⟩
+  have hgerm' (k : ℕ) : ∃ θ' v',
+      (horizontalInput.incomingGrouping h (MvPolynomial.X (R := ℚ))).IsCrossingGerm () k θ' v' ∧
+        G'.IsCrossingGerm g' k θ' v' :=
+    ⟨θ, v, isCrossingGerm_incomingGrouping (MvPolynomial.X (R := ℚ)) h hθ hv k, hgerm k⟩
+  have hν' : ((horizontalInput.incomingDiagram h (MvPolynomial.X (R := ℚ))).wall default).normal =
+      (E.wall j').normal := by
+    rw [incomingDiagram_normal, hν]
+  refine ⟨((horizontalInput.isWallFunction_incomingGrouping h MvPolynomial.X ⊤ () (hQ ())
+    ).eq_of_equivalent hDE hgerm' hf' (by simp) hj' hν').symm, ?_⟩
+  exact (horizontalInput.isPositive_incomingGrouping h MvPolynomial.X ⊤ hQ _
+    fun v => ⟨MvPolynomial.X v, MvPolynomial.map_X _ v⟩).isPositive_of_equivalent hDE hgerm'
+      (by simp) hj' hν' hf'
+
+end Representatives
 
 section Orthant
 

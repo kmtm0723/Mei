@@ -37,7 +37,10 @@ monomial `z^p` by multiplication by `f^(ν(ρ p))`, where `ν` is the group's no
 (`FunctionWallGrouping.IsWallFunction`). The coefficient ring `A` is any algebra over the
 scalars `R` of the Lie algebra; for instance `R = ℚ` when tropical vertex coefficients are
 compared along a change of coefficient ring. We require an invertible monomial of normal
-weight one for each nonempty group, so that this action uniquely determines `f`. For a chosen
+weight one for each nonempty group, so that this action uniquely determines `f`
+(`FunctionWallGrouping.IsWallFunction.unique`). More generally, groups of groupings of two
+diagrams with the same completed label and a common normal have the same wall function
+(`FunctionWallGrouping.IsWallFunction.eq_of_label_eq`). For a chosen
 positive subsemiring `P ⊆ A[Q]`,
 a grouping is positive if every group has a wall function that is positive in the sense
 of `AlgFiltration.IsPositive`, and a diagram is a *positive wall representative* if it
@@ -302,15 +305,27 @@ theorem isWallFunction_iff (g : κ) (f : F.completionˣ) :
           F.toCompletion (single p c) := Iff.rfl
 
 variable {G σ} in
+/-- Wall functions of groups with the same completed label are equal, provided some wall of the
+first group has the same normal as some wall of the second group. The groups may belong to
+groupings of two different diagrams, with different spatial projections. The proof cancels an
+invertible monomial of normal weight one. -/
+theorem IsWallFunction.eq_of_label_eq {ι' κ' M' : Type*} [AddCommGroup M'] {π' : Γ →+ M'}
+    {E : DirectedDiagram (d := d) h H ι'} {G' : E.FunctionWallGrouping π' κ'} {g : κ} {g' : κ'}
+    {f f' : F.completionˣ} (hf : G.IsWallFunction σ g f) (hf' : G'.IsWallFunction σ g' f')
+    (hl : G.label g = G'.label g') {j : ι} {j' : ι'} (hj : G.group j = g)
+    (hj' : G'.group j' = g') (hν : (D.wall j).normal = (E.wall j').normal) : f = f' := by
+  obtain ⟨p, hp, hu⟩ := ((G.isWallFunction_iff σ g f).mp hf j hj).1
+  have he := (((G.isWallFunction_iff σ g f).mp hf j hj).2 p 1).symm.trans
+    (hl ▸ ((G'.isWallFunction_iff σ g' f').mp hf' j' hj').2 p 1)
+  exact Units.ext (hu.mul_right_cancel (by simpa only [← hν, hp, zpow_one] using he))
+
+variable {G σ} in
 /-- The action determines the wall function of a nonempty group uniquely, by cancellation
 of an invertible monomial of normal weight one. -/
 theorem IsWallFunction.unique {g : κ} {f f' : F.completionˣ}
     (hf : G.IsWallFunction σ g f) (hf' : G.IsWallFunction σ g f')
-    {j : ι} (hj : G.group j = g) : f = f' := by
-  obtain ⟨p, hp, hu⟩ := ((G.isWallFunction_iff σ g f).mp hf j hj).1
-  have he := (((G.isWallFunction_iff σ g f).mp hf j hj).2 p 1).symm.trans
-    (((G.isWallFunction_iff σ g f').mp hf' j hj).2 p 1)
-  exact Units.ext (hu.mul_right_cancel (by simpa only [hp, zpow_one] using he))
+    {j : ι} (hj : G.group j = g) : f = f' :=
+  hf.eq_of_label_eq hf' rfl hj hj rfl
 
 variable (P : Subsemiring (AddMonoidAlgebra A Q))
 
