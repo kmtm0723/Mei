@@ -52,7 +52,7 @@ If `E` is equivalent to the incoming diagram and `θ` is such a point, then the 
 functions of `E` at `θ`, in a direction crossing the line negatively and for the normal of the
 line, are exactly `1 + c z^{2e₁}`
 (`RankTwoPolynomialInput.Examples.isGermWallFunction_iff_of_equivalent`), which has coefficients
-in `ℕ[c]` (`RankTwoPolynomialInput.Examples.isPositive_horizontalInitialFunction`). So the wall
+in `ℕ[c]` (`RankTwoPolynomialInput.Examples.isPositive_completedInitialFunction`). So the wall
 function on the line of the completed class is `1 + c z^{2e₁}` in every representative, at every
 point of the line that is generic for it. This uses
 `DirectedDiagram.FunctionWallGrouping.IsWallFunction.eq_of_isGermWallFunction`.
@@ -373,7 +373,7 @@ theorem isGermWallFunction_iff_of_equivalent {ι' : Type*}
     exact hν ▸ hf.isGermWallFunction_of_equivalent hgerm (by simp) hθj hvj hDE hE'
 
 /-- The wall function `1 + c z^{2e₁}` of the horizontal line has coefficients in `ℕ[c]`. -/
-theorem isPositive_horizontalInitialFunction :
+theorem isPositive_completedInitialFunction :
     (Fc).IsPositive (AddMonoidAlgebra.mapRingHom (⊤ : AddSubmonoid (ℤ × ℤ))
       (MvPolynomial.map (σ := horizontalInput.Variable) (Nat.castRingHom ℚ))).rangeS
       (horizontalInput.completedInitialFunction MvPolynomial.X ⊤ ()).val :=

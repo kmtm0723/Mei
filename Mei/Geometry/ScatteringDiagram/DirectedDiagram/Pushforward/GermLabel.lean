@@ -21,8 +21,13 @@ carried to regular points and generic points of the image of `B`
 The normal map of `P` sends each normal to one whose real extension, composed with the linear
 part of `A`, is a positive multiple of the original real extension. So crossing signs are kept,
 and the combined crossing label of the pushforward at order `k`, the point `A θ` and the
-direction `A v` is the truncated image of the combined label of `D` at any source order covering
-the cutoff modulus (`DirectedDiagram.combinedLabel_pushforward`). The germ label of the
+direction `A v` is the truncated image of the combined label of `D` at any source order `a`
+covering the cutoff modulus (`DirectedDiagram.combinedLabel_pushforward`). For the proof, the
+pushed walls active at order `k` through `A θ` embed into the walls of `D` active at order `a`
+through `θ` (`DirectedDiagram.activePushforwardEmbedding`,
+`DirectedDiagram.map_incidentActive_pushforward_subset`), and the remaining walls of `D` through
+`θ` have trivial pushed labels at order `k`
+(`DirectedDiagram.projection_pushforward_wall_label_eq_one`). The germ label of the
 pushforward is the image of the germ label under the completed Lie map
 (`DirectedDiagram.germLabel_pushforward`). Hence every diagram equivalent to the pushforward has
 this germ label at every image of a generic point that is generic for it
@@ -119,80 +124,85 @@ theorem pos_realCharacter_pushforward_normal_iff (j : ι) (v : V) :
   rw [pushforward_wall, DirectedWall.pushforward_normal, he,
     mul_pos_iff_of_pos_left (by exact_mod_cast hr)]
 
+/-- A pushed wall contains the image `A θ` exactly when the original wall contains `θ`. -/
+theorem spatialMap_mem_pushforward_wall_support_iff (j : ι) (θ : V) :
+    P.spatialMap θ ∈ ((D.pushforward P).wall j).support ↔ θ ∈ (D.wall j).support := by
+  rw [pushforward_wall_support, P.spatialMap.injective.mem_set_image]
+
+/-- The walls of the pushforward active at order `k` are among the walls of `D` active at every
+source order `a` covering the cutoff modulus of `k`. -/
+def activePushforwardEmbedding (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a) :
+    (D.pushforward P).active k ↪ D.active a :=
+  ⟨Set.inclusion (D.active_pushforward_subset P k ha), Set.inclusion_injective _⟩
+
+/-- The embedding of active walls keeps the wall index. -/
+@[simp]
+theorem coe_activePushforwardEmbedding (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a)
+    (j : (D.pushforward P).active k) :
+    (D.activePushforwardEmbedding P k ha j : ι) = j := by
+  simp [activePushforwardEmbedding]
+
+/-- The pushed walls active at order `k` through the image `A θ` embed into the walls of `D`
+active at the source order `a` through `θ`, for `a` covering the cutoff modulus of `k`. -/
+theorem map_incidentActive_pushforward_subset (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a)
+    (θ : V) :
+    ((D.pushforward P).incidentActive k (P.spatialMap θ)).map
+        (D.activePushforwardEmbedding P k ha) ⊆ D.incidentActive a θ := by
+  intro b hb
+  obtain ⟨c, hc, rfl⟩ := Finset.mem_map.mp hb
+  rw [mem_incidentActive, spatialMap_mem_pushforward_wall_support_iff] at hc
+  rwa [mem_incidentActive, coe_activePushforwardEmbedding]
+
+/-- A wall of `D` through `θ`, active at the source order `a`, that is not the image of a pushed
+wall active at order `k` through `A θ` has trivial pushed label at order `k`. -/
+theorem projection_pushforward_wall_label_eq_one (k : ℕ) {a : ℕ}
+    (ha : P.degreeMap.modulus k ≤ a) {θ : V} {b : D.active a} (hb : b ∈ D.incidentActive a θ)
+    (hnot : b ∉ ((D.pushforward P).incidentActive k (P.spatialMap θ)).map
+      (D.activePushforwardEmbedding P k ha)) :
+    CompletedGroup.projection k ((D.pushforward P).wall b).label = 1 := by
+  have hinactive : b.val ∉ (D.pushforward P).active k := fun hbk => hnot
+    (Finset.mem_map.mpr ⟨⟨b.val, hbk⟩, by
+      rwa [mem_incidentActive, spatialMap_mem_pushforward_wall_support_iff,
+        ← mem_incidentActive], Subtype.ext (coe_activePushforwardEmbedding ..)⟩)
+  simpa only [mem_active, not_not] using hinactive
+
 /-- **Combined labels under pushforward.** At target order `k` and any source order `a` covering
 the cutoff modulus of `k`, the combined crossing label of the pushforward at the image `A θ` of
-a regular point and the image `A v` of a direction is the truncated image of the combined label
-of `D` at `θ` and `v`. -/
+a point `θ` outside the singular support of the walls active at order `a`, in the image `A v` of
+a direction `v`, is the truncated image of the combined label of `D` at `θ` and `v`. -/
 theorem combinedLabel_pushforward (k : ℕ) {a : ℕ} (ha : P.degreeMap.modulus k ≤ a) (θ v : V)
     (hθ : θ ∉ singularSupport (fun j : D.active a => (D.wall j).support)) :
     (D.pushforward P).combinedLabel k (P.spatialMap θ) (P.spatialMap.toAffineEquiv.linear v)
         (D.notMem_singularSupport_pushforward P k ha hθ) =
       (P.lieHom.truncatedMap k ha).bchGroupMap (D.combinedLabel a θ v hθ) := by
-  classical
-  let S := (Set.toFinite {j : D.active a | θ ∈ (D.wall j).support}).toFinset
-  let T := (Set.toFinite {j : (D.pushforward P).active k |
-    P.spatialMap θ ∈ ((D.pushforward P).wall j).support}).toFinset
-  let emb : (D.pushforward P).active k ↪ D.active a :=
-    ⟨Set.inclusion (D.active_pushforward_subset P k ha), Set.inclusion_injective _⟩
-  have hmem (j : ι) : P.spatialMap θ ∈ ((D.pushforward P).wall j).support ↔
-      θ ∈ (D.wall j).support := by
-    rw [pushforward_wall_support, P.spatialMap.injective.mem_set_image]
-  have hs : T.map emb ⊆ S := by
-    intro b hb
-    obtain ⟨c, hc, rfl⟩ := Finset.mem_map.mp hb
-    simpa [S, T, emb, hmem] using hc
-  let f (j : D.active a) :=
-    CompletedGroup.projection a (D.wall j).label ^
-      (if 0 < h.realCharacter (D.wall j).normal v then -1 else 1 : ℤ)
-  let f' (j : (D.pushforward P).active k) :=
-    CompletedGroup.projection k ((D.pushforward P).wall j).label ^
-      (if 0 < h'.realCharacter ((D.pushforward P).wall j).normal
-        (P.spatialMap.toAffineEquiv.linear v) then -1 else 1 : ℤ)
-  -- The original crossing sign, which the pushforward keeps.
-  let g (j : D.active a) :=
-    CompletedGroup.projection k ((D.pushforward P).wall j).label ^
-      (if 0 < h.realCharacter (D.wall j).normal v then -1 else 1 : ℤ)
-  have hcS : (S : Set (D.active a)).Pairwise fun x y => Commute (f x) (f y) := by
-    intro x hx y hy _
-    have hx : θ ∈ (D.wall x).support := by simpa [S] using hx
-    have hy : θ ∈ (D.wall y).support := by simpa [S] using hy
-    exact (D.activeLabels_commute a x y (affineSpan_eq_of_notMem_singularSupport
-      (W := fun j : D.active a => (D.wall j).support) hθ hx hy)).zpow_zpow _ _
-  have hcT : (T : Set ((D.pushforward P).active k)).Pairwise
-      fun x y => Commute (f' x) (f' y) := by
-    intro x hx y hy _
-    have hx : P.spatialMap θ ∈ ((D.pushforward P).wall x).support := by simpa [T] using hx
-    have hy : P.spatialMap θ ∈ ((D.pushforward P).wall y).support := by simpa [T] using hy
-    exact ((D.pushforward P).activeLabels_commute k x y (affineSpan_eq_of_notMem_singularSupport
-      (W := fun j : (D.pushforward P).active k => ((D.pushforward P).wall j).support)
-      (D.notMem_singularSupport_pushforward P k ha hθ) hx hy)).zpow_zpow _ _
-  have hz : ∀ b ∈ S, b ∉ T.map emb → g b = 1 := by
-    intro b hb hnot
-    have hinactive : b.val ∉ (D.pushforward P).active k := fun hbk =>
-      hnot (Finset.mem_map.mpr ⟨⟨b.val, hbk⟩, by simpa [S, T, hmem] using hb, rfl⟩)
-    have hone : CompletedGroup.projection k ((D.pushforward P).wall b).label = 1 := by
-      simpa only [mem_active, not_not] using hinactive
-    simp only [g, hone, one_zpow]
+  /- Both combined labels are products over the active walls through the point
+  (`combinedLabel_eq_noncommProd_incidentActive`). The truncated BCH map sends each source factor
+  to the order-`k` projection of the pushed label with the original crossing sign. These factors
+  are trivial off the image of the pushed walls through `A θ`
+  (`projection_pushforward_wall_label_eq_one`), so the product reindexes along the embedding
+  (`map_incidentActive_pushforward_subset`, `Finset.noncommProd_map` and
+  `Finset.noncommProd_subset`). The pushforward keeps every crossing sign
+  (`pos_realCharacter_pushforward_normal_iff`). -/
+  let e := D.activePushforwardEmbedding P k ha
   -- The truncated BCH map of the pushforward, between the objects of the two group towers.
   let F : (d.groupTower ℒ).obj (Opposite.op a) →* (d'.groupTower ℳ).obj (Opposite.op k) :=
     (P.lieHom.truncatedMap k ha).bchGroupMap
   have hproj (b : D.active a) : F (CompletedGroup.projection a (D.wall b).label) =
       CompletedGroup.projection k ((D.pushforward P).wall b).label :=
     (D.projection_pushforward_wall_label P k ha b).symm
-  have hF (b : D.active a) : F (f b) = g b := by
-    simp only [f, g, map_zpow, hproj]
-  rw [D.combinedLabel_eq_noncommProd a θ v hθ S (fun j => by simp [S]) hcS,
-    (D.pushforward P).combinedLabel_eq_noncommProd k _ _ _ T (fun j => by simp [T]) hcT]
+  rw [D.combinedLabel_eq_noncommProd_incidentActive a θ v hθ,
+    (D.pushforward P).combinedLabel_eq_noncommProd_incidentActive k]
   -- Read the truncated BCH map as the map `F` between the objects of the group towers.
-  change T.noncommProd f' hcT = F (S.noncommProd f hcS)
+  change _ = F _
   rw [Finset.map_noncommProd]
-  simp only [hF]
-  generalize_proofs hcg
-  refine Eq.trans ?_ ((Finset.noncommProd_map T emb g
-    (hcg.mono (Finset.coe_subset.mpr hs))).symm.trans (Finset.noncommProd_subset hs g hcg hz))
-  exact Finset.noncommProd_congr rfl (fun j _ => by
-    simp only [f', g, emb, Function.Embedding.coeFn_mk,
-      pos_realCharacter_pushforward_normal_iff]) _
+  simp only [map_zpow, hproj]
+  have hs := D.map_incidentActive_pushforward_subset P k ha θ
+  refine Eq.trans ?_ ((Finset.noncommProd_map _ e _ _).symm.trans
+    (Finset.noncommProd_subset hs _ _ fun b hb hnot => ?_))
+  · exact Finset.noncommProd_congr rfl (fun j _ => by
+      simp only [coe_activePushforwardEmbedding, e,
+        pos_realCharacter_pushforward_normal_iff]) _
+  · simp only [D.projection_pushforward_wall_label_eq_one P k ha hb hnot, one_zpow]
 
 /-- **Germ labels under pushforward.** The germ label of the pushforward at the image `A θ` of a
 regular point and the image `A v` of a direction is the image of the germ label of `D` under the

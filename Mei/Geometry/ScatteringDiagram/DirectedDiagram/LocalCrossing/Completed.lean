@@ -28,6 +28,11 @@ open subset of `A` contains a point that is generic for `D`, and also, after an 
 (`DirectedDiagram.exists_isGenericPoint`, `DirectedDiagram.exists_isGenericPoint_pair`). No
 consistency, refinement relation or bound on the walls is needed.
 
+At each order `k`, the combined crossing label at a point outside the singular support is the
+product of the signed projected labels over the finite set `DirectedDiagram.incidentActive` of
+active walls through the point (`DirectedDiagram.combinedLabel_eq_noncommProd_incidentActive`);
+these signed labels commute pairwise (`DirectedDiagram.pairwise_commute_incidentActive`).
+
 At a regular point, the combined crossing labels of `D` at all orders
 (`DirectedDiagram.combinedLabel`) are compatible under truncation, so they form an element of the
 completed group, the *germ label* `DirectedDiagram.germLabel` of `D` at `θ` in the direction `v`.
@@ -198,6 +203,45 @@ theorem exists_isGenericPoint (A : AffineSubspace ℝ V)
     fun _ hθ => ⟨hθ.1, hθ.2.1⟩
 
 end Generic
+
+section Incident
+
+/-- The walls active at order `k` whose support contains `θ`, as a finite set. -/
+def incidentActive (k : ℕ) (θ : V) : Finset (D.active k) :=
+  (Set.toFinite {j : D.active k | θ ∈ (D.wall j).support}).toFinset
+
+/-- Membership in the finite set of active walls through a point. -/
+@[simp]
+theorem mem_incidentActive {k : ℕ} {θ : V} {j : D.active k} :
+    j ∈ D.incidentActive k θ ↔ θ ∈ (D.wall j).support := by
+  simp [incidentActive]
+
+/-- At a point outside the singular support of the walls active at order `k`, the signed
+projected labels of the active walls through the point commute pairwise, for every direction
+`v`. -/
+theorem pairwise_commute_incidentActive (k : ℕ) (θ v : V)
+    (hθ : θ ∉ singularSupport (fun j : D.active k => (D.wall j).support)) :
+    (D.incidentActive k θ : Set (D.active k)).Pairwise fun x y =>
+      Commute (CompletedGroup.projection k (D.wall x).label ^
+          (if 0 < h.realCharacter (D.wall x).normal v then -1 else 1 : ℤ))
+        (CompletedGroup.projection k (D.wall y).label ^
+          (if 0 < h.realCharacter (D.wall y).normal v then -1 else 1 : ℤ)) := by
+  intro x hx y hy _
+  exact (D.activeLabels_commute k x y (affineSpan_eq_of_notMem_singularSupport
+    (W := fun j : D.active k => (D.wall j).support) hθ
+    (D.mem_incidentActive.mp hx) (D.mem_incidentActive.mp hy))).zpow_zpow _ _
+
+/-- The combined crossing label is the product of the signed projected labels of the active walls
+through the point. -/
+theorem combinedLabel_eq_noncommProd_incidentActive (k : ℕ) (θ v : V)
+    (hθ : θ ∉ singularSupport (fun j : D.active k => (D.wall j).support)) :
+    D.combinedLabel k θ v hθ = (D.incidentActive k θ).noncommProd
+      (fun j => CompletedGroup.projection k (D.wall j).label ^
+        (if 0 < h.realCharacter (D.wall j).normal v then -1 else 1 : ℤ))
+      (D.pairwise_commute_incidentActive k θ v hθ) :=
+  D.combinedLabel_eq_noncommProd k θ v hθ _ (fun _ => D.mem_incidentActive) _
+
+end Incident
 
 section GermLabel
 
