@@ -49,7 +49,7 @@ def Pushforward.ofFixedDegree : Pushforward d d h h H H' where
   normalMap := id
   wall_mem n _ m x hx := by simpa using hf n m x hx
   spatialMap := ContinuousAffineEquiv.refl ℝ V
-  map_direction _ _ := by simp
+  map_direction _ _ := ⟨1, one_pos, by simp⟩
   realCharacter_normalMap _ := ⟨1, one_pos, by ext; simp⟩
 
 /-- The degree map of a fixed-degree coefficient map is the identity. -/

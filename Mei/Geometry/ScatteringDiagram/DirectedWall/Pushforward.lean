@@ -25,7 +25,7 @@ merge degrees and carry its own cutoff modulus:
 * a map of integral normals together with a continuous affine equivalence `A` of the
   spatial supports. The real normal of `S(ν)` pulls back along the linear part of `A`
   to a positive rational multiple `r • ν` of the original real normal, and `A` carries
-  the geometric image of every positive degree `n` to that of `T n`;
+  the geometric image of every positive degree `n` to a positive multiple of that of `T n`;
 * preservation of homogeneous wall spaces: the image of a wall element of degree `n` and
   normal `ν` is a wall element of degree `T n` and normal `S(ν)`.
 
@@ -36,7 +36,9 @@ The positive rational scalar is what a tropical pairing provides: for the ration
 inverse dual of a finite-index embedding, `S(ν)` is only a rational multiple of a
 primitive integral normal. Positivity keeps the crossing signs, so path products are
 unchanged. Rationality of the scalar makes the inverse spatial map rational, hence
-supports remain rational-normal polyhedra. The spatial map must be an equivalence, since
+supports remain rational-normal polyhedra. Positive multiples of geometric degrees are allowed
+because directed walls only use these directions up to positive scaling; this admits the
+dilations `DirectedWall.Pushforward.dilation`. The spatial map must be an equivalence, since
 supports of directed walls have codimension one on both sides.
 
 Pushforward retains the support's image, sends the label through
@@ -53,7 +55,7 @@ noncomputable section
 
 namespace Mei
 
-open Set
+open Set Pointwise
 
 universe u
 
@@ -94,9 +96,10 @@ structure Pushforward where
     lieHom x ∈ H'.wall (degreeMap n) (normalMap m)
   /-- The spatial affine equivalence. -/
   spatialMap : V ≃ᴬ[ℝ] V'
-  /-- The spatial map carries geometric positive degrees to their images. -/
-  map_direction : ∀ n ∈ d.monoid,
-    i' (ρ' (degreeMap n)) = spatialMap.toAffineEquiv.linear (i (ρ n))
+  /-- The spatial map carries the geometric image of every positive degree to a positive
+  multiple of the geometric image of its image degree. -/
+  map_direction : ∀ n ∈ d.monoid, ∃ c : ℝ, 0 < c ∧
+    i' (ρ' (degreeMap n)) = c • spatialMap.toAffineEquiv.linear (i (ρ n))
   /-- Image normals pull back to positive rational multiples of the original normals. -/
   realCharacter_normalMap : ∀ m : Λ →+ ℤ, ∃ r : ℚ, 0 < r ∧
     (h'.realCharacter (normalMap m)).comp spatialMap.toAffineEquiv.linear.toLinearMap =
@@ -138,13 +141,15 @@ original normal vanishes on that degree. -/
 theorem normalMap_apply_degreeMap_eq_zero_iff (m : Λ →+ ℤ) {n : Γ} (hn : n ∈ d.monoid) :
     P.normalMap m (ρ' (P.degreeMap n)) = 0 ↔ m (ρ n) = 0 := by
   obtain ⟨r, hr, he⟩ := P.exists_realCharacter_normalMap_apply m
-  have hv := he (i (ρ n))
-  rw [← P.map_direction n hn, h'.realCharacter_apply, h.realCharacter_apply] at hv
-  have hr' : (r : ℝ) ≠ 0 := by exact_mod_cast hr.ne'
+  obtain ⟨c, hc, hd⟩ := P.map_direction n hn
+  have hv : (P.normalMap m (ρ' (P.degreeMap n)) : ℝ) = c * r * m (ρ n) := by
+    rw [← h'.realCharacter_apply, hd, map_smul, smul_eq_mul, he, h.realCharacter_apply,
+      mul_assoc]
+  have hcr : c * r ≠ 0 := mul_ne_zero hc.ne' (by exact_mod_cast hr.ne')
   constructor
   · intro hz
     rw [hz, Int.cast_zero, eq_comm, mul_eq_zero] at hv
-    exact_mod_cast hv.resolve_left hr'
+    exact_mod_cast hv.resolve_left hcr
   · intro hz
     rw [hz, Int.cast_zero, mul_zero] at hv
     exact_mod_cast hv
@@ -234,8 +239,11 @@ def comp (Q : Pushforward d' d'' h' h'' H' H'') (P : Pushforward d d' h h' H H')
       Q.wall_mem _ (P.degreeMap.map_mem hn) _ _ (P.wall_mem n hn m x hx)
   spatialMap := P.spatialMap.trans Q.spatialMap
   map_direction n hn := by
-    rw [PositiveDegreeMap.comp_apply, Q.map_direction _ (P.degreeMap.map_mem hn),
-      P.map_direction n hn, ContinuousAffineEquiv.linear_trans_apply]
+    obtain ⟨c, hc, hP⟩ := P.map_direction n hn
+    obtain ⟨c', hc', hQ⟩ := Q.map_direction _ (P.degreeMap.map_mem hn)
+    refine ⟨c' * c, mul_pos hc' hc, ?_⟩
+    rw [PositiveDegreeMap.comp_apply, hQ, hP, map_smul, smul_smul,
+      ContinuousAffineEquiv.linear_trans_apply]
   realCharacter_normalMap m := by
     obtain ⟨r, hr, hP⟩ := P.exists_realCharacter_normalMap_apply m
     obtain ⟨s, hs, hQ⟩ := Q.exists_realCharacter_normalMap_apply (P.normalMap m)
@@ -261,6 +269,55 @@ theorem comp_normalMap (Q : Pushforward d' d'' h' h'' H' H'') (P : Pushforward d
 theorem comp_spatialMap (Q : Pushforward d' d'' h' h'' H' H'') (P : Pushforward d d' h h' H H') :
     (Q.comp P).spatialMap = P.spatialMap.trans Q.spatialMap := (rfl)
 
+variable (d h H) in
+/-- The *dilation* of space by a positive rational `q`: the spatial map is `x ↦ q • x`, and the
+degree map, Lie map, rays and normals are the identity. It rescales the geometric image of every
+degree by `q` and pulls every real normal back to `q` times itself. -/
+def dilation (q : ℚ) (hq : 0 < q) : Pushforward d d h h H H where
+  degreeMap := PositiveDegreeMap.id d
+  lieHom := GradedLieHom.id ℒ
+  rayMap := _root_.id
+  mem_rayDegrees_rayMap _ _ hn := by simpa using hn
+  normalMap := _root_.id
+  wall_mem _ _ _ _ hx := by simpa using hx
+  spatialMap := (ContinuousLinearEquiv.smulLeft (R₁ := ℝ)
+    (Units.mk0 (q : ℝ) (by exact_mod_cast hq.ne'))).toContinuousAffineEquiv
+  map_direction _ _ := ⟨(q : ℝ)⁻¹, by positivity, by
+    rw [ContinuousLinearEquiv.linear_toContinuousAffineEquiv_apply,
+      ContinuousLinearEquiv.smulLeft_apply_apply, Units.smul_def, Units.val_mk0,
+      inv_smul_smul₀ (by exact_mod_cast hq.ne'), PositiveDegreeMap.id_apply]⟩
+  realCharacter_normalMap _ := ⟨q, hq, by ext; simp⟩
+
+variable {q : ℚ} {hq : 0 < q}
+
+/-- The degree map of a dilation is the identity. -/
+@[simp]
+theorem dilation_degreeMap : (dilation d h H q hq).degreeMap = PositiveDegreeMap.id d := (rfl)
+
+/-- The Lie map of a dilation is the identity. -/
+@[simp]
+theorem dilation_lieHom_apply (x : L) : (dilation d h H q hq).lieHom x = x :=
+  GradedLieHom.id_apply x
+
+/-- The ray map of a dilation is the identity. -/
+@[simp]
+theorem dilation_rayMap (w : SupportedRay d) : (dilation d h H q hq).rayMap w = w := (rfl)
+
+/-- The normal map of a dilation is the identity. -/
+@[simp]
+theorem dilation_normalMap (m : Λ →+ ℤ) : (dilation d h H q hq).normalMap m = m := (rfl)
+
+/-- The spatial map of a dilation is multiplication by `q`. -/
+@[simp]
+theorem dilation_spatialMap_apply (x : V) : (dilation d h H q hq).spatialMap x = (q : ℝ) • x := by
+  simp [dilation]
+
+/-- The linear part of the spatial map of a dilation is multiplication by `q`. -/
+@[simp]
+theorem dilation_spatialMap_linear_apply (v : V) :
+    (dilation d h H q hq).spatialMap.toAffineEquiv.linear v = (q : ℝ) • v := by
+  simp [dilation]
+
 end Pushforward
 
 variable [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
@@ -269,6 +326,26 @@ variable [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
   [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ]
   [GradedLieAlgebra ℳ] [IsPositiveGrading d' ℳ]
   [GradedLieAlgebra ℋ] [IsPositiveGrading d'' ℋ]
+
+namespace Pushforward
+
+variable {q : ℚ} {hq : 0 < q}
+
+/-- The completed Lie map of a dilation is the identity. -/
+@[simp]
+theorem dilation_lieHom_completedMap :
+    (dilation d h H q hq).lieHom.completedMap = MonoidHom.id (d.completedBCHGroup ℒ) :=
+  GradedLieHom.completedMap_id
+
+omit [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L] in
+/-- At equal source and target orders, the truncated Lie map of a dilation is the identity. -/
+@[simp]
+theorem dilation_lieHom_truncatedMap (k : ℕ)
+    (hk : (dilation d h H q hq).degreeMap.modulus k ≤ k) :
+    (dilation d h H q hq).lieHom.truncatedMap k hk = LieHom.id :=
+  GradedLieHom.truncatedMap_id k
+
+end Pushforward
 
 variable (W : DirectedWall (d := d) h H) (P : Pushforward d d' h h' H H')
 
@@ -336,13 +413,14 @@ theorem exists_geometricDirection_pushforward : ∃ t : ℝ, 0 < t ∧
   obtain ⟨hnP, a, ha, rfl⟩ := SupportedRay.mem_rayDegrees.mp hn
   obtain ⟨-, c, hc, hTc⟩ :=
     SupportedRay.mem_rayDegrees.mp (P.mem_rayDegrees_rayMap W.ray _ hn)
-  have hd := P.map_direction _ hnP
+  obtain ⟨e, he, hd⟩ := P.map_direction _ hnP
   rw [hTc] at hd
-  simp only [map_zsmul, ← Int.cast_smul_eq_zsmul ℝ] at hd
-  refine ⟨(a : ℝ) / c, div_pos (by exact_mod_cast ha) (by exact_mod_cast hc), ?_⟩
-  have hc' : (c : ℝ) ≠ 0 := by exact_mod_cast hc.ne'
-  rw [pushforward_ray, div_eq_inv_mul, mul_smul, ← map_smul, ← hd, smul_smul,
-    inv_mul_cancel₀ hc', one_smul]
+  simp only [map_zsmul, ← Int.cast_smul_eq_zsmul ℝ, map_smul, smul_smul] at hd
+  have ha' : (0 : ℝ) < a := by exact_mod_cast ha
+  have hc' : (0 : ℝ) < c := by exact_mod_cast hc
+  refine ⟨(c : ℝ)⁻¹ * (e * a), by positivity, ?_⟩
+  rw [pushforward_ray, ← inv_smul_smul₀ hc'.ne' (i' (ρ' (P.rayMap W.ray).generator)), hd,
+    smul_smul]
 
 /-- The spatial velocity of the pushed wall is a positive multiple of the spatial image of
 the original velocity. -/
@@ -357,8 +435,9 @@ theorem incoming_pushforward_iff : (W.pushforward P).Incoming ↔ W.Incoming := 
   obtain ⟨n, hn⟩ := W.ray.rayDegrees_nonempty
   rw [(W.pushforward P).incoming_iff_of_mem_rayDegrees
       (W.degreeMap_mem_pushforward_rayDegrees P hn),
-    W.incoming_iff_of_mem_rayDegrees hn,
-    P.map_direction n (SupportedRay.mem_rayDegrees.mp hn).1, pushforward_support]
+    W.incoming_iff_of_mem_rayDegrees hn]
+  obtain ⟨c, hc, hd⟩ := P.map_direction n (SupportedRay.mem_rayDegrees.mp hn).1
+  rw [hd, (recessionCone _).smul_mem_iff hc, pushforward_support]
   simpa only [ContinuousAffineEquiv.coe_coe] using
     P.spatialMap.toAffineEquiv.linear_mem_recessionCone_image W.support (i (ρ n))
 
@@ -381,6 +460,23 @@ theorem pushforward_pushforward (Q : Pushforward d' d'' h' h'' H' H'') :
       ContinuousAffineEquiv.coe_trans, Function.comp_def]
   · simp only [pushforward_label]
     exact (DFunLike.congr_fun (GradedLieHom.completedMap_comp Q.lieHom P.lieHom) _).symm
+
+/-- A dilation by `q` moves the support of a wall to its rescaling by `q`. -/
+theorem pushforward_dilation_support {q : ℚ} (hq : 0 < q) :
+    (W.pushforward (Pushforward.dilation d h H q hq)).support = (q : ℝ) • W.support := by
+  rw [pushforward_support, ← Set.image_smul]
+  exact Set.image_congr fun x _ => Pushforward.dilation_spatialMap_apply x
+
+/-- A dilation fixes a wall whose support is invariant under rescaling by `q`, for instance a
+hyperplane through the origin. -/
+theorem pushforward_dilation_eq_self {q : ℚ} (hq : 0 < q)
+    (hW : (q : ℝ) • W.support = W.support) :
+    W.pushforward (Pushforward.dilation d h H q hq) = W := by
+  apply DirectedWall.ext
+  · rw [pushforward_normal, Pushforward.dilation_normalMap]
+  · rw [pushforward_ray, Pushforward.dilation_rayMap]
+  · rw [pushforward_dilation_support, hW]
+  · rw [pushforward_label, Pushforward.dilation_lieHom_completedMap, MonoidHom.id_apply]
 
 end DirectedWall
 end Mei

@@ -89,7 +89,7 @@ def ofTropicalPairing :
   normalMap := ν
   wall_mem _ _ _ _ hx := p.tropicalVertexGradedLieHom_mem_wall ν hν hx
   spatialMap := A
-  map_direction := hA
+  map_direction n hn := ⟨1, one_pos, by rw [one_smul, hA n hn]⟩
   realCharacter_normalMap := hνA
 
 /-- The degree map is that of the pairing. -/

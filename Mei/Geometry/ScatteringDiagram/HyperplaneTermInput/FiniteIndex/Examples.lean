@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall.Pushforward
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.Dilation
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.GermLabel
 public import Mei.Geometry.ScatteringDiagram.DirectedWall.TropicalPairing.WallFunction.Examples
 public import Mei.Geometry.ScatteringDiagram.HyperplaneTermInput.FiniteIndex
@@ -55,12 +56,23 @@ direction `v` crossing the diagonal negatively, is the label of `(1 + a z^{(1,1)
 with normal `n°` (`diagonal_germLabel_of_toClass_eq`), by
 `DirectedDiagram.Equivalent.germLabel_eq_pushforward`.
 
+The lines pass through the origin (`lineInput_diagram_wall_support`), so both scattering classes
+are classes of central inputs, and their germ labels along open rays of the diagonal do not
+depend on the representative or on the generic point
+(`DirectedDiagram.germLabel_smul_eq_of_toClass_eq_scat`). Over `M` this is
+`diagonal_germLabel_smul_eq`: for representatives `D` and `D'` over `M`, the germ label of `D'` at
+a generic point `t • θ`, `t > 0`, is the germ label of `D` at the generic point `θ`. Hence the
+germ label `(1 + a z^{(1,1)})²` of `D` at a single generic point `θ` gives the germ label
+`1 + a z^{(1,1)}` of every representative `E` over `½M₀` at every point `t • S θ`, `t > 0`, that
+is generic for `E`, whether or not `S θ` is (`diagonal_germLabel_smul_of_toClass_eq`).
+
 So for this lattice the file proves: the pushforward of the ray presentation of the lines, the
 pushforward of their scattering class and of its representatives, the transport of a given
 function-wall label on the diagonal, its comparison with groups of representatives over `½M₀`
-that are matched with it by crossing germs, and the transport of a given germ label on the
-diagonal from any representative over `M` to any representative over `½M₀`. It does not compute
-the scattering class: the label `(1 + a z^{(1,1)})²` over `M` is a hypothesis.
+that are matched with it by crossing germs, the transport of a given germ label on the
+diagonal from any representative over `M` to any representative over `½M₀`, and the independence
+of these germ labels of the point on an open ray of the diagonal. It does not compute the
+scattering class: the label `(1 + a z^{(1,1)})²` over `M` at one generic point is a hypothesis.
 
 The lattice change is motivated by Burcroff–Lee–Mou, *Positivity of generalized cluster
 scattering diagrams*, Theorem 9.5 (arXiv:2503.03719v1).
@@ -216,6 +228,14 @@ theorem lineInput_exponent (α : Fin 2 × Fin K) :
     (lineInput ρ₀ μ₀ hμ₀ hρμ K).exponent α =
       ((α.2 : ℤ) + 1) • Module.Basis.finTwoProd ℤ α.1 := by
   simp [lineInput]
+
+/-- The ray presentation of the lines has its walls on hyperplanes through the origin. -/
+theorem lineInput_diagram_wall_support (c : Fin 2 × Fin K → R) :
+    ∀ x, (((lineInput ρ₀ μ₀ hμ₀ hρμ K).diagram h c).wall x).support =
+      {y | h.realCharacter (((lineInput ρ₀ μ₀ hμ₀ hρμ K).diagram h c).wall x).normal y = 0} :=
+  fun x => by
+    rw [ofHyperplaneRayFactors_support, ofHyperplaneRayFactors_normal, lineInput_offset,
+      Pi.zero_apply]
 
 end LineInput
 
@@ -509,6 +529,90 @@ theorem diagonal_germLabel_of_toClass_eq {κ ι' : Type} (c : Fin 2 × Fin K →
       rw [primitiveLatticeChangeScalar_diagonalNormal]
       exact diagonalNormal_latticeChange x)
     (r := 2) (by simp) _ _ (completedTropicalTangentMap_squaredDiagonalFunction _ a)
+
+/-- **The diagonal germ label over `M` along a ray.** Let `D` and `D'` be any representatives of
+the scattering class of the lines over `M`, let `θ` be a generic point of the diagonal line for
+`D`, and let `t • θ`, `t > 0`, be a generic point of the line for `D'`. Then the germ label of
+`D'` at `t • θ` is the germ label of `D` at `θ`, in every direction crossing the diagonal. So the
+germ label of the class over `M` on each open ray of the diagonal, for instance on the open ray
+`ℝ_{<0}(1, 1)` of `m°`, is independent of the representative and of the generic point. -/
+theorem diagonal_germLabel_smul_eq {κ κ' : Type} (c : Fin 2 × Fin K → ℚ)
+    {D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord) κ}
+    (hD : D.toClass =
+      ((latticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
+    {D' : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord) κ'}
+    (hD' : D'.toClass =
+      ((latticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
+    {θ v : ℝ × ℝ} {t : ℝ} (ht : 0 < t) (hθ : D.IsGenericPoint (diagonalLine h) θ)
+    (htθ : D'.IsGenericPoint (diagonalLine h) (t • θ)) (hv : h.realCharacter diagonalNormal v ≠ 0) :
+    D'.germLabel (t • θ) v htθ.isRegular = D.germLabel θ v hθ.isRegular :=
+  germLabel_smul_eq_of_toClass_eq_scat _ (lineInput_diagram_wall_support ℚ h _ _ _ _ _ c) hD hD'
+    (by simp) (finrank_diagonalLine_direction h) ht hθ htθ (by
+      rwa [diagonalLine, Submodule.toAffineSubspace_direction, LinearMap.mem_ker])
+
+/-- The image of the diagonal line under the spatial map of the lattice change passes through the
+origin. -/
+theorem zero_mem_map_diagonalLine :
+    (0 : ℝ × ℝ) ∈ (diagonalLine h).map
+      (primitiveLatticeChangePushforward ℚ h).spatialMap.toAffineEquiv.toAffineMap :=
+  ⟨0, by simp [diagonalLine], by simp [primitiveLatticeChangePushforward]⟩
+
+/-- The image of the diagonal line under the spatial map of the lattice change is an affine
+hyperplane. -/
+theorem finrank_map_diagonalLine_direction :
+    Module.finrank ℝ ((diagonalLine h).map
+      (primitiveLatticeChangePushforward ℚ h).spatialMap.toAffineEquiv.toAffineMap).direction + 1 =
+      Module.finrank ℝ (ℝ × ℝ) := by
+  rw [AffineSubspace.map_direction, AffineEquiv.linear_toAffineMap, LinearEquiv.finrank_map_eq,
+    finrank_diagonalLine_direction]
+
+/-- **The diagonal wall function over `½M₀` on the whole ray.** Let `D` be any representative of
+the scattering class of the lines over `M` and `E` any representative of the scattering class
+over `½M₀`. Let `θ` be a generic point of the diagonal line for `D` and let `v` cross the diagonal
+negatively. If the germ label of `D` at `θ` in the direction `v` is the function-wall label of
+`(1 + a z^{(1,1)})²` with normal `n°`, then at every point `t • S θ`, `t > 0`, of the image ray
+under the spatial map `S` that is generic for `E` on the image line, the germ label of `E` in the
+direction `S v` is the function-wall label of `1 + a z^{(1,1)}` with normal `n°`. Unlike
+`diagonal_germLabel_of_toClass_eq`, `S θ` itself need not be generic for `E`. The germ label of
+`D` at one point is a hypothesis: the scattering class over `M` is not computed. -/
+theorem diagonal_germLabel_smul_of_toClass_eq {κ ι' : Type} (c : Fin 2 × Fin K → ℚ)
+    {D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord) κ}
+    (hD : D.toClass =
+      ((latticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
+    {E : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² halfLatticeCoord) ι'}
+    (hE : E.toClass =
+      ((halfLatticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
+    {θ v : ℝ × ℝ} (hθ : D.IsGenericPoint (diagonalLine h) θ)
+    (hv : h.realCharacter diagonalNormal v < 0) (a : ℚ)
+    (hg : D.germLabel θ v hθ.isRegular = ℕ².completedBCHExp _
+      (completedTropicalTangentField ℕ² latticeCoord ((Int.castAddHom ℚ).comp diagonalNormal)
+        ((F latticeCoord).completedLog (squaredDiagonalFunction a))))
+    {t : ℝ} (ht : 0 < t)
+    (htθ : E.IsGenericPoint ((diagonalLine h).map
+      (primitiveLatticeChangePushforward ℚ h).spatialMap.toAffineEquiv.toAffineMap)
+      (t • (primitiveLatticeChangePushforward ℚ h).spatialMap θ)) :
+    E.germLabel (t • (primitiveLatticeChangePushforward ℚ h).spatialMap θ)
+        ((primitiveLatticeChangePushforward ℚ h).spatialMap.toAffineEquiv.linear v)
+        htθ.isRegular =
+      ℕ².completedBCHExp _ (completedTropicalTangentField ℕ² halfLatticeCoord
+        ((Int.castAddHom ℚ).comp diagonalNormal) ((F halfLatticeCoord).completedLog
+          (diagonalFunction halfLatticeCoord diagonalNormal_halfLatticeCoord a))) := by
+  /- The pushforward of `D` represents the class over `½M₀` and is generic at `S θ`, where its
+  germ label is the target label. The germ label of the class over `½M₀` is constant along the
+  open ray through `S θ`. -/
+  let P := primitiveLatticeChangePushforward ℚ h
+  have hθ' := hθ.pushforward P
+  have hv' : P.spatialMap.toAffineEquiv.linear v ∉
+      ((diagonalLine h).map P.spatialMap.toAffineEquiv.toAffineMap).direction := by
+    rw [AffineSubspace.map_direction, AffineEquiv.linear_toAffineMap, Submodule.mem_map_equiv,
+      LinearEquiv.symm_apply_apply, diagonalLine, Submodule.toAffineSubspace_direction,
+      LinearMap.mem_ker]
+    exact hv.ne
+  rw [germLabel_smul_eq_of_toClass_eq_scat _ (lineInput_diagram_wall_support ℚ h _ _ _ _ _ c)
+      (latticeLineInput_toClass_pushforward ℚ h c hD) hE (zero_mem_map_diagonalLine h)
+      (finrank_map_diagonalLine_direction h) ht hθ' htθ hv']
+  exact diagonal_germLabel_of_toClass_eq h c hD (latticeLineInput_toClass_pushforward ℚ h c hD)
+    hθ hθ' hv a hg
 
 end GermLabel
 
