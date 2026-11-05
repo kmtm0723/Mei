@@ -18,6 +18,10 @@ supports retain their indexed multiplicities.
 The geometric input is `Mei.Convex.eventually_mem_iff_of_submodule_le_direction`.
 The combined-label API then lets coefficient constructions use this local
 constancy without choosing an enumeration of the incident walls.
+
+In particular, near a regular point of an affine subspace `A` all of whose incident walls span
+`A`, the nearby points of `A` lie on the same walls and have the same combined label
+(`DirectedDiagram.eventually_nhdsWithin_combinedLabel_eq`).
 -/
 
 public noncomputable section
@@ -63,5 +67,33 @@ theorem eventually_combinedLabel_add_eq (k : ℕ) (θ : V)
   rw [D.combinedLabel_eq_prod k (θ + (w : V)) v hw I.toList I.nodup_toList
     (fun a => (hI a).trans (hmem a).symm),
     D.combinedLabel_eq_prod k θ v hθ I.toList I.nodup_toList hI]
+
+/-- **Local constancy along an affine subspace.** Let `θ` be a point of the affine subspace `A`,
+outside the singular support of the walls active at order `k`, such that every active wall
+through `θ` has affine span `A`. Then the points of `A` near `θ` are outside that singular
+support, lie on exactly the same active walls as `θ`, and have the same combined label as `θ`
+in every direction. -/
+theorem eventually_nhdsWithin_combinedLabel_eq (k : ℕ) {A : AffineSubspace ℝ V} {θ : V}
+    (hθA : θ ∈ A) (hθ : θ ∉ singularSupport (fun a : D.active k => (D.wall a).support))
+    (hA : ∀ a : D.active k, θ ∈ (D.wall a).support → affineSpan ℝ (D.wall a).support = A) :
+    ∀ᶠ η in 𝓝[(A : Set V)] θ,
+      ∃ hη : η ∉ singularSupport (fun a : D.active k => (D.wall a).support),
+        (∀ a : D.active k, η ∈ (D.wall a).support ↔ θ ∈ (D.wall a).support) ∧
+          ∀ v, D.combinedLabel k η v hη = D.combinedLabel k θ v hθ := by
+  let := h.finiteDimensional
+  have hS (a : D.active k) (ha : θ ∈ (D.wall a).support) :
+      A.direction ≤ (affineSpan ℝ (D.wall a).support).direction := by
+    rw [hA a ha]
+  have hev := (D.eventually_combinedLabel_add_eq k θ hθ A.direction hS).and
+    (eventually_mem_iff_of_submodule_le_direction _
+      (fun a : D.active k => (D.wall a).isConvexPolyhedron.isClosed) θ hθ A.direction hS)
+  -- Move from displacements in the direction of `A` near `0` to points of `A` near `θ`.
+  rw [nhds_subtype, Submodule.coe_zero, eventually_comap] at hev
+  have hc : Tendsto (fun η => η - θ) (𝓝[(A : Set V)] θ) (𝓝 0) := by
+    simpa using ((continuous_sub_right θ).tendsto θ).mono_left nhdsWithin_le_nhds
+  filter_upwards [hc.eventually hev, self_mem_nhdsWithin] with η hη hηA
+  obtain ⟨⟨hη', hl⟩, hm⟩ := hη ⟨η - θ, AffineSubspace.vsub_mem_direction hηA hθA⟩ rfl
+  simp only [add_sub_cancel] at hη' hl hm
+  exact ⟨hη', hm, hl⟩
 
 end Mei.DirectedDiagram

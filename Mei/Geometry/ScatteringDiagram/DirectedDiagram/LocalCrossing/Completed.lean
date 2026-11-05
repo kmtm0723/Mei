@@ -6,6 +6,7 @@ Authors: Claude Code
 module
 
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Germ
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.LocalConstancy
 public import Mei.Geometry.Affine.Generic
 
 /-!
@@ -43,7 +44,12 @@ diagrams have the same germ label at a common generic point of `A`, for every di
 function-wall groupings in
 `Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall.Equivalence`, this requires no
 grouping and no matching of crossing germs: the germ label is an invariant of the completed
-class at each common generic point. It is the label of "the wall function on a ray" of a
+class at each common generic point. Germ labels are also locally constant along `A` at each
+finite order: near a generic point `θ` of `A`, every regular point of `A` has a germ label with
+the same order-`k` projection as at `θ`, in every direction
+(`DirectedDiagram.IsGenericPoint.eventually_projection_germLabel_eq`). The neighbourhood depends
+on `k`, since walls of higher order may end on `A` arbitrarily close to `θ`. The germ label is
+the label of "the wall function on a ray" of a
 scattering diagram in Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*,
 §1.1 (arXiv:1411.1394v2), and in Burcroff–Lee–Mou, *Positivity of generalized cluster scattering
 diagrams*, Theorem 9.5 (arXiv:2503.03719v1).
@@ -57,7 +63,7 @@ public section
 
 noncomputable section
 
-open Set Mei.Convex
+open Set Filter Topology Mei.Convex
 
 namespace Mei.DirectedDiagram
 
@@ -282,6 +288,19 @@ theorem germLabel_neg (θ v : V) (hθ : D.IsRegular θ)
   ((D.eq_germLabel_iff θ (-v) hθ _).mpr fun k => by
     rw [map_inv, projection_germLabel]
     exact (D.combinedLabel_neg k θ v _ (hv k)).symm).symm
+
+variable {D} in
+/-- **Local constancy of germ labels.** Near a generic point `θ` of an affine subspace `A`, at
+each order `k`, every point of `A` that is regular for `D` has a germ label with the same
+order-`k` projection as the germ label at `θ`, in every direction. -/
+theorem IsGenericPoint.eventually_projection_germLabel_eq {A : AffineSubspace ℝ V} {θ : V}
+    (hθ : D.IsGenericPoint A θ) (k : ℕ) :
+    ∀ᶠ η in 𝓝[(A : Set V)] θ, ∀ (hη : D.IsRegular η) (v : V),
+      CompletedGroup.projection k (D.germLabel η v hη) =
+        CompletedGroup.projection k (D.germLabel θ v hθ.isRegular) := by
+  filter_upwards [D.eventually_nhdsWithin_combinedLabel_eq k hθ.mem (hθ.isRegular k)
+    fun a => hθ.affineSpan_eq a] with η ⟨_, _, hl⟩ hη v
+  rw [projection_germLabel, projection_germLabel, hl v]
 
 variable {D} {E : DirectedDiagram (d := d) h H κ}
 

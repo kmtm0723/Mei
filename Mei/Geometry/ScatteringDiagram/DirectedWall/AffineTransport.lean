@@ -91,9 +91,9 @@ def DirectedWall.Pushforward.ofCoordinateChange (e : Toric.IntegralAffineEquiv h
     rw [E.gradedLieHom_apply, E.degreeMap_apply]
     exact (E.wall_mem_iff n m x).mpr hx
   spatialMap := e.toContinuousAffineEquiv
-  map_direction n _ := by
-    rw [Toric.IntegralAffineEquiv.toContinuousAffineEquiv_toAffineEquiv, E.degreeMap_apply,
-      ← E.map_direction, hE, e.map_lattice]
+  map_direction n _ := ⟨1, one_pos, by
+    rw [one_smul, Toric.IntegralAffineEquiv.toContinuousAffineEquiv_toAffineEquiv,
+      E.degreeMap_apply, ← E.map_direction, hE, e.map_lattice]⟩
   realCharacter_normalMap m := ⟨1, one_pos, by
     rw [E.realCharacter_comp_tangentEquiv_symm e hE]
     ext v
