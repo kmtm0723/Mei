@@ -86,12 +86,13 @@ theorem toCompletion_finitePositiveCoefficientOfCompletion (x : (F).completion)
     (positiveCompletionToDirectLimit q β d x) hx u
 
 /-- Ordinary positive coefficients are exactly the finite-support elements of their completion. -/
-theorem mem_range_positiveToCompletion_iff_finite_support (x : (F).completion) :
+theorem mem_range_toCompletion_iff_finite_ambient_support (x : (F).completion) :
     x ∈ (F).toCompletion.range ↔
       Set.Finite {u | d.shiftedDirectLimitComponents (grade q β)
         (positiveCompletionToDirectLimit q β d x) u ≠ 0} := by
   constructor
   · rintro ⟨a, rfl⟩
+    -- Expose the completion map value in the range witness.
     change Set.Finite {u | d.shiftedDirectLimitComponents (grade q β)
       (positiveCompletionToDirectLimit q β d ((F).toCompletion a)) u ≠ 0}
     simpa only [shiftedDirectLimitComponents_positiveCompletionToDirectLimit_toCompletion] using

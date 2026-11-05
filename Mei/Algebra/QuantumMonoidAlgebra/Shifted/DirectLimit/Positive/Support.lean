@@ -53,6 +53,7 @@ theorem range_positiveCompletionToDirectLimit :
     (positiveCompletionToDirectLimit q β d).range =
       d.positiveCoefficientSubalgebra (grade q β) := by
   ext x
+  -- Subalgebra membership is membership in its underlying submodule.
   change x ∈ (positiveCompletionToDirectLimit q β d).range ↔
     x ∈ (d.positiveCoefficientSubalgebra (grade q β)).toSubmodule
   rw [PositiveDegrees.positiveCoefficientSubalgebra_toSubmodule]
@@ -62,6 +63,7 @@ theorem range_positiveCompletionToDirectLimit :
       (positiveCompletionToDirectLimit_apply q β d a).symm⟩
   · rintro ⟨a, ha⟩
     refine ⟨(positiveCompletionShiftEquiv q β d 0).symm a, ?_⟩
+    -- The range witness is the underlying value of the inverse algebra equivalence.
     change positiveCompletionToDirectLimit q β d
       ((positiveCompletionShiftEquiv q β d 0).symm a) = x
     rw [positiveCompletionToDirectLimit_apply, LinearEquiv.apply_symm_apply]
@@ -84,7 +86,9 @@ def positiveCompletionEquivPositiveCoefficients :
 @[simp]
 theorem coe_positiveCompletionEquivPositiveCoefficients (a : (F).completion) :
     (positiveCompletionEquivPositiveCoefficients q β d a : G) =
-      positiveCompletionToDirectLimit q β d a := (rfl)
+      positiveCompletionToDirectLimit q β d a := by
+  -- This application only projects the defining map record and its unchanged underlying function.
+  rfl
 
 /-- Recovering a positive completion and embedding it globally returns the original coefficient. -/
 @[simp]

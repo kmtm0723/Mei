@@ -13,8 +13,7 @@ public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.Embedding
 
 The zero chart embeds the completed positive coefficient algebra in global
 coefficients as an algebra. This construction needs neither a spanning condition
-on the positive monoid nor alternation of the bilinear form. Its multiplication
-law follows from finite quotient representatives and the existing shifted product.
+on the positive monoid nor alternation of the bilinear form.
 -/
 
 public section
@@ -55,13 +54,8 @@ private local instance : Mul G := ⟨(inferInstance : Ring G).mul⟩
 private local instance : Algebra R G := inferInstance
 private local instance : Module R G := inferInstance
 
-omit [DecidableEq Γ] in
-private theorem zero_mem_chart : (0 : Γ) - d.coefficientOrigin 0 ∈ d.monoid := by
-  rw [d.coefficientOrigin_eq_neg_sum]
-  simp
-
 private def positiveGlobalLinearMap : (F).completion →ₗ[R] G :=
-  (d.toShiftedDirectLimitOfChart (grade q β) 0 0 (zero_mem_chart d)).comp
+  (d.toShiftedDirectLimitOfChart (grade q β) 0 0 (d.zero_coefficientOrigin_mem)).comp
     (positiveCompletionShiftEquiv q β d 0).toLinearMap
 
 private theorem positiveGlobalLinearMap_component (a : (F).completion) (u : Γ) :
@@ -99,7 +93,12 @@ private theorem positiveGlobalLinearMap_one : positiveGlobalLinearMap q β d 1 =
     simp only [coe_positiveShiftEquiv, monomial_zero, one_mul, Subalgebra.coe_one]
   have hc' := congrArg (d.shiftedHomogeneousComponent (grade q β) 0 u) hf1
   have hd := congrArg (fun z : QuantumMonoidAlgebra q β => DirectSum.decompose (grade q β) z u) he
-  exact hc.trans (hc'.trans (hh.trans (hd.trans ho.symm)))
+  calc
+    _ = _ := hc
+    _ = _ := hc'
+    _ = _ := hh
+    _ = _ := hd
+    _ = _ := ho.symm
 
 private theorem positiveGlobalLinearMap_mul (a b : (F).completion) :
     positiveGlobalLinearMap q β d (a * b) =
@@ -108,10 +107,8 @@ private theorem positiveGlobalLinearMap_mul (a b : (F).completion) :
   funext u
   let k := (d.degree u).toNat
   have hk : d.degree u ≤ k := Int.self_le_toNat _
-  let v := Classical.choose (Ideal.Quotient.mk_surjective ((F).projection k a))
-  let w := Classical.choose (Ideal.Quotient.mk_surjective ((F).projection k b))
-  have hv := Classical.choose_spec (Ideal.Quotient.mk_surjective ((F).projection k a))
-  have hw := Classical.choose_spec (Ideal.Quotient.mk_surjective ((F).projection k b))
+  refine (Ideal.Quotient.mk_surjective ((F).projection k a)).elim fun v hv => ?_
+  refine (Ideal.Quotient.mk_surjective ((F).projection k b)).elim fun w hw => ?_
   have hvw : (F).projection k (a * b) =
       Ideal.Quotient.mk ((F).ideal (k + 1)) (v * w) := by
     exact ((F).projection k).map_mul a b |>.trans
@@ -123,12 +120,12 @@ private theorem positiveGlobalLinearMap_mul (a b : (F).completion) :
   let y := positiveCompletionShiftEquiv q β d 0 b
   let C := fun z : G => d.shiftedDirectLimitComponents (grade q β) z u
   have hp := d.shiftedDirectLimitMul_toShiftedDirectLimitOfChart (grade q β) 0 0 0 0
-    (zero_mem_chart d) (zero_mem_chart d) x y
+    (d.zero_coefficientOrigin_mem) (d.zero_coefficientOrigin_mem) x y
   have hn := d.shiftedDirectLimitMul_eq_mul (grade q β)
     (positiveGlobalLinearMap q β d a) (positiveGlobalLinearMap q β d b)
   have hp' := congrArg C (hn.symm.trans hp)
   have hc := d.shiftedDirectLimitComponents_toShiftedDirectLimitOfChart (grade q β)
-    (0 + 0) (0 + 0) (by simpa only [add_zero] using zero_mem_chart d)
+    (0 + 0) (0 + 0) (by simpa only [add_zero] using d.zero_coefficientOrigin_mem)
     (d.shiftedCompletionMul (grade q β) 0 0 x y) u
   have hread := d.shiftedHomogeneousComponent_eq (grade q β) (0 + 0) u k
     (by simpa only [add_zero, sub_zero] using hk) (d.shiftedCompletionMul (grade q β) 0 0 x y)
@@ -147,7 +144,14 @@ private theorem positiveGlobalLinearMap_mul (a b : (F).completion) :
       QuantumMonoidAlgebra q β) = (v * w : positiveSubalgebra q β d.monoid) := by
     simp only [coe_shiftedMul, coe_positiveShiftEquiv, monomial_zero, one_mul, Subalgebra.coe_mul]
   have he' := congrArg (fun z : QuantumMonoidAlgebra q β => DirectSum.decompose (grade q β) z u) he
-  exact hl.trans (hp'.trans (hc.trans (hread.trans (hm'.trans (hrep.trans he'))))).symm
+  calc
+    _ = _ := hl
+    _ = _ := he'.symm
+    _ = _ := hrep.symm
+    _ = _ := hm'.symm
+    _ = _ := hread.symm
+    _ = _ := hc.symm
+    _ = _ := hp'.symm
 
 /-- The completed positive coefficient algebra embeds in the global algebra through shift zero. -/
 def positiveCompletionToDirectLimit : (F).completion →ₐ[R] G :=
@@ -158,13 +162,16 @@ def positiveCompletionToDirectLimit : (F).completion →ₐ[R] G :=
 theorem positiveCompletionToDirectLimit_apply (a : (F).completion) :
     positiveCompletionToDirectLimit q β d a =
       d.toShiftedDirectLimitOfChart (grade q β) 0 0
-        (by rw [d.coefficientOrigin_eq_neg_sum]; simp)
-        (positiveCompletionShiftEquiv q β d 0 a) := (rfl)
+        d.zero_coefficientOrigin_mem
+        (positiveCompletionShiftEquiv q β d 0 a) := by
+  -- AlgHom.ofLinearMap retains this linear map; comp_apply exposes its two maps.
+  change positiveGlobalLinearMap q β d a = _
+  simp only [positiveGlobalLinearMap, LinearMap.comp_apply, LinearEquiv.coe_coe]
 
 /-- No positive completed coefficient is lost in the global algebra. -/
 theorem positiveCompletionToDirectLimit_injective :
     Function.Injective (positiveCompletionToDirectLimit q β d) :=
-  (d.toShiftedDirectLimitOfChart_injective (grade q β) 0 0 (zero_mem_chart d)).comp
+  (d.toShiftedDirectLimitOfChart_injective (grade q β) 0 0 (d.zero_coefficientOrigin_mem)).comp
     (positiveCompletionShiftEquiv q β d 0).injective
 
 /-- Reading a component of the embedded positive completion gives its zero-chart component. -/
