@@ -48,6 +48,8 @@ two integrality conditions hold on basis vectors (`SkewLatticeDatum.ofBasis`,
   `Mei.SkewLatticeDatum.AdaptedBasis.mem_sublattice_iff`: the two sublattices in coordinates.
 * `Mei.SkewLatticeDatum.AdaptedBasis.unfrozenBasis`,
   `Mei.SkewLatticeDatum.AdaptedBasis.sublatticeBasis`: the induced bases of `N_uf` and `N°`.
+* `Mei.SkewLatticeDatum.AdaptedBasis.forall_form_eq_zero_iff`: the form vanishes on `N_uf`
+  exactly when `{e_i, e_j} = 0` for all `i, j ∈ I_uf`.
 * `Mei.SkewLatticeDatum.AdaptedBasis.rayIndex_basis`: `κ(e_i) = d_i`.
 * `Mei.SkewLatticeDatum.ofBasis`, `Mei.SkewLatticeDatum.AdaptedBasis.ofBasis`: the skew lattice
   datum and adapted basis defined by a finite basis, integrality being checked on basis vectors.
@@ -187,6 +189,16 @@ theorem unfrozenBasis_repr (n : D.unfrozen) (i : B.unfrozenIndex) :
     refine B.unfrozenBasis.ext fun j => ?_
     simp [Finsupp.single_apply]
   exact LinearMap.congr_fun h n
+
+/-- The form vanishes on the unfrozen sublattice `N_uf` exactly when `{e_i, e_j} = 0` for all
+unfrozen indices `i, j ∈ I_uf`. -/
+theorem forall_form_eq_zero_iff :
+    (∀ n m : D.unfrozen, D.form n m = 0) ↔
+      ∀ i j : B.unfrozenIndex, D.form (B.basis i) (B.basis j) = 0 := by
+  refine ⟨fun h i j => by simpa using h (B.unfrozenBasis i) (B.unfrozenBasis j), fun h => ?_⟩
+  have hzero : D.form.compl₁₂ D.unfrozen.subtype D.unfrozen.subtype = 0 :=
+    B.unfrozenBasis.ext fun i => B.unfrozenBasis.ext fun j => by simpa using h i j
+  exact fun n m => LinearMap.congr_fun₂ hzero n m
 
 /-- The basis `(d_i e_i)` of the sublattice `N°`. -/
 def sublatticeBasis : Basis ι ℤ D.sublattice :=

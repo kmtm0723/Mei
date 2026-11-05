@@ -16,7 +16,8 @@ public import Mathlib.Algebra.DirectSum.Decomposition
 
 The sum of the homogeneous wall spaces on the actual allowed degrees of a
 supported ray is an abelian Lie subalgebra. Distinct rays with proportional
-normals commute as well. The primitive generator need not be an allowed degree.
+normals commute as well, and so do two rays each of whose normals annihilates the geometric
+direction of the other ray. The primitive generator need not be an allowed degree.
 
 For an internal grading, membership in this sum is detected by homogeneous
 components: they belong to the prescribed wall spaces, and vanish away from the
@@ -71,17 +72,39 @@ theorem raySubmodule_eq_of_ker_eq {Λ : Type*} [AddCommGroup Λ]
 theorem raySubmodule_zero (w : SupportedRay d) : H.raySubmodule w 0 = ⊥ := by
   simp only [raySubmodule_def, H.zero_normal, iSup_bot]
 
-/-- Sums of wall elements with rationally proportional normals commute, even
-when their supported rays differ. -/
-theorem lie_eq_zero_of_mem_raySubmodule {w v : SupportedRay d} {m m' : Λ →+ ℤ}
-    {x y : L} (hx : x ∈ H.raySubmodule w m) (hy : y ∈ H.raySubmodule v m')
-    {c e : ℤ} (hc : c ≠ 0) (he : e ≠ 0) (hm : c • m = e • m') : ⁅x, y⁆ = 0 := by
+/-- Two ray sums commute as soon as their homogeneous wall elements at the allowed degrees of
+the two rays commute. -/
+theorem lie_eq_zero_of_mem_raySubmodule_of_forall {w v : SupportedRay d} {m m' : Λ →+ ℤ}
+    (hwall : ∀ n ∈ w.rayDegrees, ∀ n' ∈ v.rayDegrees, ∀ x ∈ H.wall n m, ∀ y ∈ H.wall n' m',
+      ⁅x, y⁆ = 0)
+    {x y : L} (hx : x ∈ H.raySubmodule w m) (hy : y ∈ H.raySubmodule v m') : ⁅x, y⁆ = 0 := by
   rw [raySubmodule_def] at hx hy
   refine Submodule.iSup_induction _ (motive := fun x => ⁅x, y⁆ = 0) hx
     (fun n x hx => ?_) (by simp) (fun x z hx hz => by simp [hx, hz])
   exact Submodule.iSup_induction _ (motive := fun y => ⁅x, y⁆ = 0) hy
-    (fun n' y hy => H.lie_eq_zero_of_proportional hx hy hc he hm)
+    (fun n' y hy => hwall n n.property n' n'.property x hx y hy)
     (by simp) (fun y z hy hz => by simp [hy, hz])
+
+/-- Sums of wall elements with rationally proportional normals commute, even
+when their supported rays differ. -/
+theorem lie_eq_zero_of_mem_raySubmodule {w v : SupportedRay d} {m m' : Λ →+ ℤ}
+    {x y : L} (hx : x ∈ H.raySubmodule w m) (hy : y ∈ H.raySubmodule v m')
+    {c e : ℤ} (hc : c ≠ 0) (he : e ≠ 0) (hm : c • m = e • m') : ⁅x, y⁆ = 0 :=
+  H.lie_eq_zero_of_mem_raySubmodule_of_forall
+    (fun _ _ _ _ _ hx _ hy => H.lie_eq_zero_of_proportional hx hy hc he hm) hx hy
+
+/-- Sums of wall elements on the supported rays `w` and `v`, with normals `m` and `m'`, commute
+if `m` annihilates the geometric direction `ρ(v)` of the generator of `v` and `m'` annihilates
+`ρ(w)`. The normals need not be proportional. -/
+theorem lie_eq_zero_of_mem_raySubmodule_of_apply_eq_zero {w v : SupportedRay d}
+    {m m' : Λ →+ ℤ} (hm : m (ρ v.generator) = 0) (hm' : m' (ρ w.generator) = 0)
+    {x y : L} (hx : x ∈ H.raySubmodule w m) (hy : y ∈ H.raySubmodule v m') : ⁅x, y⁆ = 0 := by
+  refine H.lie_eq_zero_of_mem_raySubmodule_of_forall (fun n hn n' hn' x hx y hy => ?_) hx hy
+  obtain ⟨-, a, -, rfl⟩ := SupportedRay.mem_rayDegrees.mp hn
+  obtain ⟨-, b, -, rfl⟩ := SupportedRay.mem_rayDegrees.mp hn'
+  refine H.lie_eq_zero_of_apply_eq_zero hx hy ?_ ?_
+  · simpa only [AddMonoidHom.comp_apply, hm, smul_zero] using (m.comp ρ).map_zsmul b v.generator
+  · simpa only [AddMonoidHom.comp_apply, hm', smul_zero] using (m'.comp ρ).map_zsmul a w.generator
 
 /-- The ray sum is an abelian Lie subalgebra of the original Lie algebra. -/
 def rayLieSubalgebra (w : SupportedRay d) (m : Λ →+ ℤ) : LieSubalgebra R L where

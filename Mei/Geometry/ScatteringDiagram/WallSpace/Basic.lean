@@ -14,8 +14,9 @@ public import Mei.Algebra.Group.Hom.Int
 Wall spaces are homogeneous submodules indexed by a degree and an integral normal.
 Their bracket has the normal obtained by contracting each input normal with the
 other input's geometric direction. Nontangent spaces and spaces with zero normal
-vanish. These conditions force commutation for proportional normals and vanishing
-of brackets whose total direction is annihilated by both normals.
+vanish. These conditions force commutation for proportional normals, for normals that
+annihilate each other's geometric direction, and vanishing of brackets whose total direction
+is annihilated by both normals.
 
 The degree and tangent monoids are independent. No lattice basis, coefficient
 characteristic or positivity assumption is needed for these algebraic identities.
@@ -114,6 +115,18 @@ theorem normal_apply_eq_zero {n : Γ} {m : Λ →+ ℤ} {x : L}
   rw [H.nontangent n m h, Submodule.mem_bot] at hx
   exact hx0 hx
 
+/-- Wall elements commute if each normal annihilates the geometric degree of the other element,
+`m(ρ(n')) = 0` and `m'(ρ(n)) = 0`: their bracket normal vanishes. The normals need not be
+proportional. -/
+theorem lie_eq_zero_of_apply_eq_zero {n n' : Γ} {m m' : Λ →+ ℤ} {x y : L}
+    (hx : x ∈ H.wall n m) (hy : y ∈ H.wall n' m')
+    (hm : m (ρ n') = 0) (hm' : m' (ρ n) = 0) : ⁅x, y⁆ = 0 := by
+  have hnormal : wallBracketNormal ρ n n' m m' = 0 := by
+    ext v
+    simp [hm, hm']
+  have h := H.bracket_mem hx hy
+  rwa [hnormal, H.zero_normal, Submodule.mem_bot] at h
+
 /-- A bracket vanishes if both input normals annihilate its total geometric degree. -/
 theorem lie_eq_zero_of_normal_total_eq_zero {n n' : Γ} {m m' : Λ →+ ℤ} {x y : L}
     (hx : x ∈ H.wall n m) (hy : y ∈ H.wall n' m')
@@ -124,13 +137,7 @@ theorem lie_eq_zero_of_normal_total_eq_zero {n n' : Γ} {m m' : Λ →+ ℤ} {x 
   · simp [hy0]
   have hn := H.normal_apply_eq_zero hx hx0
   have hn' := H.normal_apply_eq_zero hy hy0
-  have hcross : m (ρ n') = 0 := by simpa [hn] using hm
-  have hcross' : m' (ρ n) = 0 := by simpa [hn'] using hm'
-  have hnormal : wallBracketNormal ρ n n' m m' = 0 := by
-    ext v
-    simp [hcross, hcross']
-  have h := H.bracket_mem hx hy
-  rwa [hnormal, H.zero_normal, Submodule.mem_bot] at h
+  exact H.lie_eq_zero_of_apply_eq_zero hx hy (by simpa [hn] using hm) (by simpa [hn'] using hm')
 
 /-- Wall elements with the same normal commute, including nontangent degrees. -/
 theorem lie_eq_zero_of_same_normal {n n' : Γ} {m : Λ →+ ℤ} {x y : L}

@@ -57,6 +57,9 @@ The space lattice `Hom(N^B, ℤ)` is identified with `L_pr = M° × N_uf` by res
   `Mei.SkewLatticeDatum.AdaptedBasis.principalBLMForm_single_inl_single_inr`,
   `Mei.SkewLatticeDatum.AdaptedBasis.principalBLMForm_single_inr_single_inr`: the values of the
   form on basis vectors.
+* `Mei.SkewLatticeDatum.AdaptedBasis.principalBLMDatum_form_eq_zero_of_forall_form_eq_zero`: if
+  the original form vanishes on `N_uf`, the form of the extension vanishes on its unfrozen
+  sublattice.
 -/
 
 public section
@@ -469,6 +472,19 @@ theorem principalBLMExtension_exponent [Nonempty ι] (i : B.unfrozenIndex) :
     (B.principalBLMExtension ℓ).exponent (B.principalBLMUnfrozenEquiv ℓ i) =
       B.principalBLMExponent i := by
   simp [principalBLMExtension]
+
+/-- If the original form vanishes on `N_uf`, for instance for the zero form, the form of the
+extension vanishes on its unfrozen sublattice, spanned by the `a_i`, `i ∈ I_uf`:
+`{a_i, a_j} = c {d_i e_i, d_j e_j} = 0`. Its pairings of the `a_i` with the frozen `c_i` are
+still nonzero. -/
+theorem principalBLMDatum_form_eq_zero_of_forall_form_eq_zero
+    (hform : ∀ n m : D.unfrozen, D.form n m = 0) (n m : (B.principalBLMDatum ℓ).unfrozen) :
+    (B.principalBLMDatum ℓ).form n m = 0 := by
+  refine (B.principalBLMBasis ℓ).forall_form_eq_zero_iff.mpr (fun i j => ?_) n m
+  obtain ⟨i, rfl⟩ := (B.principalBLMUnfrozenEquiv ℓ).surjective i
+  obtain ⟨j, rfl⟩ := (B.principalBLMUnfrozenEquiv ℓ).surjective j
+  have hij := B.forall_form_eq_zero_iff.mp hform i j
+  simp [principalBLMForm_single_inl, hij]
 
 end Form
 
