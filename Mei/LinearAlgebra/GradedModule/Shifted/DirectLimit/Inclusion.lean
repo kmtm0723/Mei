@@ -35,4 +35,16 @@ theorem toShiftedDirectLimitOfChart_inclusion (p q : Γ)
   simp only [shiftedDirectLimitComponents_toShiftedDirectLimitOfChart,
     shiftedHomogeneousComponent_inclusion]
 
+/-- Changing an equal support degree and containing chart preserves the global value. -/
+theorem toShiftedDirectLimitOfChart_cast (p q : Γ) (hpq : p = q)
+    (s t : Multiset d.monoid)
+    (hp : p - d.coefficientOrigin s ∈ d.monoid)
+    (hq : q - d.coefficientOrigin t ∈ d.monoid) (x : d.ShiftedCoefficients ℳ p) :
+    d.toShiftedDirectLimitOfChart ℳ q t hq
+        (cast (congrArg (d.ShiftedCoefficients ℳ) hpq) x) =
+      d.toShiftedDirectLimitOfChart ℳ p s hp x := by
+  cases hpq
+  simpa only [cast_eq, shiftedCompletedInclusion_refl] using
+    d.toShiftedDirectLimitOfChart_inclusion ℳ p p (by simp) s t hp hq x
+
 end Mei.PositiveDegrees
