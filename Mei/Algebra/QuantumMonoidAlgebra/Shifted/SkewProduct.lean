@@ -39,10 +39,16 @@ def monomialRightConjSkew (s : Γ) :
 theorem monomialRightConjSkew_apply (s : Γ) (a : QuantumMonoidAlgebra q β) :
     monomialRightConjSkew q β s a =
       (↑(monomialUnit q β s)⁻¹ : QuantumMonoidAlgebra q β) * a * monomial q β s := by
-  -- The ConjAct algebra automorphism is left multiplication by the chosen unit
-  -- followed by right multiplication by its inverse.
-  change (↑(monomialUnit q β s)⁻¹ : QuantumMonoidAlgebra q β) * a * ↑((monomialUnit q β s)⁻¹)⁻¹ = _
-  rw [inv_inv, coe_monomialUnit]
+  simp only [monomialRightConjSkew, MulSemiringAction.toAlgAut_apply,
+    MulSemiringAction.toAlgEquiv_apply, ConjAct.units_smul_def,
+    ConjAct.ofConjAct_toConjAct, inv_inv, coe_monomialUnit]
+
+/-- Right conjugation by the zero monomial is the identity. -/
+@[simp]
+theorem monomialRightConjSkew_zero (a : QuantumMonoidAlgebra q β) :
+    monomialRightConjSkew q β 0 a = a := by
+  simp only [monomialRightConjSkew_apply, coe_monomialUnit_inv, map_zero, zpow_zero,
+    Units.val_one, one_smul, neg_zero, monomial_zero, one_mul, mul_one]
 
 /-- The skew character controls conjugation for every bilinear form. -/
 @[simp]
@@ -87,6 +93,13 @@ theorem coe_positiveMonomialRightConjSkew (P : AddSubmonoid Γ) (s : Γ)
       monomialRightConjSkew q β s a := by
   -- codRestrict retains the ambient map and changes only its codomain.
   rfl
+
+/-- Right conjugation at the zero origin fixes every positive coefficient. -/
+@[simp]
+theorem positiveMonomialRightConjSkew_zero (P : AddSubmonoid Γ)
+    (a : positiveSubalgebra q β P) : positiveMonomialRightConjSkew q β P 0 a = a := by
+  apply Subtype.ext
+  simp only [coe_positiveMonomialRightConjSkew, monomialRightConjSkew_zero]
 
 /-- Positive monomials have the same diagonal character as ambient monomials. -/
 @[simp]
@@ -146,6 +159,19 @@ theorem projection_completedMonomialRightConjSkew (s : Γ) (k : ℕ)
         (positiveMonomialRightConjSkew_filtration_le q β P δ hδ s (k + 1))
         ((F).projection k a) :=
   (F).projection_mapCompletionₐ (F) _ id monotone_id _ k a
+
+/-- Completed right conjugation at the zero origin is the identity. -/
+@[simp]
+theorem completedMonomialRightConjSkew_zero (a : (F).completion) :
+    completedMonomialRightConjSkew q β P δ hδ 0 a = a := by
+  apply (F).completion_ext
+  intro k
+  let b : positiveSubalgebra q β P := Quotient.out ((F).projection k a)
+  have hb : Ideal.Quotient.mk ((F).ideal (k + 1)) b = (F).projection k a :=
+    Ideal.Quotient.mk_out _
+  have h := projection_completedMonomialRightConjSkew q β P δ hδ 0 k a
+  simpa only [← hb, Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk,
+    positiveMonomialRightConjSkew_zero] using h
 
 /-- Conjugation commutes with the canonical map to the positive completion. -/
 @[simp]
@@ -209,8 +235,8 @@ theorem shiftedCompletionMul_positiveCompletionShiftEquiv_skew
         (fun _ h => d.degree_nonneg h) s a) =
       Ideal.Quotient.mk ((D).ideal (k + 1))
         (positiveMonomialRightConjSkew q β d.monoid s a₀) := by
-    rw [projection_completedMonomialRightConjSkew, ← ha]
-    rfl
+    rw [projection_completedMonomialRightConjSkew, ← ha,
+      Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk]
   have hab : (D).projection k
         (((q ^ β p s : Rˣ) : R) •
           (completedMonomialRightConjSkew q β d.monoid d.degree
