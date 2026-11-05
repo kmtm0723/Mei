@@ -260,12 +260,6 @@ theorem projectedAdaptedPolynomialInput_consistent_of_forall_form_eq_zero
     (B.projectedAdaptedPolynomialInput (V := V) ℓ a h).Consistent :=
   D.consistent_of_forall_form_eq_zero hform _ (B.projectedAdaptedPolynomialInput_full ℓ a h)
 
-/-- For the zero form the projected adapted polynomial input is consistent. -/
-theorem projectedAdaptedPolynomialInput_consistent_of_form_eq_zero (hform : D.form = 0) :
-    (B.projectedAdaptedPolynomialInput (V := V) ℓ a h).Consistent :=
-  B.projectedAdaptedPolynomialInput_consistent_of_forall_form_eq_zero ℓ a h
-    fun _ _ => by simp [hform]
-
 /-- If the form vanishes on the unfrozen sublattice, the adapted polynomial input on the
 principal lattice is consistent. Pairings with frozen vectors are unrestricted. -/
 theorem adaptedPolynomialInput_consistent_of_forall_form_eq_zero
@@ -273,12 +267,6 @@ theorem adaptedPolynomialInput_consistent_of_forall_form_eq_zero
     {p : Module.Dual ℤ D.sublattice × D.unfrozen →+ V} (hp : TauCeti.Toric.IsIntegralLattice p) :
     (B.adaptedPolynomialInput (V := V) ℓ a hp).Consistent :=
   D.consistent_of_forall_form_eq_zero hform _ (B.adaptedPolynomialInput_full ℓ a hp)
-
-/-- For the zero form the adapted polynomial input on the principal lattice is consistent. -/
-theorem adaptedPolynomialInput_consistent_of_form_eq_zero (hform : D.form = 0)
-    {p : Module.Dual ℤ D.sublattice × D.unfrozen →+ V} (hp : TauCeti.Toric.IsIntegralLattice p) :
-    (B.adaptedPolynomialInput (V := V) ℓ a hp).Consistent :=
-  B.adaptedPolynomialInput_consistent_of_forall_form_eq_zero ℓ a (fun _ _ => by simp [hform]) hp
 
 end AdaptedBasis
 

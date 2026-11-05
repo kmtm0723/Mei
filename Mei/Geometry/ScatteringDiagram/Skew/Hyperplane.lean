@@ -50,13 +50,4 @@ theorem consistent_of_forall_form_eq_zero (hform : ∀ n m : D.unfrozen, D.form 
   have := D.isLieAbelian_positiveLieAlgebra_of_forall_form_eq_zero R (d := d) hform
   F.consistent_of_isLieAbelian_of_full hfull
 
-/-- For the zero form, every diagram of full affine hyperplanes with skew labels is
-consistent, for any regrading and spatial map of the skew Lie algebra. This covers the
-original, principal, projected principal and principal cylinder wall spaces. -/
-theorem consistent_of_form_eq_zero (hform : D.form = 0) (F : DirectedDiagram (d := e) h H ι)
-    (hfull : ∀ a, ∃ b : ℝ,
-      (F.wall a).support = {v | h.realCharacter (F.wall a).normal v = b}) :
-    F.Consistent :=
-  D.consistent_of_forall_form_eq_zero (fun _ _ => by simp [hform]) F hfull
-
 end Mei.SkewLatticeDatum

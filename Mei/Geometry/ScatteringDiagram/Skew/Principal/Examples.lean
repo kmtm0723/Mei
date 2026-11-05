@@ -16,7 +16,7 @@ the frozen basis vector `e₂` and multipliers one. The form is nonzero, since `
 it vanishes on `N_uf = ℤ e₀ ⊕ ℤ e₁` (`frozenDatum_form_ne_zero`,
 `frozenDatum_form_unfrozen_eq_zero`). With multiplicities `ℓ = (2, 2)` and independent
 coefficients `aᵢₛ` the adapted polynomial input has the initial wall functions
-`1 + aᵢ₀ q^{eᵢ} + aᵢ₁ q^{2 eᵢ}` on the principal coefficient algebra.
+`1 + aᵢ₀ q^{eᵢ} + aᵢ₁ (q^{eᵢ})^2` on the principal coefficient algebra.
 
 * `exists_isPositiveWallRepresentative_frozenDatum`: for every integral lattice structure on
   `L_pr,ℝ`, the outgoing scattering class of this input has a representative whose grouped

@@ -61,12 +61,4 @@ theorem isLieAbelian_positiveLieAlgebra_of_forall_form_eq_zero {d : PositiveDegr
     simp [hform]
   exact ⟨fun x y => Subtype.ext (SkewLieAlgebra.lie_eq_zero_of_eq_zero _ _ hβ x.1 y.1)⟩
 
-/-- For the zero form, the positive skew Lie algebra is abelian, at every choice of
-positive degrees. -/
-theorem isLieAbelian_positiveLieAlgebra_of_form_eq_zero {d : PositiveDegrees D.unfrozen}
-    (hform : D.form = 0) :
-    IsLieAbelian
-      (SkewLieAlgebra.positiveLieAlgebra (D.coefficientForm R) (D.isAlt_coefficientForm R) d) :=
-  D.isLieAbelian_positiveLieAlgebra_of_forall_form_eq_zero R fun _ _ => by simp [hform]
-
 end Mei.SkewLatticeDatum

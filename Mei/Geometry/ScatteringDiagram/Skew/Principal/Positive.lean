@@ -14,14 +14,14 @@ public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall
 Let `B` be an adapted basis of a skew lattice datum, with degenerate and zero forms allowed.
 The adapted polynomial input on the principal lattice `L_pr = M° × N_uf` has, at each unfrozen
 index `i`, the full hyperplane of the primitive normal `κ(eᵢ)νᵢ` and the label with wall
-function `fᵢ = 1 + ∑ₛ aᵢₛ (q^{eᵢ})^s`, where `q^{eᵢ} = z^{r(eᵢ)}` is the principal monomial. The
-labels act on the completion of `R[Q]`, for a coefficient monoid `Q ⊇ P_pr`, through the
-principal realization.
+function `fᵢ = 1 + ∑_{s<ℓᵢ} aᵢₛ (q^{eᵢ})^{s+1}`, where `q^{eᵢ} = z^{r(eᵢ)}` is the principal
+monomial. The labels act on the completion of `R[Q]`, for a coefficient monoid `Q ⊇ P_pr`,
+through the principal realization.
 
 * If `Q` contains every character `(χ, 0)`, then in the grouping in which every input wall is
   its own function wall (`adaptedPolynomialGrouping`), `fᵢ` is the wall function of the wall at
   `i` (`isWallFunction_adaptedPolynomialGrouping`). As an element of the completion it is the
-  polynomial `1 + ∑ₛ aᵢₛ z^{s r(eᵢ)}` (`coe_completedPolynomialWallFunction`).
+  polynomial `1 + ∑_{s<ℓᵢ} aᵢₛ z^{(s+1) r(eᵢ)}` (`coe_completedPolynomialWallFunction`).
 * If moreover every `aᵢₛ` lies in the image of a semiring map `φ : S →+* R`, the input is a
   positive wall representative for the image of `S[Q]`, for every form
   (`isPositiveWallRepresentative_adaptedPolynomialInput`).
@@ -108,8 +108,8 @@ theorem coe_principalMonomial (i : B.unfrozenIndex) :
     (B.principalMonomial (R := R) Q i).val =
       (F).toCompletion (single (B.principalExponent Q i) 1) := (rfl)
 
-/-- The polynomial wall function `fᵢ = 1 + ∑ₛ aᵢₛ (q^{eᵢ})^s` of the input wall at `i`, as a
-unit of the completed coefficient algebra. -/
+/-- The polynomial wall function `fᵢ = 1 + ∑_{s<ℓᵢ} aᵢₛ (q^{eᵢ})^{s+1}` of the input wall at
+`i`, as a unit of the completed coefficient algebra. -/
 def completedPolynomialWallFunction (i : B.unfrozenIndex) : (F).completionˣ :=
   ((F).isUnit_of_sub_one_mem ((F).completedAeval_sub_one_mem_first (B.principalMonomial Q i)
     (B.polynomialWallFunction ℓ a i) (B.constantCoeff_polynomialWallFunction ℓ a i))).unit
@@ -132,7 +132,7 @@ theorem completedAeval_principalMonomial_monomial (i : B.unfrozenIndex) (n : ℕ
   rw [← AlgFiltration.toCompletionₐ_apply (R := R), ← map_smul, smul_single, smul_eq_mul, mul_one,
     AlgFiltration.toCompletionₐ_apply]
 
-/-- The wall function is the polynomial `1 + ∑ₛ aᵢₛ z^{s r(eᵢ)}`, with `s = 1, …, ℓᵢ`. -/
+/-- The wall function is the polynomial `1 + ∑_{s<ℓᵢ} aᵢₛ z^{(s+1) r(eᵢ)}`. -/
 @[simp]
 theorem coe_completedPolynomialWallFunction (i : B.unfrozenIndex) :
     (B.completedPolynomialWallFunction ℓ a Q i : (F).completion) =
@@ -222,9 +222,9 @@ theorem completedBCHAction_label_adaptedPolynomialGrouping (i : B.unfrozenIndex)
   exact (hl.trans key).trans hpow.symm
 
 /-- If the coefficient monoid contains every character `(χ, 0)`, the polynomial
-`fᵢ = 1 + ∑ₛ aᵢₛ (q^{eᵢ})^s` is the wall function of the group `i`: some monomial of normal
-weight one is invertible, and the label acts by `z^p ↦ fᵢ^(ν(p)) z^p`. This holds for every
-form. -/
+`fᵢ = 1 + ∑_{s<ℓᵢ} aᵢₛ (q^{eᵢ})^{s+1}` is the wall function of the group `i`: some monomial of
+normal weight one is invertible, and the label acts by `z^p ↦ fᵢ^(ν(p)) z^p`. This holds for
+every form. -/
 theorem isWallFunction_adaptedPolynomialGrouping
     (hQ : ∀ χ : Module.Dual ℤ D.sublattice, ((χ, 0) : Lpr) ∈ Q) (i : B.unfrozenIndex) :
     (B.adaptedPolynomialGrouping ℓ a h π).IsWallFunction σ i
@@ -280,7 +280,7 @@ vanishes on the unfrozen sublattice, for instance for the zero form, the coeffic
 contains every character `(χ, 0)` and every coefficient `aᵢₛ` is the image of an element of
 `S`, then the outgoing scattering class of the adapted polynomial input has a representative
 whose grouped wall functions are positive for the image of `S[Q]`: the input itself, with the
-wall functions `1 + ∑ₛ aᵢₛ (q^{eᵢ})^s`. -/
+wall functions `1 + ∑_{s<ℓᵢ} aᵢₛ (q^{eᵢ})^{s+1}`. -/
 theorem exists_isPositiveWallRepresentative_of_forall_form_eq_zero
     (hform : ∀ n m : D.unfrozen, D.form n m = 0)
     (hQ : ∀ χ : Module.Dual ℤ D.sublattice, ((χ, 0) : Lpr) ∈ Q) {S : Type*} [Semiring S]
