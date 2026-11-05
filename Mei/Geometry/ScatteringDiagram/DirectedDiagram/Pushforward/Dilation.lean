@@ -21,18 +21,12 @@ of such a *central* input is equivalent to all its dilations
 dilation at `q • θ` is the germ label of `E` at `θ`
 (`DirectedDiagram.germLabel_pushforward_dilation`).
 
-Combined with the local constancy of germ labels along a hyperplane at each finite order
-(`DirectedDiagram.IsGenericPoint.eventually_projection_germLabel_eq`) and the existence of
-common generic points (`DirectedDiagram.exists_isGenericPoint_pair`), this shows that the germ
-label is constant along open rays in a linear hyperplane `A`, and is the same for all
-representatives: if `E` and `F` represent the scattering class of a central input, `θ` is a
-generic point of `A` for `E` and `t • θ`, `t > 0`, is a generic point of `A` for `F`, then the
-germ labels of `F` at `t • θ` and of `E` at `θ` agree in every direction outside the direction of
-`A` (`DirectedDiagram.germLabel_smul_eq_of_toClass_eq_scat`). The proof works at each order: it
-moves `t • θ` to a nearby rational multiple `q • θ`, which is generic for the dilation of `E` by
-`q`, and compares the dilation with `F` at a common generic point close to `q • θ`. Real
-dilations are not needed, and no grouping, consistency argument at the ray or bound on the walls
-is used.
+The main result is that the germ label is constant along open rays in a linear hyperplane `A`
+and is the same for all representatives. If `E` and `F` represent the scattering class of a
+central input, `θ` is a generic point of `A` for `E`, and `t • θ`, `t > 0`, is a generic point of
+`A` for `F`, then the germ labels of `F` at `t • θ` and of `E` at `θ` agree in every direction
+outside the direction of `A` (`DirectedDiagram.germLabel_smul_eq_of_toClass_eq_scat`, from
+`DirectedDiagram.germLabel_smul_eq_of_equivalent_dilation`).
 
 So for a central input the *wall function on a ray* of its completion, in the sense of
 Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*, §1.1 (arXiv:1411.1394v2),
