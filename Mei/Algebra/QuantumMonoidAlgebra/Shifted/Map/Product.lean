@@ -171,10 +171,9 @@ theorem mapShiftedQuotient_mul (p r : Γ) (k : ℕ)
     (d.shiftedQuotientMul (grade q β) p r (T.modulus k) u v))) ha hb
   have hr := congrArg₂ (fun u v => e.shiftedQuotientMul (grade q' β') (T p) (T r) k
     (mapShiftedQuotient d e T φ h p k u) (mapShiftedQuotient d e T φ h r k v)) ha hb
-  calc
-    _ = _ := hl.symm
-    _ = _ := mapShiftedQuotient_mul_mk d e T φ h p r k a b
-    _ = _ := hr
+  exact (hl.symm).trans <|
+    (mapShiftedQuotient_mul_mk d e T φ h p r k a b).trans <|
+    hr
 
 private theorem projection_cast_completed {p r : Γ'} (hpr : p = r) (k : ℕ)
     (x : e.ShiftedCoefficients (grade q' β') p) :
@@ -240,13 +239,12 @@ theorem mapShiftedCompletion_mul (p r : Γ)
   have h₆ := e.projection_shiftedCompletionMul (grade q' β') (T p) (T r) k
     (mapShiftedCompletion d e T φ h p x) (mapShiftedCompletion d e T φ h r y)
     (mapShiftedSupport d e T φ h p a) (mapShiftedSupport d e T φ h r b) ha.2 hb.2
-  calc
-    _ = _ := h₀
-    _ = _ := h₁.symm
-    _ = _ := h₂
-    _ = _ := h₃
-    _ = _ := h₄
-    _ = _ := h₅
-    _ = _ := h₆.symm
+  exact (h₀).trans <|
+    (h₁.symm).trans <|
+    (h₂).trans <|
+    (h₃).trans <|
+    (h₄).trans <|
+    (h₅).trans <|
+    h₆.symm
 
 end Mei.QuantumMonoidAlgebra
