@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Geometry.Convex.Sweep.Admissible
+public import Mei.Geometry.Convex.Polyhedron.CrossingEvents
 public import Mei.Geometry.Convex.Polyhedron.WallEvent
 public import Mei.Geometry.Convex.Polyhedron.SingularSupport
 
@@ -17,7 +18,9 @@ set of incident indexed walls and the sign of its chosen normal on the prescribe
 outgoing direction, which is the negative of forward velocity. The canonical
 finite event alphabet distinguishes simultaneous encounters without losing
 coincident wall indices. The path, every encounter parameter, local directions,
-incoming source and singular avoidance are retained.
+incoming source and singular avoidance are retained. Ordered crossing times of
+an admissible segment determine the same kind of event, and distinct such times
+have distinct canonical events.
 
 At a regular encounter all incident walls have the same affine direction.
 Consequently the normal chosen by the event remains transverse even when it
@@ -132,3 +135,150 @@ theorem parameter_withWallEvents :
     (r.withWallEvents hker hregular hW).parameter = r.parameter := (rfl)
 
 end Mei.Convex.AdmissibleRayRealization
+
+namespace Mei.Convex.WallComplement
+
+variable {V ι : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Finite ι]
+  {W : ι → Set V} {x y : WallComplement W}
+
+/-- The simultaneous event at a genuine crossing time of an admissible segment.
+Its incidence set contains all indexed walls through the event, and its sign is
+computed on the backward displacement. -/
+def crossingWallEvent (f : ι → V →L[ℝ] ℝ) (e : x ⟶ y) (t : ℝ)
+    (ht : t ∈ orderedCrossingTimes e) : WallEvent ι :=
+  let s : {s : Finset ι // s.Nonempty} :=
+    ⟨crossingWalls x y t, crossingWalls_nonempty e ht⟩
+  (s, SignType.sign (f s.property.choose (x.val - y.val)))
+
+/-- The incidence set of a crossing event is the indexed crossing set. -/
+@[simp]
+theorem crossingWallEvent_fst_val (f : ι → V →L[ℝ] ℝ)
+    (e : x ⟶ y) (t : ℝ) (ht : t ∈ orderedCrossingTimes e) :
+    (crossingWallEvent f e t ht).1.val = crossingWalls x y t := (rfl)
+
+/-- The sign of a crossing event is computed by its chosen normal on the
+backward displacement. -/
+@[simp↓]
+theorem normal_sign_crossingWallEvent (f : ι → V →L[ℝ] ℝ)
+    (e : x ⟶ y) (t : ℝ) (ht : t ∈ orderedCrossingTimes e) :
+    SignType.sign ((crossingWallEvent f e t ht).normal f (x.val - y.val)) =
+      (crossingWallEvent f e t ht).2 := by
+  simp [crossingWallEvent, WallEvent.normal_def]
+
+/-- An indexed wall contains a crossing point exactly when it belongs to the
+canonical event at that crossing. -/
+theorem mem_crossingWallEvent (f : ι → V →L[ℝ] ℝ)
+    (e : x ⟶ y) (t : ℝ) (ht : t ∈ orderedCrossingTimes e) (j : ι) :
+    AffineMap.lineMap x.val y.val t ∈ W j ↔ j ∈ (crossingWallEvent f e t ht).1.val := by
+  rw [crossingWallEvent_fst_val, mem_crossingWalls, mem_crossings]
+  exact (and_iff_right (Ioo_subset_Icc_self (mem_Ioo_of_mem_orderedCrossingTimes e ht))).symm
+
+/-- Distinct genuine crossing times determine distinct canonical simultaneous
+events, independently of the normals used to compute their signs. -/
+theorem crossingWallEvent_injective (f : ι → V →L[ℝ] ℝ) (e : x ⟶ y)
+    {s t : ℝ} (hs : s ∈ orderedCrossingTimes e) (ht : t ∈ orderedCrossingTimes e)
+    (he : crossingWallEvent f e s hs = crossingWallEvent f e t ht) : s = t := by
+  by_contra hne
+  have hd := disjoint_crossingWalls e hne
+  obtain ⟨b, hb⟩ := crossingWalls_nonempty e hs
+  have hb' : b ∈ crossingWalls x y t := by
+    have heq : crossingWalls x y s = crossingWalls x y t := by
+      have hval := congrArg (fun z : WallEvent ι => z.1.val) he
+      simpa only [crossingWallEvent_fst_val] using hval
+    exact (Finset.ext_iff.mp heq b).mp hb
+  exact (Finset.disjoint_left.mp hd hb) hb'
+
+
+/-- The finite inventory of canonical simultaneous events on one admissible segment. -/
+def segmentWallEvents (f : ι → V →L[ℝ] ℝ) (e : x ⟶ y) : Finset (WallEvent ι) := by
+  classical
+  exact (orderedCrossingTimes e).toFinset.attach.image fun t =>
+    crossingWallEvent f e t.val (List.mem_toFinset.mp t.property)
+
+/-- A genuine segment crossing belongs to its finite simultaneous-event inventory. -/
+@[simp]
+theorem crossingWallEvent_mem_segmentWallEvents (f : ι → V →L[ℝ] ℝ)
+    (e : x ⟶ y) {t : ℝ} (ht : t ∈ orderedCrossingTimes e) :
+    crossingWallEvent f e t ht ∈ segmentWallEvents f e := by
+  classical
+  apply Finset.mem_image.mpr
+  exact ⟨⟨t, List.mem_toFinset.mpr ht⟩, Finset.mem_attach _ _, rfl⟩
+
+/-- The crossing point lies on the wall chosen as the normal representative of
+its canonical simultaneous event. -/
+theorem mem_chosenWall_crossingWallEvent (f : ι → V →L[ℝ] ℝ)
+    (e : x ⟶ y) (t : ℝ) (ht : t ∈ orderedCrossingTimes e) :
+    AffineMap.lineMap x.val y.val t ∈ W (crossingWallEvent f e t ht).1.property.choose := by
+  have hs : AffineMap.lineMap x.val y.val t ∈ (crossingWallEvent f e t ht).support W := by
+    exact (WallEvent.mem_support _ _ _).2 (fun j => mem_crossingWallEvent f e t ht j)
+  exact (WallEvent.mem_support _ _ _).mp hs _ |>.mpr
+    (crossingWallEvent f e t ht).1.property.choose_spec
+
+/-- Inventory membership is exactly representation by a genuine crossing time. -/
+theorem mem_segmentWallEvents_iff (f : ι → V →L[ℝ] ℝ) (e : x ⟶ y)
+    (b : WallEvent ι) :
+    b ∈ segmentWallEvents f e ↔ ∃ t, ∃ ht : t ∈ orderedCrossingTimes e,
+      b = crossingWallEvent f e t ht := by
+  classical
+  constructor
+  · intro hb
+    obtain ⟨t, _, he⟩ := Finset.mem_image.mp hb
+    exact ⟨t.val, List.mem_toFinset.mp t.property, he.symm⟩
+  · rintro ⟨t, ht, rfl⟩
+    exact crossingWallEvent_mem_segmentWallEvents f e ht
+
+/-- The parameter of a segment event is its displacement to the specified ray's
+starting scale. Events outside the genuine inventory have the default value zero. -/
+noncomputable def segmentEventParameter (f : ι → V →L[ℝ] ℝ) (e : x ⟶ y)
+    (T : ℝ) (b : WallEvent ι) : ℝ := by
+  classical
+  exact if hb : b ∈ segmentWallEvents f e then
+    T * (1 - ((mem_segmentWallEvents_iff f e b).mp hb).choose)
+  else 0
+
+/-- An event's ray parameter is the terminal displacement at its genuine
+crossing time, computed from the unique crossing-time witness. -/
+@[simp]
+theorem segmentEventParameter_of_mem (f : ι → V →L[ℝ] ℝ) (e : x ⟶ y)
+    (T : ℝ) {t : ℝ} (ht : t ∈ orderedCrossingTimes e) :
+    segmentEventParameter f e T (crossingWallEvent f e t ht) = T * (1 - t) := by
+  classical
+  have hb := crossingWallEvent_mem_segmentWallEvents f e ht
+  rw [segmentEventParameter, dite_eq_left hb]
+  congr 2
+  apply crossingWallEvent_injective f e
+    ((mem_segmentWallEvents_iff f e
+      (crossingWallEvent f e t ht)).mp hb).choose_spec.choose ht
+  exact ((mem_segmentWallEvents_iff f e
+    (crossingWallEvent f e t ht)).mp hb).choose_spec.choose_spec.symm
+
+/-- The ray parameter vanishes for an event outside the genuine inventory. -/
+@[simp]
+theorem segmentEventParameter_of_not_mem (f : ι → V →L[ℝ] ℝ) (e : x ⟶ y)
+    (T : ℝ) {b : WallEvent ι} (hb : b ∉ segmentWallEvents f e) :
+    segmentEventParameter f e T b = 0 := by
+  classical
+  rw [segmentEventParameter, dite_eq_right hb]
+
+/-- A genuine event has positive parameter for a positively scaled ray. -/
+theorem segmentEventParameter_pos (f : ι → V →L[ℝ] ℝ) (e : x ⟶ y)
+    (T : ℝ) (hT : 0 < T) {t : ℝ} (ht : t ∈ orderedCrossingTimes e) :
+    0 < segmentEventParameter f e T (crossingWallEvent f e t ht) := by
+  rw [segmentEventParameter_of_mem]
+  exact mul_pos hT (sub_pos.mpr (mem_Ioo_of_mem_orderedCrossingTimes e ht).2)
+
+/-- Event parameters are injective on the genuine inventory for a positively
+scaled ray. -/
+theorem segmentEventParameter_injOn (f : ι → V →L[ℝ] ℝ) (e : x ⟶ y)
+    (T : ℝ) (hT : 0 < T) : Set.InjOn (segmentEventParameter f e T) (segmentWallEvents f e) := by
+  intro b hb b' hb' he
+  obtain ⟨t, ht, rfl⟩ := (mem_segmentWallEvents_iff f e b).mp hb
+  obtain ⟨t', ht', rfl⟩ := (mem_segmentWallEvents_iff f e b').mp hb'
+  rw [segmentEventParameter_of_mem, segmentEventParameter_of_mem] at he
+  have htt : t = t' := by
+    apply (mul_left_cancel₀ (ne_of_gt hT))
+    linarith
+  subst t'
+  rfl
+
+end Mei.Convex.WallComplement
