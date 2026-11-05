@@ -16,7 +16,8 @@ constant (`ContinuousAt.eventually_sign_eq`).
 
 In a linearly ordered field with the order topology, for `x ≠ 0` and any `y`, small
 multiples `σ * y` have absolute value smaller than `|x|` (`eventually_abs_mul_lt`), so that
-`x + σ * y` has the sign of `x`. The same holds for small positive `σ`, with `x ≠ 0` as a
+`x + σ * y` has the sign of `x` (`eventually_pos_add_mul`, `eventually_add_mul_neg`). The bound
+on `|σ * y|` holds for small positive `σ`, with `x ≠ 0` as a
 hypothesis inside the filter (`eventually_nhdsGT_imp_abs_mul_lt`).
 -/
 
@@ -50,6 +51,25 @@ theorem eventually_abs_mul_lt {x : K} (hx : x ≠ 0) (y : K) :
     simpa using ((continuous_id.mul continuous_const).abs.tendsto (0 : K) :
       Tendsto (fun σ : K => |σ * y|) (𝓝 0) (𝓝 |0 * y|))
   exact hlim.eventually_lt_const (abs_pos.mpr hx)
+
+/-- For `x > 0` and any `y`, `x + σ * y` is positive for small `σ`. -/
+theorem eventually_pos_add_mul {x : K} (hx : 0 < x) (y : K) :
+    ∀ᶠ σ in 𝓝 (0 : K), 0 < x + σ * y := by
+  filter_upwards [eventually_abs_mul_lt hx.ne' y] with σ hσ
+  rw [abs_of_pos hx] at hσ
+  calc 0 < x - |σ * y| := sub_pos.mpr hσ
+    _ ≤ x + σ * y := by
+      rw [sub_eq_add_neg]
+      exact add_le_add_right (neg_abs_le _) x
+
+/-- For `x < 0` and any `y`, `x + σ * y` is negative for small `σ`. -/
+theorem eventually_add_mul_neg {x : K} (hx : x < 0) (y : K) :
+    ∀ᶠ σ in 𝓝 (0 : K), x + σ * y < 0 := by
+  filter_upwards [eventually_abs_mul_lt hx.ne y] with σ hσ
+  rw [abs_of_neg hx] at hσ
+  calc x + σ * y ≤ x + |σ * y| := add_le_add_right (le_abs_self _) x
+    _ < x + -x := add_lt_add_right hσ x
+    _ = 0 := add_neg_cancel x
 
 /-- For small positive `σ`, if `x ≠ 0`, then `σ * y` has absolute value smaller than `|x|`. -/
 theorem eventually_nhdsGT_imp_abs_mul_lt (x y : K) :
