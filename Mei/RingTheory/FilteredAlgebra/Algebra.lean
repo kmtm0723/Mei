@@ -326,17 +326,25 @@ theorem liftₐ_restrictScalars (f : ∀ k, B →ₐ[R] A ⧸ F.ideal (k + 1)) (
 
 end RestrictScalars
 
+/-- A projected scalar multiple of a product is computed from representatives of both factors. -/
+theorem projection_smul_mul_of_projections {R A : Type*} [CommRing R] [Ring A]
+    [Algebra R A] (F : AlgFiltration A) (r : R) (u v : A) (a b : F.completion) (k : ℕ)
+    (ha : F.projection k a = Ideal.Quotient.mk (F.ideal (k + 1)) u)
+    (hb : F.projection k b = Ideal.Quotient.mk (F.ideal (k + 1)) v) :
+    F.projection k (r • (a * b)) = Ideal.Quotient.mk (F.ideal (k + 1)) (r • (u * v)) := by
+  have hs : F.projection k (r • (a * b)) = r • F.projection k (a * b) := by
+    simpa only [AlgHom.toLinearMap_apply, projectionₐ_apply] using
+      (F.projectionₐ (R := R) k).toLinearMap.map_smul r (a * b)
+  rw [hs, map_mul, ha, hb, ← map_mul]
+  exact ((Ideal.Quotient.mkₐ R (F.ideal (k + 1))).toLinearMap.map_smul _ _).symm
+
 /-- A projected scalar multiple of a product is computed from any quotient representative. -/
 theorem projection_smul_mul_of_projection {R A : Type*} [CommRing R] [Ring A]
     [Algebra R A] (F : AlgFiltration A) (r : R) (u b : A) (a : F.completion) (k : ℕ)
     (hb : F.projection k a = Ideal.Quotient.mk (F.ideal (k + 1)) b) :
     F.projection k (r • (F.toCompletion u * a)) =
-      Ideal.Quotient.mk (F.ideal (k + 1)) (r • (u * b)) := by
-  have hs : F.projection k (r • (F.toCompletion u * a)) =
-      r • F.projection k (F.toCompletion u * a) := by
-    simpa only [AlgHom.toLinearMap_apply, projectionₐ_apply] using
-      (F.projectionₐ (R := R) k).toLinearMap.map_smul r (F.toCompletion u * a)
-  rw [hs, map_mul, F.projection_toCompletion, hb, ← map_mul]
-  exact ((Ideal.Quotient.mkₐ R (F.ideal (k + 1))).toLinearMap.map_smul _ _).symm
+      Ideal.Quotient.mk (F.ideal (k + 1)) (r • (u * b)) :=
+  F.projection_smul_mul_of_projections r u b (F.toCompletion u) a k
+    (F.projection_toCompletion k u) hb
 
 end Mei.AlgFiltration
