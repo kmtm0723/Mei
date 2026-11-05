@@ -17,8 +17,9 @@ degrees tangent to `m` to degrees tangent to `m'`; for integral characters this 
 lies over a tangent map `t` with `m' ∘ t` a rational multiple of `m`
 (`Mei.map_tropicalTangentMonoid_intCast_le`). The monomial map `z^q ↦ z^{T q}` of tangent
 coefficients (`Mei.tropicalTangentMap`) extends to completed tangent coefficients with the cutoff
-modulus of `T` (`Mei.completedTropicalTangentMap`) and commutes with completed logarithms
-(`Mei.completedTropicalTangentMap_completedLog`).
+modulus of `T` (`Mei.completedTropicalTangentMap`) and commutes with completed exponentials and
+logarithms (`Mei.completedTropicalTangentMap_completedExp`,
+`Mei.completedTropicalTangentMap_completedLog`).
 
 Let `f` be a graded Lie map between tropical vertex Lie algebras sending every tangent field
 `z^q ∂_m`, `q ≠ 0`, to `c • z^{T q} ∂_{m'}`; its own degree map and cutoff modulus may differ
@@ -142,6 +143,17 @@ theorem completedTropicalTangentMap_sub_one_mem {u : (G).completion}
   simpa only [map_sub, map_one] using completedTropicalTangentMap_mem_completionIdeal_one T hT hu
 
 variable [Algebra ℚ R]
+
+/-- The completed tangent monomial map commutes with completed exponentials. -/
+@[simp]
+theorem completedTropicalTangentMap_completedExp (x : (G).completionIdeal 1) :
+    completedTropicalTangentMap T hT ((G).completedExp x) =
+      (G').completedExp ⟨completedTropicalTangentMap T hT x,
+        completedTropicalTangentMap_mem_completionIdeal_one T hT x.property⟩ := by
+  simp only [completedTropicalTangentMap, ← AlgHom.coe_toRingHom,
+    AlgFiltration.coe_mapCompletionₐ]
+  exact (G).mapCompletion_completedExp (G') _ _ _ _
+    (filtration_ideal_one_le_comap_tropicalTangentMap T hT) x
 
 /-- The completed tangent monomial map commutes with completed logarithms. -/
 @[simp]

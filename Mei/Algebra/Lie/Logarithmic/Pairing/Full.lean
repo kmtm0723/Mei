@@ -14,7 +14,9 @@ A tropical pairing whose character domain is the whole character space is define
 character restriction `tropicalSubalgebra ρ ⊤ d`, which is all of the positive tangent Lie
 algebra `tropicalVertexLieAlgebra d ρ`. Composing with this identification gives a graded Lie
 map between the tropical vertex Lie algebras themselves, over the degree map of the pairing.
-On a homogeneous field `z^n ∂_m` it gives `z^{T n} ∂_{S m}`. Directed walls labelled in
+On a homogeneous field `z^n ∂_m` it gives `z^{T n} ∂_{S m}`, so it is injective on every
+homogeneous piece when the character map `S` is injective
+(`TropicalPairing.injOn_tropicalVertexGradedLieHom`). Directed walls labelled in
 `tropicalVertexWallSpaces` take their labels in these algebras.
 
 When the evaluation identity of the pairing also holds on the exponents of coefficient monoids
@@ -87,6 +89,19 @@ theorem coe_tropicalVertexGradedLieHom_of_homogeneous {n : Γ}
     (p.tropicalVertexGradedLieHom x).val =
       single ρ' (p.degreeMap n) (p.characterMap ⟨m, Submodule.mem_top⟩) :=
   p.coe_gradedLieHom_of_homogeneous _ ⟨m, Submodule.mem_top⟩ hm
+
+/-- A pairing with injective character map is injective on every homogeneous piece of the full
+tropical vertex Lie algebra. -/
+theorem injOn_tropicalVertexGradedLieHom (hS : Function.Injective p.characterMap) (n : Γ) :
+    Set.InjOn p.tropicalVertexGradedLieHom (tropicalVertexGrading (R := R) d ρ n) := by
+  intro x hx y hy hxy
+  obtain ⟨m, hm⟩ := (mem_tropicalVertexGrading_iff d ρ n x).mp hx
+  obtain ⟨m', hm'⟩ := (mem_tropicalVertexGrading_iff d ρ n y).mp hy
+  have h := congrArg Subtype.val hxy
+  rw [p.coe_tropicalVertexGradedLieHom_of_homogeneous x m hm,
+    p.coe_tropicalVertexGradedLieHom_of_homogeneous y m' hm'] at h
+  obtain rfl : m = m' := congrArg Subtype.val (hS (single_injective ρ' _ h))
+  exact Subtype.ext (hm.symm.trans hm')
 
 end TropicalPairing
 

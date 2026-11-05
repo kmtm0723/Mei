@@ -25,8 +25,10 @@ label at every order are its coefficients.
 
 This splits a label whose logarithm is supported on an abelian family of degrees, such
 as a supported ray with abelian ray Lie algebra, into labels of pure degree. The
-splitting commutes with degree-preserving coefficient maps and injective regradings.
-For noninjective regradings, logarithmic coefficients instead add over degree fibers.
+splitting commutes with degree-preserving coefficient maps and injective regradings; hence a
+graded map along an injective regrading that is injective on every homogeneous piece has an
+injective completed map (`GradedLieHom.completedMap_injective`). For noninjective regradings,
+logarithmic coefficients instead add over degree fibers.
 These comparisons use `PositiveDegrees.completionComponent_completionMap_eq_sum`
 and `PositiveDegrees.completionComponent_completionMap_of_injective` through
 `GradedLieHom.completedBCHExp_symm_completedMap`.
@@ -518,6 +520,16 @@ theorem logComponent_completedMap_of_injective (f : GradedLieHom T ℒ ℳ)
     (fun k => d.degreeIdeal_toSubmodule ℒ k) (fun k => e.degreeIdeal_toSubmodule ℳ k)
     f.toLieHom.toLinearMap T (fun _ _ hx => f.map_mem hx) T.modulus T.monotone_modulus
     (fun k _ hx => f.map_mem_degreeIdeal k hx) hT n _
+
+/-- **Injective completed maps.** A graded Lie homomorphism along an injective regrading that is
+injective on every homogeneous piece has an injective completed map. -/
+theorem completedMap_injective (f : GradedLieHom T ℒ ℳ) (hT : Function.Injective T)
+    (hf : ∀ n, Set.InjOn f (ℒ n)) : Function.Injective f.completedMap := by
+  intro g g' h
+  refine d.ext_logComponent ℒ fun n => Subtype.ext (hf n (d.logComponent ℒ g n).property
+    (d.logComponent ℒ g' n).property ?_)
+  rw [← f.logComponent_completedMap_of_injective hT, ← f.logComponent_completedMap_of_injective hT,
+    h]
 
 /-- Homogeneous splitting commutes with completed maps along injective degree
 maps, with the homogeneous factor reindexed by the image degree. -/
