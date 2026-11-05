@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall.Equivalence
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall.Specialization
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.Completion
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.Scat
@@ -32,10 +33,16 @@ the group has the function-wall label `exp(log(f₀) ∂_n)`, that `q n = r` and
 `T_* f₀ = f₁ ^ r`. Then the pushed group has the label `exp(log(f₁) ∂_{n'})` for any integral
 normal `n'` with `n' ∘ t = q n • n`, for instance `ν n`. The proof applies
 `Mei.DirectedWall.Pushforward.ofFiniteIndex_lieHom_completedMap_completedBCHExp_completedLog` to
-the group label. That a representative has such a group, and the comparison with groups of other
-representatives of the pushed class, are not treated here. The lattice change is motivated by
-Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*, Theorem 9.5
-(arXiv:2503.03719v1).
+the group label. Crossing germs of a group are carried to crossing germs of the pushed group by
+the spatial map (`FunctionWallGrouping.IsCrossingGerm.pushforward`). Hence a diagram equivalent
+to the pushforward has the same label `exp(log(f₁) ∂_{n'})` on any group whose crossing germs at
+every order are the images of crossing germs of the source group
+(`FunctionWallGrouping.label_eq_of_equivalent_pushforward_ofFiniteIndex`), by
+`FunctionWallGrouping.label_eq_of_equivalent`. The source group and its label
+`exp(log(f₀) ∂_n)` with `T_* f₀ = f₁ ^ r`, and the crossing germs of both groups, are
+hypotheses. The lattice change
+is motivated by Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*,
+Theorem 9.5 (arXiv:2503.03719v1).
 
 ## Positivity under pushforward
 
@@ -191,6 +198,34 @@ theorem label_pushforward (g : κ) :
     (G.pushforward hπ hprim).label g = P.lieHom.completedMap (G.label g) :=
   (((G.pushforward hπ hprim).eq_label_iff g _).mpr fun k => by
     rw [P.lieHom.projection_completedMap k, projection_label, groupLabel_pushforward]).symm
+
+variable {G} in
+/-- A crossing germ of the group `g` at the source order `a`, the point `θ` and the direction
+`v` is carried to a crossing germ of the pushed group `g` at every target order `k` whose cutoff
+modulus is at most `a`, at the point `A θ` and the direction `A v` for the spatial map `A`. -/
+theorem IsCrossingGerm.pushforward {g : κ} {k a : ℕ} (ha : P.degreeMap.modulus k ≤ a)
+    {θ v : V} (hG : G.IsCrossingGerm g a θ v) :
+    (G.pushforward hπ hprim).IsCrossingGerm g k (P.spatialMap θ)
+      (P.spatialMap.toAffineEquiv.linear v) where
+  notMem_singularSupport hθ := by
+    have hs : Convex.singularSupport
+        (fun j : (D.pushforward P).active k => ((D.pushforward P).wall j).support) =
+        P.spatialMap '' Convex.singularSupport
+          (fun j : (D.pushforward P).active k => (D.wall j).support) := by
+      simp only [pushforward_wall_support]
+      exact Convex.singularSupport_image _ _
+    rw [hs, P.spatialMap.injective.mem_set_image] at hθ
+    exact hG.notMem_singularSupport (Convex.singularSupport_comp_subset _
+      (Set.inclusion (D.active_pushforward_subset P k ha)) hθ)
+  mem_support_iff j := by
+    rw [pushforward_wall_support, P.spatialMap.injective.mem_set_image, pushforward_group]
+    exact hG.mem_support_iff (Set.inclusion (D.active_pushforward_subset P k ha) j)
+  realCharacter_normal_neg j hj := by
+    obtain ⟨r, hr, he⟩ := P.exists_realCharacter_normalMap_apply (D.wall j).normal
+    rw [pushforward_wall, DirectedWall.pushforward_normal, he]
+    exact mul_neg_of_pos_of_neg (by exact_mod_cast hr)
+      (hG.realCharacter_normal_neg (Set.inclusion (D.active_pushforward_subset P k ha) j)
+        (by simpa using hj))
 
 section WallFunction
 
@@ -364,6 +399,36 @@ theorem label_pushforward_ofFiniteIndex (hπ : ∀ x ∈ d.monoid, π' ((P).degr
   rw [label_pushforward, hg]
   exact DirectedWall.Pushforward.ofFiniteIndex_lieHom_completedMap_completedBCHExp_completedLog
     T t ht hρ ν q hq hν n hn' hr f₀ f₁ hf
+
+include hr in
+/-- **Transport of a group label to matched groups of equivalent diagrams.** Under the
+hypotheses of `FunctionWallGrouping.label_pushforward_ofFiniteIndex`, let `E` be any diagram
+equivalent to the finite-index pushforward of `D`, with a function-wall grouping `G'`. Suppose
+that at every order `k` there is a crossing germ of `g` at the source order `T.modulus k`, at a
+point `θ` and a direction `v`, and a crossing germ of the group `g'` of `G'` at order `k`, at the
+images `A θ` and `A v` under the spatial map `A`. Then `g'` has the function-wall label
+`exp(log(f₁) ∂_{n'})`, the label of an `r`-th root `f₁` of `T_* f₀`. The crossing germs are
+hypotheses. -/
+theorem label_eq_of_equivalent_pushforward_ofFiniteIndex
+    (hπ : ∀ x ∈ d.monoid, π' ((P).degreeMap x) = π x)
+    (hprim : ∀ j, TauCeti.IsPrimitive ((P).normalMap (D.wall j).normal))
+    (f₀ : {u : (F).completion // u - 1 ∈ (F).completionIdeal 1})
+    (f₁ : {u : (F').completion // u - 1 ∈ (F').completionIdeal 1})
+    (hg : G.label g = d.completedBCHExp _ (completedTropicalTangentField d ρ
+      ((Int.castAddHom R).comp n) ((F).completedLog f₀)))
+    (hf : completedTropicalTangentMap T (map_tropicalTangentMonoid_intCast_le T hρ hn') f₀ =
+      (f₁ : (F').completion) ^ r)
+    {ι' κ' M' : Type*} [AddCommGroup M'] {π'' : Γ' →+ M'}
+    {E : DirectedDiagram (d := e) h' (tropicalVertexWallSpaces (R := R) e ρ') ι'}
+    (hDE : (D.pushforward (P)).Equivalent E) (G' : E.FunctionWallGrouping π'' κ') {g' : κ'}
+    (hgerm : ∀ k, ∃ θ v, G.IsCrossingGerm g (T.modulus k) θ v ∧
+      G'.IsCrossingGerm g' k ((P).spatialMap θ) ((P).spatialMap.toAffineEquiv.linear v)) :
+    G'.label g' = e.completedBCHExp _ (completedTropicalTangentField e ρ'
+      ((Int.castAddHom R).comp n') ((F').completedLog f₁)) :=
+  (label_eq_of_equivalent hDE fun k => by
+    obtain ⟨θ, v, hθ, hθ'⟩ := hgerm k
+    exact ⟨_, _, hθ.pushforward hπ hprim (by simp), hθ'⟩).symm.trans
+      (G.label_pushforward_ofFiniteIndex T t ht hρ ν q hq hν hn' hr hπ hprim f₀ f₁ hg hf)
 
 end DirectedDiagram.FunctionWallGrouping
 
