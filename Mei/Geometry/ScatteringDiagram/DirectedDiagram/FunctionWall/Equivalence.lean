@@ -59,8 +59,9 @@ for which `θ` is a generic point of that affine span
 (`FunctionWallGrouping.IsWallFunction.isGermWallFunction_of_equivalent`,
 `FunctionWallGrouping.IsWallFunction.eq_of_isGermWallFunction`). By
 `DirectedDiagram.exists_isGenericPoint`, every nonempty relatively open subset of a hyperplane
-contains points that are generic for the second diagram, so its only hypothesis besides
-equivalence is the choice of such a point.
+contains points that are generic for the second diagram, so the second diagram needs neither a
+grouping nor matched crossing germs. The crossing germs of the first diagram's group at `θ` and
+`v` at every order remain hypotheses of these bridge results.
 -/
 
 public section

@@ -435,7 +435,7 @@ section GermLabel
 def diagonalLine : AffineSubspace ℝ (ℝ × ℝ) :=
   (LinearMap.ker (h.realCharacter diagonalNormal)).toAffineSubspace
 
-/-- A direction lies on the diagonal line when `n°` vanishes on it. -/
+/-- A point lies on the diagonal line when `n°` vanishes on it. -/
 @[simp]
 theorem mem_diagonalLine {θ : ℝ × ℝ} :
     θ ∈ diagonalLine h ↔ h.realCharacter diagonalNormal θ = 0 := by
