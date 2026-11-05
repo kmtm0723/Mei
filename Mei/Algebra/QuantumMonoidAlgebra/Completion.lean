@@ -51,9 +51,13 @@ local notation "F" => positiveFiltration q β P δ hδ
 -- quotient, product, and subring layers each time exceeds the instance search budget.
 instance : Ring (F).completion := inferInstance
 
+instance : Semiring (F).completion := (inferInstance : Ring (F).completion).toSemiring
+
 instance : Semigroup (F).completion := (inferInstance : Ring (F).completion).toSemigroup
 
 instance : AddCommMonoid (F).completion := inferInstance
+
+instance (k : ℕ) : Semiring (positiveSubalgebra q β P ⧸ (F).ideal k) := inferInstance
 
 end Instances
 
