@@ -38,7 +38,9 @@ At a regular point, the combined crossing labels of `D` at all orders
 (`DirectedDiagram.combinedLabel`) are compatible under truncation, so they form an element of the
 completed group, the *germ label* `DirectedDiagram.germLabel` of `D` at `θ` in the direction `v`.
 It does not change under positive rescaling of `v` (`DirectedDiagram.germLabel_smul_pos`) and is
-inverted by reversing a transverse direction (`DirectedDiagram.germLabel_neg`). Equivalent
+inverted by reversing a transverse direction (`DirectedDiagram.germLabel_neg`). It lies in every
+wall group containing the labels of all walls through `θ`
+(`DirectedDiagram.germLabel_mem_wallGroup`). Equivalent
 diagrams have the same germ label at a common generic point of `A`, for every direction
 `v ∉ A.direction` (`DirectedDiagram.Equivalent.germLabel_eq`). In contrast to the comparison of
 function-wall groupings in
@@ -288,6 +290,20 @@ theorem germLabel_neg (θ v : V) (hθ : D.IsRegular θ)
   ((D.eq_germLabel_iff θ (-v) hθ _).mpr fun k => by
     rw [map_inv, projection_germLabel]
     exact (D.combinedLabel_neg k θ v _ (hv k)).symm).symm
+
+/-- **Germ labels in a wall group.** If every active wall through a regular point `θ` has its
+label in the wall group of a supported ray `w` and a normal `m`, then so does the germ label at
+`θ`, in every direction. -/
+theorem germLabel_mem_wallGroup (θ v : V) (hθ : D.IsRegular θ) {w : SupportedRay d}
+    {m : Λ →+ ℤ}
+    (hw : ∀ (k : ℕ) (j : D.active k), θ ∈ (D.wall j).support → (D.wall j).label ∈ H.wallGroup w m) :
+    D.germLabel θ v hθ ∈ H.wallGroup w m := by
+  refine (H.mem_wallGroup w m _).mpr fun k => ?_
+  rw [projection_germLabel, combinedLabel_eq_noncommProd_incidentActive]
+  refine (LieSubalgebra.mem_bchSubgroup _ _).mp
+    (Subgroup.noncommProd_mem _ _ fun j hj => Subgroup.zpow_mem _ ?_ _)
+  exact (LieSubalgebra.mem_bchSubgroup _ _).mpr
+    ((H.mem_wallGroup w m _).mp (hw k j (D.mem_incidentActive.mp hj)) k)
 
 variable {D} in
 /-- **Local constancy of germ labels.** Near a generic point `θ` of an affine subspace `A`, at

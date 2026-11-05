@@ -32,6 +32,9 @@ the comparison scalar is `r = 2`. Hence:
   on the same ray labelled by the ray factor of the second
   (`diagonalWall_pushforward_label`).
 
+The diagonal ray `(1, 1)` is the only supported ray of `ℕ²` whose direction in `M` lies on the
+diagonal (`eq_diagonalRay_of_diagonalNormal_latticeCoord`).
+
 So the wall function over `M` is the square of the wall function over `½M₀`, as in the lattice
 change of Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*,
 Theorem 9.5 (arXiv:2503.03719v1). The invariants `ℓ = 2` and `r = 2` of this lattice are
@@ -240,6 +243,27 @@ def diagonalRay : SupportedRay ℕ² := SupportedRay.ofMem (1, 1) one_one_mem is
 @[simp]
 theorem diagonalRay_generator : diagonalRay.generator = (1, 1) :=
   SupportedRay.generator_ofMem _ _ _
+
+/-- The diagonal ray is the only supported ray of `ℕ²` whose spatial direction in `M` is
+tangent to the diagonal. -/
+theorem eq_diagonalRay_of_diagonalNormal_latticeCoord {w : SupportedRay ℕ²}
+    (hw : diagonalNormal (latticeCoord w.generator) = 0) : w = diagonalRay := by
+  obtain ⟨s, hs, hsw⟩ := w.supported
+  have hab : w.generator.1 = w.generator.2 := by
+    rw [diagonalNormal_apply, latticeCoord_apply] at hw
+    omega
+  have hpos : 0 < s * w.generator.1 := by
+    have hmem := (Module.Basis.mem_positiveDegrees_monoid _ _).mp hsw 0
+    have hne := w.generator_ne_zero
+    simp only [Module.Basis.finTwoProd, map_zsmul, Finsupp.smul_apply, smul_eq_mul] at hmem
+    rcases (mul_nonneg_iff_of_pos_left hs).mp hmem |>.lt_or_eq with h | h
+    · exact mul_pos hs h
+    · exact (hne (Prod.ext h.symm (hab ▸ h.symm))).elim
+  refine SupportedRay.eq_of_mem_rayDegrees (n := s • w.generator)
+    (SupportedRay.mem_rayDegrees.mpr ⟨hsw, s, hs, rfl⟩)
+    (SupportedRay.mem_rayDegrees.mpr ⟨hsw, s * w.generator.1, hpos, ?_⟩)
+  rw [diagonalRay_generator, Prod.ext_iff]
+  simp [hab]
 
 theorem diagonalNormal_ne_zero : diagonalNormal ≠ 0 := fun he => by
   simpa using DFunLike.congr_fun he (1, 0)

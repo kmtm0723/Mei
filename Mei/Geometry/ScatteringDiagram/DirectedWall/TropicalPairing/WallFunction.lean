@@ -27,6 +27,8 @@ completed function-wall label `exp(u ∂_n)` is sent to `exp(((q n)⁻¹ • T_*
 For primitive `n` and `n'` these labels have wall functions `f₀` and `f₁`, by
 `Mei.completedBCHAction_completedBCHExp_completedTropicalTangentField_completedLog`. So the
 wall function on the side of `Λ` is the `r`-th power of the wall function on the side of `Λ'`.
+Every `f₀` has such an `r`-th root `f₁`
+(`Mei.DirectedWall.Pushforward.exists_pow_eq_and_ofFiniteIndex_lieHom_completedMap_eq`).
 
 When the degree lattice is shared and `T` is the identity, as for a lattice change that keeps
 the coefficient variables, the pushed wall stays on its supported ray
@@ -122,6 +124,37 @@ theorem ofFiniteIndex_lieHom_completedMap_completedBCHExp_completedLog {r : ℕ}
     (fun _ _ x hx => coe_ofFiniteIndex_lieHom_of_eq_single T t ht hρ ν q hq hν n hn' x hx) ?_
     f₀ f₁ hf
   rw [← map_natCast (algebraMap ℚ R), ← map_mul, ← hr, mul_inv_cancel₀ (hq n).ne', map_one]
+
+/-- **Ray-power comparison for every function wall.** Let `n'` be an integral normal with
+`n' ∘ t = q n • n` and let `q n = r` be a natural number. For every completed tangent series `f₀`
+congruent to one there is an `r`-th root `f₁` of its image under the tangent monomial map, and
+the finite-index pushforward sends `exp(log(f₀) ∂_n)` to `exp(log(f₁) ∂_{n'})`. -/
+theorem exists_pow_eq_and_ofFiniteIndex_lieHom_completedMap_eq {r : ℕ} (hr : q n = r)
+    (f₀ : {u : (G).completion // u - 1 ∈ (G).completionIdeal 1}) :
+    ∃ f₁ : {u : (G').completion // u - 1 ∈ (G').completionIdeal 1},
+      Φ f₀ = (f₁ : (G').completion) ^ r ∧
+      (ofFiniteIndex (h := h) (h' := h') T t ht hρ ν q hq hν).lieHom.completedMap
+          (d.completedBCHExp ℒ (completedTropicalTangentField d ρ ((Int.castAddHom R).comp n)
+            ((G).completedLog f₀))) =
+        e.completedBCHExp ℒ' (completedTropicalTangentField e ρ' ((Int.castAddHom R).comp n')
+          ((G').completedLog f₁)) := by
+  /- Take `f₁ = exp(r⁻¹ Φ(log f₀))`. Then `f₁ ^ r = exp(Φ(log f₀)) = Φ(f₀)`, and the comparison
+  is `ofFiniteIndex_lieHom_completedMap_completedBCHExp_completedLog`. -/
+  have hr0 : (r : ℚ) ≠ 0 := hr ▸ (hq n).ne'
+  have hx : algebraMap ℚ R (r : ℚ)⁻¹ • Φ ((G).completedLog f₀) ∈ (G').completionIdeal 1 := by
+    rw [Algebra.smul_def]
+    exact Ideal.mul_mem_left _ _ (completedTropicalTangentMap_mem_completionIdeal_one _ _
+      ((G).completedLog_mem f₀))
+  have hf : Φ f₀ = (G').completedExp ⟨_, hx⟩ ^ r := by
+    rw [← AlgFiltration.completedExp_nsmul, ← (G).completedExp_completedLog f₀,
+      completedTropicalTangentMap_completedExp]
+    congr 1
+    refine Subtype.ext ?_
+    rw [Submodule.coe_smul_of_tower, ← Nat.cast_smul_eq_nsmul R, smul_smul,
+      ← map_natCast (algebraMap ℚ R), ← map_mul, mul_inv_cancel₀ hr0, map_one, one_smul]
+  exact ⟨⟨_, (G').completedExp_sub_one_mem _⟩, hf,
+    ofFiniteIndex_lieHom_completedMap_completedBCHExp_completedLog T t ht hρ ν q hq hν n hn' hr
+      f₀ _ hf⟩
 
 end Pushforward
 

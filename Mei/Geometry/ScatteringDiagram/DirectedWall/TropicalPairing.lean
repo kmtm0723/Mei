@@ -40,6 +40,13 @@ Two cases supply the spatial data.
   The index multiple `m ∘ t.indexInverse` of the inverse dual is always such a normal, with
   `q` the index (`AddMonoidHom.comp_indexInverse_apply_map`).
 
+If the degree map and the character map of the pairing are injective, the completed Lie map of
+the pushforward is injective
+(`DirectedWall.Pushforward.ofTropicalPairing_lieHom_completedMap_injective`). This holds for
+`ofFiniteIndex` with an injective degree map
+(`DirectedWall.Pushforward.ofFiniteIndex_lieHom_completedMap_injective`), so there a completed
+label is determined by its image.
+
 Only the pushforward data are constructed here. Identifying the pushed walls with a given
 input, for instance the image of the ray factors of a finite alphabet function wall, is not
 done.
@@ -102,6 +109,17 @@ theorem ofTropicalPairing_degreeMap :
 theorem ofTropicalPairing_lieHom_apply (x : tropicalVertexLieAlgebra (R := R) d ρ) :
     (ofTropicalPairing (h := h) (h' := h') p ν hν A hA hνA).lieHom x =
       p.tropicalVertexGradedLieHom x := (rfl)
+
+variable [DecidableEq Γ] [DecidableEq Γ'] in
+/-- If the degree map and the character map of the pairing are injective, the completed Lie map
+of the pushforward is injective. -/
+theorem ofTropicalPairing_lieHom_completedMap_injective (hT : Function.Injective p.degreeMap)
+    (hS : Function.Injective p.characterMap) :
+    Function.Injective
+      (ofTropicalPairing (h := h) (h' := h') p ν hν A hA hνA).lieHom.completedMap :=
+  GradedLieHom.completedMap_injective _ (by rwa [ofTropicalPairing_degreeMap])
+    fun n _ hx _ hy hxy => p.injOn_tropicalVertexGradedLieHom hS n hx hy
+      (by simpa only [ofTropicalPairing_lieHom_apply] using hxy)
 
 /-- Supported rays are reindexed along the degree map. -/
 @[simp]
@@ -264,6 +282,17 @@ theorem coe_ofFiniteIndex_lieHom_of_homogeneous {n : Γ}
   rw [ofFiniteIndex, ofTropicalPairing_lieHom_apply,
     TropicalPairing.coe_tropicalVertexGradedLieHom_of_homogeneous _ x m hm,
     TropicalPairing.ofFiniteIndex_characterMap, TropicalPairing.ofFiniteIndex_degreeMap]
+
+variable [DecidableEq Γ] [DecidableEq Γ'] in
+/-- If the positive degree map is injective, the completed Lie map of the finite-index
+pushforward is injective. -/
+theorem ofFiniteIndex_lieHom_completedMap_injective (hT : Function.Injective T) :
+    Function.Injective
+      (ofFiniteIndex (R := R) (h := h) (h' := h') T t ht hρ ν q hq hν).lieHom.completedMap := by
+  rw [ofFiniteIndex]
+  exact ofTropicalPairing_lieHom_completedMap_injective _ _ _ _ _ _
+    (by rwa [TropicalPairing.ofFiniteIndex_degreeMap])
+    (TropicalPairing.ofFiniteIndex_characterMap_injective T t ht hρ ⊤)
 
 /-- The field `z^n ∂_m` of an integral normal is sent to `q⁻¹ • z^{T n} ∂_{ν m}`: the
 integral normal `ν m` is kept and the denominator goes into the label. -/

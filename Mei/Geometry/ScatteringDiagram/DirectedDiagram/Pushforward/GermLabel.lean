@@ -31,7 +31,9 @@ through `θ` (`DirectedDiagram.activePushforwardEmbedding`,
 pushforward is the image of the germ label under the completed Lie map
 (`DirectedDiagram.germLabel_pushforward`). Hence every diagram equivalent to the pushforward has
 this germ label at every image of a generic point that is generic for it
-(`DirectedDiagram.Equivalent.germLabel_eq_pushforward`).
+(`DirectedDiagram.Equivalent.germLabel_eq_pushforward`). When the completed Lie map is injective,
+the germ label of `D` is conversely determined by that of the equivalent diagram
+(`DirectedDiagram.Equivalent.germLabel_eq_completedMap_iff`).
 
 This is the germ-level form of `DirectedDiagram.pathProduct_pushforward`: no function-wall
 grouping of the source or of the target is involved. It compares the wall functions on a ray of
@@ -233,5 +235,19 @@ theorem Equivalent.germLabel_eq_pushforward (hDE : (D.pushforward P).Equivalent 
     rwa [AffineSubspace.map_direction, AffineEquiv.linear_toAffineMap, Submodule.mem_map_equiv,
       LinearEquiv.symm_apply_apply]
   rw [← (hDE.germLabel_eq (hD.pushforward P) hE hv'), germLabel_pushforward]
+
+/-- **Germ labels recovered from a pushforward.** Under the hypotheses of
+`DirectedDiagram.Equivalent.germLabel_eq_pushforward`, if the completed Lie map of `P` is
+injective, then the germ label of `D` at `θ` in the direction `v` is a completed label `g` exactly
+when the germ label of `E` at `A θ` in the direction `A v` is the image of `g`. -/
+theorem Equivalent.germLabel_eq_completedMap_iff (hDE : (D.pushforward P).Equivalent E)
+    (hP : Function.Injective P.lieHom.completedMap) {B : AffineSubspace ℝ V} {θ v : V}
+    (hD : D.IsGenericPoint B θ)
+    (hE : E.IsGenericPoint (B.map P.spatialMap.toAffineEquiv.toAffineMap) (P.spatialMap θ))
+    (hv : v ∉ B.direction) (g : d.completedBCHGroup ℒ) :
+    E.germLabel (P.spatialMap θ) (P.spatialMap.toAffineEquiv.linear v) hE.isRegular =
+        P.lieHom.completedMap g ↔ D.germLabel θ v hD.isRegular = g := by
+  rw [hDE.germLabel_eq_pushforward _ hD hE hv]
+  exact hP.eq_iff
 
 end Mei.DirectedDiagram
