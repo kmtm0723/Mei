@@ -205,6 +205,8 @@ theorem completedBCHAction_label_adaptedPolynomialGrouping (i : B.unfrozenIndex)
       ((B.completedPolynomialWallFunction ℓ a Q i ^
           ((B.adaptedPolynomialInput ℓ a h).wall i).normal p : (F).completionˣ) : (F).completion) *
         (F).toCompletion (single p c) := by
+  -- The label and the normal of the wall are transported by `congrArg`: rewriting them with
+  -- `rw` in goals containing the completed coefficient algebra times out.
   have hl := congrArg (fun g => (σ) g ((F).toCompletion (single p c)))
     (B.label_adaptedPolynomialGrouping ℓ a h π i)
   have key : (σ) (B.polynomialWallLabel ℓ a i) ((F).toCompletion (single p c)) =
