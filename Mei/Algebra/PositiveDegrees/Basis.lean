@@ -20,8 +20,10 @@ Mathlib's `Module.Basis.equivFun`. The allowed monoid is free on the basis vecto
 `Module.Basis.positiveDegreesMonoidEquiv` identifies it with `ι →₀ ℕ`, carrying the degree
 to the total degree. For the standard basis of `ℤ × ℤ` the allowed exponents are the pairs with
 nonnegative coordinates (`Module.Basis.mem_positiveDegrees_finTwoProd_monoid`).
-For graphs in a torsion-free target, every supported primitive ray generator
-already belongs to the graph monoid.
+For elements `aⱼ` of a commutative monoid, the monomial weight `n ↦ ∏ⱼ aⱼ^{nⱼ}`
+(`Module.Basis.monomialWeight`) is multiplicative on the allowed monoid
+(`Module.Basis.monomialWeight_add`). For graphs in a torsion-free target, every supported
+primitive ray generator already belongs to the graph monoid.
 -/
 
 public section
@@ -141,6 +143,42 @@ theorem positiveDegreesMonoidEquiv_apply (n : b.positiveDegrees.monoid) (j : ι)
 theorem repr_positiveDegreesMonoidEquiv_symm_apply (c : ι →₀ ℕ) (j : ι) :
     b.repr (b.positiveDegreesMonoidEquiv.symm c) j = c j := by
   simp [positiveDegreesMonoidEquiv]
+
+section MonomialWeight
+
+variable {R : Type*} [CommMonoid R] (a : ι → R)
+
+/-- The monomial weight `n ↦ ∏ⱼ aⱼ ^ nⱼ` of the basis coordinates `nⱼ` of `n`; negative
+coordinates are replaced by zero. On an allowed exponent it is the monomial in the `aⱼ` with the
+natural coordinates of `n` as exponents. -/
+def monomialWeight (n : N) : R :=
+  ∏ j, a j ^ (b.repr n j).toNat
+
+/-- The monomial weight is the product of the powers of the `aⱼ` by the truncated coordinates. -/
+theorem monomialWeight_def (n : N) : b.monomialWeight a n = ∏ j, a j ^ (b.repr n j).toNat :=
+  (rfl)
+
+/-- The monomial weight is multiplicative on allowed exponents. -/
+theorem monomialWeight_add {n m : N} (hn : n ∈ b.positiveDegrees.monoid)
+    (hm : m ∈ b.positiveDegrees.monoid) :
+    b.monomialWeight a (n + m) = b.monomialWeight a n * b.monomialWeight a m := by
+  simp only [monomialWeight_def, ← Finset.prod_mul_distrib, ← pow_add, map_add,
+    Finsupp.add_apply, Int.toNat_add ((b.mem_positiveDegrees_monoid _).mp hn _)
+      ((b.mem_positiveDegrees_monoid _).mp hm _)]
+
+/-- The monomial weight of a basis vector `bⱼ` is `aⱼ`. -/
+@[simp]
+theorem monomialWeight_self (j : ι) : b.monomialWeight a (b j) = a j := by
+  classical
+  rw [monomialWeight_def, Finset.prod_eq_single j (fun i _ hi => by simp [hi]) (by simp)]
+  simp
+
+/-- If every `aⱼ` lies in a submonoid, so does the monomial weight of every element. -/
+theorem monomialWeight_mem {S : Type*} [SetLike S R] [SubmonoidClass S R] {s : S}
+    (ha : ∀ j, a j ∈ s) (n : N) : b.monomialWeight a n ∈ s :=
+  prod_mem fun j _ => pow_mem (ha j) _
+
+end MonomialWeight
 
 /-- The degree of an allowed exponent is the total degree of its natural coordinates. -/
 theorem positiveDegrees_degree_eq_degree_positiveDegreesMonoidEquiv

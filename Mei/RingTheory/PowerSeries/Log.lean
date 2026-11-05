@@ -14,6 +14,8 @@ import TauCeti.RingTheory.PowerSeries.Log
 The formal logarithm of a constant-one series commutes with coefficient maps
 between rational algebras. This allows logarithmic wall labels to specialize
 with their wall functions. We use Mathlib's `PowerSeries.map_subst` and `map_log`.
+Rescaling the variable also commutes with the formal logarithm of a constant-one series, by
+Mathlib's `PowerSeries.rescale_eq_subst` and `PowerSeries.subst_comp_subst_apply`.
 The linear coefficient of a constant-one series agrees with that of its logarithm,
 by the logarithmic derivative identity `PowerSeries.logDeriv_mul`.
 -/
@@ -41,5 +43,12 @@ theorem coeff_one_logOf {f : PowerSeries R} (hf : constantCoeff f = 1) :
   rw [coeff_zero_eq_constantCoeff_apply, map_mul, hf, mul_one,
     ← coeff_zero_eq_constantCoeff_apply, coeff_logDeriv, coeff_derivative] at h
   simpa using h
+
+/-- Rescaling the variable of a constant-one series commutes with its formal logarithm. -/
+theorem logOf_rescale (a : R) (f : PowerSeries R) (hf : constantCoeff f = 1) :
+    logOf (rescale a f) = rescale a (logOf f) := by
+  have hs : HasSubst (f - 1) := HasSubst.of_constantCoeff_zero' (by simp [hf])
+  rw [logOf_eq, logOf_eq, rescale_eq_subst a (subst _ _),
+    subst_comp_subst_apply hs (HasSubst.smul_X' a), ← rescale_eq_subst, map_sub, map_one]
 
 end PowerSeries

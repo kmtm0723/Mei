@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.PowerSeries.Log
 public import Mei.RingTheory.PowerSeries.EulerDerivInv
 
 import Mathlib.Algebra.Algebra.Rat
+import Mei.RingTheory.PowerSeries.Log
 
 /-!
 # The dilogarithm power series
@@ -16,7 +17,8 @@ import Mathlib.Algebra.Algebra.Rat
 Over a `ℚ`-algebra, `negDilogNeg A` is the formal power series
 `-Li₂(-X) = ∑_{n ≥ 1} (-1)^(n+1) Xⁿ / n² = X - X²/4 + X³/9 - ⋯`.
 It is the unique power series `f` without constant term with `X · d/dX f` equal to
-Mathlib's `PowerSeries.log A = log(1 + X)`.
+Mathlib's `PowerSeries.log A = log(1 + X)`. More generally, the inverse Euler derivative of
+`log(1 + aX)` is the rescaled series `-Li₂(-aX)` (`eulerDerivInv_logOf_one_add_C_mul_X`).
 
 Its coefficients are the logarithmic coefficients of the dilogarithm elements
 `Ψ[n] = exp(∑_{j ≥ 1} (-1)^(j+1) X_{jn} / j²)` of cluster scattering diagrams.
@@ -88,5 +90,12 @@ theorem eulerDerivInv_log : eulerDerivInv (log A) = negDilogNeg A :=
 theorem eq_negDilogNeg_iff (f : A⟦X⟧) :
     f = negDilogNeg A ↔ constantCoeff f = 0 ∧ X * d⁄dX f = log A := by
   rw [← eulerDerivInv_log, eq_comm, eulerDerivInv_eq_iff _ _ constantCoeff_log]
+
+/-- The inverse Euler derivative of `log(1 + aX)` is `-Li₂(-aX) = ∑ₙ (-1)^(n+1) aⁿ Xⁿ / n²`. -/
+theorem eulerDerivInv_logOf_one_add_C_mul_X (a : A) :
+    eulerDerivInv (logOf (1 + C a * X)) = rescale a (negDilogNeg A) := by
+  have h : (1 + C a * X : A⟦X⟧) = rescale a (1 + X) := by
+    rw [map_add, map_one, rescale_X]
+  rw [h, logOf_rescale a _ (by simp), logOf_one_add_X, eulerDerivInv_rescale, eulerDerivInv_log]
 
 end PowerSeries

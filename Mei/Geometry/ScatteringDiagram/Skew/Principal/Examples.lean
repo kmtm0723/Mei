@@ -36,10 +36,16 @@ For the unimodular rank-two datum `{e₁, e₂} = 1`, `N° = N`, with its standa
   diagram of type `A₂` with the additional wall `{ν_{e₁} + ν_{e₂} = 0, ν_{e₁} ≥ 0}`, an outgoing
   completion whose grouped wall functions `1 + q^{e₁}`, `1 + q^{e₂}`, `1 + q^{e₁ + e₂}` have
   natural-number coefficients.
+* `exists_isPositiveWallRepresentative_unimodularRankTwo_coefficient`: for independent variables
+  `a₀, a₁ ∈ ℚ[a₀, a₁]`, the outgoing scattering class of the adapted polynomial input
+  `(e₁⊥, 1 + a₀ q^{e₁})`, `(e₂⊥, 1 + a₁ q^{e₂})` is represented by the same configuration, with
+  grouped wall functions `1 + a₀ q^{e₁}`, `1 + a₁ q^{e₂}` and `1 + a₀ a₁ q^{e₁ + e₂}`
+  (`coe_pentagonWallFunction_unimodularRankTwo_inr`) whose monomial coefficients lie in
+  `ℕ[a₀, a₁]`.
 
 The statements on `frozenDatum` are instances of
 `Mei.SkewLatticeDatum.AdaptedBasis.exists_isPositiveWallRepresentative_of_forall_form_eq_zero`,
-and the one on the unimodular datum of
+and those on the unimodular datum of
 `Mei.SkewLatticeDatum.AdaptedBasis.IsTypeA₂.exists_isPositiveWallRepresentative_scat`;
 see Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*, Theorem 1.13
 (arXiv:1411.1394v2).
@@ -202,10 +208,16 @@ open AdaptedBasis
 open _root_.AddMonoidAlgebra
 open scoped Mei.TropicalVertexCoefficientAction
 
+/-- The unfrozen index `0` of the unimodular rank-two datum. -/
+abbrev unimodularRankTwoFst : unimodularRankTwoAdaptedBasis.unfrozenIndex := ⟨0, by simp⟩
+
+/-- The unfrozen index `1` of the unimodular rank-two datum. -/
+abbrev unimodularRankTwoSnd : unimodularRankTwoAdaptedBasis.unfrozenIndex := ⟨1, by simp⟩
+
 /-- The standard basis of the unimodular rank-two datum, with `{e₁, e₂} = 1` and `N° = N`, is of
 type `A₂` at its two indices. -/
 theorem isTypeA₂_unimodularRankTwoAdaptedBasis :
-    unimodularRankTwoAdaptedBasis.IsTypeA₂ ⟨0, by simp⟩ ⟨1, by simp⟩ where
+    unimodularRankTwoAdaptedBasis.IsTypeA₂ unimodularRankTwoFst unimodularRankTwoSnd where
   eq_or_eq i := by
     obtain ⟨i, hi⟩ := i
     fin_cases i
@@ -259,7 +271,49 @@ theorem exists_isPositiveWallRepresentative_unimodularRankTwo :
         (fun _ _ => (1 : R)) h).Scat
           (unimodularRankTwoAdaptedBasis.adaptedPolynomialInput_full _ _ h) ∧
       E.IsPositiveWallRepresentative (σ R) (mapRingHom Qpr (Nat.castRingHom R)).rangeS π :=
-  isTypeA₂_unimodularRankTwoAdaptedBasis.exists_isPositiveWallRepresentative_scat h π Qpr
-    fun _ => (unimodularRankTwo.mem_principalCoefficientMonoid _ _).mpr (zero_mem _)
+  isTypeA₂_unimodularRankTwoAdaptedBasis.exists_isPositiveWallRepresentative_scat h
+    (fun _ => (1 : R)) π Qpr
+    (fun _ => (unimodularRankTwo.mem_principalCoefficientMonoid _ _).mpr (zero_mem _))
+    (Nat.castRingHom R) fun _ => ⟨1, map_one _⟩
+
+open scoped Classical in
+/-- **The scattering diagram of type `A₂` with coefficients.** For the unimodular rank-two datum
+and independent variables `a₀, a₁`, the outgoing scattering class of the adapted polynomial input
+`(e₁⊥, 1 + a₀ q^{e₁})`, `(e₂⊥, 1 + a₁ q^{e₂})` has a consistent outgoing representative with the
+single additional wall `{ν_{e₁} + ν_{e₂} = 0, ν_{e₁} ≥ 0}`, whose grouped wall functions
+`1 + a₀ q^{e₁}`, `1 + a₁ q^{e₂}` and `1 + a₀ a₁ q^{e₁ + e₂}` have monomial coefficients in
+`ℕ[a₀, a₁]`. -/
+theorem exists_isPositiveWallRepresentative_unimodularRankTwo_coefficient :
+    ∃ (κ : Type) (E : DirectedDiagram (d := unimodularRankTwo.principalPositiveDegrees 𝒅) h
+        (unimodularRankTwo.principalGraphWallSpaces
+          (R := MvPolynomial unimodularRankTwoAdaptedBasis.unfrozenIndex ℚ) 𝒅)
+        (unimodularRankTwoAdaptedBasis.unfrozenIndex ⊕ κ)),
+      DirectedDiagram.IsOutgoingCompletion (unimodularRankTwoAdaptedBasis.adaptedPolynomialInput
+        (V := V) (fun _ => 1) (fun i _ => MvPolynomial.X i) h).wall E ∧
+      E.toClass = (unimodularRankTwoAdaptedBasis.adaptedPolynomialInput (fun _ => 1)
+        (fun i _ => MvPolynomial.X i) h).Scat
+          (unimodularRankTwoAdaptedBasis.adaptedPolynomialInput_full _ _ h) ∧
+      E.IsPositiveWallRepresentative
+        (σ (MvPolynomial unimodularRankTwoAdaptedBasis.unfrozenIndex ℚ))
+        (mapRingHom Qpr (MvPolynomial.map (Nat.castRingHom ℚ))).rangeS π :=
+  isTypeA₂_unimodularRankTwoAdaptedBasis.exists_isPositiveWallRepresentative_scat h
+    MvPolynomial.X π Qpr
+    (fun _ => (unimodularRankTwo.mem_principalCoefficientMonoid _ _).mpr (zero_mem _))
+    (MvPolynomial.map (Nat.castRingHom ℚ))
+    fun i => ⟨MvPolynomial.X i, MvPolynomial.map_X _ i⟩
+
+open scoped Classical in
+/-- The wall function of the outgoing wall of the diagram of type `A₂` with the independent
+coefficients `a₀, a₁` is `1 + a₀ a₁ z^{r(e₁ + e₂)}`: its coefficient is the product of the input
+coefficients. -/
+theorem coe_pentagonWallFunction_unimodularRankTwo_inr :
+    (isTypeA₂_unimodularRankTwoAdaptedBasis.pentagonWallFunction MvPolynomial.X Qpr (.inr ())).val =
+      1 + (TropicalVertexCoefficientAction.filtration
+          (R := MvPolynomial unimodularRankTwoAdaptedBasis.unfrozenIndex ℚ)
+          (unimodularRankTwo.principalPositiveDegrees 𝒅) Qpr).toCompletion
+        (single (unimodularRankTwoAdaptedBasis.pentagonExponent Qpr unimodularRankTwoFst
+          unimodularRankTwoSnd (.inr ()))
+          (MvPolynomial.X unimodularRankTwoFst * MvPolynomial.X unimodularRankTwoSnd)) :=
+  isTypeA₂_unimodularRankTwoAdaptedBasis.coe_pentagonWallFunction_inr _ _ ()
 
 end Mei.SkewLatticeDatum.Examples

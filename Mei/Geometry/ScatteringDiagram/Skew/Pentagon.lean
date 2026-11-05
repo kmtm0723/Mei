@@ -8,6 +8,7 @@ module
 public import Mei.Geometry.ScatteringDiagram.Skew.Dilogarithm
 public import Mei.Geometry.ScatteringDiagram.Skew.Examples
 public import Mei.Algebra.Lie.Skew.Map
+public import Mei.Algebra.Lie.Skew.Weight
 public import Mei.Algebra.Group.Units.Hom
 public import Mei.Algebra.Ring.Units
 public import Mei.Algebra.PositiveDegrees.Basis
@@ -32,6 +33,11 @@ is assumed. Specializing `β` to `D.coefficientForm R` gives the skew lattice id
   normalized powers `Ψ[n]^c`.
 * `Mei.SkewLieAlgebra.dilogElement_pentagon`: if `{n₁, n₂} = 1`, then
   `Ψ[n₂] Ψ[n₁] = Ψ[n₁] Ψ[n₁ + n₂] Ψ[n₂]`.
+* `Mei.SkewLieAlgebra.rayExp_rescale_smul_negDilogNeg_pentagon`: the identity with monomial
+  coefficients. For a weight `χ` multiplicative on the allowed monoid, write `Ψ_u[n]^c` for the
+  ray label of `c ∑_{j ≥ 1} (-1)^(j+1) u^j X_{jn} / j²`; then
+  `Ψ_{χ(n₂)}[n₂]^c Ψ_{χ(n₁)}[n₁]^c = Ψ_{χ(n₁)}[n₁]^c Ψ_{χ(n₁) χ(n₂)}[n₁ + n₂]^c Ψ_{χ(n₂)}[n₂]^c`.
+  The weights need not be units.
 
 ## Implementation notes
 
@@ -45,6 +51,9 @@ are the normal exponents of `p`.
 The unrestricted identity follows by transporting this calculation from the unimodular plane:
 the skew Lie map `X_(a,b) ↦ c X_(a n₁ + b n₂)` preserves brackets because `c {n₁,n₂} = 1`.
 `SkewLieAlgebra.gradedMap` and its finite-projection formula transport the ray labels.
+The identity with coefficients is the image of the identity with coefficient one under the weight
+map `X_n ↦ χ(n) X_n` (`SkewLieAlgebra.weightGradedLieHom`), which rescales the series of each ray
+label.
 
 ## References
 
@@ -286,6 +295,26 @@ theorem rayExp_smul_negDilogNeg_pentagon {n₁ n₂ : Γ} (hn₁ : n₁ ∈ d.mo
     PositiveDegreeMap.ofBound_apply _ _ _ _ v
   simp only [hTapply, f₁, f₂, map_add] at h
   simp only [map_mul]
+  exact h
+
+/-- **Pentagon identity with coefficients.** Let `χ` be a weight on the exponent group that is
+multiplicative on the allowed monoid, and let `n₁, n₂` be nonzero allowed degrees with
+`c * β n₁ n₂ = 1`. Writing `Ψ_u[n]^c` for the ray label of
+`c ∑_{j ≥ 1} (-1)^(j+1) u^j X_{jn} / j²`, that is of `(c • negDilogNeg R)(u T)`,
+`Ψ_{χ(n₂)}[n₂]^c Ψ_{χ(n₁)}[n₁]^c = Ψ_{χ(n₁)}[n₁]^c Ψ_{χ(n₁) χ(n₂)}[n₁ + n₂]^c Ψ_{χ(n₂)}[n₂]^c`. -/
+theorem rayExp_rescale_smul_negDilogNeg_pentagon {χ : Γ → R}
+    (hχ : ∀ n ∈ d.monoid, ∀ m ∈ d.monoid, χ (n + m) = χ n * χ m) {n₁ n₂ : Γ}
+    (hn₁ : n₁ ∈ d.monoid) (hn₂ : n₂ ∈ d.monoid) (hn₁0 : n₁ ≠ 0) (hn₂0 : n₂ ≠ 0) {c : R}
+    (hc : c * β n₁ n₂ = 1) :
+    Ψ hn₂ hn₂0 (rescale (χ n₂) (c • negDilogNeg R)) *
+        Ψ hn₁ hn₁0 (rescale (χ n₁) (c • negDilogNeg R)) =
+      Ψ hn₁ hn₁0 (rescale (χ n₁) (c • negDilogNeg R)) *
+        Ψ (add_mem hn₁ hn₂) (d.add_ne_zero hn₁ hn₂ hn₁0)
+          (rescale (χ n₁ * χ n₂) (c • negDilogNeg R)) *
+        Ψ hn₂ hn₂0 (rescale (χ n₂) (c • negDilogNeg R)) := by
+  have h := congrArg (weightGradedLieHom β hβ d hχ).completedMap
+    (rayExp_smul_negDilogNeg_pentagon β hβ d hn₁ hn₂ hn₁0 hn₂0 hc)
+  simp only [map_mul, completedMap_weightGradedLieHom_rayExp, hχ n₁ hn₁ n₂ hn₂] at h
   exact h
 
 /-- **Pentagon identity for dilogarithm elements.** For nonzero positive degrees
