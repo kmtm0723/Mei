@@ -7,6 +7,8 @@ module
 
 public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.Completion
 public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.Embedding
+public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.Inclusion
+public import Mei.Logic.Function.Cast
 
 /-!
 # The positive completion inside global quantum coefficients
@@ -93,12 +95,11 @@ private theorem positiveGlobalLinearMap_one : positiveGlobalLinearMap q β d 1 =
     simp only [coe_positiveShiftEquiv, monomial_zero, one_mul, Subalgebra.coe_one]
   have hc' := congrArg (d.shiftedHomogeneousComponent (grade q β) 0 u) hf1
   have hd := congrArg (fun z : QuantumMonoidAlgebra q β => DirectSum.decompose (grade q β) z u) he
-  calc
-    _ = _ := hc
-    _ = _ := hc'
-    _ = _ := hh
-    _ = _ := hd
-    _ = _ := ho.symm
+  exact (hc).trans <|
+    (hc').trans <|
+    (hh).trans <|
+    (hd).trans <|
+    ho.symm
 
 private theorem positiveGlobalLinearMap_mul (a b : (F).completion) :
     positiveGlobalLinearMap q β d (a * b) =
@@ -144,14 +145,13 @@ private theorem positiveGlobalLinearMap_mul (a b : (F).completion) :
       QuantumMonoidAlgebra q β) = (v * w : positiveSubalgebra q β d.monoid) := by
     simp only [coe_shiftedMul, coe_positiveShiftEquiv, monomial_zero, one_mul, Subalgebra.coe_mul]
   have he' := congrArg (fun z : QuantumMonoidAlgebra q β => DirectSum.decompose (grade q β) z u) he
-  calc
-    _ = _ := hl
-    _ = _ := he'.symm
-    _ = _ := hrep.symm
-    _ = _ := hm'.symm
-    _ = _ := hread.symm
-    _ = _ := hc.symm
-    _ = _ := hp'.symm
+  exact (hl).trans <|
+    (he'.symm).trans <|
+    (hrep.symm).trans <|
+    (hm'.symm).trans <|
+    (hread.symm).trans <|
+    (hc.symm).trans <|
+    hp'.symm
 
 /-- The completed positive coefficient algebra embeds in the global algebra through shift zero. -/
 def positiveCompletionToDirectLimit : (F).completion →ₐ[R] G :=
@@ -167,6 +167,27 @@ theorem positiveCompletionToDirectLimit_apply (a : (F).completion) :
   -- AlgHom.ofLinearMap retains this linear map; comp_apply exposes its two maps.
   change positiveGlobalLinearMap q β d a = _
   simp only [positiveGlobalLinearMap, LinearMap.comp_apply, LinearEquiv.coe_coe]
+
+/-- Equal support degrees give the same global value of positive completed coordinates. -/
+theorem toShiftedDirectLimitOfChart_positiveCompletionShiftEquiv_congr
+    {p r : Γ} (hpr : p = r) (s : Multiset d.monoid)
+    (hp : p - d.coefficientOrigin s ∈ d.monoid)
+    (hr : r - d.coefficientOrigin s ∈ d.monoid) (a : (F).completion) :
+    d.toShiftedDirectLimitOfChart (grade q β) p s hp
+        (positiveCompletionShiftEquiv q β d p a) =
+      d.toShiftedDirectLimitOfChart (grade q β) r s hr
+        (positiveCompletionShiftEquiv q β d r a) := by
+  have hc := d.toShiftedDirectLimitOfChart_cast (grade q β)
+    p r hpr s s hp hr (positiveCompletionShiftEquiv q β d p a)
+  have he : cast (congrArg (d.ShiftedCoefficients (grade q β)) hpr)
+      (positiveCompletionShiftEquiv q β d p a) =
+      positiveCompletionShiftEquiv q β d r a := by
+    simpa only [cast_eq] using
+      Function.cast_apply (A := fun _ : Γ => (F).completion)
+        (fun u => (positiveCompletionShiftEquiv q β d u :
+          (F).completion → d.ShiftedCoefficients (grade q β) u)) hpr a
+  exact hc.symm.trans
+    (congrArg (d.toShiftedDirectLimitOfChart (grade q β) r s hr) he)
 
 /-- No positive completed coefficient is lost in the global algebra. -/
 theorem positiveCompletionToDirectLimit_injective :
