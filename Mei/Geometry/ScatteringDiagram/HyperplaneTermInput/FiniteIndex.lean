@@ -19,8 +19,7 @@ normals `μ_i` have comparison scalar `q μ_i = 1`, so that `ν μ_i ∘ t = μ_
 `M ⊆ ℓ⁻¹M₀` of a rank-two lattice, where `M₀` is spanned by primitive vectors `m₁, m₂` of `M`
 with index `ℓ`, the primitive normals of a line `ℝm_i` for `M` and for `ℓ⁻¹M₀` restrict to each
 other, since `ℓ = r · ind(m_i)` with `r = 1` (`Submodule.index_eq_mul_relIndex_ker_eval`);
-this instance of the hypothesis is not derived here in general, only checked in
-`Mei.HyperplaneTermInput.FiniteIndex.Examples`.
+for two lines in rank two this is `Mei.RankTwoLatticeChange.normalScalar_lineNormal`.
 
 The image input `I.map T t hρ (ν ∘ μ)` has normals `ν μ_i`, the same offsets and terms, and
 exponents `T n_α`. The finite-index pushforward sends `z^n ∂_{μ_i}` to `z^{T n} ∂_{ν μ_i}`, since

@@ -6,91 +6,40 @@ Authors: Claude
 module
 
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall.Pushforward
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.Dilation
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Pushforward.GermLabel
 public import Mei.Geometry.ScatteringDiagram.DirectedWall.TropicalPairing.WallFunction.Examples
-public import Mei.Geometry.ScatteringDiagram.HyperplaneTermInput.FiniteIndex
-public import Mei.Geometry.ScatteringDiagram.WallSpace.Logarithmic.TangentLabel
+public import Mei.Geometry.ScatteringDiagram.HyperplaneTermInput.LatticeChange.Basic
 
 /-!
-# The incoming lines of the lattice change for `m₁ = (1, 0)` and `m₂ = (1, 2)`
+# The lattice change of two lines for `m₁ = (1, 0)` and `m₂ = (1, 2)`
 
 Let `M = ℤ²`, let `M₀ ⊆ M` be spanned by `m₁ = (1, 0)` and `m₂ = (1, 2)`, of index `ℓ = 2`, and
-use the coordinates of `Mei.DirectedWall.LatticeChange.Examples`: the coefficient exponent
-`(a, b) ∈ ℕ²` of `x^{a m₁ + b m₂}` has coordinates `latticeCoord (a, b) = (a + b, 2b)` in `M` and
-`halfLatticeCoord (a, b) = (2a, 2b)` in `½M₀`, with basis `½m₁, ½m₂`, and `M ⊆ ½M₀` is
-`latticeChange (x, y) = (2x - y, y)`.
+use the coordinates of `Mei.DirectedWall.LatticeChange.Examples`, which are the coordinates of
+`Mei.RankTwoLatticeChange` for this lattice: the coefficient exponent `(a, b)` of
+`x^{a m₁ + b m₂}` is `latticeCoord (a, b) = (a + b, 2b)` in `M` and
+`halfLatticeCoord (a, b) = (2a, 2b)` in `½M₀`, and `M ⊆ ½M₀` is
+`latticeChange (x, y) = (2x - y, y)`. The lattice change `primitiveLatticeChangePushforward` uses
+the canonical normal map `Mei.RankTwoLatticeChange.normalMap`. On this lattice it sends the line
+normals `e₂*` and `2e₁* - e₂*` of `M` (`lineNormal_zero`, `lineNormal_one`) to `e₂*` and `e₁*`,
+and keeps the normal `n° = x - y` of the diagonal `ℝ(1, 1)` with comparison scalar `r = 2`
+(`normalMap_diagonalNormal`, `normalScalar_diagonalNormal`), since `m° = m₁ + m₂ = 2 • (1, 1)`
+(`two_nsmul_one_one`).
 
-The incoming lines `ℝm₁` and `ℝm₂` carry the functions `1 + ∑_{k < K} c_{i,k} x^{(k+1) m_i}`
-(`lineInput`). Over `M` they are cooriented by the normals `e₂*` and `2e₁* - e₂*`
-(`latticeLineInput`); over `½M₀` by the normals `e₂*` and `e₁*` (`halfLatticeLineInput`). Both
-normals of `M` are restrictions of the normals of `½M₀`, so the comparison scalar is one on
-them (`primitiveLatticeChangeNormal_lineNormal`, `primitiveLatticeChangeScalar_lineNormal`).
+The general results of `Mei.RankTwoLatticeChange` (for instance
+`Mei.RankTwoLatticeChange.exists_germLabel_smul_eq_of_toClass_eq`: on each open ray of the
+diagonal the wall function over `M` is the square of the one over `½M₀`) apply to this lattice
+with these facts as hypotheses. This file adds the statements for the explicit wall functions
+`(1 + a z^{(1,1)})²` over `M` and `1 + a z^{(1,1)}` over `½M₀`:
 
-The normal map `primitiveLatticeChangeNormal` sends `μ` to the integral character `μ ∘ t⁻¹` of
-`½M₀` when it exists, that is when `μ (1, 0)` is even, and to `μ ∘ latticeCoord`, with
-comparison scalar `2`, otherwise; for instance it keeps the normal `x - y` of the diagonal. It
-gives the finite-index pushforward `primitiveLatticeChangePushforward`, which sends the input
-over `M` to the input over `½M₀` (`latticeLineInput_map`). Hence its pushforward of the ray
-presentation over `M` is equivalent to the ray presentation over `½M₀`
-(`latticeLineInput_pushforward_equivalent`), and it carries the scattering class over `M` to the
-scattering class over `½M₀` (`latticeLineInput_pushforward_scat`), so it sends representatives
-of the first class to representatives of the second (`latticeLineInput_toClass_pushforward`).
+* a function-wall group with the label of `(1 + a z^{(1,1)})²` is pushed to a group with the label
+  of `1 + a z^{(1,1)}` (`diagonal_label_pushforward`), and this label is carried by every group of
+  a representative over `½M₀` matched with it by crossing germs (`diagonal_label_of_toClass_eq`);
+* if a representative over `M` has the germ label of `(1 + a z^{(1,1)})²` at a generic point `θ`
+  of the diagonal, every representative over `½M₀` has the germ label of `1 + a z^{(1,1)}` at
+  `S θ` when this point is generic (`diagonal_germLabel_of_toClass_eq`), and at every generic
+  point `t • S θ`, `t > 0`, of the image ray (`diagonal_germLabel_smul_of_toClass_eq`).
 
-The normal `n° = x - y` of the diagonal `ℝ(1, 1)`, along `m° = m₁ + m₂ = 2 • (1, 1)`, is kept
-with comparison scalar `r = 2`. So if a diagram over `M` has a function-wall grouping whose
-normals stay primitive under `primitiveLatticeChangeNormal`, and one of its groups has the label
-of `(1 + a z^{(1,1)})²` with normal `n°`, then the pushed group has the label of `1 + a z^{(1,1)}`
-with normal `n°` over `½M₀` (`diagonal_label_pushforward`); the grouping and the label are
-hypotheses. If the diagram over `M` represents the scattering class over `M`, the same label is
-carried by any representative of the scattering class over `½M₀` on a group whose crossing
-germs at every order are the images of crossing germs of the diagonal group
-(`diagonal_label_of_toClass_eq`); these crossing germs are hypotheses. This uses
-`DirectedDiagram.FunctionWallGrouping.label_eq_of_equivalent_pushforward_ofFiniteIndex`.
-
-At the level of germ labels no grouping is needed. For any representatives `D` over `M` and `E`
-over `½M₀`, every open set meeting the diagonal line (`diagonalLine`) contains a point `θ` that is
-generic for `D` on the line, with image `S θ` under the spatial map generic for `E` on the image
-line (`exists_isGenericPoint_diagonalLine`). If the germ label of `D` at such a `θ`, in a
-direction `v` crossing the diagonal negatively, is the label of `(1 + a z^{(1,1)})²` with normal
-`n°`, then the germ label of `E` at `S θ` in the direction `S v` is the label of `1 + a z^{(1,1)}`
-with normal `n°` (`diagonal_germLabel_of_toClass_eq`), by
-`DirectedDiagram.Equivalent.germLabel_eq_pushforward`.
-
-These germ labels are function-wall labels, and the wall function over `M` is the square of the
-wall function over `½M₀`. Every active wall of `D` through `θ` lies on the diagonal ray `(1, 1)`
-with a normal proportional to `n°` (`label_mem_wallGroup_of_isGenericPoint_diagonalLine`), so the
-germ label of `D` at `θ` is the function-wall label of a completed tangent series `f₀`, by
-`Mei.exists_eq_completedBCHExp_completedTropicalTangentField_completedLog_of_mem_wallGroup`. Its
-pushforward is the function-wall label of a square root `f₁` of `f₀`, which is the germ label of
-`E` at `S θ` (`exists_diagonal_germLabel_eq_of_toClass_eq`). Conversely, the completed Lie map of
-the lattice change is injective, so for any `f₀ = f₁ ^ 2` the germ label of `E` at `S θ` is the
-label of `f₁` exactly when the germ label of `D` at `θ` is the label of `f₀`
-(`diagonal_germLabel_eq_iff_of_toClass_eq`): whatever the wall function over `½M₀` is, the wall
-function over `M` is its square.
-
-The lines pass through the origin (`lineInput_diagram_wall_support`), so both scattering classes
-are classes of central inputs, and their germ labels along open rays of the diagonal do not
-depend on the representative or on the generic point
-(`DirectedDiagram.germLabel_smul_eq_of_toClass_eq_scat`). Over `M` this is
-`diagonal_germLabel_smul_eq`: for representatives `D` and `D'` over `M`, the germ label of `D'` at
-a generic point `t • θ`, `t > 0`, is the germ label of `D` at the generic point `θ`. Hence the
-germ label `(1 + a z^{(1,1)})²` of `D` at a single generic point `θ` gives the germ label
-`1 + a z^{(1,1)}` of every representative `E` over `½M₀` at every point `t • S θ`, `t > 0`, that
-is generic for `E`, whether or not `S θ` is (`diagonal_germLabel_smul_of_toClass_eq`).
-
-So for this lattice the file proves: the pushforward of the ray presentation of the lines, the
-pushforward of their scattering class and of its representatives, the transport of a given
-function-wall label on the diagonal, its comparison with groups of representatives over `½M₀`
-that are matched with it by crossing germs, the transport of a given germ label on the
-diagonal from any representative over `M` to any representative over `½M₀`, the independence
-of these germ labels of the point on an open ray of the diagonal, and the existence of the
-diagonal wall functions over `M` and over `½M₀` at common generic points, the first the square
-of the second. It does not compute the scattering class: the wall functions are not determined,
-and the label `(1 + a z^{(1,1)})²` over `M` in `diagonal_germLabel_of_toClass_eq` is a
-hypothesis.
-
-The lattice change is motivated by Burcroff–Lee–Mou, *Positivity of generalized cluster
+The germ label `(1 + a z^{(1,1)})²` over `M` is a hypothesis: the scattering class is not
+computed. The lattice change is motivated by Burcroff–Lee–Mou, *Positivity of generalized cluster
 scattering diagrams*, Theorem 9.5 (arXiv:2503.03719v1).
 -/
 
@@ -105,348 +54,98 @@ open DirectedWall DirectedDiagram TauCeti.Toric DirectedWall.LatticeChange.Examp
 /-- The positive quadrant `ℕ²` of `ℤ²`, with coordinate-sum degree. -/
 local notation "ℕ²" => Module.Basis.positiveDegrees (Module.Basis.finTwoProd ℤ)
 
-/-- The normal map of `M ⊆ ½M₀` sending `μ` to `μ ∘ latticeChange⁻¹` when `μ (1, 0)` is even, and
-to `μ ∘ latticeCoord` otherwise. -/
-def primitiveLatticeChangeNormal (μ : ℤ × ℤ →+ ℤ) : ℤ × ℤ →+ ℤ :=
-  if Even (μ (1, 0)) then
-    (μ (1, 0) / 2) • (AddMonoidHom.fst ℤ ℤ + AddMonoidHom.snd ℤ ℤ) +
-      μ (0, 1) • AddMonoidHom.snd ℤ ℤ
-  else latticeChangeNormal μ
+/-- The normal of `ℝm₁` in `M` is `e₂*`. -/
+theorem lineNormal_zero :
+    RankTwoLatticeChange.lineNormal (1, 0) (1, 2) 0 = AddMonoidHom.snd ℤ ℤ :=
+  AddMonoidHom.ext fun x => by simp [Prod.det_apply]
 
-/-- The comparison scalar of `primitiveLatticeChangeNormal`: `1` when `μ (1, 0)` is even and `2`
-otherwise. -/
-def primitiveLatticeChangeScalar (μ : ℤ × ℤ →+ ℤ) : ℚ := if Even (μ (1, 0)) then 1 else 2
+/-- The normal of `ℝm₂` in `M` is `2e₁* - e₂*`. -/
+theorem lineNormal_one :
+    RankTwoLatticeChange.lineNormal (1, 0) (1, 2) 1 =
+      (2 : ℤ) • AddMonoidHom.fst ℤ ℤ - AddMonoidHom.snd ℤ ℤ :=
+  AddMonoidHom.ext fun x => by simp [Prod.det_apply, mul_comm]
 
-/-- For even `μ (1, 0)`, the normal is `(x, y) ↦ (μ (1, 0) / 2) (x + y) + μ (0, 1) y`. -/
-theorem primitiveLatticeChangeNormal_apply_of_even {μ : ℤ × ℤ →+ ℤ} (hμ : Even (μ (1, 0)))
-    (x : ℤ × ℤ) :
-    primitiveLatticeChangeNormal μ x = μ (1, 0) / 2 * (x.1 + x.2) + μ (0, 1) * x.2 := by
-  simp [primitiveLatticeChangeNormal, hμ, mul_add]
+/-- `m° = m₁ + m₂ = 2 • (1, 1)`. -/
+theorem two_nsmul_one_one :
+    (2 : ℕ) • ((1, 1) : ℤ × ℤ) = (1 : ℤ) • ((1, 0) : ℤ × ℤ) + (1 : ℤ) • ((1, 2) : ℤ × ℤ) := by
+  decide
 
-/-- For odd `μ (1, 0)`, the normal is `μ ∘ latticeCoord`. -/
-theorem primitiveLatticeChangeNormal_of_not_even {μ : ℤ × ℤ →+ ℤ} (hμ : ¬Even (μ (1, 0))) :
-    primitiveLatticeChangeNormal μ = latticeChangeNormal μ := by
-  simp [primitiveLatticeChangeNormal, hμ]
+/-- The canonical normal map keeps the normal `n° = x - y` of the diagonal. -/
+theorem normalMap_diagonalNormal :
+    RankTwoLatticeChange.normalMap (1, 0) (1, 2) diagonalNormal = diagonalNormal :=
+  RankTwoLatticeChange.normalMap_normal det_generators_pos isCoprime_one_left two_nsmul_one_one
 
-/-- For even `μ (1, 0)`, the comparison scalar is `1`. -/
-theorem primitiveLatticeChangeScalar_of_even {μ : ℤ × ℤ →+ ℤ} (hμ : Even (μ (1, 0))) :
-    primitiveLatticeChangeScalar μ = 1 := by
-  simp [primitiveLatticeChangeScalar, hμ]
-
-/-- For odd `μ (1, 0)`, the comparison scalar is `2`. -/
-theorem primitiveLatticeChangeScalar_of_not_even {μ : ℤ × ℤ →+ ℤ} (hμ : ¬Even (μ (1, 0))) :
-    primitiveLatticeChangeScalar μ = 2 := by
-  simp [primitiveLatticeChangeScalar, hμ]
-
-/-- The comparison scalars are positive. -/
-theorem primitiveLatticeChangeScalar_pos (μ : ℤ × ℤ →+ ℤ) : 0 < primitiveLatticeChangeScalar μ := by
-  by_cases hμ : Even (μ (1, 0))
-  · rw [primitiveLatticeChangeScalar_of_even hμ]
-    exact one_pos
-  · rw [primitiveLatticeChangeScalar_of_not_even hμ]
-    exact two_pos
-
-/-- The normal map pulls back along `latticeChange` to the comparison scalar times the
-original normal. -/
-theorem primitiveLatticeChangeNormal_apply_latticeChange (μ : ℤ × ℤ →+ ℤ) (x : ℤ × ℤ) :
-    (primitiveLatticeChangeNormal μ (latticeChange x) : ℚ) =
-      primitiveLatticeChangeScalar μ * μ x := by
-  by_cases hμ : Even (μ (1, 0))
-  · obtain ⟨k, hk⟩ := hμ
-    have hμx : μ x = x.1 * μ (1, 0) + x.2 * μ (0, 1) := by
-      rw [← smul_eq_mul, ← smul_eq_mul, ← map_zsmul, ← map_zsmul, ← map_add]
-      congr 1
-      simp only [Prod.ext_iff, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd,
-        smul_eq_mul, mul_one, mul_zero, add_zero, zero_add, and_self]
-    have hx : primitiveLatticeChangeNormal μ (latticeChange x) = μ x := by
-      rw [primitiveLatticeChangeNormal_apply_of_even ⟨k, hk⟩, hμx, hk, latticeChange_apply,
-        show (k + k) / 2 = k by omega]
-      ring
-    rw [hx, primitiveLatticeChangeScalar_of_even ⟨k, hk⟩, one_mul]
-  · rw [primitiveLatticeChangeNormal_of_not_even hμ, primitiveLatticeChangeScalar_of_not_even hμ]
-    exact latticeChangeNormal_apply_latticeChange μ x
+/-- The normal `n°` of the diagonal has comparison scalar `r = 2`. -/
+theorem normalScalar_diagonalNormal :
+    RankTwoLatticeChange.normalScalar (1, 0) (1, 2) diagonalNormal = 2 := by
+  rw [RankTwoLatticeChange.normalScalar_normal det_generators_pos isCoprime_one_left
+    two_nsmul_one_one, Nat.cast_ofNat]
 
 variable (R : Type) [CommRing R] [Algebra ℚ R]
   (h : IsIntegralLattice ((Int.castAddHom ℝ).prodMap (Int.castAddHom ℝ)))
 
-/-- The finite-index pushforward along `M ⊆ ½M₀`, with identity degree map and normal map
-`primitiveLatticeChangeNormal`. -/
-def primitiveLatticeChangePushforward :
+/-- The lattice change `M ⊆ ½M₀` with the canonical normal map. -/
+abbrev primitiveLatticeChangePushforward :
     Pushforward ℕ² ℕ² h h (tropicalVertexWallSpaces (R := R) ℕ² latticeCoord)
       (tropicalVertexWallSpaces ℕ² halfLatticeCoord) :=
-  Pushforward.ofFiniteIndex (PositiveDegreeMap.id ℕ²) latticeChange latticeChange_injective
-    halfLatticeCoord_eq_latticeChange primitiveLatticeChangeNormal primitiveLatticeChangeScalar
-    primitiveLatticeChangeScalar_pos primitiveLatticeChangeNormal_apply_latticeChange
+  RankTwoLatticeChange.pushforward R h det_generators_pos
+    (RankTwoLatticeChange.normalMap (1, 0) (1, 2)) (RankTwoLatticeChange.normalScalar (1, 0) (1, 2))
+    (RankTwoLatticeChange.normalScalar_pos det_generators_pos)
+    (RankTwoLatticeChange.normalMap_apply_change det_generators_pos)
 
-/-- The degree map of `primitiveLatticeChangePushforward` is the identity. -/
-@[simp]
-theorem primitiveLatticeChangePushforward_degreeMap_apply (x : ℤ × ℤ) :
-    (primitiveLatticeChangePushforward R h).degreeMap x = x := by
-  simp [primitiveLatticeChangePushforward]
-
-/-- The normal map of `primitiveLatticeChangePushforward` is `primitiveLatticeChangeNormal`. -/
-@[simp]
-theorem primitiveLatticeChangePushforward_normalMap (μ : ℤ × ℤ →+ ℤ) :
-    (primitiveLatticeChangePushforward R h).normalMap μ = primitiveLatticeChangeNormal μ := by
-  simp [primitiveLatticeChangePushforward]
-
-/-- The coefficient exponents `(k + 1) • e_i` of `x^{(k+1) m_i}` are allowed degrees. -/
-theorem succ_smul_finTwoProd_mem (i : Fin 2) (k : ℕ) :
-    ((k : ℤ) + 1) • Module.Basis.finTwoProd ℤ i ∈ ℕ².monoid := by
-  rw [Module.Basis.mem_positiveDegrees_monoid]
-  intro j
-  rw [map_zsmul, Module.Basis.repr_self, Finsupp.smul_apply, smul_eq_mul]
-  exact mul_nonneg (by positivity) (by rw [Finsupp.single_apply]; split_ifs <;> simp)
-
-/-- The coefficient exponents `(k + 1) • e_i` of `x^{(k+1) m_i}` are nonzero. -/
-theorem succ_smul_finTwoProd_ne_zero (i : Fin 2) (k : ℕ) :
-    ((k : ℤ) + 1) • Module.Basis.finTwoProd ℤ i ≠ 0 :=
-  smul_ne_zero (by positivity) ((Module.Basis.finTwoProd ℤ).ne_zero i)
-
-/-- The incoming lines `ℝm₁` and `ℝm₂` through the origin, in tangent coordinates `ρ₀` and
-cooriented by `μ₀ 0` and `μ₀ 1`, with the terms `x^{(k + 1) m_i}` for `k < K`: the term `(i, k)`
-has coefficient exponent `(k + 1) • e_i`. -/
-def lineInput (ρ₀ : ℤ × ℤ →+ ℤ × ℤ) (μ₀ : Fin 2 → ℤ × ℤ →+ ℤ) (hμ₀ : ∀ i, μ₀ i ≠ 0)
-    (hρμ : ∀ i, μ₀ i (ρ₀ (Module.Basis.finTwoProd ℤ i)) = 0) (K : ℕ) :
-    HyperplaneTermInput ℕ² ρ₀ (Fin 2) (Fin 2 × Fin K) where
-  normal := μ₀
-  normal_ne_zero := hμ₀
-  offset _ := 0
-  wallIndex := Prod.fst
-  exponent α := ((α.2 : ℤ) + 1) • Module.Basis.finTwoProd ℤ α.1
-  exponent_mem α := succ_smul_finTwoProd_mem α.1 α.2
-  exponent_ne_zero α := succ_smul_finTwoProd_ne_zero α.1 α.2
-  normal_exponent α := by rw [map_zsmul, map_zsmul, hρμ, smul_zero]
-
-section LineInput
-
-variable (ρ₀ : ℤ × ℤ →+ ℤ × ℤ) (μ₀ : Fin 2 → ℤ × ℤ →+ ℤ) (hμ₀ : ∀ i, μ₀ i ≠ 0)
-  (hρμ : ∀ i, μ₀ i (ρ₀ (Module.Basis.finTwoProd ℤ i)) = 0) (K : ℕ)
-
-/-- The line `ℝm_i` is cooriented by `μ₀ i`. -/
-@[simp]
-theorem lineInput_normal : (lineInput ρ₀ μ₀ hμ₀ hρμ K).normal = μ₀ := by
-  simp [lineInput]
-
-/-- The lines pass through the origin. -/
-@[simp]
-theorem lineInput_offset : (lineInput ρ₀ μ₀ hμ₀ hρμ K).offset = 0 := by
-  simp [lineInput, Pi.zero_def]
-
-/-- The term `(i, k)` lies on the line `ℝm_i`. -/
-@[simp]
-theorem lineInput_wallIndex : (lineInput ρ₀ μ₀ hμ₀ hρμ K).wallIndex = Prod.fst := by
-  simp [lineInput]
-
-/-- The term `(i, k)` has coefficient exponent `(k + 1) • e_i`. -/
-@[simp]
-theorem lineInput_exponent (α : Fin 2 × Fin K) :
-    (lineInput ρ₀ μ₀ hμ₀ hρμ K).exponent α =
-      ((α.2 : ℤ) + 1) • Module.Basis.finTwoProd ℤ α.1 := by
-  simp [lineInput]
-
-/-- The ray presentation of the lines has its walls on hyperplanes through the origin. -/
-theorem lineInput_diagram_wall_support (c : Fin 2 × Fin K → R) :
-    ∀ x, (((lineInput ρ₀ μ₀ hμ₀ hρμ K).diagram h c).wall x).support =
-      {y | h.realCharacter (((lineInput ρ₀ μ₀ hμ₀ hρμ K).diagram h c).wall x).normal y = 0} :=
-  fun x => by
-    rw [ofHyperplaneRayFactors_support, ofHyperplaneRayFactors_normal, lineInput_offset,
-      Pi.zero_apply]
-
-end LineInput
-
-/-- The normals `e₂*` of `ℝm₁` and `2e₁* - e₂*` of `ℝm₂` in `M`. -/
-def lineNormal : Fin 2 → ℤ × ℤ →+ ℤ :=
-  ![AddMonoidHom.snd ℤ ℤ, (2 : ℤ) • AddMonoidHom.fst ℤ ℤ - AddMonoidHom.snd ℤ ℤ]
-
-/-- The normals `e₂*` of `ℝm₁` and `e₁*` of `ℝm₂` in `½M₀`. -/
-def halfLineNormal : Fin 2 → ℤ × ℤ →+ ℤ := ![AddMonoidHom.snd ℤ ℤ, AddMonoidHom.fst ℤ ℤ]
-
-/-- The normal of `ℝm₁` in `M` is `e₂*`. -/
-@[simp]
-theorem lineNormal_zero : lineNormal 0 = AddMonoidHom.snd ℤ ℤ := by
-  simp [lineNormal]
-
-/-- The normal of `ℝm₂` in `M` is `2e₁* - e₂*`. -/
-@[simp]
-theorem lineNormal_one :
-    lineNormal 1 = (2 : ℤ) • AddMonoidHom.fst ℤ ℤ - AddMonoidHom.snd ℤ ℤ := by
-  simp [lineNormal]
-
-/-- The normal of `ℝm₁` in `½M₀` is `e₂*`. -/
-@[simp]
-theorem halfLineNormal_zero : halfLineNormal 0 = AddMonoidHom.snd ℤ ℤ := by
-  simp [halfLineNormal]
-
-/-- The normal of `ℝm₂` in `½M₀` is `e₁*`. -/
-@[simp]
-theorem halfLineNormal_one : halfLineNormal 1 = AddMonoidHom.fst ℤ ℤ := by
-  simp [halfLineNormal]
-
-/-- The normals of `M` are nonzero. -/
-theorem lineNormal_ne_zero (i : Fin 2) : lineNormal i ≠ 0 := fun h0 => by
-  fin_cases i <;> simpa using DFunLike.congr_fun h0 (0, 1)
-
-/-- The normals of `½M₀` are nonzero. -/
-theorem halfLineNormal_ne_zero (i : Fin 2) : halfLineNormal i ≠ 0 := fun h0 => by
-  fin_cases i
-  · simpa using DFunLike.congr_fun h0 (0, 1)
-  · simpa using DFunLike.congr_fun h0 (1, 0)
-
-/-- The normal of `ℝm_i` in `M` vanishes on `m_i`. -/
-theorem lineNormal_latticeCoord (i : Fin 2) :
-    lineNormal i (latticeCoord (Module.Basis.finTwoProd ℤ i)) = 0 := by
-  fin_cases i <;> simp
-
-/-- The normal of `ℝm_i` in `½M₀` vanishes on `m_i`. -/
-theorem halfLineNormal_halfLatticeCoord (i : Fin 2) :
-    halfLineNormal i (halfLatticeCoord (Module.Basis.finTwoProd ℤ i)) = 0 := by
-  fin_cases i <;> simp
-
-/-- The incoming lines `ℝm₁` and `ℝm₂` over `M`, with the normals `lineNormal`. -/
-abbrev latticeLineInput (K : ℕ) : HyperplaneTermInput ℕ² latticeCoord (Fin 2) (Fin 2 × Fin K) :=
-  lineInput latticeCoord lineNormal lineNormal_ne_zero lineNormal_latticeCoord K
-
-/-- The incoming lines `ℝm₁` and `ℝm₂` over `½M₀`, with the normals `halfLineNormal`. -/
-abbrev halfLatticeLineInput (K : ℕ) :
-    HyperplaneTermInput ℕ² halfLatticeCoord (Fin 2) (Fin 2 × Fin K) :=
-  lineInput halfLatticeCoord halfLineNormal halfLineNormal_ne_zero
-    halfLineNormal_halfLatticeCoord K
-
-/-- The normals of the lines `ℝm_i` over `M` have comparison scalar one. -/
-theorem primitiveLatticeChangeScalar_lineNormal (K : ℕ) (i : Fin 2) :
-    primitiveLatticeChangeScalar ((latticeLineInput K).normal i) = 1 := by
-  rw [lineInput_normal]
-  fin_cases i <;> simp [primitiveLatticeChangeScalar]
-
-/-- The normal map sends the normals of the lines in `M` to their normals in `½M₀`. -/
-theorem primitiveLatticeChangeNormal_lineNormal (i : Fin 2) :
-    primitiveLatticeChangeNormal (lineNormal i) = halfLineNormal i := by
-  ext x
-  have he : Even (lineNormal i (1, 0)) := by fin_cases i <;> simp
-  rw [primitiveLatticeChangeNormal_apply_of_even he]
-  fin_cases i <;> simp
-
-/-- The input over `M` mapped along `latticeChange` with the normals
-`primitiveLatticeChangeNormal` is the input over `½M₀`. -/
-theorem latticeLineInput_map (K : ℕ) :
-    (latticeLineInput K).map (PositiveDegreeMap.id ℕ²) latticeChange
-        halfLatticeCoord_eq_latticeChange
-        (fun i => primitiveLatticeChangeNormal ((latticeLineInput K).normal i))
-        ((latticeLineInput K).comp_normal_of_ofFiniteIndex latticeChange
-          primitiveLatticeChangeNormal_apply_latticeChange
-          (primitiveLatticeChangeScalar_lineNormal K)) =
-      halfLatticeLineInput K :=
-  HyperplaneTermInput.ext (funext fun i => by simp [primitiveLatticeChangeNormal_lineNormal])
-    (by simp) (by simp) (funext fun α => by simp)
-
-variable {K : ℕ} (c : Fin 2 × Fin K → R)
-
-/-- **Incoming lines under the lattice change.** The pushforward along `M ⊆ ½M₀` of the ray
-presentation of the lines `ℝm_i` with functions `1 + ∑_{k < K} c_{i,k} x^{(k+1) m_i}` over `M` is
-equivalent to the ray presentation of the same lines and functions over `½M₀`. -/
-theorem latticeLineInput_pushforward_equivalent :
-    (((latticeLineInput K).diagram h c).pushforward
-      (primitiveLatticeChangePushforward R h)).Equivalent
-        ((halfLatticeLineInput K).diagram h c) := by
-  rw [← latticeLineInput_map]
-  exact (latticeLineInput K).diagram_pushforward_ofFiniteIndex_equivalent _ _
-    latticeChange_injective halfLatticeCoord_eq_latticeChange primitiveLatticeChangeScalar_pos _
-    (primitiveLatticeChangeScalar_lineNormal K) h h c
-
-/-- **Scattering classes under the lattice change.** The pushforward along `M ⊆ ½M₀` of the
-scattering class of the lines `ℝm_i` with functions `1 + ∑_{k < K} c_{i,k} x^{(k+1) m_i}` over
-`M` is the scattering class of the same lines and functions over `½M₀`. -/
-theorem latticeLineInput_pushforward_scat :
-    Class.pushforward (primitiveLatticeChangePushforward R h)
-        (((latticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..)) =
-      ((halfLatticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..) :=
-  ((latticeLineInput K).diagram h c |>.pushforward_scat _ _).trans
-    (DirectedDiagram.scat_eq_of_equivalent _ _ (latticeLineInput_pushforward_equivalent R h c))
-
-/-- A diagram representing the scattering class of the lines over `M` is pushed along `M ⊆ ½M₀`
-to a diagram representing the scattering class of the lines over `½M₀`. -/
-theorem latticeLineInput_toClass_pushforward {κ : Type}
-    {D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := R) ℕ² latticeCoord) κ}
-    (hD : D.toClass =
-      ((latticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..)) :
-    (D.pushforward (primitiveLatticeChangePushforward R h)).toClass =
-      ((halfLatticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..) := by
-  rw [← latticeLineInput_map]
-  exact (latticeLineInput K).toClass_pushforward_ofFiniteIndex _ _ latticeChange_injective
-    halfLatticeCoord_eq_latticeChange primitiveLatticeChangeScalar_pos _
-    (primitiveLatticeChangeScalar_lineNormal K) h h c hD
-
-/-- The normal map keeps the normal `n°(x, y) = x - y` of the diagonal. -/
-@[simp]
-theorem primitiveLatticeChangeNormal_diagonalNormal :
-    primitiveLatticeChangeNormal diagonalNormal = diagonalNormal := by
-  rw [primitiveLatticeChangeNormal_of_not_even (by simp), latticeChangeNormal_diagonalNormal]
-
-/-- The normal `n°` of the diagonal has comparison scalar `r = 2`. -/
-@[simp]
-theorem primitiveLatticeChangeScalar_diagonalNormal :
-    primitiveLatticeChangeScalar diagonalNormal = 2 :=
-  primitiveLatticeChangeScalar_of_not_even (by simp)
-
-/-- The normal `n°` pulls back along `M ⊆ ½M₀` to its comparison scalar times `n°`. -/
-theorem diagonalNormal_latticeChange_eq_scalar_mul (x : ℤ × ℤ) :
-    (diagonalNormal (latticeChange x) : ℚ) =
-      primitiveLatticeChangeScalar diagonalNormal * diagonalNormal x := by
-  rw [primitiveLatticeChangeScalar_diagonalNormal]
-  exact diagonalNormal_latticeChange x
-
+/-- The coefficients tangent to `n°` over `ρ₀`. -/
 local notation "F" ρ₀ => TropicalVertexCoefficientAction.filtration (R := ℚ) ℕ²
   (tropicalTangentMonoid ℕ² ρ₀ (AddMonoidHom.comp (Int.castAddHom ℚ) diagonalNormal))
 
+variable {K : ℕ}
+
 /-- **Transport of a diagonal group label.** Let a diagram over `M` have a function-wall
-grouping whose normals stay primitive under `primitiveLatticeChangeNormal`, and let its group
-`g` have the function-wall label of `(1 + a z^{(1,1)})²` with normal `n°`. Then the group `g` of
-the pushforward along `M ⊆ ½M₀` has the function-wall label of `1 + a z^{(1,1)}` with normal
-`n°`. -/
+grouping whose normals stay primitive under the canonical normal map, and let its group `g` have
+the function-wall label of `(1 + a z^{(1,1)})²` with normal `n°`. Then the group `g` of the
+pushforward along `M ⊆ ½M₀` has the function-wall label of `1 + a z^{(1,1)}` with normal `n°`. -/
 theorem diagonal_label_pushforward {κ M κ' : Type*} [AddCommGroup M] {π : ℤ × ℤ →+ M}
     {D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord) κ}
     (G : D.FunctionWallGrouping π κ')
-    (hprim : ∀ j, TauCeti.IsPrimitive (primitiveLatticeChangeNormal (D.wall j).normal))
+    (hprim : ∀ j,
+      TauCeti.IsPrimitive (RankTwoLatticeChange.normalMap (1, 0) (1, 2) (D.wall j).normal))
     {g : κ'} (a : ℚ)
     (hg : G.label g = ℕ².completedBCHExp _ (completedTropicalTangentField ℕ² latticeCoord
       ((Int.castAddHom ℚ).comp diagonalNormal)
       ((F latticeCoord).completedLog (squaredDiagonalFunction a)))) :
     (G.pushforward (P := primitiveLatticeChangePushforward ℚ h) (π' := π)
-        (fun x _ => by rw [primitiveLatticeChangePushforward_degreeMap_apply])
-        (fun j => by simpa using hprim j)).label g =
+        (fun x _ => by simp) (fun j => by simpa using hprim j)).label g =
       ℕ².completedBCHExp _ (completedTropicalTangentField ℕ² halfLatticeCoord
         ((Int.castAddHom ℚ).comp diagonalNormal) ((F halfLatticeCoord).completedLog
-          (diagonalFunction halfLatticeCoord diagonalNormal_halfLatticeCoord a))) :=
-  FunctionWallGrouping.label_pushforward_ofFiniteIndex _ _ latticeChange_injective
-    halfLatticeCoord_eq_latticeChange primitiveLatticeChangeNormal primitiveLatticeChangeScalar
-    primitiveLatticeChangeScalar_pos primitiveLatticeChangeNormal_apply_latticeChange G
-    diagonalNormal_latticeChange_eq_scalar_mul
-    (r := 2) (by simp) _ _ _ _ hg (completedTropicalTangentMap_squaredDiagonalFunction _ a)
+          (diagonalFunction halfLatticeCoord diagonalNormal_halfLatticeCoord a))) := by
+  rw [FunctionWallGrouping.label_pushforward, hg]
+  exact RankTwoLatticeChange.pushforward_lieHom_completedMap_label det_generators_pos
+    (RankTwoLatticeChange.normalScalar_pos det_generators_pos)
+    (RankTwoLatticeChange.normalMap_apply_change det_generators_pos) two_nsmul_one_one
+    normalMap_diagonalNormal (by simp) _ _ (completedTropicalTangentMap_squaredDiagonalFunction _ a)
 
 /-- **The diagonal label in matched representatives over `½M₀`.** Let `D` represent the scattering
-class of the lines over `M`, with a function-wall grouping whose normals stay primitive under
-`primitiveLatticeChangeNormal`, and let its group `g` have the function-wall label of
-`(1 + a z^{(1,1)})²` with normal `n°`. Let `E` be any representative of the scattering class of
-the lines over `½M₀`, with a function-wall grouping `G'`. Suppose that at every order `k` the
-group `g` has a crossing germ at order `k` (the cutoff modulus is the identity), at a point `θ`
-and a direction `v`, and that the group `g'` of `G'` has a crossing germ at order `k` at their
-images under the spatial map. Then `g'` has the function-wall label of `1 + a z^{(1,1)}` with
-normal `n°`. -/
+class of the lines over `M`, with a function-wall grouping whose normals stay primitive under the
+canonical normal map, and let its group `g` have the function-wall label of `(1 + a z^{(1,1)})²`
+with normal `n°`. Let `E` be any representative of the scattering class of the lines over `½M₀`,
+with a function-wall grouping `G'`. Suppose that at every order `k` the group `g` has a crossing
+germ at order `k`, at a point `θ` and a direction `v`, and that the group `g'` of `G'` has a
+crossing germ at order `k` at their images under the spatial map. Then `g'` has the function-wall
+label of `1 + a z^{(1,1)}` with normal `n°`. -/
 theorem diagonal_label_of_toClass_eq {κ M κ' ι' M' κ'' : Type} [AddCommGroup M]
     [AddCommGroup M'] {π : ℤ × ℤ →+ M} {π' : ℤ × ℤ →+ M'} (c : Fin 2 × Fin K → ℚ)
     {D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord) κ}
-    (hD : D.toClass =
-      ((latticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
+    (hD : D.toClass = ((RankTwoLatticeChange.latticeLineInput det_generators_pos K).diagram h
+      c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
     (G : D.FunctionWallGrouping π κ')
-    (hprim : ∀ j, TauCeti.IsPrimitive (primitiveLatticeChangeNormal (D.wall j).normal))
+    (hprim : ∀ j,
+      TauCeti.IsPrimitive (RankTwoLatticeChange.normalMap (1, 0) (1, 2) (D.wall j).normal))
     {g : κ'} (a : ℚ)
     (hg : G.label g = ℕ².completedBCHExp _ (completedTropicalTangentField ℕ² latticeCoord
       ((Int.castAddHom ℚ).comp diagonalNormal)
       ((F latticeCoord).completedLog (squaredDiagonalFunction a))))
     {E : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² halfLatticeCoord) ι'}
-    (hE : E.toClass =
-      ((halfLatticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
+    (hE : E.toClass = ((RankTwoLatticeChange.sublatticeLineInput (1, 0) (1, 2) K).diagram h
+      c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
     (G' : E.FunctionWallGrouping π' κ'') {g' : κ''}
     (hgerm : ∀ k, ∃ θ v, G.IsCrossingGerm g k θ v ∧
       G'.IsCrossingGerm g' k ((primitiveLatticeChangePushforward ℚ h).spatialMap θ)
@@ -454,230 +153,38 @@ theorem diagonal_label_of_toClass_eq {κ M κ' ι' M' κ'' : Type} [AddCommGroup
     G'.label g' =
       ℕ².completedBCHExp _ (completedTropicalTangentField ℕ² halfLatticeCoord
         ((Int.castAddHom ℚ).comp diagonalNormal) ((F halfLatticeCoord).completedLog
-          (diagonalFunction halfLatticeCoord diagonalNormal_halfLatticeCoord a))) :=
-  FunctionWallGrouping.label_eq_of_equivalent_pushforward_ofFiniteIndex _ _
-    latticeChange_injective halfLatticeCoord_eq_latticeChange primitiveLatticeChangeNormal
-    primitiveLatticeChangeScalar primitiveLatticeChangeScalar_pos
-    primitiveLatticeChangeNormal_apply_latticeChange G
-    diagonalNormal_latticeChange_eq_scalar_mul
-    (r := 2) (by simp) (π' := π) (fun x _ => by simp)
-    (fun j => by simpa using hprim j) _ _ hg
-    (completedTropicalTangentMap_squaredDiagonalFunction _ a)
-    ((toClass_eq_iff _ _).mp ((latticeLineInput_toClass_pushforward ℚ h c hD).trans hE.symm)) G'
-    fun k => by
-      obtain ⟨θ, v, hθ, hθ'⟩ := hgerm k
-      exact ⟨θ, v, by rwa [PositiveDegreeMap.id_modulus], hθ'⟩
+          (diagonalFunction halfLatticeCoord diagonalNormal_halfLatticeCoord a))) := by
+  /- `E` is equivalent to the pushforward of `D`, whose group `g` carries the target label by
+  `diagonal_label_pushforward`, and the crossing germs of `g` are pushed to crossing germs. -/
+  have hDE := (toClass_eq_iff _ _).mp ((RankTwoLatticeChange.toClass_pushforward ℚ h
+    det_generators_pos (RankTwoLatticeChange.normalScalar_pos det_generators_pos)
+    (RankTwoLatticeChange.normalMap_apply_change det_generators_pos)
+    (RankTwoLatticeChange.normalMap_lineNormal det_generators_pos) c hD).trans hE.symm)
+  refine (FunctionWallGrouping.label_eq_of_equivalent hDE fun k => ?_).symm.trans
+    (diagonal_label_pushforward h G hprim a hg)
+  obtain ⟨θ, v, hθ, hθ'⟩ := hgerm k
+  exact ⟨_, _, hθ.pushforward _ _ (by simp), hθ'⟩
 
 section GermLabel
 
-/-- The diagonal line `{x = y}` of `ℝ²`, the kernel of the real extension of `n°`. -/
-def diagonalLine : AffineSubspace ℝ (ℝ × ℝ) :=
-  (LinearMap.ker (h.realCharacter diagonalNormal)).toAffineSubspace
-
-/-- A point lies on the diagonal line when `n°` vanishes on it. -/
-@[simp]
-theorem mem_diagonalLine {θ : ℝ × ℝ} :
-    θ ∈ diagonalLine h ↔ h.realCharacter diagonalNormal θ = 0 := by
-  rw [diagonalLine, Submodule.mem_toAffineSubspace, LinearMap.mem_ker]
-
-/-- The diagonal line is an affine hyperplane of `ℝ²`. -/
-theorem finrank_diagonalLine_direction :
-    Module.finrank ℝ (diagonalLine h).direction + 1 = Module.finrank ℝ (ℝ × ℝ) := by
-  rw [diagonalLine, Submodule.toAffineSubspace_direction]
-  refine Module.Dual.finrank_ker_add_one_of_ne_zero fun he => ?_
-  have h₁ := LinearMap.congr_fun he (((Int.castAddHom ℝ).prodMap (Int.castAddHom ℝ)) (1, 0))
-  rw [h.realCharacter_apply] at h₁
-  simp at h₁
-
-/-- **Common generic points on the diagonal.** For any directed diagrams `D` over `M` and `E` over
-`½M₀`, every open set meeting the diagonal line contains a generic point of the line for `D`
-whose image under the spatial map `S` of the lattice change is a generic point of the image line
-for `E`. -/
-theorem exists_isGenericPoint_diagonalLine {κ ι' : Type}
-    (D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord) κ)
-    (E : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² halfLatticeCoord) ι')
-    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hne : (U ∩ diagonalLine h).Nonempty) :
-    ∃ θ ∈ U ∩ diagonalLine h, D.IsGenericPoint (diagonalLine h) θ ∧
-      E.IsGenericPoint ((diagonalLine h).map
-        (primitiveLatticeChangePushforward ℚ h).spatialMap.toAffineEquiv.toAffineMap)
-        ((primitiveLatticeChangePushforward ℚ h).spatialMap θ) :=
-  D.exists_isGenericPoint_pair E _ _ (finrank_diagonalLine_direction h) hU hne
-
-/-- The tangent monomial map of the identity degree map, from the coefficients tangent to `n°`
-over `M` to those over `½M₀`. -/
-local notation "Φ" => completedTropicalTangentMap (R := ℚ) (PositiveDegreeMap.id ℕ²)
-  (map_tropicalTangentMonoid_intCast_le (PositiveDegreeMap.id ℕ²)
-    halfLatticeCoord_eq_latticeChange diagonalNormal_latticeChange)
-
-/-- The completed Lie map of the lattice change is injective. -/
-theorem primitiveLatticeChangePushforward_lieHom_completedMap_injective :
-    Function.Injective (primitiveLatticeChangePushforward ℚ h).lieHom.completedMap := by
-  rw [primitiveLatticeChangePushforward]
-  exact Pushforward.ofFiniteIndex_lieHom_completedMap_injective _ _ _ _ _ _ _ _
-    fun _ _ hxy => by simpa only [PositiveDegreeMap.id_apply] using hxy
-
-/-- **Squares of diagonal wall functions.** If `f₀ = f₁ ^ 2` under the tangent monomial map, the
-lattice change sends the function-wall label of `f₀` with normal `n°` over `M` to the
-function-wall label of `f₁` with normal `n°` over `½M₀`. -/
-theorem primitiveLatticeChangePushforward_completedMap_diagonal
-    (f₀ : {u : (F latticeCoord).completion // u - 1 ∈ (F latticeCoord).completionIdeal 1})
-    (f₁ : {u : (F halfLatticeCoord).completion // u - 1 ∈ (F halfLatticeCoord).completionIdeal 1})
-    (hf : Φ f₀ = (f₁ : (F halfLatticeCoord).completion) ^ 2) :
-    (primitiveLatticeChangePushforward ℚ h).lieHom.completedMap (ℕ².completedBCHExp _
-      (completedTropicalTangentField ℕ² latticeCoord ((Int.castAddHom ℚ).comp diagonalNormal)
-        ((F latticeCoord).completedLog f₀))) =
-      ℕ².completedBCHExp _ (completedTropicalTangentField ℕ² halfLatticeCoord
-        ((Int.castAddHom ℚ).comp diagonalNormal) ((F halfLatticeCoord).completedLog f₁)) := by
-  rw [primitiveLatticeChangePushforward]
-  exact Pushforward.ofFiniteIndex_lieHom_completedMap_completedBCHExp_completedLog
-    (PositiveDegreeMap.id ℕ²) latticeChange latticeChange_injective
-    halfLatticeCoord_eq_latticeChange primitiveLatticeChangeNormal primitiveLatticeChangeScalar
-    primitiveLatticeChangeScalar_pos primitiveLatticeChangeNormal_apply_latticeChange
-    diagonalNormal diagonalNormal_latticeChange_eq_scalar_mul (r := 2) (by simp) f₀ f₁ hf
-
-/-- Every active wall through a generic point of the diagonal line, for a diagram over `M`, has its
-label in the wall group of the diagonal ray `(1, 1)` with normal `n°`. -/
-theorem label_mem_wallGroup_of_isGenericPoint_diagonalLine {κ : Type}
-    {D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord) κ}
-    {θ : ℝ × ℝ} (hθ : D.IsGenericPoint (diagonalLine h) θ) {k : ℕ} (j : D.active k)
-    (hj : θ ∈ (D.wall j).support) :
-    (D.wall j).label ∈
-      (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord).wallGroup diagonalRay diagonalNormal := by
-  /- The wall spans the diagonal line, so its normal `μ` vanishes on `(1, 1)` and is the multiple
-  `μ (1, 0) • n°` of `n°`. Its ray is then tangent to the diagonal, hence the diagonal ray. -/
-  have hker : LinearMap.ker (h.realCharacter (D.wall j).normal) =
-      LinearMap.ker (h.realCharacter diagonalNormal) := by
-    rw [← (D.wall j).direction_support, hθ.affineSpan_eq j hj, diagonalLine,
-      Submodule.toAffineSubspace_direction]
-  have h11 : (D.wall j).normal (1, 1) = 0 := by
-    have hmem : ((Int.castAddHom ℝ).prodMap (Int.castAddHom ℝ)) ((1, 1) : ℤ × ℤ) ∈
-        LinearMap.ker (h.realCharacter (D.wall j).normal) := by
-      rw [hker, LinearMap.mem_ker, h.realCharacter_apply, diagonalNormal_apply, sub_self,
-        Int.cast_zero]
-    rw [LinearMap.mem_ker, h.realCharacter_apply] at hmem
-    exact_mod_cast hmem
-  have h01 : (D.wall j).normal (0, 1) = -(D.wall j).normal (1, 0) := by
-    have h := map_add (D.wall j).normal (1, 0) (0, 1)
-    rw [Prod.mk_add_mk, zero_add, add_zero, h11] at h
-    omega
-  have hμ : (D.wall j).normal = (D.wall j).normal (1, 0) • diagonalNormal := by
-    apply AddMonoidHom.toIntLinearMap_injective
-    refine LinearMap.prod_ext (LinearMap.ext_ring ?_) (LinearMap.ext_ring ?_) <;>
-      simp [diagonalNormal_apply, h01]
-  have hc : (D.wall j).normal (1, 0) ≠ 0 := fun h0 =>
-    (D.wall j).normal_ne_zero (by rw [hμ, h0, zero_smul])
-  have hray : (D.wall j).ray = diagonalRay := by
-    refine eq_diagonalRay_of_diagonalNormal_latticeCoord ?_
-    have hdir := (D.wall j).normal_direction
-    rw [hμ, AddMonoidHom.smul_apply, smul_eq_mul] at hdir
-    exact (mul_eq_zero.mp hdir).resolve_left hc
-  have hlabel := (D.wall j).label_mem
-  rwa [hray, hμ, DirectedWallSpaces.wallGroup_rescale _ _ _ _ hc] at hlabel
-
-/-- **The diagonal wall function over `M` is the square of the one over `½M₀`.** Let `D` be any
-representative of the scattering class of the lines over `M` and `E` any representative over
-`½M₀`. Let `θ` be a generic point of the diagonal line for `D` whose image `S θ` under the spatial
-map is a generic point of the image line for `E`, and let `v` cross the diagonal. Let `f₀` over `M`
-and `f₁` over `½M₀` be completed tangent series congruent to one with `f₀ = f₁ ^ 2` under the
-tangent monomial map. Then the germ label of `E` at `S θ` in the direction `S v` is the
-function-wall label of `f₁` with normal `n°` exactly when the germ label of `D` at `θ` in the
-direction `v` is the function-wall label of `f₀` with normal `n°`. -/
-theorem diagonal_germLabel_eq_iff_of_toClass_eq {κ ι' : Type} (c : Fin 2 × Fin K → ℚ)
-    {D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord) κ}
-    (hD : D.toClass =
-      ((latticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
-    {E : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² halfLatticeCoord) ι'}
-    (hE : E.toClass =
-      ((halfLatticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
-    {θ v : ℝ × ℝ} (hθ : D.IsGenericPoint (diagonalLine h) θ)
-    (hθ' : E.IsGenericPoint ((diagonalLine h).map
-      (primitiveLatticeChangePushforward ℚ h).spatialMap.toAffineEquiv.toAffineMap)
-      ((primitiveLatticeChangePushforward ℚ h).spatialMap θ))
-    (hv : h.realCharacter diagonalNormal v ≠ 0)
-    (f₀ : {u : (F latticeCoord).completion // u - 1 ∈ (F latticeCoord).completionIdeal 1})
-    (f₁ : {u : (F halfLatticeCoord).completion // u - 1 ∈ (F halfLatticeCoord).completionIdeal 1})
-    (hf : Φ f₀ = (f₁ : (F halfLatticeCoord).completion) ^ 2) :
-    E.germLabel ((primitiveLatticeChangePushforward ℚ h).spatialMap θ)
-        ((primitiveLatticeChangePushforward ℚ h).spatialMap.toAffineEquiv.linear v)
-        hθ'.isRegular =
-      ℕ².completedBCHExp _ (completedTropicalTangentField ℕ² halfLatticeCoord
-        ((Int.castAddHom ℚ).comp diagonalNormal) ((F halfLatticeCoord).completedLog f₁)) ↔
-    D.germLabel θ v hθ.isRegular = ℕ².completedBCHExp _
-      (completedTropicalTangentField ℕ² latticeCoord ((Int.castAddHom ℚ).comp diagonalNormal)
-        ((F latticeCoord).completedLog f₀)) := by
-  have hDE := (toClass_eq_iff _ _).mp
-    ((latticeLineInput_toClass_pushforward ℚ h c hD).trans hE.symm)
-  have hv' : v ∉ (diagonalLine h).direction := by
-    rwa [diagonalLine, Submodule.toAffineSubspace_direction, LinearMap.mem_ker]
-  rw [← primitiveLatticeChangePushforward_completedMap_diagonal h f₀ f₁ hf]
-  exact hDE.germLabel_eq_completedMap_iff _
-    (primitiveLatticeChangePushforward_lieHom_completedMap_injective h) hθ hθ' hv' _
-
-/-- **The diagonal wall functions over `M` and over `½M₀`.** Let `D`, `E`, `θ` and `v` be as in
-`diagonal_germLabel_eq_iff_of_toClass_eq`. Then there are completed tangent series `f₀` over `M`
-and `f₁` over `½M₀`, congruent to one, with `f₀ = f₁ ^ 2` under the tangent monomial map, such
-that the germ label of `D` at `θ` in the direction `v` is the function-wall label of `f₀` with
-normal `n°` and the germ label of `E` at `S θ` in the direction `S v` is the function-wall label
-of `f₁` with normal `n°`. The series are not computed. -/
-theorem exists_diagonal_germLabel_eq_of_toClass_eq {κ ι' : Type} (c : Fin 2 × Fin K → ℚ)
-    {D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord) κ}
-    (hD : D.toClass =
-      ((latticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
-    {E : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² halfLatticeCoord) ι'}
-    (hE : E.toClass =
-      ((halfLatticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
-    {θ v : ℝ × ℝ} (hθ : D.IsGenericPoint (diagonalLine h) θ)
-    (hθ' : E.IsGenericPoint ((diagonalLine h).map
-      (primitiveLatticeChangePushforward ℚ h).spatialMap.toAffineEquiv.toAffineMap)
-      ((primitiveLatticeChangePushforward ℚ h).spatialMap θ))
-    (hv : h.realCharacter diagonalNormal v ≠ 0) :
-    ∃ (f₀ : {u : (F latticeCoord).completion // u - 1 ∈ (F latticeCoord).completionIdeal 1})
-      (f₁ : {u : (F halfLatticeCoord).completion //
-        u - 1 ∈ (F halfLatticeCoord).completionIdeal 1}),
-      Φ f₀ = (f₁ : (F halfLatticeCoord).completion) ^ 2 ∧
-      D.germLabel θ v hθ.isRegular = ℕ².completedBCHExp _
-        (completedTropicalTangentField ℕ² latticeCoord ((Int.castAddHom ℚ).comp diagonalNormal)
-          ((F latticeCoord).completedLog f₀)) ∧
-      E.germLabel ((primitiveLatticeChangePushforward ℚ h).spatialMap θ)
-          ((primitiveLatticeChangePushforward ℚ h).spatialMap.toAffineEquiv.linear v)
-          hθ'.isRegular =
-        ℕ².completedBCHExp _ (completedTropicalTangentField ℕ² halfLatticeCoord
-          ((Int.castAddHom ℚ).comp diagonalNormal) ((F halfLatticeCoord).completedLog f₁)) := by
-  /- The germ label of `D` lies in the wall group of the diagonal ray, hence is the function-wall
-  label of some `f₀`. Its pushforward is the function-wall label of a square root `f₁` of `f₀`,
-  which is the germ label of `E` by `diagonal_germLabel_eq_iff_of_toClass_eq`. -/
-  obtain ⟨f₀, hf₀⟩ :=
-    exists_eq_completedBCHExp_completedTropicalTangentField_completedLog_of_mem_wallGroup
-      (D.germLabel_mem_wallGroup θ v hθ.isRegular fun _ j hj =>
-        label_mem_wallGroup_of_isGenericPoint_diagonalLine h hθ j hj)
-  obtain ⟨f₁, hf, -⟩ := Pushforward.exists_pow_eq_and_ofFiniteIndex_lieHom_completedMap_eq
-    (h := h) (h' := h) (PositiveDegreeMap.id ℕ²) latticeChange latticeChange_injective
-    halfLatticeCoord_eq_latticeChange primitiveLatticeChangeNormal primitiveLatticeChangeScalar
-    primitiveLatticeChangeScalar_pos primitiveLatticeChangeNormal_apply_latticeChange
-    diagonalNormal diagonalNormal_latticeChange_eq_scalar_mul
-    (r := 2) (by simp) f₀
-  exact ⟨f₀, f₁, hf, hf₀.symm,
-    (diagonal_germLabel_eq_iff_of_toClass_eq h c hD hE hθ hθ' hv f₀ f₁ hf).mpr hf₀.symm⟩
-
 /-- **The diagonal wall function over `½M₀` from the one over `M`.** Let `D` be any representative
 of the scattering class of the lines over `M` and `E` any representative of the scattering class
-over `½M₀`. Let `θ` be a generic point of the diagonal line for `D` whose image under the
-spatial map `S` is a generic point of the image line for `E`; such points exist in every open
-set meeting the line (`exists_isGenericPoint_diagonalLine`). Let `v` cross the diagonal
-negatively. If the germ label of `D` at `θ` in the direction `v` is the function-wall label of
-`(1 + a z^{(1,1)})²` with normal `n°`, then the germ label of `E` at `S θ` in the direction `S v`
-is the function-wall label of `1 + a z^{(1,1)}` with normal `n°`. The germ label of `D` is a
-hypothesis: the scattering class over `M` is not computed. No function-wall grouping of `D` or
-`E` is involved. -/
+over `½M₀`. Let `θ` be a generic point of the diagonal for `D` whose image under the spatial map
+`S` is a generic point of the image line for `E`; such points exist in every open set meeting the
+diagonal (`Mei.RankTwoLatticeChange.exists_isGenericPoint_pair_line`). Let `v` cross the
+diagonal negatively. If the germ label of `D` at `θ` in the direction `v` is the function-wall
+label of `(1 + a z^{(1,1)})²` with normal `n°`, then the germ label of `E` at `S θ` in the
+direction `S v` is the function-wall label of `1 + a z^{(1,1)}` with normal `n°`. The germ label
+of `D` is a hypothesis: the scattering class over `M` is not computed. -/
 theorem diagonal_germLabel_of_toClass_eq {κ ι' : Type} (c : Fin 2 × Fin K → ℚ)
     {D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord) κ}
-    (hD : D.toClass =
-      ((latticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
+    (hD : D.toClass = ((RankTwoLatticeChange.latticeLineInput det_generators_pos K).diagram h
+      c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
     {E : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² halfLatticeCoord) ι'}
-    (hE : E.toClass =
-      ((halfLatticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
-    {θ v : ℝ × ℝ} (hθ : D.IsGenericPoint (diagonalLine h) θ)
-    (hθ' : E.IsGenericPoint ((diagonalLine h).map
+    (hE : E.toClass = ((RankTwoLatticeChange.sublatticeLineInput (1, 0) (1, 2) K).diagram h
+      c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
+    {θ v : ℝ × ℝ} (hθ : D.IsGenericPoint (RankTwoLatticeChange.line h (1, 1)) θ)
+    (hθ' : E.IsGenericPoint ((RankTwoLatticeChange.line h (1, 1)).map
       (primitiveLatticeChangePushforward ℚ h).spatialMap.toAffineEquiv.toAffineMap)
       ((primitiveLatticeChangePushforward ℚ h).spatialMap θ))
     (hv : h.realCharacter diagonalNormal v < 0) (a : ℚ)
@@ -690,48 +197,16 @@ theorem diagonal_germLabel_of_toClass_eq {κ ι' : Type} (c : Fin 2 × Fin K →
       ℕ².completedBCHExp _ (completedTropicalTangentField ℕ² halfLatticeCoord
         ((Int.castAddHom ℚ).comp diagonalNormal) ((F halfLatticeCoord).completedLog
           (diagonalFunction halfLatticeCoord diagonalNormal_halfLatticeCoord a))) :=
-  (diagonal_germLabel_eq_iff_of_toClass_eq h c hD hE hθ hθ' hv.ne _ _
-    (completedTropicalTangentMap_squaredDiagonalFunction _ a)).mpr hg
-
-/-- **The diagonal germ label over `M` along a ray.** Let `D` and `D'` be any representatives of
-the scattering class of the lines over `M`, let `θ` be a generic point of the diagonal line for
-`D`, and let `t • θ`, `t > 0`, be a generic point of the line for `D'`. Then the germ label of
-`D'` at `t • θ` is the germ label of `D` at `θ`, in every direction crossing the diagonal. So the
-germ label of the class over `M` on each open ray of the diagonal, for instance on the open ray
-`ℝ_{<0}(1, 1)` of `m°`, is independent of the representative and of the generic point. -/
-theorem diagonal_germLabel_smul_eq {κ κ' : Type} (c : Fin 2 × Fin K → ℚ)
-    {D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord) κ}
-    (hD : D.toClass =
-      ((latticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
-    {D' : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord) κ'}
-    (hD' : D'.toClass =
-      ((latticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
-    {θ v : ℝ × ℝ} {t : ℝ} (ht : 0 < t) (hθ : D.IsGenericPoint (diagonalLine h) θ)
-    (htθ : D'.IsGenericPoint (diagonalLine h) (t • θ)) (hv : h.realCharacter diagonalNormal v ≠ 0) :
-    D'.germLabel (t • θ) v htθ.isRegular = D.germLabel θ v hθ.isRegular :=
-  germLabel_smul_eq_of_toClass_eq_scat _ (lineInput_diagram_wall_support ℚ h _ _ _ _ _ c) hD hD'
-    (by simp) (finrank_diagonalLine_direction h) ht hθ htθ (by
-      rwa [diagonalLine, Submodule.toAffineSubspace_direction, LinearMap.mem_ker])
-
-/-- The image of the diagonal line under the spatial map of the lattice change passes through the
-origin. -/
-theorem zero_mem_map_diagonalLine :
-    (0 : ℝ × ℝ) ∈ (diagonalLine h).map
-      (primitiveLatticeChangePushforward ℚ h).spatialMap.toAffineEquiv.toAffineMap :=
-  ⟨0, by simp [diagonalLine], by simp [primitiveLatticeChangePushforward]⟩
-
-/-- The image of the diagonal line under the spatial map of the lattice change is an affine
-hyperplane. -/
-theorem finrank_map_diagonalLine_direction :
-    Module.finrank ℝ ((diagonalLine h).map
-      (primitiveLatticeChangePushforward ℚ h).spatialMap.toAffineEquiv.toAffineMap).direction + 1 =
-      Module.finrank ℝ (ℝ × ℝ) := by
-  rw [AffineSubspace.map_direction, AffineEquiv.linear_toAffineMap, LinearEquiv.finrank_map_eq,
-    finrank_diagonalLine_direction]
+  (RankTwoLatticeChange.germLabel_eq_iff_of_toClass_eq det_generators_pos
+    (RankTwoLatticeChange.normalScalar_pos det_generators_pos)
+    (RankTwoLatticeChange.normalMap_apply_change det_generators_pos) two_nsmul_one_one c
+    (RankTwoLatticeChange.normalMap_lineNormal det_generators_pos) normalMap_diagonalNormal
+    (by simp) hD hE hθ hθ' hv.ne _ _ (completedTropicalTangentMap_squaredDiagonalFunction _ a)).mpr
+    hg
 
 /-- **The diagonal wall function over `½M₀` on the whole ray.** Let `D` be any representative of
 the scattering class of the lines over `M` and `E` any representative of the scattering class
-over `½M₀`. Let `θ` be a generic point of the diagonal line for `D` and let `v` cross the diagonal
+over `½M₀`. Let `θ` be a generic point of the diagonal for `D` and let `v` cross the diagonal
 negatively. If the germ label of `D` at `θ` in the direction `v` is the function-wall label of
 `(1 + a z^{(1,1)})²` with normal `n°`, then at every point `t • S θ`, `t > 0`, of the image ray
 under the spatial map `S` that is generic for `E` on the image line, the germ label of `E` in the
@@ -740,18 +215,18 @@ direction `S v` is the function-wall label of `1 + a z^{(1,1)}` with normal `n°
 `D` at one point is a hypothesis: the scattering class over `M` is not computed. -/
 theorem diagonal_germLabel_smul_of_toClass_eq {κ ι' : Type} (c : Fin 2 × Fin K → ℚ)
     {D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² latticeCoord) κ}
-    (hD : D.toClass =
-      ((latticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
+    (hD : D.toClass = ((RankTwoLatticeChange.latticeLineInput det_generators_pos K).diagram h
+      c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
     {E : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := ℚ) ℕ² halfLatticeCoord) ι'}
-    (hE : E.toClass =
-      ((halfLatticeLineInput K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
-    {θ v : ℝ × ℝ} (hθ : D.IsGenericPoint (diagonalLine h) θ)
+    (hE : E.toClass = ((RankTwoLatticeChange.sublatticeLineInput (1, 0) (1, 2) K).diagram h
+      c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
+    {θ v : ℝ × ℝ} (hθ : D.IsGenericPoint (RankTwoLatticeChange.line h (1, 1)) θ)
     (hv : h.realCharacter diagonalNormal v < 0) (a : ℚ)
     (hg : D.germLabel θ v hθ.isRegular = ℕ².completedBCHExp _
       (completedTropicalTangentField ℕ² latticeCoord ((Int.castAddHom ℚ).comp diagonalNormal)
         ((F latticeCoord).completedLog (squaredDiagonalFunction a))))
     {t : ℝ} (ht : 0 < t)
-    (htθ : E.IsGenericPoint ((diagonalLine h).map
+    (htθ : E.IsGenericPoint ((RankTwoLatticeChange.line h (1, 1)).map
       (primitiveLatticeChangePushforward ℚ h).spatialMap.toAffineEquiv.toAffineMap)
       (t • (primitiveLatticeChangePushforward ℚ h).spatialMap θ)) :
     E.germLabel (t • (primitiveLatticeChangePushforward ℚ h).spatialMap θ)
@@ -763,19 +238,17 @@ theorem diagonal_germLabel_smul_of_toClass_eq {κ ι' : Type} (c : Fin 2 × Fin 
   /- The pushforward of `D` represents the class over `½M₀` and is generic at `S θ`, where its
   germ label is the target label. The germ label of the class over `½M₀` is constant along the
   open ray through `S θ`. -/
-  let P := primitiveLatticeChangePushforward ℚ h
-  have hθ' := hθ.pushforward P
-  have hv' : P.spatialMap.toAffineEquiv.linear v ∉
-      ((diagonalLine h).map P.spatialMap.toAffineEquiv.toAffineMap).direction := by
-    rw [AffineSubspace.map_direction, AffineEquiv.linear_toAffineMap, Submodule.mem_map_equiv,
-      LinearEquiv.symm_apply_apply, diagonalLine, Submodule.toAffineSubspace_direction,
-      LinearMap.mem_ker]
-    exact hv.ne
-  rw [germLabel_smul_eq_of_toClass_eq_scat _ (lineInput_diagram_wall_support ℚ h _ _ _ _ _ c)
-      (latticeLineInput_toClass_pushforward ℚ h c hD) hE (zero_mem_map_diagonalLine h)
-      (finrank_map_diagonalLine_direction h) ht hθ' htθ hv']
-  exact diagonal_germLabel_of_toClass_eq h c hD (latticeLineInput_toClass_pushforward ℚ h c hD)
-    hθ hθ' hv a hg
+  have hD' := RankTwoLatticeChange.toClass_pushforward ℚ h det_generators_pos
+    (RankTwoLatticeChange.normalScalar_pos det_generators_pos)
+    (RankTwoLatticeChange.normalMap_apply_change det_generators_pos)
+    (RankTwoLatticeChange.normalMap_lineNormal det_generators_pos) c hD
+  have hθ' := hθ.pushforward (primitiveLatticeChangePushforward ℚ h)
+  rw [germLabel_smul_eq_of_toClass_eq_scat _
+      (RankTwoLatticeChange.lineInput_diagram_wall_support _ _ _ _ _ ℚ h c) hD' hE
+      (RankTwoLatticeChange.zero_mem_map_line _ _ _)
+      (RankTwoLatticeChange.finrank_direction_map_line _ _ _ (m := (1, 1)) (by simp)) ht hθ' htθ
+      (RankTwoLatticeChange.linear_notMem_direction_map_line _ _ _ hv.ne)]
+  exact diagonal_germLabel_of_toClass_eq h c hD hD' hθ hθ' hv a hg
 
 end GermLabel
 

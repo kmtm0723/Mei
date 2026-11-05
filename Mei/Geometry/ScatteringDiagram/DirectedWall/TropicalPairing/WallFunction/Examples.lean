@@ -9,7 +9,7 @@ public import Mei.Algebra.PositiveDegrees.Basis
 public import Mei.Geometry.ScatteringDiagram.DirectedWall.Hyperplane
 public import Mei.Geometry.ScatteringDiagram.DirectedWall.TropicalPairing.WallFunction
 public import Mei.Geometry.ScatteringDiagram.WallSpace.Logarithmic.RayFactor
-public import Mathlib.GroupTheory.IndexNSmul
+public import Mei.LinearAlgebra.Determinant.LatticeChange
 
 /-!
 # The lattice change for `m₁ = (1, 0)` and `m₂ = (1, 2)`
@@ -19,7 +19,8 @@ and let `m° = m₁ + m₂ = (2, 2) = 2 • (1, 1)`, so `r = 2`. The coefficient
 exponents `(a, b) ∈ ℕ²` of `x^{a m₁ + b m₂}`. In `M` they have coordinates
 `latticeCoord (a, b) = (a + b, 2b)`; in `ℓ⁻¹M₀ = ½M₀`, with basis `½m₁, ½m₂`, they have
 coordinates `halfLatticeCoord (a, b) = (2a, 2b)`. The inclusion `M ⊆ ½M₀` is
-`latticeChange (x, y) = (2x - y, y)`, of index two, and the degree map is the identity.
+`latticeChange (x, y) = (2x - y, y)`, of index two, and the degree map is the identity. These are
+the coordinates `Mei.RankTwoLatticeChange.coord`, `sublatticeCoord` and `change` of this lattice.
 
 The normal map `μ ↦ μ ∘ latticeCoord` satisfies `ν μ ∘ latticeChange = 2 • μ`, which gives the
 finite-index pushforward `latticeChangePushforward`. It keeps the normal `n°(x, y) = x - y`
@@ -52,53 +53,42 @@ open LogarithmicVectorField TauCeti.Toric
 /-- The positive quadrant `ℕ²` of `ℤ²`, with coordinate-sum degree. -/
 local notation "ℕ²" => Module.Basis.positiveDegrees (Module.Basis.finTwoProd ℤ)
 
-/-- The coordinates `(a + b, 2b)` in `M = ℤ²` of `a m₁ + b m₂`. -/
-def latticeCoord : ℤ × ℤ →+ ℤ × ℤ :=
-  (AddMonoidHom.fst ℤ ℤ + AddMonoidHom.snd ℤ ℤ).prod ((2 : ℤ) • AddMonoidHom.snd ℤ ℤ)
+/-- The coordinates `(a + b, 2b)` in `M = ℤ²` of `a m₁ + b m₂`: the coordinates
+`RankTwoLatticeChange.coord` of `M` for `m₁ = (1, 0)` and `m₂ = (1, 2)`. -/
+abbrev latticeCoord : ℤ × ℤ →+ ℤ × ℤ := RankTwoLatticeChange.coord (1, 0) (1, 2)
 
-@[simp]
 theorem latticeCoord_apply (x : ℤ × ℤ) : latticeCoord x = (x.1 + x.2, 2 * x.2) := by
-  simp [latticeCoord]
+  simp [mul_comm]
 
-/-- The coordinates `(2a, 2b)` of `a m₁ + b m₂` in `½M₀`, with basis `½m₁, ½m₂`. -/
-def halfLatticeCoord : ℤ × ℤ →+ ℤ × ℤ :=
-  ((2 : ℤ) • AddMonoidHom.fst ℤ ℤ).prod ((2 : ℤ) • AddMonoidHom.snd ℤ ℤ)
+/-- The coordinates `(2a, 2b)` of `a m₁ + b m₂` in `½M₀`, with basis `½m₁, ½m₂`: the
+coordinates `RankTwoLatticeChange.sublatticeCoord` for `m₁ = (1, 0)` and `m₂ = (1, 2)`. -/
+abbrev halfLatticeCoord : ℤ × ℤ →+ ℤ × ℤ := RankTwoLatticeChange.sublatticeCoord (1, 0) (1, 2)
 
-@[simp]
 theorem halfLatticeCoord_apply (x : ℤ × ℤ) : halfLatticeCoord x = (2 * x.1, 2 * x.2) := by
-  simp [halfLatticeCoord]
+  simp [Prod.smul_def]
 
-/-- The inclusion `M ⊆ ½M₀` in coordinates: `(x, y) ↦ (2x - y, y)`. -/
-def latticeChange : ℤ × ℤ →+ ℤ × ℤ :=
-  ((2 : ℤ) • AddMonoidHom.fst ℤ ℤ - AddMonoidHom.snd ℤ ℤ).prod (AddMonoidHom.snd ℤ ℤ)
+/-- The inclusion `M ⊆ ½M₀` in coordinates, `(x, y) ↦ (2x - y, y)`: the map
+`RankTwoLatticeChange.change` for `m₁ = (1, 0)` and `m₂ = (1, 2)`. -/
+abbrev latticeChange : ℤ × ℤ →+ ℤ × ℤ := RankTwoLatticeChange.change (1, 0) (1, 2)
 
-@[simp]
 theorem latticeChange_apply (x : ℤ × ℤ) : latticeChange x = (2 * x.1 - x.2, x.2) := by
-  simp [latticeChange]
+  simp [mul_comm]
 
-theorem latticeChange_injective : Function.Injective latticeChange := by
-  rintro ⟨a, b⟩ ⟨c, e⟩ h
-  simp only [latticeChange_apply, Prod.mk.injEq] at h
-  simp only [Prod.mk.injEq]
-  omega
+/-- The determinant `det(m₁, m₂) = 2` of the generators is positive. -/
+theorem det_generators_pos : 0 < Prod.det ((1, 0) : ℤ × ℤ) (1, 2) := by
+  norm_num [Prod.det_apply]
+
+theorem latticeChange_injective : Function.Injective latticeChange :=
+  RankTwoLatticeChange.change_injective det_generators_pos.ne'
 
 /-- The image of `M` in `½M₀` contains `2 • ½M₀`, so it has finite index. -/
-instance : latticeChange.range.FiniteIndex := by
-  have : (nsmulAddMonoidHom (α := ℤ × ℤ) 2).range.FiniteIndex :=
-    ⟨by rw [AddSubgroup.index_range_nsmul]; norm_num⟩
-  refine AddSubgroup.finiteIndex_of_le (H := (nsmulAddMonoidHom (α := ℤ × ℤ) 2).range) ?_
-  rintro _ ⟨x, rfl⟩
-  refine ⟨(x.1 + x.2, 2 * x.2), ?_⟩
-  simp only [Prod.ext_iff, latticeChange_apply, nsmulAddMonoidHom_apply, two_nsmul,
-    Prod.fst_add, Prod.snd_add]
-  omega
+instance : latticeChange.range.FiniteIndex :=
+  RankTwoLatticeChange.finiteIndex_range_change det_generators_pos
 
 /-- The two coordinate maps are compatible with the inclusion `M ⊆ ½M₀`. -/
 theorem halfLatticeCoord_eq_latticeChange (n : ℤ × ℤ) (_ : n ∈ ℕ².monoid) :
     halfLatticeCoord (PositiveDegreeMap.id ℕ² n) = latticeChange (latticeCoord n) := by
-  simp only [Prod.ext_iff, PositiveDegreeMap.id_apply, halfLatticeCoord_apply,
-    latticeChange_apply, latticeCoord_apply, and_true]
-  omega
+  rw [PositiveDegreeMap.id_apply, RankTwoLatticeChange.sublatticeCoord_eq_change_coord]
 
 /-- The normal map `μ ↦ μ ∘ latticeCoord`, where `latticeCoord ∘ latticeChange = 2`. -/
 def latticeChangeNormal (μ : ℤ × ℤ →+ ℤ) : ℤ × ℤ →+ ℤ := μ.comp latticeCoord
@@ -106,7 +96,7 @@ def latticeChangeNormal (μ : ℤ × ℤ →+ ℤ) : ℤ × ℤ →+ ℤ := μ.c
 @[simp]
 theorem latticeChangeNormal_apply (μ : ℤ × ℤ →+ ℤ) (x : ℤ × ℤ) :
     latticeChangeNormal μ x = μ (x.1 + x.2, 2 * x.2) := by
-  simp [latticeChangeNormal]
+  rw [latticeChangeNormal, AddMonoidHom.comp_apply, latticeCoord_apply]
 
 /-- The normal map pulls back along `latticeChange` to twice the original normal. -/
 theorem latticeChangeNormal_apply_latticeChange (μ : ℤ × ℤ →+ ℤ) (x : ℤ × ℤ) :
@@ -117,12 +107,12 @@ theorem latticeChangeNormal_apply_latticeChange (μ : ℤ × ℤ →+ ℤ) (x : 
   rw [latticeChangeNormal_apply, latticeChange_apply, hx, map_zsmul, smul_eq_mul, Int.cast_mul,
     Int.cast_ofNat]
 
-/-- The normal `n°(x, y) = x - y` of the diagonal. -/
-def diagonalNormal : ℤ × ℤ →+ ℤ := AddMonoidHom.fst ℤ ℤ - AddMonoidHom.snd ℤ ℤ
+/-- The normal `n°(x, y) = x - y` of the diagonal: the normal `RankTwoLatticeChange.normal` of
+the line `ℝ(1, 1)`. -/
+abbrev diagonalNormal : ℤ × ℤ →+ ℤ := RankTwoLatticeChange.normal (1, 1)
 
-@[simp]
 theorem diagonalNormal_apply (x : ℤ × ℤ) : diagonalNormal x = x.1 - x.2 := by
-  simp [diagonalNormal]
+  simp
 
 /-- The normal of the diagonal is kept: `n°` is primitive both in the dual of `M` and in the
 dual of `½M₀`, and `n° ∘ latticeChange = 2 • n°` with `r = 2`. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
@@ -16,7 +17,10 @@ import Mathlib.Tactic.Linarith
 
 `Prod.det` is the alternating bilinear form `x₁ y₂ - x₂ y₁` on `R × R`.
 Over a linearly ordered field, `Prod.det_trans` expresses transitivity of its sign relative
-to a scalar for vectors in the open half-plane `x₁ + x₂ < 0`.
+to a scalar for vectors in the open half-plane `x₁ + x₂ < 0`. Over `ℤ`, the vectors `x` with
+`det x (p, q) = 0` for coprime `p, q` are the integral multiples of `(p, q)`
+(`Prod.exists_eq_zsmul_of_det_eq_zero`), and an additive map on `ℤ × ℤ` is determined by its
+values on the coordinate vectors (`AddMonoidHom.apply_eq_fst_mul_add_snd_mul`).
 -/
 
 public section
@@ -52,4 +56,25 @@ theorem det_trans {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
   rw [mul_div_assoc', eq_div_iff hy.ne]
   linear_combination (z.1 + z.2) * hxy + (x.1 + x.2) * hyz
 
+/-- If `p` and `q` are coprime integers, the integral vectors `x` with `det x (p, q) = 0` are the
+integral multiples of `(p, q)`. -/
+theorem exists_eq_zsmul_of_det_eq_zero {p q : ℤ} (hpq : IsCoprime p q) {x : ℤ × ℤ}
+    (hx : det x (p, q) = 0) : ∃ k : ℤ, x = k • (p, q) := by
+  obtain ⟨u, v, huv⟩ := hpq
+  rw [det_apply] at hx
+  dsimp only at hx
+  refine ⟨u * x.1 + v * x.2, Prod.ext ?_ ?_⟩
+  · simp only [Prod.smul_fst, smul_eq_mul]
+    linear_combination (-1 : ℤ) * x.1 * huv + v * hx
+  · simp only [Prod.smul_snd, smul_eq_mul]
+    linear_combination (-1 : ℤ) * x.2 * huv - u * hx
+
 end Prod
+
+/-- An additive map `ℤ × ℤ → ℤ` is determined by its values on the coordinate vectors. -/
+theorem AddMonoidHom.apply_eq_fst_mul_add_snd_mul (μ : ℤ × ℤ →+ ℤ) (x : ℤ × ℤ) :
+    μ x = x.1 * μ (1, 0) + x.2 * μ (0, 1) := by
+  have hx : x = x.1 • ((1, 0) : ℤ × ℤ) + x.2 • ((0, 1) : ℤ × ℤ) := by
+    ext <;> simp
+  conv_lhs => rw [hx]
+  rw [map_add, map_zsmul, map_zsmul, smul_eq_mul, smul_eq_mul]
