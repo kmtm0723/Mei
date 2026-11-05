@@ -57,42 +57,17 @@ private local instance : Mul G := ⟨(inferInstance : Ring G).mul⟩
 private local instance : Algebra R G := inferInstance
 private local instance : Module R G := inferInstance
 
-omit [DecidableEq Γ] in
-private theorem conjugation_zero (a : (F).completion) : τ 0 a = a := by
-  apply (F).completion_ext
-  intro k
-  let b : positiveSubalgebra q β d.monoid := Quotient.out ((F).projection k a)
-  have hb : Ideal.Quotient.mk ((F).ideal (k + 1)) b = (F).projection k a :=
-    Ideal.Quotient.mk_out _
-  have hf : positiveMonomialRightConjSkew q β d.monoid 0 b = b := by
-    apply Subtype.ext
-    simp only [coe_positiveMonomialRightConjSkew, monomialRightConjSkew_apply,
-      coe_monomialUnit_inv, map_zero, zpow_zero, Units.val_one,
-      one_smul, neg_zero, monomial_zero, one_mul, mul_one]
-  have h := projection_completedMonomialRightConjSkew q β d.monoid d.degree
-    (fun _ h => d.degree_nonneg h) 0 k a
-  simpa only [← hb, Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, hf] using h
-
 private theorem product_coordinates (p s : Γ) (v w : Multiset d.monoid)
     (hp : p - d.coefficientOrigin v ∈ d.monoid)
     (hs : s - d.coefficientOrigin w ∈ d.monoid) (a b : (F).completion) :
     d.toShiftedDirectLimitOfChart (grade q β) p v hp (positiveCompletionShiftEquiv q β d p a) *
         d.toShiftedDirectLimitOfChart (grade q β) s w hs (positiveCompletionShiftEquiv q β d s b) =
       d.toShiftedDirectLimitOfChart (grade q β) (p + s) (v + w)
-        (by
-          rw [d.coefficientOrigin_add]
-          have he : p + s - (d.coefficientOrigin v + d.coefficientOrigin w) =
-              (p - d.coefficientOrigin v) + (s - d.coefficientOrigin w) := by abel
-          rw [he]
-          exact d.monoid.add_mem hp hs)
+        (d.add_sub_coefficientOrigin_mem hp hs)
         (positiveCompletionShiftEquiv q β d (p + s)
           (((q ^ β p s : Rˣ) : R) • (τ s a * b))) := by
-  have hsum : p + s - d.coefficientOrigin (v + w) ∈ d.monoid := by
-    rw [d.coefficientOrigin_add]
-    have he : p + s - (d.coefficientOrigin v + d.coefficientOrigin w) =
-        (p - d.coefficientOrigin v) + (s - d.coefficientOrigin w) := by abel
-    rw [he]
-    exact d.monoid.add_mem hp hs
+  have hsum : p + s - d.coefficientOrigin (v + w) ∈ d.monoid :=
+    d.add_sub_coefficientOrigin_mem hp hs
   let E := d.toShiftedDirectLimitOfChart (grade q β) (p + s) (v + w) hsum
   have h1 := d.shiftedDirectLimitMul_eq_mul (grade q β)
     (d.toShiftedDirectLimitOfChart (grade q β) p v hp (positiveCompletionShiftEquiv q β d p a))
@@ -144,7 +119,7 @@ theorem chart_mul_positiveCompletionToDirectLimit (p : Γ) (s : Multiset d.monoi
     _ = d.toShiftedDirectLimitOfChart (grade q β) (p + 0) (s + 0)
         (by simpa only [add_zero] using hp)
         (positiveCompletionShiftEquiv q β d (p + 0) (a * b)) := by
-      simpa only [map_zero, zpow_zero, Units.val_one, one_smul, conjugation_zero,
+      simpa only [map_zero, zpow_zero, Units.val_one, one_smul, completedMonomialRightConjSkew_zero,
         ← positiveCompletionToDirectLimit_apply] using h
     _ = _ := chart_coordinates_congr q β d (p + 0) p (s + 0) s
       (add_zero p) (add_zero s) _ hp _

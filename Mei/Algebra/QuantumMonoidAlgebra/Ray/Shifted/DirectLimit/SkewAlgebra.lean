@@ -48,7 +48,7 @@ private theorem chart_mul_eq (s t : Multiset d.monoid)
     d.toShiftedDirectLimit (grade q β) s x * d.toShiftedDirectLimit (grade q β) t y =
       d.toShiftedDirectLimitOfChart (grade q β)
         (d.coefficientOrigin s + d.coefficientOrigin t) (s + t)
-        (by rw [d.coefficientOrigin_add]; simp)
+        (d.add_sub_coefficientOrigin_mem (by simp) (by simp))
         (d.shiftedCompletionMul (grade q β) (d.coefficientOrigin s) (d.coefficientOrigin t)
           x y) :=
   (d.shiftedDirectLimitMul_eq_mul (grade q β) _ _).symm.trans
@@ -65,9 +65,9 @@ private theorem rayDirectLimitAction_map_mul_charts (H : (PowerSeries R)ˣ)
         directLimitRayAction q β d n hn H (d.toShiftedDirectLimit (grade q β) t b) := by
   let p := d.coefficientOrigin s
   let r := d.coefficientOrigin t
-  have hp : p + r - d.coefficientOrigin (s + t) ∈ d.monoid := by
-    rw [d.coefficientOrigin_add]
-    simp only [p, r, sub_self, zero_mem]
+  have hp : p + r - d.coefficientOrigin (s + t) ∈ d.monoid :=
+    d.add_sub_coefficientOrigin_mem (by simp only [p, sub_self, zero_mem])
+      (by simp only [r, sub_self, zero_mem])
   let E := d.toShiftedDirectLimitOfChart (grade q β) (p + r) (s + t) hp
   have hprod := chart_mul_eq q β d s t a b
   have hact := directLimitRayAction_toShiftedDirectLimitOfChart q β d n hn H
