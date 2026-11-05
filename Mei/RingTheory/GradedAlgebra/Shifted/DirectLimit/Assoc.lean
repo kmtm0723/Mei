@@ -22,17 +22,6 @@ variable {Γ R A : Type*} [AddCommGroup Γ] [CommRing R] [Ring A] [Algebra R A]
   [DecidableEq Γ] (d : PositiveDegrees Γ) (𝒜 : Γ → Submodule R A)
   [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜]
 
-omit [SetLike.GradedMul 𝒜] in
-private theorem toShiftedDirectLimitOfChart_cast (p q : Γ) (h : p = q)
-    (s t : Multiset d.monoid)
-    (hp : p - d.coefficientOrigin s ∈ d.monoid)
-    (hq : q - d.coefficientOrigin t ∈ d.monoid) (x : d.ShiftedCoefficients 𝒜 p) :
-    d.toShiftedDirectLimitOfChart 𝒜 q t hq (cast (congrArg (d.ShiftedCoefficients 𝒜) h) x) =
-      d.toShiftedDirectLimitOfChart 𝒜 p s hp x := by
-  cases h
-  simpa only [cast_eq, shiftedCompletedInclusion_refl] using
-    d.toShiftedDirectLimitOfChart_inclusion 𝒜 p p (by simp) s t hp hq x
-
 /-- Multiplication of global coefficients is associative. -/
 theorem shiftedDirectLimitMul_assoc (x y z : d.ShiftedDirectLimit 𝒜) :
     d.shiftedDirectLimitMul 𝒜 (d.shiftedDirectLimitMul 𝒜 x y) z =
