@@ -18,7 +18,8 @@ crossing time the signed labels therefore have an unordered product, including
 all coincident indexed walls. Multiplying these event products in reverse time
 order gives the segment transport; concatenating segments gives polygonal
 transport. The first crossing is rightmost and a positive normal velocity gives
-the inverse label. Reversal inverts transport, and group homomorphisms preserve it.
+the inverse label. Reversal inverts transport, group homomorphisms preserve it, and it lies
+in every subgroup containing the labels.
 
 This evaluates `WallComplement.signedCrossingEvent` using Mathlib's
 `Finset.noncommProd`, rather than choosing an enumeration of simultaneous walls.
@@ -431,5 +432,13 @@ theorem map_wallPathProduct (f : G →* K) (p : AdmissiblePLPath x y) :
   induction p with
   | nil => simp
   | cons p e ih => simp [map_segmentPathProduct, ih]
+
+/-- Polygonal transport lies in every subgroup containing all labels. -/
+theorem wallPathProduct_mem {S : Subgroup G} (hS : ∀ i, label i ∈ S) (p : AdmissiblePLPath x y) :
+    p.wallPathProduct ν label hcomm ∈ S := by
+  rw [wallPathProduct_eq_prod_flatMap]
+  refine S.list_prod_mem fun g hg => ?_
+  obtain ⟨a, -, rfl⟩ := List.mem_map.mp hg
+  exact zpow_mem (hS a.1) _
 
 end Quiver.Path

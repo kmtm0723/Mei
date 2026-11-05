@@ -9,6 +9,7 @@ public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Restriction
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Refinement
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Germ
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Map.Basic
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.LocalProduct
 
 /-!
 # Adjoining directed wall families
@@ -32,6 +33,14 @@ presentation be replaced while retaining a fixed correction family.
 Adjoining the families in either order gives equivalent diagrams, so equivalent
 replacements of both families give equivalent unions. Mapping coefficients commutes
 with adjoining wall families.
+
+If two families are consistent and every label of one commutes with every label of the
+other, their union is consistent, at each order and at all orders
+(`DirectedDiagram.LevelConsistent.append`, `DirectedDiagram.Consistent.append`); the walls
+of the two families may cross. Every diagram is equivalent to the union of its restrictions
+to a set of indices and to its complement (`DirectedDiagram.equivalent_append_restrict_compl`),
+so a diagram is consistent when these two restrictions are consistent and have commuting
+labels (`DirectedDiagram.consistent_of_restrict_of_restrict_compl`).
 
 The comparison uses `DirectedDiagram.levelEquivalent_restrict` to discard
 invisible walls and `DirectedDiagram.Refinement.ofEquiv` to identify the retained
@@ -268,6 +277,89 @@ theorem Equivalent.append_congr {ι' κ' : Type*}
     (hD : D.Equivalent D') (hE : E.Equivalent E') : (D.append E).Equivalent (D'.append E') :=
   (equivalent_iff _ _).mpr fun k =>
     ((equivalent_iff _ _).mp hD k).append_congr ((equivalent_iff _ _).mp hE k)
+
+section Commuting
+
+variable (D E) in
+/-- A point lies off the walls of the union active at order `k` exactly when it lies off the
+active walls of both families. -/
+theorem forall_notMem_append_iff (k : ℕ) (y : V) :
+    (∀ j : (D.append E).active k, y ∉ ((D.append E).wall j).support) ↔
+      (∀ j : D.active k, y ∉ (D.wall j).support) ∧
+        ∀ j : E.active k, y ∉ (E.wall j).support := by
+  refine ⟨fun hy => ⟨fun j => hy ⟨.inl j.val, by
+    simpa only [mem_active, append_wall_inl] using j.property⟩, fun j => hy ⟨.inr j.val, by
+    simpa only [mem_active, append_wall_inr] using j.property⟩⟩, ?_⟩
+  rintro ⟨hD, hE⟩ ⟨j | j, hj⟩
+  · exact hD ⟨j, by simpa only [mem_active, append_wall_inl] using hj⟩
+  · exact hE ⟨j, by simpa only [mem_active, append_wall_inr] using hj⟩
+
+/-- **Commuting families.** If `D` and `E` are consistent at order `k` and every projected label
+of `D` commutes with every projected label of `E` at that order, then the union `D.append E` is
+consistent at order `k`. The walls of the two families may cross, overlap or coincide.
+
+The pointwise product of the two transport functions `D.levelTransportFun` and
+`E.levelTransportFun`, whose values commute, satisfies the local criterion
+`levelConsistent_of_local`. -/
+theorem LevelConsistent.append {k : ℕ} (hD : D.LevelConsistent k) (hE : E.LevelConsistent k)
+    (hDE : ∀ a b, Commute (CompletedGroup.projection k (D.wall a).label)
+      (CompletedGroup.projection k (E.wall b).label)) :
+    (D.append E).LevelConsistent k := by
+  refine ((D.append E).levelConsistent_iff_loops k).mpr fun x p => ?_
+  obtain ⟨hxD, hxE⟩ := (D.forall_notMem_append_iff E k x.val).mp x.notMem
+  let xD : WallComplement (fun j : D.active k => (D.wall j).support) := ⟨x.val, hxD⟩
+  let xE : WallComplement (fun j : E.active k => (E.wall j).support) := ⟨x.val, hxE⟩
+  have hcomm := D.commute_levelTransportFun hD xD hE xE hDE
+  refine ((D.append E).levelPathProduct_eq_mul_inv_of_local k
+    (F := fun y => D.levelTransportFun hD xD y * E.levelTransportFun hE xE y)
+    (fun θ hθ => ?_) (fun θ hθ v hv => ?_) p).trans (mul_inv_cancel _)
+  · obtain ⟨hθD, hθE⟩ := (D.forall_notMem_append_iff E k θ).mp hθ
+    filter_upwards [D.eventually_levelTransportFun_eq hD xD hθD,
+      E.eventually_levelTransportFun_eq hE xE hθE] with φ hφD hφE
+    rw [hφD, hφE]
+  · have hvD : ∀ j : D.active k, θ ∈ (D.wall j).support →
+        h.realCharacter (D.wall j).normal v ≠ 0 := fun j hj =>
+      hv ⟨.inl j.val, by simpa only [mem_active, append_wall_inl] using j.property⟩ hj
+    have hvE : ∀ j : E.active k, θ ∈ (E.wall j).support →
+        h.realCharacter (E.wall j).normal v ≠ 0 := fun j hj =>
+      hv ⟨.inr j.val, by simpa only [mem_active, append_wall_inr] using j.property⟩ hj
+    filter_upwards [D.eventually_levelTransportFun_mul_inv_eq hD xD
+        (fun hs => hθ (D.singularSupport_append_left_subset E k hs)) v hvD,
+      E.eventually_levelTransportFun_mul_inv_eq hE xE
+        (fun hs => hθ (D.singularSupport_append_right_subset E k hs)) v hvE] with s hsD hsE
+    rw [combinedLabel_append, ← hsD, ← hsE, mul_inv_rev, mul_assoc, mul_assoc]
+    exact congrArg _ ((mul_assoc _ _ _).symm.trans
+      ((hcomm _ _).inv_left.mul_right (hcomm _ _).inv_inv).eq.symm)
+
+/-- **Commuting families.** If `D` and `E` are consistent and every label of `D` commutes with
+every label of `E`, then the union `D.append E` is consistent. The walls of the two families may
+cross, overlap or coincide. -/
+theorem Consistent.append (hD : D.Consistent) (hE : E.Consistent)
+    (hDE : ∀ a b, Commute (D.wall a).label (E.wall b).label) : (D.append E).Consistent :=
+  (consistent_iff _).mpr fun k => ((consistent_iff _).mp hD k).append ((consistent_iff _).mp hE k)
+    fun a b => (hDE a b).map (CompletedGroup.projection k)
+
+variable (D) in
+/-- A diagram is equivalent to the union of its restrictions to a set of indices and to the
+complement. -/
+theorem equivalent_append_restrict_compl (s : Set ι) :
+    D.Equivalent ((D.restrict s).append (D.restrict sᶜ)) := by
+  classical
+  exact (Refinement.ofEquiv (Equiv.Set.sumCompl s) fun j => by
+    rcases j with j | j <;> simp).equivalent
+
+/-- **Commuting families.** Let `s` be a set of indices. If the restrictions of `D` to `s` and
+to its complement are consistent and every label of a wall in `s` commutes with every label of a
+wall outside `s`, then `D` is consistent. -/
+theorem consistent_of_restrict_of_restrict_compl {s : Set ι} (hs : (D.restrict s).Consistent)
+    (hsc : (D.restrict sᶜ).Consistent)
+    (hcomm : ∀ a ∈ s, ∀ b ∉ s, Commute (D.wall a).label (D.wall b).label) : D.Consistent :=
+  (D.equivalent_append_restrict_compl s).consistent_iff.mpr
+    (hs.append hsc fun a b => by
+      rw [restrict_wall, restrict_wall]
+      exact hcomm a.val a.property b.val b.property)
+
+end Commuting
 
 section Map
 

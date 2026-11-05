@@ -69,6 +69,13 @@ theorem levelChamber_surjective (k : ℕ) :
   obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe C
   exact ⟨⟨x.val, x.property⟩, rfl⟩
 
+/-- The complement of the walls active at order `k` is open. -/
+theorem isOpen_setOf_forall_notMem_support (k : ℕ) :
+    IsOpen {z : V | ∀ j : D.active k, z ∉ (D.wall j).support} := by
+  simpa only [ofPred_forall, compl_def] using
+    isOpen_iInter_of_finite
+      (fun j : D.active k => (D.wall j).isConvexPolyhedron.isClosed.isOpen_compl)
+
 /-- Consistent endpoint transport is locally constant on the active-wall complement. -/
 theorem isLocallyConstant_levelTransport {k : ℕ} (hD : D.LevelConsistent k)
     (x : WallComplement (fun j : D.active k => (D.wall j).support)) :
@@ -76,11 +83,8 @@ theorem isLocallyConstant_levelTransport {k : ℕ} (hD : D.LevelConsistent k)
       D.levelTransport k hD x ⟨y.val, y.property⟩) := by
   apply (IsLocallyConstant.iff_exists_open _).mpr
   intro y
-  have hopen : IsOpen {z : V | ∀ j : D.active k, z ∉ (D.wall j).support} := by
-    simpa only [ofPred_forall, compl_def] using
-      isOpen_iInter_of_finite
-        (fun j : D.active k => (D.wall j).isConvexPolyhedron.isClosed.isOpen_compl)
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp hopen y.val y.property
+  obtain ⟨r, hr, hball⟩ :=
+    Metric.isOpen_iff.mp (D.isOpen_setOf_forall_notMem_support k) y.val y.property
   refine ⟨Subtype.val ⁻¹' Metric.ball y.val r,
     Metric.isOpen_ball.preimage continuous_subtype_val, by simpa, ?_⟩
   intro z hz

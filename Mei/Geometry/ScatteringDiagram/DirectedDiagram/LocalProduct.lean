@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.LocalCrossing
-public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Consistency
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Chamber
 public import Mei.Geometry.Convex.Polyhedron.Path.Subdivision
 
 /-!
@@ -23,6 +23,13 @@ This is the directed analogue of the local criterion for finite wall diagrams
 (`FiniteWallDiagram.consistent_of_local`). Coincident and repeated
 supports are allowed: the germ condition concerns the combined label of all active walls
 through `θ`.
+
+Conversely, the transport from a base point of a diagram consistent at order `k`, extended by
+`1` to the active supports (`DirectedDiagram.levelTransportFun`), is such a function
+(`DirectedDiagram.eventually_levelTransportFun_eq` and
+`DirectedDiagram.eventually_levelTransportFun_mul_inv_eq`). Its values lie in every subgroup
+containing the active projected labels, so the transports of two diagrams whose labels commute
+commute (`DirectedDiagram.commute_levelTransportFun`).
 -/
 
 public section
@@ -130,5 +137,93 @@ theorem levelConsistent_of_local
     D.LevelConsistent k :=
   (D.levelConsistent_iff_loops k).mpr fun _ p => by
     rw [D.levelPathProduct_eq_mul_inv_of_local k hF hcross p, mul_inv_cancel]
+
+section Transport
+
+variable {k} (hD : D.LevelConsistent k)
+  (x : WallComplement (fun j : D.active k => (D.wall j).support))
+
+open scoped Classical in
+/-- The order-`k` transport from `x` of a diagram consistent at order `k`, as a function on the
+ambient space: `levelTransport k hD x y` at a point `y` off the active walls, and `1` on the
+active walls. -/
+def levelTransportFun (y : V) : d.truncatedGroup ℒ k :=
+  if hy : ∀ j : D.active k, y ∉ (D.wall j).support then D.levelTransport k hD x ⟨y, hy⟩ else 1
+
+/-- Off the active walls, the transport function is the endpoint transport. -/
+theorem levelTransportFun_of_notMem {y : V} (hy : ∀ j : D.active k, y ∉ (D.wall j).support) :
+    D.levelTransportFun hD x y = D.levelTransport k hD x ⟨y, hy⟩ := by
+  classical
+  rw [levelTransportFun]
+  exact dite_eq_left hy
+
+/-- At an allowed endpoint, the transport function is the endpoint transport. -/
+theorem levelTransportFun_val (y : WallComplement (fun j : D.active k => (D.wall j).support)) :
+    D.levelTransportFun hD x y.val = D.levelTransport k hD x y :=
+  D.levelTransportFun_of_notMem hD x y.notMem
+
+/-- The transport function takes values in every subgroup containing the projected labels of
+the walls active at order `k`. -/
+theorem levelTransportFun_mem {S : Subgroup (d.truncatedGroup ℒ k)}
+    (hS : ∀ j : D.active k, CompletedGroup.projection k (D.wall j).label ∈ S) (y : V) :
+    D.levelTransportFun hD x y ∈ S := by
+  by_cases hy : ∀ j : D.active k, y ∉ (D.wall j).support
+  · obtain ⟨p⟩ := D.exists_level_path k x ⟨y, hy⟩
+    rw [D.levelTransportFun_of_notMem hD x hy, D.levelTransport_eq_levelPathProduct hD p]
+    exact D.levelPathProduct_mem k hS p
+  · classical
+    rw [levelTransportFun, dite_eq_right hy]
+    exact S.one_mem
+
+/-- Off the active walls, the transport function is locally constant. -/
+theorem eventually_levelTransportFun_eq {θ : V} (hθ : ∀ j : D.active k, θ ∉ (D.wall j).support) :
+    ∀ᶠ φ in 𝓝 θ, D.levelTransportFun hD x φ = D.levelTransportFun hD x θ := by
+  have hopen := D.isOpen_setOf_forall_notMem_support k
+  have hlc : ∀ᶠ φ in 𝓝[{z : V | ∀ j : D.active k, z ∉ (D.wall j).support}] θ,
+      ∀ hφ, D.levelTransport k hD x ⟨φ, hφ⟩ = D.levelTransport k hD x ⟨θ, hθ⟩ :=
+    (eventually_nhds_subtype_iff {z : V | ∀ j : D.active k, z ∉ (D.wall j).support} ⟨θ, hθ⟩
+      (fun φ => ∀ hφ, D.levelTransport k hD x ⟨φ, hφ⟩ = D.levelTransport k hD x ⟨θ, hθ⟩)).mp
+      (((D.isLocallyConstant_levelTransport hD x).eventually_eq ⟨θ, hθ⟩).mono
+        fun _ hy _ => hy)
+  rw [hopen.nhdsWithin_eq hθ] at hlc
+  filter_upwards [hlc, hopen.mem_nhds hθ] with φ hφ hφU
+  rw [D.levelTransportFun_of_notMem hD x hφU, D.levelTransportFun_of_notMem hD x hθ]
+  exact hφ hφU
+
+/-- At a point `θ` outside the singular support of the active walls and a velocity `v`
+transverse to the active walls through `θ`, the transport function changes by the combined
+label: `F (θ + s • v) * (F (θ - s • v))⁻¹` is the combined label for all small `s > 0`. -/
+theorem eventually_levelTransportFun_mul_inv_eq {θ : V}
+    (hθ : θ ∉ singularSupport (fun j : D.active k => (D.wall j).support)) (v : V)
+    (hv : ∀ j : D.active k, θ ∈ (D.wall j).support → h.realCharacter (D.wall j).normal v ≠ 0) :
+    ∀ᶠ s in 𝓝[>] (0 : ℝ), D.levelTransportFun hD x (θ + s • v) *
+      (D.levelTransportFun hD x (θ - s • v))⁻¹ = D.combinedLabel k θ v hθ := by
+  filter_upwards [D.eventually_exists_levelPathProduct_eq_combinedLabel k θ v hθ hv]
+    with s ⟨ym, yp, e, hm, hp, he⟩
+  rw [← hm, ← hp, D.levelTransportFun_val, D.levelTransportFun_val, ← he,
+    ← D.levelTransport_eq_levelPathProduct hD e.toPath, D.levelTransport_comp hD x ym yp,
+    mul_inv_cancel_right]
+
+/-- If every projected label of `D` commutes with every projected label of `E` at order `k`,
+the transport functions of `D` and `E` take commuting values. -/
+theorem commute_levelTransportFun {κ : Type*} {E : DirectedDiagram (d := d) h H κ}
+    (hE : E.LevelConsistent k) (x' : WallComplement (fun j : E.active k => (E.wall j).support))
+    (hDE : ∀ a b, Commute (CompletedGroup.projection k (D.wall a).label)
+      (CompletedGroup.projection k (E.wall b).label)) (y z : V) :
+    Commute (D.levelTransportFun hD x y) (E.levelTransportFun hE x' z) := by
+  have hy : D.levelTransportFun hD x y ∈
+      Subgroup.centralizer (Set.range fun b : E.active k =>
+        CompletedGroup.projection k (E.wall b).label) :=
+    D.levelTransportFun_mem hD x (fun a => Subgroup.mem_centralizer_iff.mpr <| by
+      rintro _ ⟨b, rfl⟩
+      exact (hDE a b).symm.eq) y
+  have hz : E.levelTransportFun hE x' z ∈
+      Subgroup.centralizer {D.levelTransportFun hD x y} :=
+    E.levelTransportFun_mem hE x' (fun b => Subgroup.mem_centralizer_iff.mpr <| by
+      rintro _ rfl
+      exact (Subgroup.mem_centralizer_iff.mp hy _ ⟨b, rfl⟩).symm) z
+  exact Subgroup.mem_centralizer_iff.mp hz _ rfl
+
+end Transport
 
 end Mei.DirectedDiagram

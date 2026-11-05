@@ -10,6 +10,7 @@ public import Mathlib.Algebra.MvPolynomial.Basic
 
 /-!
 # Positive adapted polynomial walls: forms vanishing on the unfrozen part, and type `A₂`
+with isolated indices
 
 Take `N = ℤ³` with the skew form `{x, y} = x₀ y₂ - x₂ y₀`, the unfrozen basis vectors `e₀, e₁`,
 the frozen basis vector `e₂` and multipliers one. The form is nonzero, since `{e₀, e₂} = 1`, but
@@ -29,7 +30,7 @@ coefficients `aᵢₛ` the adapted polynomial input has the initial wall functio
   functions `1 + q^{eᵢ}` have natural-number coefficients.
 
 For the unimodular rank-two datum `{e₁, e₂} = 1`, `N° = N`, with its standard adapted basis
-(`isTypeA₂_unimodularRankTwoAdaptedBasis`), the form does not vanish on `N_uf`:
+(`isTypeA₂WithIsolated_unimodularRankTwoAdaptedBasis`), the form does not vanish on `N_uf`:
 
 * `exists_isPositiveWallRepresentative_unimodularRankTwo`: over any commutative `ℚ`-algebra,
   the outgoing scattering class of the binomial input `(eᵢ⊥, 1 + q^{eᵢ})` is represented by the
@@ -43,10 +44,24 @@ For the unimodular rank-two datum `{e₁, e₂} = 1`, `N° = N`, with its standa
   (`coe_pentagonWallFunction_unimodularRankTwo_inr`) whose monomial coefficients lie in
   `ℕ[a₀, a₁]`.
 
+Take `N = ℤ³` with the skew form `{x, y} = x₀ y₁ - x₁ y₀`, every basis vector unfrozen and
+multipliers one (`isolatedDatum`). The form is degenerate on `N_uf = N`, with `e₂` in its radical,
+but does not vanish (`isolatedDatum_form_single_two`,
+`isolatedDatum_form_single_zero_single_one`); its standard basis is of type `A₂` at `0, 1` with
+the isolated index `2` (`isTypeA₂WithIsolated_isolatedBasis`).
+
+* `exists_isPositiveWallRepresentative_isolated`: for independent variables `a₀, a₁, a₂`, the
+  outgoing scattering class of the adapted polynomial input `(eᵢ⊥, 1 + aᵢ q^{eᵢ})` is represented
+  by the input walls and the one additional wall `{ν_{e₀} + ν_{e₁} = 0, ν_{e₀} ≥ 0}`, with grouped
+  wall functions `1 + aᵢ q^{eᵢ}` and `1 + a₀ a₁ q^{e₀ + e₁}` whose monomial coefficients lie in
+  `ℕ[a₀, a₁, a₂]`.
+* `coe_pentagonWallFunction_isolated_inl_isolatedThd`: the wall `e₂⊥`, which crosses all other
+  walls, keeps its input function `1 + a₂ z^{r(e₂)}`.
+
 The statements on `frozenDatum` are instances of
 `Mei.SkewLatticeDatum.AdaptedBasis.exists_isPositiveWallRepresentative_of_forall_form_eq_zero`,
-and those on the unimodular datum of
-`Mei.SkewLatticeDatum.AdaptedBasis.IsTypeA₂.exists_isPositiveWallRepresentative_scat`;
+and those on the unimodular datum and on `isolatedDatum` of
+`Mei.SkewLatticeDatum.AdaptedBasis.IsTypeA₂WithIsolated.exists_isPositiveWallRepresentative_scat`;
 see Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*, Theorem 1.13
 (arXiv:1411.1394v2).
 -/
@@ -215,17 +230,16 @@ abbrev unimodularRankTwoFst : unimodularRankTwoAdaptedBasis.unfrozenIndex := ⟨
 abbrev unimodularRankTwoSnd : unimodularRankTwoAdaptedBasis.unfrozenIndex := ⟨1, by simp⟩
 
 /-- The standard basis of the unimodular rank-two datum, with `{e₁, e₂} = 1` and `N° = N`, is of
-type `A₂` at its two indices. -/
-theorem isTypeA₂_unimodularRankTwoAdaptedBasis :
-    unimodularRankTwoAdaptedBasis.IsTypeA₂ unimodularRankTwoFst unimodularRankTwoSnd where
-  eq_or_eq i := by
+type `A₂` at its two indices, without isolated indices. -/
+theorem isTypeA₂WithIsolated_unimodularRankTwoAdaptedBasis :
+    unimodularRankTwoAdaptedBasis.IsTypeA₂WithIsolated unimodularRankTwoFst
+      unimodularRankTwoSnd where
+  form_eq_one := by simp
+  multiplier_eq_one i := unimodularRankTwoAdaptedBasis_multiplier i
+  form_eq_zero i hi₁ hi₂ := by
     obtain ⟨i, hi⟩ := i
     fin_cases i
-    · exact Or.inl rfl
-    · exact Or.inr rfl
-  form_eq_one := by simp
-  multiplier_fst := unimodularRankTwoAdaptedBasis_multiplier _
-  multiplier_snd := unimodularRankTwoAdaptedBasis_multiplier _
+    exacts [absurd rfl hi₁, absurd rfl hi₂]
 
 local notation "𝒅" => unimodularRankTwoAdaptedBasis.unfrozenBasis.positiveDegrees
 local notation "Lpr" => Module.Dual ℤ unimodularRankTwo.sublattice × unimodularRankTwo.unfrozen
@@ -271,7 +285,7 @@ theorem exists_isPositiveWallRepresentative_unimodularRankTwo :
         (fun _ _ => (1 : R)) h).Scat
           (unimodularRankTwoAdaptedBasis.adaptedPolynomialInput_full _ _ h) ∧
       E.IsPositiveWallRepresentative (σ R) (mapRingHom Qpr (Nat.castRingHom R)).rangeS π :=
-  isTypeA₂_unimodularRankTwoAdaptedBasis.exists_isPositiveWallRepresentative_scat h
+  isTypeA₂WithIsolated_unimodularRankTwoAdaptedBasis.exists_isPositiveWallRepresentative_scat h
     (fun _ => (1 : R)) π Qpr
     (fun _ => (unimodularRankTwo.mem_principalCoefficientMonoid _ _).mpr (zero_mem _))
     (Nat.castRingHom R) fun _ => ⟨1, map_one _⟩
@@ -296,24 +310,171 @@ theorem exists_isPositiveWallRepresentative_unimodularRankTwo_coefficient :
       E.IsPositiveWallRepresentative
         (σ (MvPolynomial unimodularRankTwoAdaptedBasis.unfrozenIndex ℚ))
         (mapRingHom Qpr (MvPolynomial.map (Nat.castRingHom ℚ))).rangeS π :=
-  isTypeA₂_unimodularRankTwoAdaptedBasis.exists_isPositiveWallRepresentative_scat h
+  isTypeA₂WithIsolated_unimodularRankTwoAdaptedBasis.exists_isPositiveWallRepresentative_scat h
     MvPolynomial.X π Qpr
     (fun _ => (unimodularRankTwo.mem_principalCoefficientMonoid _ _).mpr (zero_mem _))
     (MvPolynomial.map (Nat.castRingHom ℚ))
     fun i => ⟨MvPolynomial.X i, MvPolynomial.map_X _ i⟩
 
 open scoped Classical in
-/-- The wall function of the outgoing wall of the diagram of type `A₂` with the independent
+/-- The wall function of the outgoing wall of the pentagon diagram with the independent
 coefficients `a₀, a₁` is `1 + a₀ a₁ z^{r(e₁ + e₂)}`: its coefficient is the product of the input
 coefficients. -/
 theorem coe_pentagonWallFunction_unimodularRankTwo_inr :
-    (isTypeA₂_unimodularRankTwoAdaptedBasis.pentagonWallFunction MvPolynomial.X Qpr (.inr ())).val =
+    (isTypeA₂WithIsolated_unimodularRankTwoAdaptedBasis.pentagonWallFunction MvPolynomial.X Qpr
+        (.inr ())).val =
       1 + (TropicalVertexCoefficientAction.filtration
           (R := MvPolynomial unimodularRankTwoAdaptedBasis.unfrozenIndex ℚ)
           (unimodularRankTwo.principalPositiveDegrees 𝒅) Qpr).toCompletion
         (single (unimodularRankTwoAdaptedBasis.pentagonExponent Qpr unimodularRankTwoFst
           unimodularRankTwoSnd (.inr ()))
           (MvPolynomial.X unimodularRankTwoFst * MvPolynomial.X unimodularRankTwoSnd)) :=
-  isTypeA₂_unimodularRankTwoAdaptedBasis.coe_pentagonWallFunction_inr _ _ ()
+  isTypeA₂WithIsolated_unimodularRankTwoAdaptedBasis.coe_pentagonWallFunction_inr _ _ ()
+
+end Mei.SkewLatticeDatum.Examples
+
+namespace Mei.SkewLatticeDatum.Examples
+
+open AdaptedBasis
+open _root_.AddMonoidAlgebra
+open scoped Mei.TropicalVertexCoefficientAction
+
+/-- The skew form `{x, y} = x₀ y₁ - x₁ y₀` on `ℤ³`, pairing `e₀` with `e₁`. -/
+def isolatedForm : (Fin 3 → ℤ) →ₗ[ℤ] (Fin 3 → ℤ) →ₗ[ℤ] ℚ :=
+  LinearMap.mk₂ ℤ (fun x y => ((x 0 * y 1 - x 1 * y 0 : ℤ) : ℚ))
+    (fun x x' y => by push_cast [Pi.add_apply]; ring)
+    (fun c x y => by push_cast [Pi.smul_apply, smul_eq_mul]; ring)
+    (fun x y y' => by push_cast [Pi.add_apply]; ring)
+    (fun c x y => by push_cast [Pi.smul_apply, smul_eq_mul]; ring)
+
+/-- The values of `isolatedForm`. -/
+@[simp]
+theorem isolatedForm_apply (x y : Fin 3 → ℤ) :
+    isolatedForm x y = ((x 0 * y 1 - x 1 * y 0 : ℤ) : ℚ) :=
+  LinearMap.mk₂_apply ..
+
+/-- The skew lattice datum on `ℤ³` with form `isolatedForm`, every basis vector unfrozen and
+multipliers one. -/
+def isolatedDatum : SkewLatticeDatum (Fin 3 → ℤ) :=
+  ofBasis (Pi.basisFun ℤ (Fin 3)) Finset.univ (fun _ => 1) isolatedForm (fun _ => one_pos)
+    (fun x => by simp [mul_comm]) (fun _ _ _ => ⟨_, isolatedForm_apply _ _⟩)
+    (fun _ _ _ => ⟨_, isolatedForm_apply _ _⟩)
+
+/-- The standard basis of `ℤ³` as an adapted basis of `isolatedDatum`. -/
+def isolatedBasis : isolatedDatum.AdaptedBasis (Fin 3) :=
+  AdaptedBasis.ofBasis ..
+
+/-- The form of `isolatedDatum` is `isolatedForm`. -/
+@[simp]
+theorem isolatedDatum_form : isolatedDatum.form = isolatedForm :=
+  ofBasis_form ..
+
+/-- The basis of `isolatedBasis` is the standard basis. -/
+@[simp]
+theorem isolatedBasis_basis : isolatedBasis.basis = Pi.basisFun ℤ (Fin 3) :=
+  AdaptedBasis.ofBasis_basis
+
+/-- Every index of `isolatedBasis` is unfrozen. -/
+@[simp]
+theorem isolatedBasis_unfrozenIndex : isolatedBasis.unfrozenIndex = Finset.univ :=
+  AdaptedBasis.ofBasis_unfrozenIndex
+
+/-- The multipliers of `isolatedBasis` are one. -/
+@[simp]
+theorem isolatedBasis_multiplier : isolatedBasis.multiplier = fun _ => 1 :=
+  AdaptedBasis.ofBasis_multiplier
+
+/-- The unfrozen index `0` of `isolatedBasis`. -/
+abbrev isolatedFst : isolatedBasis.unfrozenIndex := ⟨0, by simp⟩
+
+/-- The unfrozen index `1` of `isolatedBasis`. -/
+abbrev isolatedSnd : isolatedBasis.unfrozenIndex := ⟨1, by simp⟩
+
+/-- The isolated unfrozen index `2` of `isolatedBasis`. -/
+abbrev isolatedThd : isolatedBasis.unfrozenIndex := ⟨2, by simp⟩
+
+/-- The form of `isolatedDatum` is degenerate on the unfrozen lattice `N_uf = ℤ³`: `e₂` pairs to
+zero with every vector. -/
+theorem isolatedDatum_form_single_two (y : Fin 3 → ℤ) :
+    isolatedDatum.form (Pi.single 2 1) y = 0 := by
+  simp
+
+/-- The form of `isolatedDatum` does not vanish on `N_uf`: `{e₀, e₁} = 1`. -/
+theorem isolatedDatum_form_single_zero_single_one :
+    isolatedDatum.form (Pi.single 0 1) (Pi.single 1 1) = 1 := by
+  simp
+
+/-- The standard basis of `isolatedDatum` is of type `A₂` at `0, 1` with the isolated index
+`2`. -/
+theorem isTypeA₂WithIsolated_isolatedBasis :
+    isolatedBasis.IsTypeA₂WithIsolated isolatedFst isolatedSnd where
+  form_eq_one := by simp
+  multiplier_eq_one i := congrFun isolatedBasis_multiplier i
+  form_eq_zero i hi₁ hi₂ j := by
+    obtain ⟨i, hi⟩ := i
+    fin_cases i
+    · exact absurd rfl hi₁
+    · exact absurd rfl hi₂
+    · simp
+
+local notation "𝒅" => isolatedBasis.unfrozenBasis.positiveDegrees
+local notation "Lpr" => Module.Dual ℤ isolatedDatum.sublattice × isolatedDatum.unfrozen
+local notation "Qpr" => isolatedDatum.principalCoefficientMonoid 𝒅
+local notation "𝒜" => MvPolynomial isolatedBasis.unfrozenIndex ℚ
+
+/-- The principal positive monoid of `isolatedDatum` lies in its principal coefficient monoid. -/
+instance : Fact ((isolatedDatum.principalPositiveDegrees 𝒅).monoid ≤ Qpr) :=
+  ⟨isolatedDatum.principalPositiveDegrees_le_coefficientMonoid 𝒅⟩
+
+/-- The principal lattice `M° × N_uf` of `isolatedDatum` is free. -/
+instance : Module.Free ℤ Lpr := by
+  have := Module.Free.of_basis isolatedBasis.sublatticeBasis
+  have := Module.Finite.of_basis isolatedBasis.sublatticeBasis
+  have := Module.Free.of_basis isolatedBasis.unfrozenBasis
+  infer_instance
+
+local notation "F" => TropicalVertexCoefficientAction.filtration (R := 𝒜)
+  (isolatedDatum.principalPositiveDegrees 𝒅) Qpr
+local notation "σ" => MonoidHom.comp (AlgFiltration.completedBCHAction F
+  (isolatedDatum.principalPositiveDegrees 𝒅)
+  (tropicalVertexGrading (R := 𝒜) (isolatedDatum.principalPositiveDegrees 𝒅)
+    (AddMonoidHom.id Lpr)))
+  (GradedLieHom.completedMap (isolatedDatum.principalGraphGradedLieHom (R := 𝒜) 𝒅))
+
+variable {V M : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {p : Lpr →+ V}
+  (h : TauCeti.Toric.IsIntegralLattice p) [AddCommGroup M] (π : Lpr →+ M)
+
+open scoped Classical in
+/-- **A degenerate form of rank three.** For `isolatedDatum`, with `{e₀, e₁} = 1` and `e₂` in the
+radical of the form, and independent variables `a₀, a₁, a₂`, the outgoing scattering class of the
+adapted polynomial input `(eᵢ⊥, 1 + aᵢ q^{eᵢ})`, `i = 0, 1, 2`, has a consistent outgoing
+representative with the single additional wall `{ν_{e₀} + ν_{e₁} = 0, ν_{e₀} ≥ 0}`, whose grouped
+wall functions `1 + aᵢ q^{eᵢ}` and `1 + a₀ a₁ q^{e₀ + e₁}` have monomial coefficients in
+`ℕ[a₀, a₁, a₂]`. The hyperplane `e₂⊥` crosses the other walls without any correction. -/
+theorem exists_isPositiveWallRepresentative_isolated :
+    ∃ (κ : Type) (E : DirectedDiagram (d := isolatedDatum.principalPositiveDegrees 𝒅) h
+        (isolatedDatum.principalGraphWallSpaces (R := 𝒜) 𝒅) (isolatedBasis.unfrozenIndex ⊕ κ)),
+      DirectedDiagram.IsOutgoingCompletion (isolatedBasis.adaptedPolynomialInput
+        (V := V) (fun _ => 1) (fun i _ => MvPolynomial.X i) h).wall E ∧
+      E.toClass = (isolatedBasis.adaptedPolynomialInput (fun _ => 1)
+        (fun i _ => MvPolynomial.X i) h).Scat (isolatedBasis.adaptedPolynomialInput_full _ _ h) ∧
+      E.IsPositiveWallRepresentative σ
+        (mapRingHom Qpr (MvPolynomial.map (Nat.castRingHom ℚ))).rangeS π :=
+  isTypeA₂WithIsolated_isolatedBasis.exists_isPositiveWallRepresentative_scat h
+    MvPolynomial.X π Qpr
+    (fun _ => (isolatedDatum.mem_principalCoefficientMonoid _ _).mpr (zero_mem _))
+    (MvPolynomial.map (Nat.castRingHom ℚ))
+    fun i => ⟨MvPolynomial.X i, MvPolynomial.map_X _ i⟩
+
+open scoped Classical in
+/-- The wall function of the input wall at the isolated index `2` of the pentagon diagram of
+`isolatedDatum` with the independent coefficients `a₀, a₁, a₂` is `1 + a₂ z^{r(e₂)}`: the
+isolated wall keeps its input function. -/
+theorem coe_pentagonWallFunction_isolated_inl_isolatedThd :
+    (isTypeA₂WithIsolated_isolatedBasis.pentagonWallFunction MvPolynomial.X Qpr
+        (.inl isolatedThd)).val =
+      1 + (F).toCompletion (single (isolatedBasis.pentagonExponent Qpr isolatedFst isolatedSnd
+        (.inl isolatedThd)) (MvPolynomial.X isolatedThd)) :=
+  isTypeA₂WithIsolated_isolatedBasis.coe_pentagonWallFunction_inl _ _ _
 
 end Mei.SkewLatticeDatum.Examples

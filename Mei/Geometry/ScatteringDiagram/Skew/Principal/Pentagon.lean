@@ -13,50 +13,48 @@ public import Mei.Geometry.ScatteringDiagram.Skew.Pentagon
 import Mei.Algebra.MonoidAlgebra.Filtration.PowerSeries
 
 /-!
-# The cluster scattering diagram of type `A₂` with coefficients
+# The cluster scattering pentagon diagram with isolated indices and coefficients
 
-An adapted basis of a skew lattice datum is *of type `A₂`* at two unfrozen indices `i₁, i₂`
-(`SkewLatticeDatum.AdaptedBasis.IsTypeA₂`) when these are its only unfrozen indices,
-`{e_{i₁}, e_{i₂}} = 1` and `d_{i₁} = d_{i₂} = 1`; frozen indices are allowed. Write `ν₁, ν₂` for the
-principal normals of `e_{i₁}, e_{i₂}` on the principal lattice `L_pr = M° × N_uf`. For coefficients
-`a_{i₁}, a_{i₂}` in a commutative `ℚ`-algebra `R`, the adapted polynomial input with `ℓᵢ = 1` has
-the full hyperplanes `{νᵢ = 0}` and wall functions `1 + aᵢ q^{eᵢ}`; for `a = 1` it is the ordinary
-binomial input.
+An adapted basis of a skew lattice datum is *of type `A₂` with isolated indices* at two unfrozen
+indices `i₁, i₂` (`SkewLatticeDatum.AdaptedBasis.IsTypeA₂WithIsolated`) when
+`{e_{i₁}, e_{i₂}} = 1`, every unfrozen multiplier is one, and every other unfrozen basis vector
+pairs to zero with all unfrozen basis vectors; frozen indices are allowed. Without other unfrozen
+indices the form on `N_uf` is of type `A₂`; with them it is degenerate. Write `ν₁, ν₂` for the
+principal normals of `e_{i₁}, e_{i₂}` on the principal lattice `L_pr = M° × N_uf`. For
+coefficients `aᵢ` in a commutative `ℚ`-algebra `R`, the adapted polynomial input with `ℓᵢ = 1` has
+the full hyperplanes `{νᵢ = 0}` and wall functions `1 + aᵢ q^{eᵢ}` at all unfrozen indices `i`;
+for `a = 1` it is the ordinary binomial input.
 
 * Adding the half-hyperplane `{ν₁ + ν₂ = 0, ν₁ ≥ 0}`, cooriented by `ν₁ + ν₂` and labelled by the
   principal image of the ray label of `-Li₂(-a_{i₁} a_{i₂} T)` at `e_{i₁} + e_{i₂}`
-  (`SkewLatticeDatum.AdaptedBasis.IsTypeA₂.outgoingWall`), gives a consistent diagram
-  (`SkewLatticeDatum.AdaptedBasis.IsTypeA₂.pentagonDiagram_consistent`) whose new wall is
-  outgoing. It is therefore an outgoing completion of the input
-  (`SkewLatticeDatum.AdaptedBasis.IsTypeA₂.isOutgoingCompletion_pentagonDiagram`) and represents
-  its scattering class (`SkewLatticeDatum.AdaptedBasis.IsTypeA₂.scat_eq_toClass_pentagonDiagram`).
-* Each wall of this diagram, at the degree `n` among `e_{i₁}`, `e_{i₂}` and `e_{i₁} + e_{i₂}`
-  (`SkewLatticeDatum.AdaptedBasis.pentagonDegree`) with the coefficient `c` among `a_{i₁}`, `a_{i₂}`
-  and `a_{i₁} a_{i₂}` (`SkewLatticeDatum.AdaptedBasis.pentagonCoefficient`), has the wall function
+  (`IsTypeA₂WithIsolated.outgoingWall`), gives a consistent diagram, the *pentagon diagram*
+  (`IsTypeA₂WithIsolated.pentagonDiagram_consistent`), whose new wall is outgoing. It is
+  therefore an outgoing completion of the input
+  (`IsTypeA₂WithIsolated.isOutgoingCompletion_pentagonDiagram`) and represents its scattering
+  class (`IsTypeA₂WithIsolated.scat_eq_toClass_pentagonDiagram`).
+* Each wall of this diagram, at the degree `n` among the `eᵢ` and `e_{i₁} + e_{i₂}`
+  (`SkewLatticeDatum.AdaptedBasis.pentagonDegree`) with the coefficient `c` among the `aᵢ` and
+  `a_{i₁} a_{i₂}` (`SkewLatticeDatum.AdaptedBasis.pentagonCoefficient`), has the wall function
   `1 + c q^n = 1 + c z^{r(n)}` for its principal normal, if the coefficient monoid `Q` contains
-  every character `(χ, 0)`
-  (`SkewLatticeDatum.AdaptedBasis.IsTypeA₂.isWallFunction_discrete_pentagonDiagram`). If
-  `a_{i₁}, a_{i₂}` lie in the image of a semiring map `φ : S →+* R`, the discrete grouping is
-  positive for the image of `S[Q]`, so the diagram is a positive wall representative of the
-  scattering class
-  (`SkewLatticeDatum.AdaptedBasis.IsTypeA₂.exists_isPositiveWallRepresentative_scat`).
-  For independent variables `a_{i₁}, a_{i₂}` over `ℚ` the grouped wall functions have coefficients
-  in `ℕ[a_{i₁}, a_{i₂}]`; for `a = 1` they are `1 + q^n` with natural-number coefficients.
+  every character `(χ, 0)` (`IsTypeA₂WithIsolated.isWallFunction_discrete_pentagonDiagram`). If
+  the `aᵢ` lie in the image of a semiring map `φ : S →+* R`, the discrete grouping is positive for
+  the image of `S[Q]`, so the diagram is a positive wall representative of the scattering class
+  (`IsTypeA₂WithIsolated.exists_isPositiveWallRepresentative_scat`). For independent variables
+  `aᵢ` over `ℚ` the grouped wall functions have coefficients in `ℕ[aᵢ]`; for `a = 1` they are
+  `1 + q^n` with natural-number coefficients.
 
-The consistency is the pentagon identity with coefficients
-`SkewLieAlgebra.rayExp_rescale_smul_negDilogNeg_pentagon` for the monomial weight
-`n ↦ a_{i₁}^{n₁} a_{i₂}^{n₂}` (`Module.Basis.monomialWeight`), through
-`DirectedDiagram.IsPentagonConfiguration.consistent`. The input labels and wall functions use
-`SkewLatticeDatum.AdaptedBasis.coe_polynomialWallLabel_of_multiplier_eq_one` and
-`SkewLatticeDatum.AdaptedBasis.completedBCHAction_graphBCHGroupEquiv_rayExp_rescale_negDilogNeg`.
-Instances on the unimodular rank-two datum are in
+The walls at `i₁`, `i₂` and the outgoing wall are in pentagon configuration
+(`IsTypeA₂WithIsolated.isPentagonConfiguration`), and their labels satisfy the pentagon identity
+with coefficients (`IsTypeA₂WithIsolated.pentagonDiagram_label_pentagon`). The labels at the
+isolated indices commute with all labels of the diagram
+(`IsTypeA₂WithIsolated.commute_pentagonDiagram_label`). Instances are in
 `Mei.Geometry.ScatteringDiagram.Skew.Principal.Examples`.
 
 These are the positivity statements of Gross–Hacking–Keel–Kontsevich, *Canonical bases for
-cluster algebras*, §1.1 and Theorem 1.13 (arXiv:1411.1394v2), for rank two and type `A₂`, with
-the coefficients of the principal realization (§1 and Appendix B there). The consistency is the
-pentagon identity of Nakanishi, *Cluster algebras and scattering diagrams, Part III*, §5
-(arXiv:2111.00800v6).
+cluster algebras*, §1.1 and Theorem 1.13 (arXiv:1411.1394v2), for the exchange matrices of type
+`A₂` with isolated vertices, with the coefficients of the principal realization (§1 and Appendix B
+there). The relation between the walls at `i₁`, `i₂` is the pentagon identity of Nakanishi,
+*Cluster algebras and scattering diagrams, Part III*, §5 (arXiv:2111.00800v6).
 -/
 
 public section
@@ -70,7 +68,7 @@ open scoped Mei.TropicalVertexCoefficientAction
 
 variable {N R ι V M : Type*} [AddCommGroup N] {D : SkewLatticeDatum N} (B : D.AdaptedBasis ι)
 
-/-- The degrees of the walls of the diagram of type `A₂` at the unfrozen indices `i₁, i₂`: the
+/-- The degrees of the walls of the pentagon diagram at the unfrozen indices `i₁, i₂`: the
 basis vector `eᵢ` for the input wall at `i`, and `e_{i₁} + e_{i₂}` for the outgoing wall. -/
 def pentagonDegree (i₁ i₂ : B.unfrozenIndex) : B.unfrozenIndex ⊕ Unit → D.unfrozen :=
   Sum.elim B.unfrozenBasis fun _ => B.unfrozenBasis i₁ + B.unfrozenBasis i₂
@@ -93,7 +91,7 @@ theorem pentagonDegree_mem_positiveDegrees_monoid (i₁ i₂ : B.unfrozenIndex)
   · exact B.unfrozenBasis_mem_positiveDegrees_monoid i
   · exact B.unfrozenBasis_add_mem_positiveDegrees_monoid i₁ i₂
 
-/-- The coefficients of the walls of the diagram of type `A₂` at the unfrozen indices `i₁, i₂`,
+/-- The coefficients of the walls of the pentagon diagram at the unfrozen indices `i₁, i₂`,
 for input coefficients `a`: `aᵢ` for the input wall at `i`, and `a_{i₁} a_{i₂}` for the outgoing
 wall. -/
 def pentagonCoefficient [Mul R] (a : B.unfrozenIndex → R) (i₁ i₂ : B.unfrozenIndex) :
@@ -147,23 +145,62 @@ theorem coe_pentagonExponent (Q : AddSubmonoid (Module.Dual ℤ D.sublattice × 
     (B.pentagonExponent Q i₁ i₂ j : Module.Dual ℤ D.sublattice × D.unfrozen) =
       D.principalEmbedding (B.pentagonDegree i₁ i₂ j) := (rfl)
 
-/-- An adapted basis is *of type `A₂`* at the unfrozen indices `i₁, i₂` when these are its only
-unfrozen indices, `{e_{i₁}, e_{i₂}} = 1`, and both multipliers are one, `d_{i₁} = d_{i₂} = 1`.
-Frozen indices are allowed. -/
-structure IsTypeA₂ (i₁ i₂ : B.unfrozenIndex) : Prop where
-  /-- The unfrozen indices are `i₁` and `i₂`. -/
-  eq_or_eq (i : B.unfrozenIndex) : i = i₁ ∨ i = i₂
-  /-- The skew pairing of the two unfrozen basis vectors is one. -/
+/-- The indices of the walls of the pentagon diagram at the unfrozen indices `i₁, i₂` that are
+not input walls at other unfrozen indices: the input walls at `i₁, i₂` and the outgoing wall. -/
+def pentagonIndices (i₁ i₂ : B.unfrozenIndex) : Set (B.unfrozenIndex ⊕ Unit) :=
+  {.inl i₁, .inl i₂, .inr ()}
+
+/-- The indices in `pentagonIndices i₁ i₂` are `inl i₁`, `inl i₂` and `inr ()`. -/
+theorem mem_pentagonIndices {i₁ i₂ : B.unfrozenIndex} {j : B.unfrozenIndex ⊕ Unit} :
+    j ∈ B.pentagonIndices i₁ i₂ ↔ j = .inl i₁ ∨ j = .inl i₂ ∨ j = .inr () := by
+  rw [pentagonIndices, Set.mem_insert_iff, Set.mem_insert_iff, Set.mem_singleton_iff]
+
+/-- An index outside `pentagonIndices i₁ i₂` is the input wall at an unfrozen index other than
+`i₁, i₂`. -/
+theorem exists_eq_inl_of_notMem_pentagonIndices {i₁ i₂ : B.unfrozenIndex}
+    {j : B.unfrozenIndex ⊕ Unit} (hj : j ∉ B.pentagonIndices i₁ i₂) :
+    ∃ i, i ≠ i₁ ∧ i ≠ i₂ ∧ j = .inl i := by
+  rw [mem_pentagonIndices] at hj
+  rcases j with i | ⟨⟩
+  · exact ⟨i, fun h => hj (Or.inl (congrArg _ h)), fun h => hj (Or.inr (Or.inl (congrArg _ h))),
+      rfl⟩
+  · exact absurd (Or.inr (Or.inr rfl)) hj
+
+/-- An adapted basis is *of type `A₂` with isolated indices* at the unfrozen indices `i₁, i₂`
+when `{e_{i₁}, e_{i₂}} = 1`, every unfrozen multiplier is one, and every other unfrozen index is
+isolated: its basis vector pairs to zero with every unfrozen basis vector. Frozen indices are
+allowed, with arbitrary pairings. If `i₁, i₂` are the only unfrozen indices, the form on `N_uf` is
+of type `A₂`; otherwise it is degenerate, and the isolated basis vectors lie in its radical. -/
+structure IsTypeA₂WithIsolated (i₁ i₂ : B.unfrozenIndex) : Prop where
+  /-- The skew pairing of the basis vectors at `i₁` and `i₂` is one. -/
   form_eq_one : D.form (B.basis i₁) (B.basis i₂) = 1
-  /-- The first multiplier is one. -/
-  multiplier_fst : B.multiplier i₁ = 1
-  /-- The second multiplier is one. -/
-  multiplier_snd : B.multiplier i₂ = 1
+  /-- Every unfrozen multiplier is one. -/
+  multiplier_eq_one (i : B.unfrozenIndex) : B.multiplier i = 1
+  /-- Every unfrozen index other than `i₁, i₂` is isolated. -/
+  form_eq_zero (i : B.unfrozenIndex) (hi₁ : i ≠ i₁) (hi₂ : i ≠ i₂) (j : B.unfrozenIndex) :
+    D.form (B.basis i) (B.basis j) = 0
 
-namespace IsTypeA₂
+namespace IsTypeA₂WithIsolated
 
-variable {B} {i₁ i₂ : B.unfrozenIndex} (hA : B.IsTypeA₂ i₁ i₂)
+variable {B} {i₁ i₂ : B.unfrozenIndex} (hA : B.IsTypeA₂WithIsolated i₁ i₂)
 include hA
+
+/-- The multiplier at `i₁` is one. -/
+theorem multiplier_fst : B.multiplier i₁ = 1 :=
+  hA.multiplier_eq_one i₁
+
+/-- The multiplier at `i₂` is one. -/
+theorem multiplier_snd : B.multiplier i₂ = 1 :=
+  hA.multiplier_eq_one i₂
+
+/-- The basis vector at an isolated index pairs to zero with the degree of every wall of the
+pentagon diagram. -/
+theorem form_pentagonDegree_eq_zero {i : B.unfrozenIndex} (hi₁ : i ≠ i₁) (hi₂ : i ≠ i₂)
+    (j : B.unfrozenIndex ⊕ Unit) : D.form (B.basis i) (B.pentagonDegree i₁ i₂ j : N) = 0 := by
+  rcases j with j | ⟨⟩
+  · rw [pentagonDegree_inl, coe_unfrozenBasis, hA.form_eq_zero i hi₁ hi₂ j]
+  · rw [pentagonDegree_inr, Submodule.coe_add, coe_unfrozenBasis, coe_unfrozenBasis, map_add,
+      hA.form_eq_zero i hi₁ hi₂, hA.form_eq_zero i hi₁ hi₂, add_zero]
 
 /-- The two unfrozen indices are distinct. -/
 theorem ne : i₁ ≠ i₂ := by
@@ -275,9 +312,7 @@ theorem pentagonDegree_ne_zero (j : B.unfrozenIndex ⊕ Unit) : B.pentagonDegree
 theorem rayIndex_pentagonDegree (j : B.unfrozenIndex ⊕ Unit) :
     D.sublattice.toAddSubgroup.rayIndex (B.pentagonDegree i₁ i₂ j : N) = 1 := by
   rcases j with i | ⟨⟩
-  · rcases hA.eq_or_eq i with rfl | rfl
-    · simp [B.rayIndex_basis, hA.multiplier_fst]
-    · simp [B.rayIndex_basis, hA.multiplier_snd]
+  · simp [B.rayIndex_basis, hA.multiplier_eq_one i]
   · simpa using hA.rayIndex_add
 
 /-- The principal normal of each wall degree takes the value one on some character `(χ, 0)`. -/
@@ -327,7 +362,7 @@ theorem coe_addLabel : (hA.addLabel a).1 =
         (rescale (a i₁ * a i₂) (negDilogNeg R))) :=
   (rfl)
 
-/-- The outgoing wall of type `A₂`: the half-hyperplane of the principal normal `ν₁₂` of
+/-- The outgoing wall of the pentagon diagram: the half-hyperplane of the principal normal `ν₁₂` of
 `e_{i₁} + e_{i₂}` on which the principal normal `ν₁` of `e_{i₁}` is nonnegative, cooriented by
 `ν₁₂`, on the principal ray through `r(e_{i₁} + e_{i₂})`, labelled by the principal image of the
 ray label of `-Li₂(-a_{i₁} a_{i₂} T)` at `e_{i₁} + e_{i₂}`. -/
@@ -398,8 +433,8 @@ theorem outgoingWall_outgoing : (hA.outgoingWall h a).Outgoing := by
       (B.unfrozenBasis i₁ + B.unfrozenBasis i₂)) : ℚ) := by exact_mod_cast hle'
   linarith
 
-/-- The diagram of type `A₂` with coefficients `a`: the two walls of the adapted polynomial input
-with `ℓ = 1` and coefficients `aᵢ`, of wall functions `1 + aᵢ q^{eᵢ}`, together with the outgoing
+/-- The pentagon diagram with coefficients `a`: the walls of the adapted polynomial input with
+`ℓ = 1` and coefficients `aᵢ`, of wall functions `1 + aᵢ q^{eᵢ}`, together with the outgoing
 wall. -/
 def pentagonDiagram : DirectedDiagram (V := V) (d := e) h 𝓗 (B.unfrozenIndex ⊕ Unit) :=
   DirectedDiagram.ofFinite (Sum.elim (B.adaptedPolynomialInput (V := V) (fun _ => 1)
@@ -418,11 +453,51 @@ theorem pentagonDiagram_wall_inr (u : Unit) :
     (hA.pentagonDiagram h a).wall (.inr u) = hA.outgoingWall h a := by
   simp [pentagonDiagram]
 
-/-- The diagram of type `A₂` is in pentagon configuration: its walls are the hyperplanes of the
-principal normals `ν₁, ν₂` of `e_{i₁}, e_{i₂}` and the half-hyperplane `{ν₁ + ν₂ = 0, ν₁ ≥ 0}`
-cooriented by `ν₁ + ν₂`. -/
+/-- The wall of the pentagon diagram indexed by `j` has the principal normal of
+`pentagonDegree i₁ i₂ j`. -/
+theorem pentagonDiagram_normal (j : B.unfrozenIndex ⊕ Unit) :
+    ((hA.pentagonDiagram h a).wall j).normal =
+      (D.principalNormal (B.pentagonDegree i₁ i₂ j)).toAddMonoidHom := by
+  rcases j with i | ⟨⟩ <;> simp
+
+/-- The label of the wall of the pentagon diagram indexed by `j` is the principal image of the ray
+label of `-Li₂(-c T)` at `n`, for `n = pentagonDegree i₁ i₂ j` and
+`c = pentagonCoefficient a i₁ i₂ j`. -/
+theorem pentagonDiagram_label (j : B.unfrozenIndex ⊕ Unit) :
+    ((hA.pentagonDiagram h a).wall j).label =
+      (𝒅).graphBCHGroupEquiv ℒ D.principalCharacter.toAddMonoidHom
+        (SkewLieAlgebra.rayExp (D.coefficientForm R) (D.isAlt_coefficientForm R)
+          (B.pentagonDegree_mem_positiveDegrees_monoid i₁ i₂ j) (hA.pentagonDegree_ne_zero j)
+          (rescale (B.pentagonCoefficient a i₁ i₂ j) (negDilogNeg R))) := by
+  rcases j with i | u
+  · rw [pentagonDiagram_wall_inl, adaptedPolynomialInput_label,
+      B.coe_polynomialWallLabel_of_multiplier_eq_one _ (hA.multiplier_eq_one i),
+      pentagonCoefficient_inl]
+    exact congrArg _ (SkewLieAlgebra.rayExp_congr_degree _ _
+      (B.pentagonDegree_inl i₁ i₂ i).symm _ _ _ _ _)
+  · rw [pentagonDiagram_wall_inr, outgoingWall_label, pentagonCoefficient_inr]
+    exact congrArg _ (SkewLieAlgebra.rayExp_congr_degree _ _
+      (B.pentagonDegree_inr i₁ i₂ u).symm _ _ _ _ _)
+
+/-- The label of the input wall at an isolated index commutes with every label of the pentagon
+diagram. -/
+theorem commute_pentagonDiagram_label {i : B.unfrozenIndex} (hi₁ : i ≠ i₁) (hi₂ : i ≠ i₂)
+    (j : B.unfrozenIndex ⊕ Unit) :
+    Commute ((hA.pentagonDiagram h a).wall (.inl i)).label
+      ((hA.pentagonDiagram h a).wall j).label := by
+  rw [pentagonDiagram_label, pentagonDiagram_label]
+  refine (SkewLieAlgebra.commute_rayExp_of_eq_zero _ _ _ _ _ _ ?_ _ _).map _
+  rw [coefficientForm_apply, pentagonDegree_inl, coe_unfrozenBasis,
+    hA.form_pentagonDegree_eq_zero hi₁ hi₂, map_zero]
+
+/-- The walls of the pentagon diagram at `inl i₁`, `inl i₂` and `inr ()` are in pentagon
+configuration: they are the hyperplanes of the principal normals `ν₁, ν₂` of `e_{i₁}, e_{i₂}`
+and the half-hyperplane `{ν₁ + ν₂ = 0, ν₁ ≥ 0}` cooriented by `ν₁ + ν₂`. -/
 theorem isPentagonConfiguration :
-    (hA.pentagonDiagram h a).IsPentagonConfiguration (.inl i₁) (.inl i₂) (.inr ())
+    ((hA.pentagonDiagram h a).restrict (B.pentagonIndices i₁ i₂)).IsPentagonConfiguration
+      ⟨.inl i₁, B.mem_pentagonIndices.mpr (Or.inl rfl)⟩
+      ⟨.inl i₂, B.mem_pentagonIndices.mpr (Or.inr (Or.inl rfl))⟩
+      ⟨.inr (), B.mem_pentagonIndices.mpr (Or.inr (Or.inr rfl))⟩
       (D.principalNormal (B.unfrozenBasis i₁)).toAddMonoidHom
       (D.principalNormal (B.unfrozenBasis i₂)).toAddMonoidHom := by
   obtain ⟨h₁₁, h₁₂, h₂₁, h₂₂⟩ := hA.coord_rayVector
@@ -441,11 +516,11 @@ theorem isPentagonConfiguration :
       support_half := by ext; simp [hadd]
       exists_fst := ⟨latticeMap (B.sublatticeBasis.coord i₂, 0), by simp [h₂₁], by simp [h₂₂]⟩
       exists_snd := ⟨latticeMap (B.sublatticeBasis.coord i₁, 0), by simp [h₁₂], by simp [h₁₁]⟩ }
-  rintro (i | ⟨⟩)
-  · rcases hA.eq_or_eq i with rfl | rfl <;> simp
-  · simp
+  rintro ⟨j, hj⟩
+  rcases B.mem_pentagonIndices.mp hj with rfl | rfl | rfl
+  exacts [Or.inl rfl, Or.inr (Or.inl rfl), Or.inr (Or.inr rfl)]
 
-/-- The labels of the diagram of type `A₂` satisfy the pentagon relation with coefficients
+/-- The labels of the pentagon diagram satisfy the pentagon relation with coefficients
 `Ψ_{a_{i₂}}[e_{i₂}] Ψ_{a_{i₁}}[e_{i₁}] =
 Ψ_{a_{i₁}}[e_{i₁}] Ψ_{a_{i₁} a_{i₂}}[e_{i₁} + e_{i₂}] Ψ_{a_{i₂}}[e_{i₂}]`, where `Ψ_c[n]` is the ray
 label of `-Li₂(-c T)` at `n`. -/
@@ -467,13 +542,30 @@ theorem pentagonDiagram_label_pentagon :
       map_one])
   simpa only [one_smul, Module.Basis.monomialWeight_self] using hp
 
-/-- The diagram of type `A₂` is consistent. -/
-theorem pentagonDiagram_consistent : (hA.pentagonDiagram h a).Consistent :=
-  (hA.isPentagonConfiguration h a).consistent (hA.pentagonDiagram_label_pentagon h a)
+/-- The input walls of the pentagon diagram at the isolated indices form a consistent diagram: they
+are full hyperplanes with commuting labels. -/
+theorem restrict_compl_pentagonIndices_consistent :
+    ((hA.pentagonDiagram h a).restrict (B.pentagonIndices i₁ i₂)ᶜ).Consistent := by
+  refine DirectedDiagram.consistent_of_commute_of_full _ (fun j => ?_) fun j j' => ?_
+  · obtain ⟨i, -, -, hi⟩ := B.exists_eq_inl_of_notMem_pentagonIndices j.property
+    rw [DirectedDiagram.restrict_wall, hi, pentagonDiagram_wall_inl]
+    exact B.adaptedPolynomialInput_full _ _ h i
+  · obtain ⟨i, hi₁, hi₂, hi⟩ := B.exists_eq_inl_of_notMem_pentagonIndices j.property
+    rw [DirectedDiagram.restrict_wall, DirectedDiagram.restrict_wall, hi]
+    exact hA.commute_pentagonDiagram_label h a hi₁ hi₂ _
 
-/-- The diagram of type `A₂` is an outgoing completion of the adapted polynomial input with
-`ℓ = 1` and coefficients `aᵢ`: its walls at the unfrozen indices are the input walls, its
-remaining wall is outgoing, and it is consistent. -/
+/-- The pentagon diagram is consistent. -/
+theorem pentagonDiagram_consistent : (hA.pentagonDiagram h a).Consistent := by
+  refine DirectedDiagram.consistent_of_restrict_of_restrict_compl
+    ((hA.isPentagonConfiguration h a).consistent ?_)
+    (hA.restrict_compl_pentagonIndices_consistent h a) fun j _ j' hj' => ?_
+  · simpa only [DirectedDiagram.restrict_wall] using hA.pentagonDiagram_label_pentagon h a
+  · obtain ⟨i, hi₁, hi₂, rfl⟩ := B.exists_eq_inl_of_notMem_pentagonIndices hj'
+    exact (hA.commute_pentagonDiagram_label h a hi₁ hi₂ j).symm
+
+/-- The pentagon diagram is an outgoing completion of the adapted polynomial input with `ℓ = 1`
+and coefficients `aᵢ`: its walls at the unfrozen indices are the input walls, its remaining wall
+is outgoing, and it is consistent. -/
 theorem isOutgoingCompletion_pentagonDiagram :
     DirectedDiagram.IsOutgoingCompletion
       (B.adaptedPolynomialInput (V := V) (fun _ => 1) (fun i _ => a i) h).wall
@@ -484,49 +576,22 @@ theorem isOutgoingCompletion_pentagonDiagram :
     exact hA.outgoingWall_outgoing h a
   consistent := hA.pentagonDiagram_consistent h a
 
-/-- **The scattering diagram of type `A₂` with coefficients.** For an adapted basis of type `A₂`
-and coefficients `a_{i₁}, a_{i₂}`, the outgoing scattering class of the adapted polynomial input
-`(eᵢ⊥, 1 + aᵢ q^{eᵢ})`, `i = i₁, i₂`, on the principal lattice is the class of the diagram with the
-one additional outgoing wall `{ν₁ + ν₂ = 0, ν₁ ≥ 0}` labelled by the ray label of
-`-Li₂(-a_{i₁} a_{i₂} T)` at `e_{i₁} + e_{i₂}`. For `a = 1` the input is the ordinary binomial
-input and the new label is `Ψ[e_{i₁} + e_{i₂}]`. -/
+/-- **The scattering diagram of type `A₂` with isolated indices and coefficients.** For an adapted
+basis of type `A₂` with isolated indices and coefficients `aᵢ`, the outgoing scattering class of
+the adapted polynomial input `(eᵢ⊥, 1 + aᵢ q^{eᵢ})` on the principal lattice, over all unfrozen
+indices `i`, is the class of the pentagon diagram, with the one additional outgoing wall
+`{ν₁ + ν₂ = 0, ν₁ ≥ 0}` labelled by the ray label of `-Li₂(-a_{i₁} a_{i₂} T)` at
+`e_{i₁} + e_{i₂}`. For `a = 1` the input is the ordinary binomial input and the new label is
+`Ψ[e_{i₁} + e_{i₂}]`. -/
 theorem scat_eq_toClass_pentagonDiagram
     [Module.Free ℤ (Module.Dual ℤ D.sublattice × D.unfrozen)] :
     (B.adaptedPolynomialInput (V := V) (fun _ => 1) (fun i _ => a i) h).Scat
         (B.adaptedPolynomialInput_full _ _ h) = (hA.pentagonDiagram h a).toClass :=
   DirectedDiagram.scat_eq_toClass _ _ (hA.isOutgoingCompletion_pentagonDiagram h a)
 
-/-- The wall of the diagram of type `A₂` indexed by `j` has the principal normal of
-`pentagonDegree i₁ i₂ j`. -/
-theorem pentagonDiagram_normal (j : B.unfrozenIndex ⊕ Unit) :
-    ((hA.pentagonDiagram h a).wall j).normal =
-      (D.principalNormal (B.pentagonDegree i₁ i₂ j)).toAddMonoidHom := by
-  rcases j with i | ⟨⟩ <;> simp
-
-/-- The label of the wall of the diagram of type `A₂` indexed by `j` is the principal image of
-the ray label of `-Li₂(-c T)` at `n`, for `n = pentagonDegree i₁ i₂ j` and
-`c = pentagonCoefficient a i₁ i₂ j`. -/
-theorem pentagonDiagram_label (j : B.unfrozenIndex ⊕ Unit) :
-    ((hA.pentagonDiagram h a).wall j).label =
-      (𝒅).graphBCHGroupEquiv ℒ D.principalCharacter.toAddMonoidHom
-        (SkewLieAlgebra.rayExp (D.coefficientForm R) (D.isAlt_coefficientForm R)
-          (B.pentagonDegree_mem_positiveDegrees_monoid i₁ i₂ j) (hA.pentagonDegree_ne_zero j)
-          (rescale (B.pentagonCoefficient a i₁ i₂ j) (negDilogNeg R))) := by
-  rcases j with i | u
-  · have hm : B.multiplier i = 1 := by
-      rcases hA.eq_or_eq i with rfl | rfl
-      exacts [hA.multiplier_fst, hA.multiplier_snd]
-    rw [pentagonDiagram_wall_inl, adaptedPolynomialInput_label,
-      B.coe_polynomialWallLabel_of_multiplier_eq_one _ hm, pentagonCoefficient_inl]
-    exact congrArg _ (SkewLieAlgebra.rayExp_congr_degree _ _
-      (B.pentagonDegree_inl i₁ i₂ i).symm _ _ _ _ _)
-  · rw [pentagonDiagram_wall_inr, outgoingWall_label, pentagonCoefficient_inr]
-    exact congrArg _ (SkewLieAlgebra.rayExp_congr_degree _ _
-      (B.pentagonDegree_inr i₁ i₂ u).symm _ _ _ _ _)
-
 variable [AddCommGroup M] (π : Module.Dual ℤ D.sublattice × D.unfrozen →+ M)
 
-/-- The coorientations of the walls of the diagram of type `A₂` are primitive. -/
+/-- The coorientations of the walls of the pentagon diagram are primitive. -/
 theorem isPrimitive_pentagonDiagram_normal (j : B.unfrozenIndex ⊕ Unit) :
     TauCeti.IsPrimitive ((hA.pentagonDiagram h a).wall j).normal := by
   have := Module.Free.of_basis B.sublatticeBasis
@@ -578,6 +643,14 @@ theorem coe_pentagonWallFunction (j : B.unfrozenIndex ⊕ Unit) :
 
 omit [Module.Free ℤ N] [Algebra ℚ R] [DecidableEq D.unfrozen]
   [DecidableEq (Module.Dual ℤ D.sublattice)] in
+/-- The wall function of the input wall at the unfrozen index `i` is `1 + aᵢ z^{r(eᵢ)}`. -/
+theorem coe_pentagonWallFunction_inl (i : B.unfrozenIndex) :
+    (hA.pentagonWallFunction a Q (.inl i) : (F).completion) =
+      1 + (F).toCompletion (single (B.pentagonExponent Q i₁ i₂ (.inl i)) (a i)) := by
+  rw [coe_pentagonWallFunction, pentagonCoefficient_inl]
+
+omit [Module.Free ℤ N] [Algebra ℚ R] [DecidableEq D.unfrozen]
+  [DecidableEq (Module.Dual ℤ D.sublattice)] in
 /-- The wall function of the outgoing wall is `1 + a_{i₁} a_{i₂} z^{r(e_{i₁} + e_{i₂})}`. -/
 theorem coe_pentagonWallFunction_inr (u : Unit) :
     (hA.pentagonWallFunction a Q (.inr u) : (F).completion) =
@@ -585,7 +658,7 @@ theorem coe_pentagonWallFunction_inr (u : Unit) :
   rw [coe_pentagonWallFunction, pentagonCoefficient_inr]
 
 /-- If the coefficient monoid `Q` contains every character `(χ, 0)`, then in the discrete grouping
-of the diagram of type `A₂`, in which every wall is its own function wall, the wall indexed by `j`
+of the pentagon diagram, in which every wall is its own function wall, the wall indexed by `j`
 has the wall function `1 + c z^{r(n)}` (`pentagonWallFunction`): `1 + aᵢ q^{eᵢ}` on the input wall
 at `i` and `1 + a_{i₁} a_{i₂} q^{e_{i₁} + e_{i₂}}` on the outgoing wall. -/
 theorem isWallFunction_discrete_pentagonDiagram
@@ -620,9 +693,9 @@ theorem isWallFunction_discrete_pentagonDiagram
     (F).completion) * (F).toCompletion (single p c))
     (congrArg (fun ν : Lpr →+ ℤ => ν p.val) hν).symm
 
-/-- If the coefficient monoid `Q` contains every character `(χ, 0)` and the coefficients
-`a_{i₁}, a_{i₂}` are images of elements of `S` under a semiring map `φ : S →+* R`, the discrete
-grouping of the diagram of type `A₂` is positive for the image of `S[Q]`. -/
+/-- If the coefficient monoid `Q` contains every character `(χ, 0)` and the coefficients `aᵢ`
+are images of elements of `S` under a semiring map `φ : S →+* R`, the discrete
+grouping of the pentagon diagram is positive for the image of `S[Q]`. -/
 theorem isPositive_discrete_pentagonDiagram
     (hQ : ∀ χ : Module.Dual ℤ D.sublattice, ((χ, 0) : Lpr) ∈ Q) {S : Type*} [Semiring S]
     (φ : S →+* R) (ha : ∀ i, a i ∈ φ.rangeS) :
@@ -636,7 +709,7 @@ theorem isPositive_discrete_pentagonDiagram
   exact AlgFiltration.isPositive_toCompletion
     (add_mem (one_mem _) ⟨single _ b, by rw [mapRingHom_single, hb]⟩)
 
-/-- Under the hypotheses of `isPositive_discrete_pentagonDiagram`, the diagram of type `A₂` is a
+/-- Under the hypotheses of `isPositive_discrete_pentagonDiagram`, the pentagon diagram is a
 positive wall representative for the image of `S[Q]`. -/
 theorem isPositiveWallRepresentative_pentagonDiagram
     (hQ : ∀ χ : Module.Dual ℤ D.sublattice, ((χ, 0) : Lpr) ∈ Q) {S : Type*} [Semiring S]
@@ -644,14 +717,14 @@ theorem isPositiveWallRepresentative_pentagonDiagram
     (hA.pentagonDiagram h a).IsPositiveWallRepresentative σ (mapRingHom Q φ).rangeS π :=
   (hA.isPositive_discrete_pentagonDiagram h a π Q hQ φ ha).isPositiveWallRepresentative
 
-/-- **Positivity of adapted polynomial walls of type `A₂`.** For an adapted basis of type `A₂`,
-coefficients `a_{i₁}, a_{i₂}` that are images under a semiring map `φ : S →+* R`, and a coefficient
-monoid `Q` containing every character `(χ, 0)`, the outgoing scattering class of the adapted
-polynomial input `(eᵢ⊥, 1 + aᵢ q^{eᵢ})` on the principal lattice has a consistent outgoing
-representative, the diagram of type `A₂`, whose grouped wall functions `1 + a_{i₁} q^{e_{i₁}}`,
-`1 + a_{i₂} q^{e_{i₂}}` and `1 + a_{i₁} a_{i₂} q^{e_{i₁} + e_{i₂}}` are positive for the image of
-`S[Q]`. For `a = 1` and `φ = Nat.castRingHom R` this is the ordinary binomial input with
-natural-number coefficients. -/
+/-- **Positivity of adapted polynomial walls of type `A₂` with isolated indices.** For an adapted
+basis of type `A₂` with isolated indices, coefficients `aᵢ` that are images under a semiring map
+`φ : S →+* R`, and a coefficient monoid `Q` containing every character `(χ, 0)`, the outgoing
+scattering class of the adapted polynomial input `(eᵢ⊥, 1 + aᵢ q^{eᵢ})` on the principal lattice,
+over all unfrozen indices `i`, has a consistent outgoing representative, the pentagon diagram,
+whose grouped wall functions `1 + aᵢ q^{eᵢ}` and `1 + a_{i₁} a_{i₂} q^{e_{i₁} + e_{i₂}}` are
+positive for the image of `S[Q]`. For `a = 1` and `φ = Nat.castRingHom R` this is the ordinary
+binomial input with natural-number coefficients. -/
 theorem exists_isPositiveWallRepresentative_scat
     [Module.Free ℤ (Module.Dual ℤ D.sublattice × D.unfrozen)]
     (hQ : ∀ χ : Module.Dual ℤ D.sublattice, ((χ, 0) : Lpr) ∈ Q) {S : Type*} [Semiring S]
@@ -666,6 +739,6 @@ theorem exists_isPositiveWallRepresentative_scat
     (hA.scat_eq_toClass_pentagonDiagram h a).symm,
     hA.isPositiveWallRepresentative_pentagonDiagram h a π Q hQ φ ha⟩
 
-end IsTypeA₂
+end IsTypeA₂WithIsolated
 
 end Mei.SkewLatticeDatum.AdaptedBasis
