@@ -8,11 +8,13 @@ module
 public import Mei.Geometry.ScatteringDiagram.Skew.Examples
 public import Mei.Geometry.ScatteringDiagram.Skew.PolynomialInput.Extension.Basic
 public import Mei.Geometry.ScatteringDiagram.Skew.PolynomialInput.Incoming
+public import Mei.Geometry.ScatteringDiagram.Skew.PolynomialInput.Commuting
 
 /-!
 # Checks on polynomial inputs of generalized cluster scattering diagrams
 
-Two checks on `BLMPolynomialInput`.
+Two checks on `BLMPolynomialInput`, and an instance of the positive representatives of
+`Mei.Geometry.ScatteringDiagram.Skew.PolynomialInput.Commuting`.
 
 * *Terms of one initial polynomial on different rays.* Let `1 + ∑ₛ pₛ z^(s w)` be the initial
   function of a polynomial input, with variables `p_s`, `p_t` for `s ≠ t`. The terms
@@ -35,6 +37,15 @@ Two checks on `BLMPolynomialInput`.
   principal extension of the same adapted basis carries one, with a nonzero form
   (`Mei.SkewLatticeDatum.Examples.nonempty_blmPolynomialInput_principalBLMBasis`,
   `Mei.SkewLatticeDatum.Examples.principalBLMDatum_form_ne_zero`).
+
+* *Positive representatives for the zero form of rank two.* On `ℤ²` with the zero form and both
+  basis vectors unfrozen (`zeroFormPlaneBasis`), the principal BLM extension with any
+  multiplicities `ℓ₀, ℓ₁` is a polynomial input whose form vanishes on its unfrozen sublattice
+  (`zeroFormPlane_principalBLMDatum_form_eq_zero`). Its two incoming cylinder hyperplanes have
+  non-proportional normals (`zeroFormPlane_alphabetNormal_not_proportional`), so they cross;
+  nevertheless the incoming diagram is consistent, and over `ℚ` it represents its own outgoing
+  scattering class with grouped wall functions `1 + ∑_{s=1}^{ℓᵢ} pᵢₛ z^{s wᵢ}` whose monomial
+  coefficients are natural numbers (`zeroFormPlane_exists_isPositiveWallRepresentative`).
 
 The splitting of the initial function into rays follows Burcroff–Lee–Mou, *Positivity of
 generalized cluster scattering diagrams*, §8.1 and §9.2 (arXiv:2503.03719v1).
@@ -169,5 +180,97 @@ theorem principalBLMDatum_form_ne_zero (ℓ : zeroFormAdaptedBasis.unfrozenIndex
   simp [hc, hd] at this
 
 end ZeroForm
+
+section ZeroFormPlane
+
+/-- The rank-two skew lattice datum on `ℤ²` with the zero form and `N_uf = N° = ℤ²`. -/
+def zeroFormPlane : SkewLatticeDatum (ℤ × ℤ) :=
+  ofBasis (Module.Basis.finTwoProd ℤ) Finset.univ (fun _ => 1) 0 (fun _ => one_pos)
+    (fun _ => by simp) (fun _ _ _ => ⟨0, by simp⟩) (fun _ _ _ => ⟨0, by simp⟩)
+
+@[simp]
+theorem zeroFormPlane_form : zeroFormPlane.form = 0 :=
+  ofBasis_form
+
+/-- The standard basis of `ℤ²`, with both indices unfrozen and multipliers one, as an adapted
+basis of the zero-form plane. -/
+def zeroFormPlaneBasis : zeroFormPlane.AdaptedBasis (Fin 2) :=
+  AdaptedBasis.ofBasis _ _ _ _ _ _ _ _
+
+@[simp]
+theorem zeroFormPlaneBasis_unfrozenIndex : zeroFormPlaneBasis.unfrozenIndex = Finset.univ :=
+  AdaptedBasis.ofBasis_unfrozenIndex
+
+variable (ℓ : zeroFormPlaneBasis.unfrozenIndex → ℕ+)
+
+/-- The principal BLM extension of the zero-form plane with multiplicities `ℓ`. -/
+abbrev zeroFormPlaneInput : (zeroFormPlaneBasis.principalBLMBasis ℓ).BLMPolynomialInput :=
+  zeroFormPlaneBasis.principalBLMExtension ℓ
+
+/-- The unfrozen index of the extension coming from the basis vector `e_k` of `ℤ²`. -/
+def zeroFormPlaneIndex (k : Fin 2) : (zeroFormPlaneBasis.principalBLMBasis ℓ).unfrozenIndex :=
+  zeroFormPlaneBasis.principalBLMUnfrozenEquiv ℓ ⟨k, by simp⟩
+
+/-- The incoming cylinder hyperplanes of the extension at the two unfrozen indices have
+non-proportional normals: the normal at `e₀` takes the value `1` on the character `(a₀*, 0)`,
+and the normal at `e₁` takes the value `0` there. -/
+theorem zeroFormPlane_alphabetNormal_not_proportional {c e : ℤ} (hc : c ≠ 0) :
+    c • (zeroFormPlaneInput ℓ).alphabetNormal (zeroFormPlaneIndex ℓ 0) ≠
+      e • (zeroFormPlaneInput ℓ).alphabetNormal (zeroFormPlaneIndex ℓ 1) := by
+  intro hce
+  have h := DFunLike.congr_fun hce
+    (((zeroFormPlaneBasis.principalBLMBasis ℓ).basis.coord (zeroFormPlaneIndex ℓ 0)), 0)
+  simp [zeroFormPlaneIndex, hc] at h
+
+/-- The form of the principal extension of the zero-form plane vanishes on its unfrozen
+sublattice. -/
+theorem zeroFormPlane_principalBLMDatum_form_eq_zero
+    (n m : (zeroFormPlaneBasis.principalBLMDatum ℓ).unfrozen) :
+    (zeroFormPlaneBasis.principalBLMDatum ℓ).form n m = 0 :=
+  zeroFormPlaneBasis.principalBLMDatum_form_eq_zero_of_forall_form_eq_zero ℓ (by simp) n m
+
+/-- The alphabet degrees of the extension are allowed exponents of its coefficient monoid. -/
+instance zeroFormPlaneInput_coefficientMonoid_fact :
+    Fact ((PositiveDegrees.finiteAlphabet (zeroFormPlaneInput ℓ).letterExponent).monoid ≤
+      (zeroFormPlaneInput ℓ).coefficientMonoid) :=
+  ⟨(zeroFormPlaneInput ℓ).positiveDegrees_le_coefficientMonoid⟩
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [DecidableEq (Module.Dual ℤ ((Fin 2 ⊕ zeroFormPlaneBasis.unfrozenIndex) →₀ ℤ))]
+  {latticeMap : (Module.Dual ℤ ((Fin 2 ⊕ zeroFormPlaneBasis.unfrozenIndex) →₀ ℤ) ×
+    ((zeroFormPlaneInput ℓ).Letter → ℤ)) →+ V}
+  (h : TauCeti.Toric.IsIntegralLattice latticeMap)
+
+/-- The incoming diagram of the principal extension of the zero-form plane is consistent,
+although its two cylinder hyperplanes cross. -/
+theorem zeroFormPlane_incomingDiagram_consistent :
+    ((zeroFormPlaneInput ℓ).incomingDiagram (R := ℚ) h).Consistent :=
+  (zeroFormPlaneInput ℓ).incomingDiagram_consistent_of_forall_form_eq_zero h
+    (zeroFormPlane_principalBLMDatum_form_eq_zero ℓ)
+
+open scoped Mei.TropicalVertexCoefficientAction in
+/-- Over `ℚ`, the outgoing scattering class of the principal extension of the zero-form plane
+has a representative whose grouped wall functions have natural-number monomial coefficients, for
+the coefficient monoid with Laurent characters and nonnegative multiplicities of the variables:
+the incoming diagram, with wall functions `1 + ∑_{s=1}^{ℓᵢ} pᵢₛ z^{s wᵢ}`. -/
+theorem zeroFormPlane_exists_isPositiveWallRepresentative :
+    ∃ (κ : Type) (E : DirectedDiagram
+        (d := PositiveDegrees.finiteAlphabet (zeroFormPlaneInput ℓ).letterExponent) h
+        (tropicalVertexWallSpaces (R := ℚ) _ (AddMonoidHom.id _)) κ),
+      E.toClass = ((zeroFormPlaneInput ℓ).incomingDiagram (R := ℚ) h).Scat
+          ((zeroFormPlaneInput ℓ).incomingDiagram_full h) ∧
+        E.IsPositiveWallRepresentative
+          ((TropicalVertexCoefficientAction.filtration (R := ℚ)
+            (PositiveDegrees.finiteAlphabet (zeroFormPlaneInput ℓ).letterExponent)
+            (zeroFormPlaneInput ℓ).coefficientMonoid).completedBCHAction _
+              (tropicalVertexGrading (R := ℚ) _ (AddMonoidHom.id _)))
+          (AddMonoidAlgebra.mapRingHom (zeroFormPlaneInput ℓ).coefficientMonoid
+            (Nat.castRingHom ℚ)).rangeS
+          (AddMonoidHom.fst _ _) :=
+  (zeroFormPlaneInput ℓ).exists_isPositiveWallRepresentative_of_forall_form_eq_zero h
+    (zeroFormPlaneInput ℓ).coefficientMonoid (zeroFormPlane_principalBLMDatum_form_eq_zero ℓ)
+    (fun _ => by simp) _
+
+end ZeroFormPlane
 
 end Mei.SkewLatticeDatum.Examples

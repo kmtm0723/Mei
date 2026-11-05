@@ -53,6 +53,8 @@ vector `-2 e₁*` (`Mei.SkewLatticeDatum.Examples.rankTwoBLMPolynomialInput`, in
 * `Mei.SkewLatticeDatum.AdaptedBasis.BLMPolynomialInput.multiplicity_smul_exponent`:
   `ℓ_i w_i = -{-, κ(e_i) e_i}`.
 * `Mei.SkewLatticeDatum.AdaptedBasis.BLMPolynomialInput.exponent_apply_basis_self`: `w_i(e_i) = 0`.
+* `BLMPolynomialInput.exponent_apply_basis_eq_zero_of_forall_form_eq_zero`:
+  `w_i(e_j) = 0` for unfrozen `j` when the form vanishes on `N_uf`.
 * `Mei.SkewLatticeDatum.AdaptedBasis.BLMPolynomialInput.initialFunction`: the initial wall
   functions `1 + ∑_s p_{i,s} z^{s w_i}`.
 * `Mei.SkewLatticeDatum.AdaptedBasis.BLMPolynomialInput.isEmpty_of_form_eq_zero`: the zero form
@@ -121,6 +123,14 @@ to its support `e_i⊥`. -/
 theorem exponent_apply_basis_self (i : B.unfrozenIndex) : I.exponent i (B.basis i) = 0 := by
   apply Int.cast_injective (α := ℚ)
   simp [I.cast_exponent_apply]
+
+/-- If the form vanishes on the unfrozen sublattice, every exponent `w_i` vanishes on every
+unfrozen basis vector `e_j`: `w_i(e_j) = d_i {e_i, e_j} / ℓ_i = 0`. -/
+theorem exponent_apply_basis_eq_zero_of_forall_form_eq_zero
+    (hform : ∀ n m : D.unfrozen, D.form n m = 0) (i j : B.unfrozenIndex) :
+    I.exponent i (B.basis j) = 0 := by
+  apply Int.cast_injective (α := ℚ)
+  simp [I.cast_exponent_apply, B.forall_form_eq_zero_iff.mp hform i j]
 
 /-- The exponents are nonzero. -/
 @[simp]

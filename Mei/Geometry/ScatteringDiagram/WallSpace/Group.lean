@@ -16,7 +16,8 @@ public import Mei.Algebra.Lie.BCH.Ray.Factor
 A wall group consists of the completed BCH elements whose logarithm at each
 finite order lies in the image of a supported-ray wall Lie algebra. These are
 subgroups, and wall groups with rationally proportional normals commute
-elementwise, including groups belonging to different supported rays.
+elementwise, including groups belonging to different supported rays. So do wall groups on two
+supported rays each of whose normals annihilates the geometric direction of the other ray.
 
 Finite images commute with all truncation transitions. Membership retains the
 actual allowed ray degrees through `Mei.DirectedWallSpaces.raySubmodule`. A label whose
@@ -78,16 +79,25 @@ theorem truncatedRayLieSubalgebra_eq_bot (w : SupportedRay d) (m : Λ →+ ℤ) 
   obtain ⟨y, hy, rfl⟩ := (H.mem_truncatedRayLieSubalgebra w m k x).mp hx
   exact (d.degreeIdeal ℒ k).mkQ_eq_zero.mpr (H.raySubmodule_le_degreeIdeal w m k hw hy)
 
+/-- If two ray sums commute, so do their images after finite truncation. -/
+theorem lie_eq_zero_of_mem_truncatedRayLieSubalgebra_of_forall {w v : SupportedRay d}
+    {m m' : Λ →+ ℤ}
+    (hlie : ∀ x ∈ H.raySubmodule w m, ∀ y ∈ H.raySubmodule v m', ⁅x, y⁆ = 0)
+    {k : ℕ} {x y : d.truncatedLie ℒ k}
+    (hx : x ∈ H.truncatedRayLieSubalgebra w m k)
+    (hy : y ∈ H.truncatedRayLieSubalgebra v m' k) : ⁅x, y⁆ = 0 := by
+  obtain ⟨a, ha, hax⟩ := (H.mem_truncatedRayLieSubalgebra w m k _).mp hx
+  obtain ⟨b, hb, hby⟩ := (H.mem_truncatedRayLieSubalgebra v m' k _).mp hy
+  rw [← hax, ← hby, ← LieHom.map_lie, hlie a ha b hb, map_zero]
+
 /-- Proportional normals still give zero brackets after finite truncation. -/
 theorem lie_eq_zero_of_mem_truncatedRayLieSubalgebra {w v : SupportedRay d}
     {m m' : Λ →+ ℤ} {k : ℕ} {x y : d.truncatedLie ℒ k}
     (hx : x ∈ H.truncatedRayLieSubalgebra w m k)
     (hy : y ∈ H.truncatedRayLieSubalgebra v m' k)
-    {c e : ℤ} (hc : c ≠ 0) (he : e ≠ 0) (hm : c • m = e • m') : ⁅x, y⁆ = 0 := by
-  obtain ⟨a, ha, hax⟩ := (H.mem_truncatedRayLieSubalgebra w m k _).mp hx
-  obtain ⟨b, hb, hby⟩ := (H.mem_truncatedRayLieSubalgebra v m' k _).mp hy
-  rw [← hax, ← hby, ← LieHom.map_lie,
-    H.lie_eq_zero_of_mem_raySubmodule ha hb hc he hm, map_zero]
+    {c e : ℤ} (hc : c ≠ 0) (he : e ≠ 0) (hm : c • m = e • m') : ⁅x, y⁆ = 0 :=
+  H.lie_eq_zero_of_mem_truncatedRayLieSubalgebra_of_forall
+    (fun _ ha _ hb => H.lie_eq_zero_of_mem_raySubmodule ha hb hc he hm) hx hy
 
 variable [Algebra ℚ R] [LieAlgebra ℚ L] [IsScalarTower ℚ R L]
 
@@ -231,20 +241,39 @@ theorem wallGroup_rescale (w : SupportedRay d) (m : Λ →+ ℤ)
   ext g
   simp only [mem_wallGroup, mem_truncatedRayLieSubalgebra, H.raySubmodule_rescale w m c hc]
 
+/-- Completed labels in the wall groups of `(w, m)` and `(v, m')` commute as soon as the ray
+sums of these two wall spaces commute. -/
+theorem commute_of_mem_wallGroup_of_forall {w v : SupportedRay d} {m m' : Λ →+ ℤ}
+    (hlie : ∀ x ∈ H.raySubmodule w m, ∀ y ∈ H.raySubmodule v m', ⁅x, y⁆ = 0)
+    {g h : d.completedBCHGroup ℒ} (hg : g ∈ H.wallGroup w m) (hh : h ∈ H.wallGroup v m') :
+    Commute g h := by
+  apply CompletedGroup.ext
+  intro k
+  rw [map_mul, map_mul]
+  have hc := BCHGroup.commute_exp_of_lie_eq_zero _ _
+    (H.lie_eq_zero_of_mem_truncatedRayLieSubalgebra_of_forall hlie
+      ((H.mem_wallGroup w m g).mp hg k) ((H.mem_wallGroup v m' h).mp hh k))
+  rw [BCHGroup.exp_log (L := d.truncatedLie ℒ k) (CompletedGroup.projection k g),
+    BCHGroup.exp_log (L := d.truncatedLie ℒ k) (CompletedGroup.projection k h)] at hc
+  exact hc.eq
+
 /-- Completed labels with proportional normals commute, with no restriction on
 their supported rays or the geometric images of those rays. -/
 theorem commute_of_mem_wallGroup {w v : SupportedRay d} {m m' : Λ →+ ℤ}
     {g h : d.completedBCHGroup ℒ} (hg : g ∈ H.wallGroup w m) (hh : h ∈ H.wallGroup v m')
-    {c e : ℤ} (hc : c ≠ 0) (he : e ≠ 0) (hm : c • m = e • m') : Commute g h := by
-  apply CompletedGroup.ext
-  intro k
-  rw [map_mul, map_mul]
-  have hlie := H.lie_eq_zero_of_mem_truncatedRayLieSubalgebra
-    ((H.mem_wallGroup w m g).mp hg k) ((H.mem_wallGroup v m' h).mp hh k) hc he hm
-  have hc := BCHGroup.commute_exp_of_lie_eq_zero _ _ hlie
-  rw [BCHGroup.exp_log (L := d.truncatedLie ℒ k) (CompletedGroup.projection k g),
-    BCHGroup.exp_log (L := d.truncatedLie ℒ k) (CompletedGroup.projection k h)] at hc
-  exact hc.eq
+    {c e : ℤ} (hc : c ≠ 0) (he : e ≠ 0) (hm : c • m = e • m') : Commute g h :=
+  H.commute_of_mem_wallGroup_of_forall
+    (fun _ hx _ hy => H.lie_eq_zero_of_mem_raySubmodule hx hy hc he hm) hg hh
+
+/-- Completed labels in the wall groups of `(w, m)` and `(v, m')` commute if `m` annihilates the
+geometric direction `ρ(v)` of the generator of `v` and `m'` annihilates `ρ(w)`. The normals need
+not be proportional. -/
+theorem commute_of_mem_wallGroup_of_apply_eq_zero {w v : SupportedRay d} {m m' : Λ →+ ℤ}
+    (hm : m (ρ v.generator) = 0) (hm' : m' (ρ w.generator) = 0)
+    {g h : d.completedBCHGroup ℒ} (hg : g ∈ H.wallGroup w m) (hh : h ∈ H.wallGroup v m') :
+    Commute g h :=
+  H.commute_of_mem_wallGroup_of_forall
+    (fun _ hx _ hy => H.lie_eq_zero_of_mem_raySubmodule_of_apply_eq_zero hm hm' hx hy) hg hh
 
 /-- Every completed wall group is abelian. -/
 noncomputable instance wallGroup_isMulCommutative (w : SupportedRay d) (m : Λ →+ ℤ) :
