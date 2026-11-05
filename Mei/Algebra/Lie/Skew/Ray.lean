@@ -153,6 +153,15 @@ def rayExp (f : R⟦X⟧) : d.completedBCHGroup ℒ :=
 theorem rayExp_def (f : R⟦X⟧) :
     rayExp β hβ hn hn0 f = d.completedBCHExp ℒ (raySeries β hβ hn hn0 f) := (rfl)
 
+omit hn hn0 in
+/-- Ray labels at equal degrees agree. -/
+theorem rayExp_congr_degree {n₁ n₂ : Γ} (h : n₁ = n₂) (hn₁ : n₁ ∈ d.monoid) (hn₁0 : n₁ ≠ 0)
+    (hn₂ : n₂ ∈ d.monoid) (hn₂0 : n₂ ≠ 0) (g : R⟦X⟧) :
+    rayExp β hβ hn₁ hn₁0 g = rayExp β hβ hn₂ hn₂0 g := by
+  subst h
+  -- The two sides differ only in proofs of propositions.
+  rfl
+
 /-- At order `k`, a ray label is the exponential of the partial sum over `j < k`. -/
 @[simp]
 theorem projection_rayExp (k : ℕ) (f : R⟦X⟧) :

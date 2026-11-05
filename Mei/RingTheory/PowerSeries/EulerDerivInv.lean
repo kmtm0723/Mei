@@ -15,7 +15,8 @@ import Mathlib.Algebra.Module.Rat
 The Euler derivation `f ↦ X * derivative f` multiplies the coefficient of degree
 `j` by `j`. Over a rational algebra, `eulerDerivInv` divides the positive-degree
 coefficients by their degrees and sets the constant coefficient to zero. It
-inverts the Euler derivation on series without constant term. Applied to a formal
+inverts the Euler derivation on series without constant term, and commutes with
+coefficient maps and with rescaling the variable. Applied to a formal
 logarithm, this gives the potential whose ray exponential acts by that wall
 function.
 -/
@@ -79,5 +80,12 @@ theorem map_eulerDerivInv {S : Type*} [CommRing S] [Algebra ℚ S]
     map φ (eulerDerivInv f) = eulerDerivInv (map φ f) := by
   ext j
   simp only [coeff_map, coeff_eulerDerivInv, map_rat_smul]
+
+/-- Rescaling the variable commutes with integration against `dX / X`. -/
+@[simp]
+theorem eulerDerivInv_rescale (a : R) (f : PowerSeries R) :
+    eulerDerivInv (rescale a f) = rescale a (eulerDerivInv f) := by
+  ext j
+  rw [coeff_eulerDerivInv, coeff_rescale, coeff_rescale, coeff_eulerDerivInv, mul_smul_comm]
 
 end PowerSeries

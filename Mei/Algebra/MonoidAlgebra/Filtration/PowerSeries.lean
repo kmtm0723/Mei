@@ -14,7 +14,9 @@ public import Mei.RingTheory.FilteredAlgebra.PowerSeries.Basic
 Let `F` be a filtration of `R[M]` and `x` an element of the first completed ideal that is the
 completion of the monomial `z^m`. Evaluating a power series `g = ∑ᵢ gᵢ Xⁱ` at `x` gives, at order
 `k`, the class of `∑_{i ≤ k} gᵢ z^{i • m}`
-(`Mei.AlgFiltration.projection_completedAeval_of_val_eq_toCompletion_single`).
+(`Mei.AlgFiltration.projection_completedAeval_of_val_eq_toCompletion_single`); for instance
+`1 + b X` gives the completion of `1 + b z^m`
+(`Mei.AlgFiltration.completedAeval_one_add_C_mul_X_of_val_eq_toCompletion_single`).
 
 Suppose the terms of `F` lie in the monomial ideals of an integral degree `δ` that is
 nonnegative on `M` and positive on `m`. An element of the `k`-th monomial ideal has no
@@ -65,6 +67,15 @@ theorem projection_completedAeval_of_val_eq_toCompletion_single
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [← map_pow, single_pow, one_pow, ← Ideal.Quotient.mkₐ_eq_mk R, ← map_smul, smul_single,
     smul_eq_mul, mul_one]
+
+/-- The linear polynomial `1 + b X` evaluated at the completion of `z^m` is the completion of
+`1 + b z^m`. -/
+theorem completedAeval_one_add_C_mul_X_of_val_eq_toCompletion_single
+    (hx : (x : F.completion) = F.toCompletion (single m 1)) (b : R) :
+    F.completedAeval x (1 + PowerSeries.C b * PowerSeries.X) = 1 + F.toCompletion (single m b) := by
+  rw [map_add, map_one, map_mul, completedAeval_C, completedAeval_X, hx,
+    ← toCompletion_algebraMap, ← map_mul, coe_algebraMap, Function.comp_apply, single_mul_single,
+    zero_add, mul_one, Algebra.algebraMap_self, RingHom.id_apply]
 
 variable {P : AddSubmonoid M} {δ : M →+ ℤ}
 

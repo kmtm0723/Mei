@@ -41,13 +41,6 @@ variable {R Γ : Type*} [CommRing R] [Algebra ℚ R] [AddCommGroup Γ] [Decidabl
   {ι : Type*} (deg : ι → Γ) (hdeg : ∀ i, deg i ∈ d.monoid) (hdeg0 : ∀ i, deg i ≠ 0)
   (f : ι → R⟦X⟧)
 
-/-- Ray labels at equal degrees agree. -/
-private theorem rayExp_congr_degree {n n' : Γ} (h : n = n') (hn : n ∈ d.monoid) (hn0 : n ≠ 0)
-    (hn' : n' ∈ d.monoid) (hn0' : n' ≠ 0) (g : R⟦X⟧) :
-    rayExp β hβ hn hn0 g = rayExp β hβ hn' hn0' g := by
-  subst h
-  rfl
-
 /-- **Grouping a sorted product of ray labels by degree.** Let a finite product of ray labels
 `exp(fᵢ)` at degrees `nᵢ` be sorted, `β(nᵢ, nⱼ) ≥ 0` for `i < j`. It equals the product, over
 a list of representatives chosen from the original list for its distinct degrees, again sorted,
