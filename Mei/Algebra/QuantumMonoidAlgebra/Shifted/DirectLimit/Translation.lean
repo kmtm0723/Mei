@@ -12,11 +12,9 @@ public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.Inclusion
 /-!
 # Global monomial multiplication and completed translations
 
-Left multiplication by a global quantum monomial is the existing completed
-translation of every coefficient chart. This includes infinite coefficient
-families and arbitrary negative origins. A finite-quotient calculation identifies
-the completed product with translation before descent to the global algebra.
-The bilinear form need not be alternating.
+Left multiplication by a global quantum monomial equals completed translation
+on every coefficient chart. This includes infinite coefficient families and
+arbitrary negative origins. The bilinear form need not be alternating.
 -/
 
 public section

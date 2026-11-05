@@ -7,6 +7,7 @@ module
 
 public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.DirectLimit.Positive.Basic
 public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.DirectLimit.Translation
+public import Mei.Logic.Function.Cast
 
 /-!
 # Monomial normal forms of global quantum coefficients
@@ -56,8 +57,7 @@ theorem shiftedCompletedMonomialEquiv_positiveCompletionShiftEquiv_zero (p : Γ)
       positiveCompletionShiftEquiv q β d (p + 0) a := by
   apply (d.shiftedFiltration (grade q β) (p + 0)).completion_ext
   intro k
-  let b := Classical.choose (Ideal.Quotient.mk_surjective ((F).projection k a))
-  have hb := Classical.choose_spec (Ideal.Quotient.mk_surjective ((F).projection k a))
+  refine (Ideal.Quotient.mk_surjective ((F).projection k a)).elim fun b hb => ?_
   have h0 := projection_positiveCompletionShiftEquiv_of_projection q β d 0 k a b hb.symm
   have hp := projection_positiveCompletionShiftEquiv_of_projection q β d (p + 0) k a b hb.symm
   have ht := projection_shiftedCompletedMonomialEquiv q β p 0 d k
@@ -79,9 +79,7 @@ theorem directLimitMonomial_mul_positiveCompletionToDirectLimit (p : Γ)
     directLimitMonomial q β d hspan p * positiveCompletionToDirectLimit q β d a =
       d.toShiftedDirectLimitOfChart (grade q β) p s hp
         (positiveCompletionShiftEquiv q β d p a) := by
-  have hzero : (0 : Γ) - d.coefficientOrigin 0 ∈ d.monoid := by
-    rw [d.coefficientOrigin_eq_neg_sum]
-    simp
+  have hzero : (0 : Γ) - d.coefficientOrigin 0 ∈ d.monoid := d.zero_coefficientOrigin_mem
   have hsum : p + 0 - d.coefficientOrigin s ∈ d.monoid := by simpa only [add_zero] using hp
   have ht := directLimitMonomial_mul_toShiftedDirectLimitOfChart q β d hspan p 0 0 s
     hzero hsum (positiveCompletionShiftEquiv q β d 0 a)
@@ -94,9 +92,22 @@ theorem directLimitMonomial_mul_positiveCompletionToDirectLimit (p : Γ)
           (positiveCompletionShiftEquiv q β d r a) =
         d.toShiftedDirectLimitOfChart (grade q β) p s hp
           (positiveCompletionShiftEquiv q β d p a) := by
-    subst r
-    rfl
-  exact he.trans (ht.trans (hc.trans (hcast (p + 0) (add_zero p) hsum)))
+    have hc := d.toShiftedDirectLimitOfChart_cast (grade q β)
+      r p hr s s hrs hp (positiveCompletionShiftEquiv q β d r a)
+    have he : cast (congrArg (d.ShiftedCoefficients (grade q β)) hr)
+        (positiveCompletionShiftEquiv q β d r a) =
+        positiveCompletionShiftEquiv q β d p a := by
+      simpa only [cast_eq] using
+        Function.cast_apply (A := fun _ : Γ => (F).completion)
+          (fun u => (positiveCompletionShiftEquiv q β d u :
+            (F).completion → d.ShiftedCoefficients (grade q β) u)) hr a
+    exact hc.symm.trans
+      (congrArg (d.toShiftedDirectLimitOfChart (grade q β) p s hp) he)
+  calc
+    _ = _ := he
+    _ = _ := ht
+    _ = _ := hc
+    _ = _ := hcast (p + 0) (add_zero p) hsum
 
 /-- For a fixed origin, the positive completed factor is uniquely determined. -/
 theorem directLimitMonomial_mul_positiveCompletionToDirectLimit_injective (p : Γ) :
@@ -112,10 +123,8 @@ theorem exists_directLimitMonomial_mul_positiveCompletionToDirectLimit (x : G) :
     ∃ n : d.monoid, ∃ a : (F).completion,
       x = directLimitMonomial q β d hspan (-(n : Γ)) *
         positiveCompletionToDirectLimit q β d a := by
-  let s := Classical.choose (d.exists_toShiftedDirectLimit (grade q β) x)
-  let b := Classical.choose (Classical.choose_spec (d.exists_toShiftedDirectLimit (grade q β) x))
-  have hb := Classical.choose_spec
-    (Classical.choose_spec (d.exists_toShiftedDirectLimit (grade q β) x))
+  refine (d.exists_toShiftedDirectLimit (grade q β) x).elim fun s hs => ?_
+  refine hs.elim fun b hb => ?_
   let a := (positiveCompletionShiftEquiv q β d (d.coefficientOrigin s)).symm b
   have hp : d.coefficientOrigin s - d.coefficientOrigin s ∈ d.monoid := by simp
   have ht := directLimitMonomial_mul_positiveCompletionToDirectLimit q β d hspan

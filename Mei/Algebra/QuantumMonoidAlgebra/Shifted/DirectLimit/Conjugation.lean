@@ -92,6 +92,8 @@ def directLimitMonomialConjAction : Multiplicative Γ →*
 theorem directLimitMonomialConjAction_apply (p : Γ)
     (x : d.ShiftedDirectLimit (grade q β)) :
     directLimitMonomialConjAction q β d hspan (Multiplicative.ofAdd p) x =
-      directLimitMonomialRightConj q β d hspan p x := (rfl)
+      directLimitMonomialRightConj q β d hspan p x := by
+  -- This application only projects the defining map record and its unchanged underlying function.
+  rfl
 
 end Mei.QuantumMonoidAlgebra

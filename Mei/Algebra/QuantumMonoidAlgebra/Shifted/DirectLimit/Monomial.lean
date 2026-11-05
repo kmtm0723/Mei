@@ -47,7 +47,9 @@ def directLimitMonomial (p : Γ) : d.ShiftedDirectLimit (grade q β) :=
 /-- The global monomial is computed by the original algebra embedding. -/
 theorem directLimitMonomial_eq (p : Γ) :
     directLimitMonomial q β d hspan p =
-      d.toShiftedDirectLimitAlgHom (grade q β) hspan (monomial q β p) := (rfl)
+      d.toShiftedDirectLimitAlgHom (grade q β) hspan (monomial q β p) := by
+  -- This application only projects the defining map record and its unchanged underlying function.
+  rfl
 
 /-- Monomials remain units under the finite coefficient embedding. -/
 def directLimitMonomialUnit (p : Γ) : (d.ShiftedDirectLimit (grade q β))ˣ :=
@@ -58,6 +60,7 @@ def directLimitMonomialUnit (p : Γ) : (d.ShiftedDirectLimit (grade q β))ˣ :=
 theorem coe_directLimitMonomialUnit (p : Γ) :
     (directLimitMonomialUnit q β d hspan p : d.ShiftedDirectLimit (grade q β)) =
       directLimitMonomial q β d hspan p := by
+  -- Units.map evaluates by the algebra hom; expose its value before coe_monomialUnit.
   change (d.toShiftedDirectLimitAlgHom (grade q β) hspan)
     (monomialUnit q β p : QuantumMonoidAlgebra q β) = _
   rw [coe_monomialUnit]
@@ -68,6 +71,7 @@ theorem coe_directLimitMonomialUnit (p : Γ) :
 theorem coe_directLimitMonomialUnit_inv (p : Γ) :
     (↑(directLimitMonomialUnit q β d hspan p)⁻¹ : d.ShiftedDirectLimit (grade q β)) =
       ((q ^ β p p : Rˣ) : R) • directLimitMonomial q β d hspan (-p) := by
+  -- Inversion commutes with Units.map on values; expose the image of the inverse unit.
   change (d.toShiftedDirectLimitAlgHom (grade q β) hspan)
     (↑(monomialUnit q β p)⁻¹ : QuantumMonoidAlgebra q β) = _
   rw [coe_monomialUnit_inv, _root_.map_smul]
@@ -99,6 +103,7 @@ theorem directLimitMonomialRightConj_apply (p : Γ)
       (↑(directLimitMonomialUnit q β d hspan p)⁻¹ : d.ShiftedDirectLimit (grade q β)) * x *
         directLimitMonomial q β d hspan p := by
   rw [← coe_directLimitMonomialUnit]
+  -- toAlgAut evaluates by ConjAct: inverse unit on the left, its inverse on the right.
   change (↑(directLimitMonomialUnit q β d hspan p)⁻¹ : d.ShiftedDirectLimit (grade q β)) *
     x * ↑((directLimitMonomialUnit q β d hspan p)⁻¹)⁻¹ = _
   rw [inv_inv]
