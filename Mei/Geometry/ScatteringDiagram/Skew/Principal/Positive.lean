@@ -7,6 +7,7 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.Skew.Principal.Cylinder
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall
+public import Mei.Geometry.ScatteringDiagram.Skew.Dilogarithm
 
 /-!
 # Positive wall representatives of adapted polynomial inputs
@@ -33,8 +34,15 @@ through the principal realization.
   `aᵢₛ ∈ ℚ[a]` and `φ = MvPolynomial.map (Nat.castRingHom ℚ)`, the grouped wall functions have
   monomial coefficients in `ℕ[a]`.
 
+For the binomial input, `ℓᵢ = 1` and coefficient `1`, at an index with `dᵢ = 1` the input label
+is the principal image of the dilogarithm element `Ψ[eᵢ]` (`coe_polynomialWallLabel_one`). For
+an allowed degree `n ≠ 0` of ray index `κ(n) = 1`, the principal image of `Ψ[n]` acts by
+`z^p ↦ (1 + z^{r(n)})^{ν(p)} z^p` for the principal normal `ν` of `n`
+(`completedBCHAction_graphBCHGroupEquiv_dilogElement`).
+
 If the form does not vanish on `N_uf`, the outgoing completion has further walls, whose
-positivity is not formalized here.
+positivity is not formalized here; the rank-two case of type `A₂` is
+`Mei.Geometry.ScatteringDiagram.Skew.Principal.Pentagon`.
 
 The adapted polynomial inputs, their principal realization and the positivity statement are
 those of Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*, §1 and
@@ -66,6 +74,12 @@ theorem unfrozenBasis_mem_positiveDegrees_monoid (i : B.unfrozenIndex) :
     B.unfrozenBasis i ∈ (𝒅).monoid := by
   rw [Module.Basis.positiveDegrees_monoid_eq_closure]
   exact AddSubmonoid.subset_closure (Set.mem_range_self i)
+
+/-- The sum of two unfrozen basis vectors is an allowed degree. -/
+theorem unfrozenBasis_add_mem_positiveDegrees_monoid (i j : B.unfrozenIndex) :
+    B.unfrozenBasis i + B.unfrozenBasis j ∈ B.unfrozenBasis.positiveDegrees.monoid :=
+  add_mem (B.unfrozenBasis_mem_positiveDegrees_monoid i)
+    (B.unfrozenBasis_mem_positiveDegrees_monoid j)
 
 /-- The principal exponent `r(eᵢ)` of an unfrozen basis vector is a principal positive
 degree. -/
@@ -165,6 +179,75 @@ theorem exists_principalNormal_eq_one (i : B.unfrozenIndex) :
   exact ⟨χ, by rw [principalNormal_apply]; exact hχ⟩
 
 variable [Algebra ℚ R] [DecidableEq D.unfrozen] [DecidableEq (Module.Dual ℤ D.sublattice)]
+
+/-- At an unfrozen index with multiplier one, the label of the ordinary binomial input (the
+adapted polynomial input with `ℓᵢ = 1` and coefficient `1`, of wall function `1 + T`) is the
+principal image of the dilogarithm element `Ψ[eᵢ]`. -/
+theorem coe_polynomialWallLabel_one {i : B.unfrozenIndex} (hi : B.multiplier i = 1) :
+    (B.polynomialWallLabel (fun _ => 1) (fun _ _ => (1 : R)) i :
+        (D.principalPositiveDegrees B.unfrozenBasis.positiveDegrees).completedBCHGroup
+          (D.principalGrading (R := R) B.unfrozenBasis.positiveDegrees)) =
+      B.unfrozenBasis.positiveDegrees.graphBCHGroupEquiv
+        (SkewLieAlgebra.positiveGrading (D.coefficientForm R) (D.isAlt_coefficientForm R)
+          B.unfrozenBasis.positiveDegrees) D.principalCharacter.toAddMonoidHom
+        (SkewLieAlgebra.dilogElement (D.coefficientForm R) (D.isAlt_coefficientForm R)
+          (B.unfrozenBasis_mem_positiveDegrees_monoid i) (B.unfrozenBasis.ne_zero i)) := by
+  have hf : B.polynomialWallFunction (fun _ => 1) (fun _ _ => (1 : R)) i = 1 + X := by
+    simp [polynomialWallFunction_def, X_eq]
+  rw [coe_polynomialWallLabel, SkewLieAlgebra.dilogElement_def]
+  congr 2
+  rw [hf, logOf_one_add_X, eulerDerivInv_log, coe_unfrozenBasis, B.rayIndex_basis, hi,
+    Nat.cast_one, map_one, one_smul]
+
+/-- Let `n` be a nonzero allowed degree with ray index one. The principal image of `Ψ[n]` acts on
+every monomial by `z^p ↦ (1 + z^{r(n)})^{ν(p)} z^p`, where `ν` is the principal normal of `n`.
+The unit `u` is specified by its value `1 + z^{r(n)}` in the completion. -/
+theorem completedBCHAction_graphBCHGroupEquiv_dilogElement {n : D.unfrozen}
+    (hn : n ∈ B.unfrozenBasis.positiveDegrees.monoid) (hn0 : n ≠ 0)
+    (hκ : D.sublattice.toAddSubgroup.rayIndex (n : N) = 1) (q : Q)
+    (hq : q.val = D.principalEmbedding n) (u : (F).completionˣ)
+    (hu : (u : (F).completion) = 1 + (F).toCompletion (single q 1)) (p : Q) (c : R) :
+    (F).completedBCHAction (R := R)
+        (L := tropicalVertexLieAlgebra (R := R) e
+          (AddMonoidHom.id (Module.Dual ℤ D.sublattice × D.unfrozen))) e
+        (tropicalVertexGrading (R := R) e
+          (AddMonoidHom.id (Module.Dual ℤ D.sublattice × D.unfrozen)))
+        ((D.principalGraphGradedLieHom B.unfrozenBasis.positiveDegrees).completedMap
+          (B.unfrozenBasis.positiveDegrees.graphBCHGroupEquiv
+            (SkewLieAlgebra.positiveGrading (D.coefficientForm R) (D.isAlt_coefficientForm R)
+              B.unfrozenBasis.positiveDegrees) D.principalCharacter.toAddMonoidHom
+            (SkewLieAlgebra.dilogElement (D.coefficientForm R) (D.isAlt_coefficientForm R)
+              hn hn0)))
+        ((F).toCompletion (single p c)) =
+      ((u ^ D.principalNormal n p.val : (F).completionˣ) : (F).completion) *
+        (F).toCompletion (single p c) := by
+  have hmap := DFunLike.congr_fun (D.completedMap_principalGradedLieHom (R := R)
+    B.unfrozenBasis.positiveDegrees)
+    (SkewLieAlgebra.dilogElement (D.coefficientForm R) (D.isAlt_coefficientForm R) hn hn0)
+  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom] at hmap
+  -- The label is transported by `congrArg`: rewriting it in goals containing the completed
+  -- coefficient algebra times out.
+  refine (congrArg (fun z => (F).completedBCHAction (R := R) e
+    (tropicalVertexGrading (R := R) e
+      (AddMonoidHom.id (Module.Dual ℤ D.sublattice × D.unfrozen))) z
+    ((F).toCompletion (single p c))) hmap.symm).trans ?_
+  have hk : algebraMap ℚ R (((1 : ℤ) : ℚ) * D.sublattice.toAddSubgroup.rayIndex (n : N)) •
+      negDilogNeg R = negDilogNeg R := by
+    rw [hκ, Int.cast_one, mul_one, map_one, one_smul]
+  have hl : SkewLieAlgebra.dilogElement (D.coefficientForm R) (D.isAlt_coefficientForm R) hn hn0 =
+      SkewLieAlgebra.rayExp (D.coefficientForm R) (D.isAlt_coefficientForm R) hn hn0
+        (algebraMap ℚ R (((1 : ℤ) : ℚ) * D.sublattice.toAddSubgroup.rayIndex (n : N)) •
+          negDilogNeg R) := by
+    rw [hk, SkewLieAlgebra.dilogElement_def]
+  refine (congrArg (fun z => (F).completedBCHAction (R := R) e
+    (tropicalVertexGrading (R := R) e
+      (AddMonoidHom.id (Module.Dual ℤ D.sublattice × D.unfrozen)))
+    ((D.principalGradedLieHom B.unfrozenBasis.positiveDegrees).completedMap z)
+    ((F).toCompletion (single p c))) hl).trans
+    ((D.completedBCHAction_completedMap_rayExp_smul_negDilogNeg
+      B.unfrozenBasis.positiveDegrees hn hn0 1 Q q hq u hu p c).trans ?_)
+  exact congrArg (fun k : ℤ => ((u ^ k : (F).completionˣ) : (F).completion) *
+    (F).toCompletion (single p c)) (one_mul _)
 
 -- The lattices are spelled out: local notations are not expanded hygienically in `variable`
 -- binders.

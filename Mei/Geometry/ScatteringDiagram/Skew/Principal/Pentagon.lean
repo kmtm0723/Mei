@@ -10,8 +10,6 @@ public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Scat
 public import Mei.Geometry.ScatteringDiagram.DirectedWall.Halfspace
 public import Mei.Geometry.ScatteringDiagram.Skew.Principal.Positive
 public import Mei.Geometry.ScatteringDiagram.Skew.Pentagon
-public import Mei.Geometry.ScatteringDiagram.Skew.Dilogarithm
-public import Mei.Geometry.ScatteringDiagram.Skew.Examples
 
 /-!
 # The cluster scattering diagram of type `A₂`
@@ -38,10 +36,11 @@ hyperplanes `{νᵢ = 0}` and wall functions `1 + q^{eᵢ}`, over any commutativ
   is a positive wall representative
   (`SkewLatticeDatum.AdaptedBasis.IsTypeA₂.isPositiveWallRepresentative_pentagonDiagram`,
   `SkewLatticeDatum.AdaptedBasis.IsTypeA₂.exists_isPositiveWallRepresentative_scat`).
-* The standard basis of the unimodular rank-two datum is of type `A₂`
-  (`SkewLatticeDatum.Examples.isTypeA₂_unimodularRankTwoAdaptedBasis`), with the corresponding
-  positive representative
-  (`SkewLatticeDatum.Examples.exists_isPositiveWallRepresentative_unimodularRankTwo`).
+
+The input labels and wall functions use `SkewLatticeDatum.AdaptedBasis.coe_polynomialWallLabel_one`
+and `SkewLatticeDatum.AdaptedBasis.completedBCHAction_graphBCHGroupEquiv_dilogElement`, and the
+consistency uses `DirectedDiagram.IsPentagonConfiguration.consistent`. The instance on the
+unimodular rank-two datum is in `Mei.Geometry.ScatteringDiagram.Skew.Principal.Examples`.
 
 These are the ordinary binomial positivity of Gross–Hacking–Keel–Kontsevich, *Canonical bases for
 cluster algebras*, §1.1 and Theorem 1.13 (arXiv:1411.1394v2), for rank two and type `A₂`, where
@@ -59,12 +58,6 @@ open _root_.AddMonoidAlgebra PowerSeries
 open scoped Mei.TropicalVertexCoefficientAction
 
 variable {N R ι V M : Type*} [AddCommGroup N] {D : SkewLatticeDatum N} (B : D.AdaptedBasis ι)
-
-/-- The sum of two unfrozen basis vectors is an allowed degree. -/
-theorem unfrozenBasis_add_mem_positiveDegrees_monoid (i j : B.unfrozenIndex) :
-    B.unfrozenBasis i + B.unfrozenBasis j ∈ B.unfrozenBasis.positiveDegrees.monoid :=
-  add_mem (B.unfrozenBasis_mem_positiveDegrees_monoid i)
-    (B.unfrozenBasis_mem_positiveDegrees_monoid j)
 
 /-- The degrees of the walls of the diagram of type `A₂` at the unfrozen indices `i₁, i₂`: the
 basis vector `eᵢ` for the input wall at `i`, and `e_{i₁} + e_{i₂}` for the outgoing wall. -/
@@ -101,92 +94,6 @@ structure IsTypeA₂ (i₁ i₂ : B.unfrozenIndex) : Prop where
   multiplier_fst : B.multiplier i₁ = 1
   /-- The second multiplier is one. -/
   multiplier_snd : B.multiplier i₂ = 1
-
-section Binomial
-
-variable [Module.Free ℤ N] [CommRing R] [Algebra ℚ R]
-  [DecidableEq D.unfrozen] [DecidableEq (Module.Dual ℤ D.sublattice)]
-
-/-- At an unfrozen index with multiplier one, the label of the ordinary binomial input (the
-adapted polynomial input with `ℓᵢ = 1` and coefficient `1`, of wall function `1 + T`) is the
-principal image of the dilogarithm element `Ψ[eᵢ]`. -/
-theorem coe_polynomialWallLabel_one {i : B.unfrozenIndex} (hi : B.multiplier i = 1) :
-    (B.polynomialWallLabel (fun _ => 1) (fun _ _ => (1 : R)) i :
-        (D.principalPositiveDegrees B.unfrozenBasis.positiveDegrees).completedBCHGroup
-          (D.principalGrading (R := R) B.unfrozenBasis.positiveDegrees)) =
-      B.unfrozenBasis.positiveDegrees.graphBCHGroupEquiv
-        (SkewLieAlgebra.positiveGrading (D.coefficientForm R) (D.isAlt_coefficientForm R)
-          B.unfrozenBasis.positiveDegrees) D.principalCharacter.toAddMonoidHom
-        (SkewLieAlgebra.dilogElement (D.coefficientForm R) (D.isAlt_coefficientForm R)
-          (B.unfrozenBasis_mem_positiveDegrees_monoid i) (B.unfrozenBasis.ne_zero i)) := by
-  have hf : B.polynomialWallFunction (fun _ => 1) (fun _ _ => (1 : R)) i = 1 + X := by
-    simp [polynomialWallFunction_def, X_eq]
-  rw [coe_polynomialWallLabel, SkewLieAlgebra.dilogElement_def]
-  congr 2
-  rw [hf, logOf_one_add_X, eulerDerivInv_log, coe_unfrozenBasis, B.rayIndex_basis, hi,
-    Nat.cast_one, map_one, one_smul]
-
-section Action
-
-variable (Q : AddSubmonoid (Module.Dual ℤ D.sublattice × D.unfrozen))
-  [Fact ((D.principalPositiveDegrees B.unfrozenBasis.positiveDegrees).monoid ≤ Q)]
-
-local notation "e" => D.principalPositiveDegrees B.unfrozenBasis.positiveDegrees
-local notation "F" => TropicalVertexCoefficientAction.filtration (R := R) e Q
-
-/-- Let `n` be a nonzero allowed degree with ray index one. The principal image of `Ψ[n]` acts on
-every monomial by `z^p ↦ (1 + z^{r(n)})^{ν(p)} z^p`, where `ν` is the principal normal of `n`.
-The unit `u` is specified by its value `1 + z^{r(n)}` in the completion. -/
-theorem completedBCHAction_graphBCHGroupEquiv_dilogElement {n : D.unfrozen}
-    (hn : n ∈ B.unfrozenBasis.positiveDegrees.monoid) (hn0 : n ≠ 0)
-    (hκ : D.sublattice.toAddSubgroup.rayIndex (n : N) = 1) (q : Q)
-    (hq : q.val = D.principalEmbedding n) (u : (F).completionˣ)
-    (hu : (u : (F).completion) = 1 + (F).toCompletion (single q 1)) (p : Q) (c : R) :
-    (F).completedBCHAction (R := R)
-        (L := tropicalVertexLieAlgebra (R := R) e
-          (AddMonoidHom.id (Module.Dual ℤ D.sublattice × D.unfrozen))) e
-        (tropicalVertexGrading (R := R) e
-          (AddMonoidHom.id (Module.Dual ℤ D.sublattice × D.unfrozen)))
-        ((D.principalGraphGradedLieHom B.unfrozenBasis.positiveDegrees).completedMap
-          (B.unfrozenBasis.positiveDegrees.graphBCHGroupEquiv
-            (SkewLieAlgebra.positiveGrading (D.coefficientForm R) (D.isAlt_coefficientForm R)
-              B.unfrozenBasis.positiveDegrees) D.principalCharacter.toAddMonoidHom
-            (SkewLieAlgebra.dilogElement (D.coefficientForm R) (D.isAlt_coefficientForm R)
-              hn hn0)))
-        ((F).toCompletion (single p c)) =
-      ((u ^ D.principalNormal n p.val : (F).completionˣ) : (F).completion) *
-        (F).toCompletion (single p c) := by
-  have hmap := DFunLike.congr_fun (D.completedMap_principalGradedLieHom (R := R)
-    B.unfrozenBasis.positiveDegrees)
-    (SkewLieAlgebra.dilogElement (D.coefficientForm R) (D.isAlt_coefficientForm R) hn hn0)
-  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom] at hmap
-  -- The label is transported by `congrArg`: rewriting it in goals containing the completed
-  -- coefficient algebra times out.
-  refine (congrArg (fun z => (F).completedBCHAction (R := R) e
-    (tropicalVertexGrading (R := R) e
-      (AddMonoidHom.id (Module.Dual ℤ D.sublattice × D.unfrozen))) z
-    ((F).toCompletion (single p c))) hmap.symm).trans ?_
-  have hk : algebraMap ℚ R (((1 : ℤ) : ℚ) * D.sublattice.toAddSubgroup.rayIndex (n : N)) •
-      negDilogNeg R = negDilogNeg R := by
-    rw [hκ, Int.cast_one, mul_one, map_one, one_smul]
-  have hl : SkewLieAlgebra.dilogElement (D.coefficientForm R) (D.isAlt_coefficientForm R) hn hn0 =
-      SkewLieAlgebra.rayExp (D.coefficientForm R) (D.isAlt_coefficientForm R) hn hn0
-        (algebraMap ℚ R (((1 : ℤ) : ℚ) * D.sublattice.toAddSubgroup.rayIndex (n : N)) •
-          negDilogNeg R) := by
-    rw [hk, SkewLieAlgebra.dilogElement_def]
-  refine (congrArg (fun z => (F).completedBCHAction (R := R) e
-    (tropicalVertexGrading (R := R) e
-      (AddMonoidHom.id (Module.Dual ℤ D.sublattice × D.unfrozen)))
-    ((D.principalGradedLieHom B.unfrozenBasis.positiveDegrees).completedMap z)
-    ((F).toCompletion (single p c))) hl).trans
-    ((D.completedBCHAction_completedMap_rayExp_smul_negDilogNeg
-      B.unfrozenBasis.positiveDegrees hn hn0 1 Q q hq u hu p c).trans ?_)
-  exact congrArg (fun k : ℤ => ((u ^ k : (F).completionˣ) : (F).completion) *
-    (F).toCompletion (single p c)) (one_mul _)
-
-end Action
-
-end Binomial
 
 namespace IsTypeA₂
 
@@ -339,13 +246,19 @@ def addLabel : (𝓗).wallGroup (hA.addRay.graph D.principalCharacter.toAddMonoi
   ⟨(𝒅).graphBCHGroupEquiv ℒ D.principalCharacter.toAddMonoidHom
     (SkewLieAlgebra.dilogElement (D.coefficientForm R) (D.isAlt_coefficientForm R)
       (B.unfrozenBasis_add_mem_positiveDegrees_monoid i₁ i₂) hA.add_ne_zero), by
-    rw [← D.map_principalGraphWallGroup]
-    exact Subgroup.mem_map.mpr ⟨_, D.rayExp_mem_principalWallGroup (R := R) 𝒅
+    rw [← D.map_principalGraphWallGroup, Subgroup.mem_map_equiv, MulEquiv.symm_apply_apply,
+      SkewLieAlgebra.dilogElement_def]
+    exact D.rayExp_mem_principalWallGroup (R := R) 𝒅
       ((SupportedRay.generator_mem_rayDegrees_iff _).mpr
-        (B.unfrozenBasis_add_mem_positiveDegrees_monoid i₁ i₂)) (negDilogNeg R), by
-      -- The two sides differ only in the coercion of the graph comparison to a monoid hom.
-      rw [SkewLieAlgebra.dilogElement_def]
-      rfl⟩⟩
+        (B.unfrozenBasis_add_mem_positiveDegrees_monoid i₁ i₂)) (negDilogNeg R)⟩
+
+/-- The outgoing label is the principal image of `Ψ[e_{i₁} + e_{i₂}]`. -/
+@[simp]
+theorem coe_addLabel : (hA.addLabel (R := R)).1 =
+    (𝒅).graphBCHGroupEquiv ℒ D.principalCharacter.toAddMonoidHom
+      (SkewLieAlgebra.dilogElement (D.coefficientForm R) (D.isAlt_coefficientForm R)
+        (B.unfrozenBasis_add_mem_positiveDegrees_monoid i₁ i₂) hA.add_ne_zero) :=
+  (rfl)
 
 /-- The outgoing wall of type `A₂`: the half-hyperplane of the principal normal `ν₁₂` of
 `e_{i₁} + e_{i₂}` on which the principal normal `ν₁` of `e_{i₁}` is nonnegative, cooriented by
@@ -393,9 +306,8 @@ theorem outgoingWall_label : (hA.outgoingWall (R := R) h).label =
     (𝒅).graphBCHGroupEquiv ℒ D.principalCharacter.toAddMonoidHom
       (SkewLieAlgebra.dilogElement (D.coefficientForm R) (D.isAlt_coefficientForm R)
         (B.unfrozenBasis_add_mem_positiveDegrees_monoid i₁ i₂) hA.add_ne_zero) := by
-  simp [outgoingWall]
-  -- The remaining goal is the definition of `addLabel`.
-  rfl
+  rw [outgoingWall, DirectedWall.cutHalfspace_label, DirectedWall.ofAffineHyperplane_label,
+    coe_addLabel]
 
 /-- The outgoing wall is outgoing: the degree direction `r(e_{i₁} + e_{i₂})` pairs to
 `{e_{i₁} + e_{i₂}, e_{i₁}} = -1` with `ν₁`, so it leaves the half-hyperplane. -/
@@ -519,15 +431,16 @@ theorem pentagonDiagram_label (j : B.unfrozenIndex ⊕ Unit) :
       (𝒅).graphBCHGroupEquiv ℒ D.principalCharacter.toAddMonoidHom
         (SkewLieAlgebra.dilogElement (D.coefficientForm R) (D.isAlt_coefficientForm R)
           (B.pentagonDegree_mem_positiveDegrees_monoid i₁ i₂ j) (hA.pentagonDegree_ne_zero j)) := by
-  rcases j with i | ⟨⟩
-  · rcases hA.eq_or_eq i with rfl | rfl
-    -- The remaining goals differ only in the proofs that the degrees are allowed and nonzero.
-    · simp [B.coe_polynomialWallLabel_one hA.multiplier_fst]
-      rfl
-    · simp [B.coe_polynomialWallLabel_one hA.multiplier_snd]
-      rfl
-  · simp
-    rfl
+  rcases j with i | u
+  · have hm : B.multiplier i = 1 := by
+      rcases hA.eq_or_eq i with rfl | rfl
+      exacts [hA.multiplier_fst, hA.multiplier_snd]
+    rw [pentagonDiagram_wall_inl, adaptedPolynomialInput_label, B.coe_polynomialWallLabel_one hm]
+    exact congrArg _ (SkewLieAlgebra.dilogElement_congr _ _ _ _
+      (B.pentagonDegree_inl i₁ i₂ i).symm _ _)
+  · rw [pentagonDiagram_wall_inr, outgoingWall_label]
+    exact congrArg _ (SkewLieAlgebra.dilogElement_congr _ _ _ _
+      (B.pentagonDegree_inr i₁ i₂ u).symm _ _)
 
 variable [AddCommGroup M] (π : Module.Dual ℤ D.sublattice × D.unfrozen →+ M)
 
@@ -624,73 +537,4 @@ theorem exists_isPositiveWallRepresentative_scat
 
 end IsTypeA₂
 
-
 end Mei.SkewLatticeDatum.AdaptedBasis
-
-namespace Mei.SkewLatticeDatum.Examples
-
-open AdaptedBasis
-
-/-- The standard basis of the unimodular rank-two datum, with `{e₁, e₂} = 1` and `N° = N`, is of
-type `A₂` at its two indices. -/
-theorem isTypeA₂_unimodularRankTwoAdaptedBasis :
-    unimodularRankTwoAdaptedBasis.IsTypeA₂ ⟨0, by simp⟩ ⟨1, by simp⟩ where
-  eq_or_eq i := by
-    obtain ⟨i, hi⟩ := i
-    fin_cases i
-    · exact Or.inl rfl
-    · exact Or.inr rfl
-  form_eq_one := by simp
-  multiplier_fst := unimodularRankTwoAdaptedBasis_multiplier _
-  multiplier_snd := unimodularRankTwoAdaptedBasis_multiplier _
-
-variable {R V M : Type*} [CommRing R] [Algebra ℚ R] [NormedAddCommGroup V] [NormedSpace ℝ V]
-  {latticeMap : Module.Dual ℤ unimodularRankTwo.sublattice × unimodularRankTwo.unfrozen →+ V}
-  (h : TauCeti.Toric.IsIntegralLattice latticeMap) [AddCommGroup M]
-  (π : Module.Dual ℤ unimodularRankTwo.sublattice × unimodularRankTwo.unfrozen →+ M)
-
-open scoped Mei.TropicalVertexCoefficientAction
-
-open scoped Classical in
-/-- **The cluster scattering diagram of type `A₂`.** For the unimodular rank-two datum with
-`{e₁, e₂} = 1`, the outgoing scattering class of the ordinary binomial input
-`(e₁⊥, 1 + q^{e₁})`, `(e₂⊥, 1 + q^{e₂})` on the principal lattice has a consistent outgoing
-representative with the single additional wall `{ν_{e₁} + ν_{e₂} = 0, ν_{e₁} ≥ 0}`, whose
-grouped wall functions `1 + q^{e₁}`, `1 + q^{e₂}` and `1 + q^{e₁ + e₂}` are positive for the image
-of `ℕ[Q]`, `Q` the principal coefficient monoid. -/
-theorem exists_isPositiveWallRepresentative_unimodularRankTwo :
-    letI : Fact ((unimodularRankTwo.principalPositiveDegrees
-        unimodularRankTwoAdaptedBasis.unfrozenBasis.positiveDegrees).monoid ≤
-        unimodularRankTwo.principalCoefficientMonoid
-          unimodularRankTwoAdaptedBasis.unfrozenBasis.positiveDegrees) :=
-      ⟨unimodularRankTwo.principalPositiveDegrees_le_coefficientMonoid _⟩
-    ∃ (κ : Type) (E : DirectedDiagram (V := V) h
-        (unimodularRankTwo.principalGraphWallSpaces (R := R)
-          unimodularRankTwoAdaptedBasis.unfrozenBasis.positiveDegrees)
-        (unimodularRankTwoAdaptedBasis.unfrozenIndex ⊕ κ)),
-      DirectedDiagram.IsOutgoingCompletion (unimodularRankTwoAdaptedBasis.adaptedPolynomialInput
-        (V := V) (fun _ => 1) (fun _ _ => (1 : R)) h).wall E ∧
-      E.IsPositiveWallRepresentative
-        ((AlgFiltration.completedBCHAction (TropicalVertexCoefficientAction.filtration (R := R)
-          (unimodularRankTwo.principalPositiveDegrees
-            unimodularRankTwoAdaptedBasis.unfrozenBasis.positiveDegrees)
-          (unimodularRankTwo.principalCoefficientMonoid
-            unimodularRankTwoAdaptedBasis.unfrozenBasis.positiveDegrees))
-          (unimodularRankTwo.principalPositiveDegrees
-            unimodularRankTwoAdaptedBasis.unfrozenBasis.positiveDegrees)
-          (tropicalVertexGrading (R := R) (unimodularRankTwo.principalPositiveDegrees
-            unimodularRankTwoAdaptedBasis.unfrozenBasis.positiveDegrees) (AddMonoidHom.id _))).comp
-          (unimodularRankTwo.principalGraphGradedLieHom (R := R)
-            unimodularRankTwoAdaptedBasis.unfrozenBasis.positiveDegrees).completedMap)
-        (AddMonoidAlgebra.mapRingHom _ (Nat.castRingHom R)).rangeS π := by
-  have : Fact ((unimodularRankTwo.principalPositiveDegrees
-      unimodularRankTwoAdaptedBasis.unfrozenBasis.positiveDegrees).monoid ≤
-      unimodularRankTwo.principalCoefficientMonoid
-        unimodularRankTwoAdaptedBasis.unfrozenBasis.positiveDegrees) :=
-    ⟨unimodularRankTwo.principalPositiveDegrees_le_coefficientMonoid _⟩
-  exact ⟨Unit, isTypeA₂_unimodularRankTwoAdaptedBasis.pentagonDiagram h,
-    isTypeA₂_unimodularRankTwoAdaptedBasis.isOutgoingCompletion_pentagonDiagram h,
-    isTypeA₂_unimodularRankTwoAdaptedBasis.isPositiveWallRepresentative_pentagonDiagram h π _
-      fun _ => (unimodularRankTwo.mem_principalCoefficientMonoid _ _).mpr (zero_mem _)⟩
-
-end Mei.SkewLatticeDatum.Examples

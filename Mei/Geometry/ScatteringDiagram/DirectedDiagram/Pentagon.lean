@@ -22,8 +22,9 @@ they satisfy the pentagon relation `B A = A C B`, the diagram is consistent
 The chamber function `pentagonTransport A B C a b` is the product
 `A^[a > 0] C^[a > 0, a + b > 0] B^[b > 0]`, where `X^[P]` is `X` if `P` holds and `1` otherwise
 (`DirectedDiagram.pentagonTransport_def`); in the five chambers of the configuration it takes the
-values `1`, `B`, `A`, `A C` and `B A = A C B` at `(a, b) = (ℓ₁ x, ℓ₂ x)`. At every order, for the
-projected labels, it is locally constant off the active walls
+values `1`, `B`, `A`, `A C` and `A C B` at `(a, b) = (ℓ₁ x, ℓ₂ x)`
+(`DirectedDiagram.pentagonTransport_of_neg_of_neg` and its four companions). At every order,
+for the projected labels, it is locally constant off the active walls
 (`DirectedDiagram.IsPentagonConfiguration.eventually_pentagonTransport_eq`), and crossing a wall
 changes it by the signed combined label of the crossing
 (`DirectedDiagram.IsPentagonConfiguration.eventually_inv_mul_eq_combinedLabel`). Walls whose
@@ -32,8 +33,9 @@ labels vanish at an order are allowed.
 For dilogarithm labels the relation is the pentagon identity, and the configuration is the
 consistent scattering diagram of type `A₂` (Gross–Hacking–Keel–Kontsevich, *Canonical bases for
 cluster algebras*, §1.1, arXiv:1411.1394v2); see
-`Mei.Geometry.ScatteringDiagram.Skew.Principal.Pentagon`. The consistency criterion is
-`DirectedDiagram.levelConsistent_of_local`.
+`Mei.Geometry.ScatteringDiagram.Skew.Principal.Pentagon`.
+`DirectedDiagram.IsPentagonConfiguration.consistent` is derived from the local criterion
+`DirectedDiagram.levelConsistent_of_local` applied to the chamber function.
 -/
 
 public section
@@ -75,6 +77,42 @@ theorem pentagonTransport_congr {a b a' b' : ℝ} (hA : A = 1 ∨ (0 < a ↔ 0 <
     · exact if_congr hPQ rfl rfl
   rw [pentagonTransport_def, pentagonTransport_def, key hA, key hB, key hC]
 
+/-- In the chamber `{a < 0, b < 0}` the chamber function is `1`. -/
+theorem pentagonTransport_of_neg_of_neg {a b : ℝ} (ha : a < 0) (hb : b < 0) :
+    pentagonTransport A B C a b = 1 := by
+  simp [pentagonTransport_def, not_lt.mpr ha.le, not_lt.mpr hb.le]
+
+/-- In the chamber `{a < 0, b > 0}` the chamber function is `B`. -/
+theorem pentagonTransport_of_neg_of_pos {a b : ℝ} (ha : a < 0) (hb : 0 < b) :
+    pentagonTransport A B C a b = B := by
+  simp [pentagonTransport_def, not_lt.mpr ha.le, hb]
+
+/-- In the chamber `{a > 0, b > 0}` the chamber function is `A C B`. -/
+theorem pentagonTransport_of_pos_of_pos {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    pentagonTransport A B C a b = A * C * B := by
+  simp [pentagonTransport_def, ha, hb, add_pos ha hb]
+
+/-- In the chamber `{a > 0, a + b < 0}` the chamber function is `A`. -/
+theorem pentagonTransport_of_pos_of_add_neg {a b : ℝ} (ha : 0 < a) (hab : a + b < 0) :
+    pentagonTransport A B C a b = A := by
+  have hb : b ≤ 0 := by linarith
+  simp [pentagonTransport_def, ha, not_lt.mpr hab.le, not_lt.mpr hb]
+
+/-- In the chamber `{a > 0, b < 0, a + b > 0}` the chamber function is `A C`. -/
+theorem pentagonTransport_of_pos_of_neg_of_add_pos {a b : ℝ} (ha : 0 < a) (hb : b < 0)
+    (hab : 0 < a + b) : pentagonTransport A B C a b = A * C := by
+  simp [pentagonTransport_def, ha, hab, not_lt.mpr hb.le]
+
+/-- If `B` and `C` are the identity, the chamber function is `A^[a > 0]`. -/
+theorem pentagonTransport_one_one (a b : ℝ) :
+    pentagonTransport A 1 1 a b = if 0 < a then A else 1 := by
+  simp [pentagonTransport_def]
+
+/-- If `A` and `C` are the identity, the chamber function is `B^[b > 0]`. -/
+theorem pentagonTransport_one_left_one (a b : ℝ) :
+    pentagonTransport 1 B 1 a b = if 0 < b then B else 1 := by
+  simp [pentagonTransport_def]
+
 /-- Crossing `{a = 0}` in a direction with `a' > 0`, at a point with `b ≠ 0` or where `B` is the
 identity, multiplies the chamber function on the right by `A`, provided `B A = A C B`. -/
 theorem eventually_pentagonTransport_fst (hpent : B * A = A * C * B) {a b a' b' : ℝ}
@@ -82,33 +120,24 @@ theorem eventually_pentagonTransport_fst (hpent : B * A = A * C * B) {a b a' b' 
     ∀ᶠ s in 𝓝[>] (0 : ℝ), pentagonTransport A B C (a + s * a') (b + s * b') =
       pentagonTransport A B C (a - s * a') (b - s * b') * A := by
   subst ha
-  have hs : ∀ᶠ s in 𝓝[>] (0 : ℝ), 0 < s := self_mem_nhdsWithin
+  have hs : ∀ᶠ s in 𝓝[>] (0 : ℝ), 0 < s * a' :=
+    Eventually.mono (self_mem_nhdsWithin : ∀ᶠ s in 𝓝[>] (0 : ℝ), 0 < s) fun _ hs =>
+      mul_pos hs ha'
   have hle : 𝓝[>] (0 : ℝ) ≤ 𝓝 0 := nhdsWithin_le_nhds
   rcases hb with hb | rfl
   · rcases hb.lt_or_gt with hb | hb
     · filter_upwards [hs, hle (eventually_add_mul_neg hb b'), hle (eventually_add_mul_neg hb (-b')),
         hle (eventually_add_mul_neg hb (a' + b'))] with s hs h₁ h₂ h₃
-      have hsa : 0 < s * a' := mul_pos hs ha'
-      simp only [pentagonTransport_def, eq_true (show 0 < 0 + s * a' by linarith),
-        eq_false (show ¬0 < 0 - s * a' by linarith), eq_false (show ¬0 < b + s * b' by linarith),
-        eq_false (show ¬0 < b - s * b' by linarith),
-        eq_false (show ¬0 < 0 + s * a' + (b + s * b') by linarith), false_and, and_false,
-        ↓reduceIte, mul_one, one_mul]
-    · filter_upwards [hs, hle (eventually_pos_add_mul hb b'), hle (eventually_pos_add_mul hb (-b')),
-        hle (eventually_pos_add_mul hb (a' + b'))] with s hs h₁ h₂ h₃
-      have hsa : 0 < s * a' := mul_pos hs ha'
-      simp only [pentagonTransport_def, eq_true (show 0 < 0 + s * a' by linarith),
-        eq_false (show ¬0 < 0 - s * a' by linarith), eq_true (show 0 < b + s * b' by linarith),
-        eq_true (show 0 < b - s * b' by linarith),
-        eq_true (show 0 < 0 + s * a' + (b + s * b') by linarith), false_and, and_self,
-        ↓reduceIte, mul_one, one_mul]
-      exact hpent.symm
-  · have hC : C = 1 := by simpa using hpent
-    subst hC
+      rw [pentagonTransport_of_pos_of_add_neg (by linarith) (by linarith),
+        pentagonTransport_of_neg_of_neg (by linarith) (by linarith), one_mul]
+    · filter_upwards [hs, hle (eventually_pos_add_mul hb b'), hle (eventually_pos_add_mul hb (-b'))]
+        with s hs h₁ h₂
+      rw [pentagonTransport_of_pos_of_pos (by linarith) h₁,
+        pentagonTransport_of_neg_of_pos (by linarith) (by linarith), hpent]
+  · obtain rfl : C = 1 := by simpa using hpent
     filter_upwards [hs] with s hs
-    have hsa : 0 < s * a' := mul_pos hs ha'
-    simp only [pentagonTransport_def, ite_self, mul_one, eq_true (show 0 < 0 + s * a' by linarith),
-      eq_false (show ¬0 < 0 - s * a' by linarith), ↓reduceIte, one_mul]
+    rw [pentagonTransport_one_one, pentagonTransport_one_one, ite_eq_left (by linarith),
+      ite_eq_right (by linarith), one_mul]
 
 /-- Crossing `{b = 0}` in a direction with `b' > 0`, at a point with `a ≠ 0` or where `A` is the
 identity, multiplies the chamber function on the right by `B`, provided `B A = A C B`. -/
@@ -117,32 +146,24 @@ theorem eventually_pentagonTransport_snd (hpent : B * A = A * C * B) {a b a' b' 
     ∀ᶠ s in 𝓝[>] (0 : ℝ), pentagonTransport A B C (a + s * a') (b + s * b') =
       pentagonTransport A B C (a - s * a') (b - s * b') * B := by
   subst hb
-  have hs : ∀ᶠ s in 𝓝[>] (0 : ℝ), 0 < s := self_mem_nhdsWithin
+  have hs : ∀ᶠ s in 𝓝[>] (0 : ℝ), 0 < s * b' :=
+    Eventually.mono (self_mem_nhdsWithin : ∀ᶠ s in 𝓝[>] (0 : ℝ), 0 < s) fun _ hs =>
+      mul_pos hs hb'
   have hle : 𝓝[>] (0 : ℝ) ≤ 𝓝 0 := nhdsWithin_le_nhds
   rcases ha with ha | rfl
   · rcases ha.lt_or_gt with ha | ha
     · filter_upwards [hs, hle (eventually_add_mul_neg ha a'), hle (eventually_add_mul_neg ha (-a'))]
         with s hs h₁ h₂
-      have hsb : 0 < s * b' := mul_pos hs hb'
-      simp only [pentagonTransport_def, eq_false (show ¬0 < a + s * a' by linarith),
-        eq_false (show ¬0 < a - s * a' by linarith), eq_true (show 0 < 0 + s * b' by linarith),
-        eq_false (show ¬0 < 0 - s * b' by linarith), false_and, ↓reduceIte, mul_one, one_mul]
+      rw [pentagonTransport_of_neg_of_pos (by linarith) (by linarith),
+        pentagonTransport_of_neg_of_neg (by linarith) (by linarith), one_mul]
     · filter_upwards [hs, hle (eventually_pos_add_mul ha a'), hle (eventually_pos_add_mul ha (-a')),
-        hle (eventually_pos_add_mul ha (a' + b')), hle (eventually_pos_add_mul ha (-a' - b'))]
-        with s hs h₁ h₂ h₃ h₄
-      have hsb : 0 < s * b' := mul_pos hs hb'
-      simp only [pentagonTransport_def, eq_true (show 0 < a + s * a' by linarith),
-        eq_true (show 0 < a - s * a' by linarith), eq_true (show 0 < 0 + s * b' by linarith),
-        eq_false (show ¬0 < 0 - s * b' by linarith),
-        eq_true (show 0 < a + s * a' + (0 + s * b') by linarith),
-        eq_true (show 0 < a - s * a' + (0 - s * b') by linarith), and_self, ↓reduceIte,
-        mul_one]
-  · have hC : C = 1 := by simpa using hpent
-    subst hC
+        hle (eventually_pos_add_mul ha (-a' - b'))] with s hs h₁ h₂ h₃
+      rw [pentagonTransport_of_pos_of_pos h₁ (by linarith),
+        pentagonTransport_of_pos_of_neg_of_add_pos (by linarith) (by linarith) (by linarith)]
+  · obtain rfl : C = 1 := by simpa using hpent
     filter_upwards [hs] with s hs
-    have hsb : 0 < s * b' := mul_pos hs hb'
-    simp only [pentagonTransport_def, ite_self, one_mul, eq_true (show 0 < 0 + s * b' by linarith),
-      eq_false (show ¬0 < 0 - s * b' by linarith), ↓reduceIte]
+    rw [pentagonTransport_one_left_one, pentagonTransport_one_left_one, ite_eq_left (by linarith),
+      ite_eq_right (by linarith), one_mul]
 
 /-- Crossing `{a + b = 0}` in a direction with `a' + b' > 0`, at a point with `a > 0`,
 multiplies the chamber function on the right by `C`. -/
@@ -156,12 +177,8 @@ theorem eventually_pentagonTransport_add {a b a' b' : ℝ} (hab : a + b = 0) (ha
     hle (eventually_pos_add_mul ha (-a')), hle (eventually_add_mul_neg hb b'),
     hle (eventually_add_mul_neg hb (-b'))] with s (hs : 0 < s) h₁ h₂ h₃ h₄
   have hsab : 0 < s * (a' + b') := mul_pos hs hab'
-  simp only [pentagonTransport_def, eq_true (show 0 < a + s * a' by linarith),
-    eq_true (show 0 < a - s * a' by linarith), eq_false (show ¬0 < b + s * b' by linarith),
-    eq_false (show ¬0 < b - s * b' by linarith),
-    eq_true (show 0 < a + s * a' + (b + s * b') by linarith),
-    eq_false (show ¬0 < a - s * a' + (b - s * b') by linarith), and_true, and_false,
-    ↓reduceIte, mul_one]
+  rw [pentagonTransport_of_pos_of_neg_of_add_pos h₁ h₃ (by linarith),
+    pentagonTransport_of_pos_of_add_neg (by linarith) (by linarith)]
 
 end Transport
 

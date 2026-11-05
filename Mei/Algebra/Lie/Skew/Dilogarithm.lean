@@ -13,7 +13,8 @@ public import Mei.RingTheory.PowerSeries.Dilogarithm
 
 For a nonzero allowed degree `n` of positive degree data on the exponent group of a skew
 Lie algebra over a commutative `ℚ`-algebra, the dilogarithm element is
-`Ψ[n] = exp(∑_{j ≥ 1} (-1)^(j+1) X_{jn} / j²)` in the completed BCH group. It is the
+`Ψ[n] = exp(∑_{j ≥ 1} (-1)^(j+1) X_{jn} / j²)` in the completed BCH group; it depends only on
+`n` (`dilogElement_congr`). It is the
 ray label of the power series `-Li₂(-X)` (`PowerSeries.negDilogNeg`): at order `k` it is
 the exponential of the class of the finite sum over `j ≤ k`, and these levelwise
 exponentials are compatible under truncation. Its logarithmic coefficients are
@@ -56,6 +57,14 @@ def dilogElement : d.completedBCHGroup ℒ :=
 
 theorem dilogElement_def : dilogElement β hβ hn hn0 = rayExp β hβ hn hn0 (negDilogNeg R) :=
   (rfl)
+
+/-- The dilogarithm element depends only on the degree, not on the proofs that it is allowed and
+nonzero. -/
+theorem dilogElement_congr {n' : Γ} (h : n = n') (hn' : n' ∈ d.monoid) (hn0' : n' ≠ 0) :
+    dilogElement β hβ hn hn0 = dilogElement β hβ hn' hn0' := by
+  subst h
+  -- The two sides differ only in proofs of propositions.
+  rfl
 
 /-- At order `k`, `Ψ[n]` is the exponential of the class of
 `∑_{j < k} (-1)^j / (j+1)² X_{(j+1)n}`. -/

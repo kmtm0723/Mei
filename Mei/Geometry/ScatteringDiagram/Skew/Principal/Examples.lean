@@ -5,11 +5,11 @@ Authors: Claude Code
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.Skew.Principal.Positive
+public import Mei.Geometry.ScatteringDiagram.Skew.Principal.Pentagon
 public import Mathlib.Algebra.MvPolynomial.Basic
 
 /-!
-# Positive adapted polynomial walls of a form vanishing on the unfrozen part
+# Positive adapted polynomial walls: forms vanishing on the unfrozen part, and type `A₂`
 
 Take `N = ℤ³` with the skew form `{x, y} = x₀ y₂ - x₂ y₀`, the unfrozen basis vectors `e₀, e₁`,
 the frozen basis vector `e₂` and multipliers one. The form is nonzero, since `{e₀, e₂} = 1`, but
@@ -28,8 +28,19 @@ coefficients `aᵢₛ` the adapted polynomial input has the initial wall functio
   walls `(eᵢ⊥, 1 + q^{eᵢ})` has a representative of its scattering class whose grouped wall
   functions `1 + q^{eᵢ}` have natural-number coefficients.
 
-These are instances of
-`Mei.SkewLatticeDatum.AdaptedBasis.exists_isPositiveWallRepresentative_of_forall_form_eq_zero`;
+For the unimodular rank-two datum `{e₁, e₂} = 1`, `N° = N`, with its standard adapted basis
+(`isTypeA₂_unimodularRankTwoAdaptedBasis`), the form does not vanish on `N_uf`:
+
+* `exists_isPositiveWallRepresentative_unimodularRankTwo`: over any commutative `ℚ`-algebra,
+  the outgoing scattering class of the binomial input `(eᵢ⊥, 1 + q^{eᵢ})` is represented by the
+  diagram of type `A₂` with the additional wall `{ν_{e₁} + ν_{e₂} = 0, ν_{e₁} ≥ 0}`, an outgoing
+  completion whose grouped wall functions `1 + q^{e₁}`, `1 + q^{e₂}`, `1 + q^{e₁ + e₂}` have
+  natural-number coefficients.
+
+The statements on `frozenDatum` are instances of
+`Mei.SkewLatticeDatum.AdaptedBasis.exists_isPositiveWallRepresentative_of_forall_form_eq_zero`,
+and the one on the unimodular datum of
+`Mei.SkewLatticeDatum.AdaptedBasis.IsTypeA₂.exists_isPositiveWallRepresentative_scat`;
 see Gross–Hacking–Keel–Kontsevich, *Canonical bases for cluster algebras*, Theorem 1.13
 (arXiv:1411.1394v2).
 -/
@@ -182,5 +193,73 @@ theorem coe_completedPolynomialWallFunction_frozenDatum_binomial
         (F ℚ).completion) =
       (F ℚ).toCompletion (1 + single (frozenBasis.principalExponent Qpr i) 1) := by
   simp
+
+end Mei.SkewLatticeDatum.Examples
+
+namespace Mei.SkewLatticeDatum.Examples
+
+open AdaptedBasis
+open _root_.AddMonoidAlgebra
+open scoped Mei.TropicalVertexCoefficientAction
+
+/-- The standard basis of the unimodular rank-two datum, with `{e₁, e₂} = 1` and `N° = N`, is of
+type `A₂` at its two indices. -/
+theorem isTypeA₂_unimodularRankTwoAdaptedBasis :
+    unimodularRankTwoAdaptedBasis.IsTypeA₂ ⟨0, by simp⟩ ⟨1, by simp⟩ where
+  eq_or_eq i := by
+    obtain ⟨i, hi⟩ := i
+    fin_cases i
+    · exact Or.inl rfl
+    · exact Or.inr rfl
+  form_eq_one := by simp
+  multiplier_fst := unimodularRankTwoAdaptedBasis_multiplier _
+  multiplier_snd := unimodularRankTwoAdaptedBasis_multiplier _
+
+local notation "𝒅" => unimodularRankTwoAdaptedBasis.unfrozenBasis.positiveDegrees
+local notation "Lpr" => Module.Dual ℤ unimodularRankTwo.sublattice × unimodularRankTwo.unfrozen
+local notation "Qpr" => unimodularRankTwo.principalCoefficientMonoid 𝒅
+
+/-- The principal positive monoid of the unimodular rank-two datum lies in its principal
+coefficient monoid. -/
+instance : Fact ((unimodularRankTwo.principalPositiveDegrees 𝒅).monoid ≤ Qpr) :=
+  ⟨unimodularRankTwo.principalPositiveDegrees_le_coefficientMonoid 𝒅⟩
+
+/-- The principal lattice `M° × N_uf` of the unimodular rank-two datum is free. -/
+instance : Module.Free ℤ Lpr := by
+  have := Module.Free.of_basis unimodularRankTwoAdaptedBasis.sublatticeBasis
+  have := Module.Finite.of_basis unimodularRankTwoAdaptedBasis.sublatticeBasis
+  have := Module.Free.of_basis unimodularRankTwoAdaptedBasis.unfrozenBasis
+  infer_instance
+
+local notation "σ" A => MonoidHom.comp (AlgFiltration.completedBCHAction
+  (TropicalVertexCoefficientAction.filtration (R := A)
+    (unimodularRankTwo.principalPositiveDegrees 𝒅) Qpr)
+  (unimodularRankTwo.principalPositiveDegrees 𝒅)
+  (tropicalVertexGrading (R := A) (unimodularRankTwo.principalPositiveDegrees 𝒅)
+    (AddMonoidHom.id Lpr)))
+  (GradedLieHom.completedMap (unimodularRankTwo.principalGraphGradedLieHom (R := A) 𝒅))
+
+variable {R V M : Type*} [CommRing R] [Algebra ℚ R] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  {p : Lpr →+ V} (h : TauCeti.Toric.IsIntegralLattice p) [AddCommGroup M] (π : Lpr →+ M)
+
+open scoped Classical in
+/-- **The cluster scattering diagram of type `A₂`.** For the unimodular rank-two datum with
+`{e₁, e₂} = 1`, the outgoing scattering class of the ordinary binomial input
+`(e₁⊥, 1 + q^{e₁})`, `(e₂⊥, 1 + q^{e₂})` on the principal lattice has a consistent outgoing
+representative with the single additional wall `{ν_{e₁} + ν_{e₂} = 0, ν_{e₁} ≥ 0}`, whose
+grouped wall functions `1 + q^{e₁}`, `1 + q^{e₂}` and `1 + q^{e₁ + e₂}` are positive for the image
+of `ℕ[Q]`, `Q` the principal coefficient monoid. -/
+theorem exists_isPositiveWallRepresentative_unimodularRankTwo :
+    ∃ (κ : Type) (E : DirectedDiagram (d := unimodularRankTwo.principalPositiveDegrees 𝒅) h
+        (unimodularRankTwo.principalGraphWallSpaces (R := R) 𝒅)
+        (unimodularRankTwoAdaptedBasis.unfrozenIndex ⊕ κ)),
+      DirectedDiagram.IsOutgoingCompletion (unimodularRankTwoAdaptedBasis.adaptedPolynomialInput
+        (V := V) (fun _ => 1) (fun _ _ => (1 : R)) h).wall E ∧
+      E.toClass = (unimodularRankTwoAdaptedBasis.adaptedPolynomialInput (fun _ => 1)
+        (fun _ _ => (1 : R)) h).Scat
+          (unimodularRankTwoAdaptedBasis.adaptedPolynomialInput_full _ _ h) ∧
+      E.IsPositiveWallRepresentative (σ R) (mapRingHom Qpr (Nat.castRingHom R)).rangeS π :=
+  isTypeA₂_unimodularRankTwoAdaptedBasis.exists_isPositiveWallRepresentative_scat h π Qpr
+    fun _ => (unimodularRankTwo.mem_principalCoefficientMonoid _ _).mpr (zero_mem _)
 
 end Mei.SkewLatticeDatum.Examples
