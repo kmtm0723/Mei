@@ -7,6 +7,7 @@ module
 
 public import Mei.Algebra.PositiveDegrees.Graph
 public import Mathlib.LinearAlgebra.Basis.Defs
+public import Mathlib.LinearAlgebra.Basis.Fin
 
 /-!
 # Positive degrees from an integral basis
@@ -17,7 +18,8 @@ when the basis is empty. These are the degree data for completions in independen
 formal variables. The construction pulls back `Mei.PositiveDegrees.orthant` along
 Mathlib's `Module.Basis.equivFun`. The allowed monoid is free on the basis vectors:
 `Module.Basis.positiveDegreesMonoidEquiv` identifies it with `ι →₀ ℕ`, carrying the degree
-to the total degree.
+to the total degree. For the standard basis of `ℤ × ℤ` the allowed exponents are the pairs with
+nonnegative coordinates (`Module.Basis.mem_positiveDegrees_finTwoProd_monoid`).
 For graphs in a torsion-free target, every supported primitive ray generator
 already belongs to the graph monoid.
 -/
@@ -44,6 +46,21 @@ def positiveDegrees : Mei.PositiveDegrees N where
 theorem mem_positiveDegrees_monoid (n : N) :
     n ∈ b.positiveDegrees.monoid ↔ ∀ j, 0 ≤ b.repr n j := by
   simp [positiveDegrees, equivFun_apply]
+
+/-- A nonnegative integer multiple of a basis vector is an allowed exponent. -/
+theorem zsmul_mem_positiveDegrees_monoid (j : ι) {a : ℤ} (ha : 0 ≤ a) :
+    a • b j ∈ b.positiveDegrees.monoid := by
+  classical
+  rw [mem_positiveDegrees_monoid]
+  intro i
+  rw [map_zsmul, repr_self, Finsupp.smul_apply, smul_eq_mul, Finsupp.single_apply]
+  split_ifs <;> simp [ha]
+
+/-- For the standard basis of `ℤ × ℤ`, the allowed exponents are the pairs with nonnegative
+coordinates. -/
+theorem mem_positiveDegrees_finTwoProd_monoid (x : ℤ × ℤ) :
+    x ∈ (Basis.finTwoProd ℤ).positiveDegrees.monoid ↔ 0 ≤ x.1 ∧ 0 ≤ x.2 := by
+  simp [mem_positiveDegrees_monoid, Fin.forall_fin_two]
 
 /-- Degree is the sum of the integral basis coordinates. -/
 @[simp]

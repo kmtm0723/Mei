@@ -47,9 +47,11 @@ ray":
 
 The outer power `r` is `ℓ / ind(m°)` (`Submodule.index_eq_mul_relIndex_ker_eval`). The wall
 functions are not computed, and positivity is not transported. The case `m₁ = (1, 0)`,
-`m₂ = (1, 2)` with `r = 2` is `Mei.HyperplaneTermInput.FiniteIndex.Examples`, which derives its
-lattice-change results from this file, and a case with `r = 3` is
-`Mei.RankTwoLatticeChange.Examples`.
+`m₂ = (1, 2)` with `r = 2` and the explicit wall functions `(1 + a z^{(1,1)})²` and
+`1 + a z^{(1,1)}` is `Mei.HyperplaneTermInput.FiniteIndex.Examples`, and a case with `r = 3` is
+`Mei.RankTwoLatticeChange.Examples`. Generic points of `ℝm°` common to two representatives exist
+in every open set meeting the line (`exists_isGenericPoint_pair_line`), and the germ labels of the
+class over `M` are constant along open rays of `ℝm°` (`germLabel_smul_eq_of_toClass_eq`).
 -/
 
 public section
@@ -63,24 +65,6 @@ open DirectedWall DirectedDiagram TauCeti.Toric
 /-- The positive quadrant `ℕ²` of `ℤ²`, with coordinate-sum degree. -/
 local notation "ℕ²" => Module.Basis.positiveDegrees (Module.Basis.finTwoProd ℤ)
 
-/-- A pair lies in the positive quadrant when both coordinates are nonnegative. -/
-theorem mem_positiveDegrees_finTwoProd_monoid (x : ℤ × ℤ) :
-    x ∈ ℕ².monoid ↔ 0 ≤ x.1 ∧ 0 ≤ x.2 := by
-  simp [Module.Basis.mem_positiveDegrees_monoid, Fin.forall_fin_two]
-
-/-- The coefficient exponents `(k + 1) • e_i` of `x^{(k+1) m_i}` are allowed degrees. -/
-theorem succ_smul_finTwoProd_mem (i : Fin 2) (k : ℕ) :
-    ((k : ℤ) + 1) • Module.Basis.finTwoProd ℤ i ∈ ℕ².monoid := by
-  rw [Module.Basis.mem_positiveDegrees_monoid]
-  intro j
-  rw [map_zsmul, Module.Basis.repr_self, Finsupp.smul_apply, smul_eq_mul]
-  exact mul_nonneg (by positivity) (by rw [Finsupp.single_apply]; split_ifs <;> simp)
-
-/-- The coefficient exponents `(k + 1) • e_i` of `x^{(k+1) m_i}` are nonzero. -/
-theorem succ_smul_finTwoProd_ne_zero (i : Fin 2) (k : ℕ) :
-    ((k : ℤ) + 1) • Module.Basis.finTwoProd ℤ i ≠ 0 :=
-  smul_ne_zero (by positivity) ((Module.Basis.finTwoProd ℤ).ne_zero i)
-
 /-- The incoming lines `ℝm₁` and `ℝm₂` through the origin, in tangent coordinates `ρ₀` and
 cooriented by `μ₀ 0` and `μ₀ 1`, with the terms `x^{(k + 1) m_i}` for `k < K`: the term `(i, k)`
 has coefficient exponent `(k + 1) • e_i`. -/
@@ -92,8 +76,8 @@ def lineInput (ρ₀ : ℤ × ℤ →+ ℤ × ℤ) (μ₀ : Fin 2 → ℤ × ℤ
   offset _ := 0
   wallIndex := Prod.fst
   exponent α := ((α.2 : ℤ) + 1) • Module.Basis.finTwoProd ℤ α.1
-  exponent_mem α := succ_smul_finTwoProd_mem α.1 α.2
-  exponent_ne_zero α := succ_smul_finTwoProd_ne_zero α.1 α.2
+  exponent_mem α := Module.Basis.zsmul_mem_positiveDegrees_monoid _ α.1 (by positivity)
+  exponent_ne_zero α := smul_ne_zero (by positivity) ((Module.Basis.finTwoProd ℤ).ne_zero α.1)
   normal_exponent α := by rw [map_zsmul, map_zsmul, hρμ, smul_zero]
 
 section LineInput
@@ -164,8 +148,8 @@ variable {p q : ℤ} {m : ℤ × ℤ} {r : ℕ}
 /-- The supported ray of `ℕ²` through the coefficient exponent `(p, q)`, for coprime
 `p, q ≥ 0`. -/
 def coefficientRay (hpq : IsCoprime p q) (hp : 0 ≤ p) (hq : 0 ≤ q) : SupportedRay ℕ² :=
-  SupportedRay.ofMem (p, q) ((mem_positiveDegrees_finTwoProd_monoid _).mpr ⟨hp, hq⟩)
-    (isPrimitive_mk_of_isCoprime hpq)
+  SupportedRay.ofMem (p, q) ((Module.Basis.mem_positiveDegrees_finTwoProd_monoid _).mpr ⟨hp, hq⟩)
+    (Prod.isPrimitive_mk_of_isCoprime hpq)
 
 /-- The generator of the ray `(p, q)` is `(p, q)`. -/
 @[simp]
@@ -181,7 +165,7 @@ theorem eq_coefficientRay_of_normal_coord_eq_zero (hD : Prod.det m₁ m₂ ≠ 0
     (hw : normal m (coord m₁ m₂ w.generator) = 0) : w = coefficientRay hpq hp hq := by
   obtain ⟨k, hk⟩ := exists_eq_zsmul_of_normal_coord_eq_zero hD hpq hm hw
   obtain ⟨s, hs, hsw⟩ := w.supported
-  rw [hk, smul_smul, mem_positiveDegrees_finTwoProd_monoid] at hsw
+  rw [hk, smul_smul, Module.Basis.mem_positiveDegrees_finTwoProd_monoid] at hsw
   simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul] at hsw
   have hk0 : 0 ≤ k := by
     by_contra! hk0
@@ -204,9 +188,7 @@ variable (R : Type) [CommRing R] [Algebra ℚ R]
   (hσ : ∀ μ, 0 < σ μ) (hν : ∀ μ x, (ν μ (change m₁ m₂ x) : ℚ) = σ μ * μ x)
 
 /-- The finite-index pushforward along `M ⊆ ℓ⁻¹M₀`, with identity degree map and a normal map `ν`
-with `ν μ ∘ change = σ μ • μ`. Its body is exposed so that the lemmas about
-`DirectedWall.Pushforward.ofFiniteIndex` apply to it. -/
-@[expose]
+with `ν μ ∘ change = σ μ • μ`; see `pushforward_eq_ofFiniteIndex`. -/
 def pushforward :
     Pushforward ℕ² ℕ² h h (tropicalVertexWallSpaces (R := R) ℕ² (coord m₁ m₂))
       (tropicalVertexWallSpaces ℕ² (sublatticeCoord m₁ m₂)) :=
@@ -214,23 +196,33 @@ def pushforward :
   Pushforward.ofFiniteIndex (PositiveDegreeMap.id ℕ²) (change m₁ m₂) (change_injective hD.ne')
     (sublatticeCoord_id_eq_change_coord m₁ m₂) ν σ hσ hν
 
+/-- The lattice change is the finite-index pushforward along `change m₁ m₂`, for any instance
+of finite index: the defining equation of `pushforward`. -/
+theorem pushforward_eq_ofFiniteIndex [(change m₁ m₂).range.FiniteIndex] :
+    pushforward R h hD ν σ hσ hν =
+      Pushforward.ofFiniteIndex (PositiveDegreeMap.id ℕ²) (change m₁ m₂) (change_injective hD.ne')
+        (sublatticeCoord_id_eq_change_coord m₁ m₂) ν σ hσ hν := by
+  rw [pushforward]
+
 /-- The degree map of the lattice change is the identity. -/
 @[simp]
-theorem pushforward_degreeMap_apply (x : ℤ × ℤ) :
-    (pushforward R h hD ν σ hσ hν).degreeMap x = x := by
-  simp [pushforward]
+theorem pushforward_degreeMap :
+    (pushforward R h hD ν σ hσ hν).degreeMap = PositiveDegreeMap.id ℕ² := by
+  have := finiteIndex_range_change hD
+  rw [pushforward_eq_ofFiniteIndex, Pushforward.ofFiniteIndex_degreeMap]
 
 /-- The normal map of the lattice change is `ν`. -/
 @[simp]
 theorem pushforward_normalMap (μ : ℤ × ℤ →+ ℤ) :
     (pushforward R h hD ν σ hσ hν).normalMap μ = ν μ := by
-  simp [pushforward]
+  have := finiteIndex_range_change hD
+  rw [pushforward_eq_ofFiniteIndex, Pushforward.ofFiniteIndex_normalMap]
 
 /-- The completed Lie map of the lattice change is injective. -/
 theorem pushforward_lieHom_completedMap_injective :
     Function.Injective (pushforward R h hD ν σ hσ hν).lieHom.completedMap := by
   have := finiteIndex_range_change hD
-  rw [pushforward]
+  rw [pushforward_eq_ofFiniteIndex]
   exact Pushforward.ofFiniteIndex_lieHom_completedMap_injective _ _ _ _ _ _ _ _
     fun _ _ hxy => by simpa only [PositiveDegreeMap.id_apply] using hxy
 
@@ -280,7 +272,7 @@ theorem pushforward_equivalent :
     (((latticeLineInput hD K).diagram h c).pushforward
       (pushforward R h hD ν σ hσ hν)).Equivalent ((sublatticeLineInput m₁ m₂ K).diagram h c) := by
   have := finiteIndex_range_change hD
-  rw [← latticeLineInput_map hD hν hline, pushforward]
+  rw [← latticeLineInput_map hD hν hline, pushforward_eq_ofFiniteIndex]
   exact (latticeLineInput hD K).diagram_pushforward_ofFiniteIndex_equivalent _ _
     (change_injective hD.ne') _ hσ _ (scalar_latticeLineInput_normal hD hν hline K) h h c
 
@@ -380,7 +372,7 @@ theorem label_mem_wallGroup_of_isGenericPoint (hD : Prod.det m₁ m₂ ≠ 0) (h
 @[simp]
 theorem pushforward_spatialMap_zero : (pushforward R h hD ν σ hσ hν).spatialMap 0 = 0 := by
   have := finiteIndex_range_change hD
-  rw [pushforward, Pushforward.ofFiniteIndex_spatialMap,
+  rw [pushforward_eq_ofFiniteIndex, Pushforward.ofFiniteIndex_spatialMap,
     IsIntegralLattice.coe_extendContinuousAffineEquivOfFiniteIndex, map_zero]
 
 /-- The image of the line `ℝm` under the spatial map of the lattice change passes through the
@@ -457,7 +449,7 @@ theorem pushforward_lieHom_completedMap_label (hνm : ν (normal m) = normal (p,
         ((Int.castAddHom R).comp (normal (p, q))) ((F₁).completedLog f₁)) := by
   have := finiteIndex_range_change hD
   have hr := scalar_normal_eq hν hm hνm hm0
-  rw [pushforward]
+  rw [pushforward_eq_ofFiniteIndex]
   exact Pushforward.ofFiniteIndex_lieHom_completedMap_completedBCHExp_completedLog _ _ _ _ ν σ hσ
     hν (normal m) (fun x => by rw [hr]; exact intCast_normal_apply_change hm x) hr f₀ f₁ hf
 
@@ -475,13 +467,44 @@ theorem exists_pow_eq_and_pushforward_lieHom_completedMap_eq (hνm : ν (normal 
           ((Int.castAddHom R).comp (normal (p, q))) ((F₁).completedLog f₁)) := by
   have := finiteIndex_range_change hD
   have hr := scalar_normal_eq hν hm hνm hm0
-  rw [pushforward]
+  rw [pushforward_eq_ofFiniteIndex]
   exact Pushforward.exists_pow_eq_and_ofFiniteIndex_lieHom_completedMap_eq _ _ _ _ ν σ hσ hν
     (normal m) (fun x => by rw [hr]; exact intCast_normal_apply_change hm x) hr f₀
 
 variable {K : ℕ} (c : Fin 2 × Fin K → R)
   (hline : ∀ i, ν (lineNormal m₁ m₂ i) = sublatticeLineNormal i)
   (hνm : ν (normal m) = normal (p, q))
+
+/-- **Common generic points on `ℝm`.** Let `m ≠ 0`, let `D` be a diagram over `M` and `E` a
+diagram over `ℓ⁻¹M₀`. Every open set meeting the line `ℝm` contains a generic point of the line
+for `D` whose image under the spatial map of the lattice change is a generic point of the image
+line for `E`. -/
+theorem exists_isGenericPoint_pair_line (hm0 : m ≠ 0) {κ ι : Type*}
+    (D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := R) ℕ² (coord m₁ m₂)) κ)
+    (E : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := R) ℕ²
+      (sublatticeCoord m₁ m₂)) ι)
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hne : (U ∩ line h m).Nonempty) :
+    ∃ θ ∈ U ∩ line h m, D.IsGenericPoint (line h m) θ ∧
+      E.IsGenericPoint ((line h m).map (P).spatialMap.toAffineEquiv.toAffineMap)
+        ((P).spatialMap θ) :=
+  D.exists_isGenericPoint_pair E _ _ (finrank_direction_line hm0) hU hne
+
+/-- **Germ labels of the class over `M` along rays of `ℝm`.** Let `m ≠ 0`, let `D` and `D'`
+represent the scattering class of the lines over `M`, let `θ` be a generic point of the line `ℝm`
+for `D` and `t • θ`, `t > 0`, a generic point of the line for `D'`, and let `v` cross the line.
+Then the germ label of `D'` at `t • θ` in the direction `v` is the germ label of `D` at `θ`. -/
+theorem germLabel_smul_eq_of_toClass_eq (hm0 : m ≠ 0) {κ κ' : Type}
+    {D : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := R) ℕ² (coord m₁ m₂)) κ}
+    (hDc : D.toClass =
+      ((latticeLineInput hD K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
+    {D' : DirectedDiagram (d := ℕ²) h (tropicalVertexWallSpaces (R := R) ℕ² (coord m₁ m₂)) κ'}
+    (hD'c : D'.toClass =
+      ((latticeLineInput hD K).diagram h c).Scat (fun _ => ofHyperplaneRayFactors_full ..))
+    {θ v : ℝ × ℝ} {t : ℝ} (ht : 0 < t) (hθ : D.IsGenericPoint (line h m) θ)
+    (htθ : D'.IsGenericPoint (line h m) (t • θ)) (hv : h.realCharacter (normal m) v ≠ 0) :
+    D'.germLabel (t • θ) v htθ.isRegular = D.germLabel θ v hθ.isRegular :=
+  germLabel_smul_eq_of_toClass_eq_scat _ (lineInput_diagram_wall_support _ _ _ _ _ R h c) hDc hD'c
+    (by simp) (finrank_direction_line hm0) ht hθ htθ (notMem_direction_line_iff.mpr hv)
 
 include hm hline hνm in
 /-- **The wall function over `M` is the `r`-th power of the one over `ℓ⁻¹M₀`, pointwise.** Let `ν`
@@ -575,9 +598,7 @@ theorem exists_germLabel_smul_eq_of_toClass_eq (hpq : IsCoprime p q) (hp : 0 ≤
   obtain ⟨f₁, hf, hP⟩ :=
     exists_pow_eq_and_pushforward_lieHom_completedMap_eq (h := h) hD hσ hν hm hνm hmp.ne_zero f₀
   refine ⟨f₀, f₁, hf, fun hDc t ht htθ => ?_, fun hEc t ht htθ => ?_⟩
-  · rw [germLabel_smul_eq_of_toClass_eq_scat _ (lineInput_diagram_wall_support _ _ _ _ _ R h c)
-      hD₀ hDc (by simp) (finrank_direction_line hmp.ne_zero) ht hθ htθ
-      (notMem_direction_line_iff.mpr hv), ← hf₀]
+  · rw [germLabel_smul_eq_of_toClass_eq hD c hmp.ne_zero hD₀ hDc ht hθ htθ hv, ← hf₀]
   · rw [germLabel_smul_eq_of_toClass_eq_scat _ (lineInput_diagram_wall_support _ _ _ _ _ R h c)
       (toClass_pushforward R h hD hσ hν hline c hD₀) hEc (zero_mem_map_line hD hσ hν)
       (finrank_direction_map_line hD hσ hν hmp.ne_zero) ht (hθ.pushforward (P)) htθ

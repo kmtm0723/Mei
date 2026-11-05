@@ -16,7 +16,8 @@ rays without choosing a real realization of the lattice.
 
 We use `TauCeti.IsPrimitive`, defined by an integer-valued functional taking value one.
 A combination `p • b i + q • b j` of two distinct basis vectors with coprime coefficients is
-primitive (`Module.Basis.isPrimitive_zsmul_add_zsmul`).
+primitive (`Module.Basis.isPrimitive_zsmul_add_zsmul`), and so is a pair `(p, q)` of coprime
+integers in `ℤ × ℤ` (`Prod.isPrimitive_mk_of_isCoprime`).
 -/
 
 public section
@@ -61,3 +62,10 @@ theorem isPrimitive_zsmul_add_zsmul (b : Basis ι ℤ M) {i j : ι} (hij : i ≠
   simpa [hij, hij.symm, mul_comm] using huv
 
 end Module.Basis
+
+/-- A pair of coprime integers is a primitive vector of `ℤ × ℤ`. -/
+theorem Prod.isPrimitive_mk_of_isCoprime {p q : ℤ} (hpq : IsCoprime p q) :
+    TauCeti.IsPrimitive ((p, q) : ℤ × ℤ) := by
+  obtain ⟨u, v, huv⟩ := hpq
+  exact TauCeti.isPrimitive_def.mpr ⟨u • LinearMap.fst ℤ ℤ ℤ + v • LinearMap.snd ℤ ℤ ℤ,
+    by simpa using huv⟩

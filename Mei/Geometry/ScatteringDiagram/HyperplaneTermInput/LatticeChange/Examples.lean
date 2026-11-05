@@ -147,7 +147,7 @@ theorem exists_diagonal_germLabel_smul_eq_of_toClass_eq {κ₀ : Type}
   exists_germLabel_smul_eq_of_toClass_eq det_pos (normalScalar_pos det_pos)
     (normalMap_apply_change det_pos) three_nsmul_one_one c (normalMap_lineNormal det_pos)
     normalMap_normal_one_one isCoprime_one_right zero_le_two zero_le_one
-    (isPrimitive_mk_of_isCoprime isCoprime_one_left) hD₀ hθ hv
+    (Prod.isPrimitive_mk_of_isCoprime isCoprime_one_left) hD₀ hθ hv
 
 /-- **The diagonal germ labels determine each other.** Let `D` represent the scattering class of
 the lines over `M` and `E` that over `⅓M₀`, let `θ` be a generic point of the diagonal for `D`

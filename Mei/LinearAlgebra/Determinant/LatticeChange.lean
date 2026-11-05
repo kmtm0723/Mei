@@ -315,26 +315,6 @@ theorem normal_apply_change (hm : r • m = p • m₁ + q • m₂) (x : ℤ ×
     smul_eq_mul]
   ring
 
-/-- A pair of coprime integers is a primitive vector of `ℤ²`. -/
-theorem isPrimitive_mk_of_isCoprime (hpq : IsCoprime p q) :
-    TauCeti.IsPrimitive ((p, q) : ℤ × ℤ) := by
-  have h := (Module.Basis.finTwoProd ℤ).isPrimitive_zsmul_add_zsmul (i := 0) (j := 1)
-    zero_ne_one hpq
-  simpa using h
-
-/-- If `p` and `q` are coprime, the integral vectors `x` with `det(x, (p, q)) = 0` are the
-integral multiples of `(p, q)`. -/
-theorem exists_eq_zsmul_of_det_eq_zero (hpq : IsCoprime p q) {x : ℤ × ℤ}
-    (hx : Prod.det x (p, q) = 0) : ∃ k : ℤ, x = k • (p, q) := by
-  obtain ⟨u, v, huv⟩ := hpq
-  rw [Prod.det_apply] at hx
-  dsimp only at hx
-  refine ⟨u * x.1 + v * x.2, Prod.ext ?_ ?_⟩
-  · simp only [Prod.smul_fst, smul_eq_mul]
-    linear_combination (-1 : ℤ) * x.1 * huv + v * hx
-  · simp only [Prod.smul_snd, smul_eq_mul]
-    linear_combination (-1 : ℤ) * x.2 * huv - u * hx
-
 /-- **The line `ℝm°` in coefficient coordinates.** Let `m₁, m₂` be independent, `p, q` coprime and
 `r • m = p • m₁ + q • m₂`. If the normal `det(·, m)` vanishes on `a • m₁ + b • m₂`, then `(a, b)` is
 an integral multiple of `(p, q)`. -/
@@ -343,7 +323,7 @@ theorem exists_eq_zsmul_of_normal_coord_eq_zero (hD : Prod.det m₁ m₂ ≠ 0) 
     ∃ k : ℤ, x = k • (p, q) := by
   have h := natCast_mul_normal_coord hm x
   rw [hx, mul_zero, eq_comm] at h
-  exact exists_eq_zsmul_of_det_eq_zero hpq ((mul_eq_zero.mp h).resolve_left hD)
+  exact Prod.exists_eq_zsmul_of_det_eq_zero hpq ((mul_eq_zero.mp h).resolve_left hD)
 
 /-- If `p` and `q` are coprime, `r • m = p • m₁ + q • m₂` forces `r ≠ 0` for independent `m₁, m₂`.
 -/
@@ -419,22 +399,19 @@ theorem normal_apply_ne_zero (hm : m ≠ 0) : normal m (m.2, -m.1) ≠ 0 := by
   have h₂ : m.2 = 0 := by nlinarith
   exact Prod.ext h₁ h₂
 
-/-- An additive map on `ℤ²` is determined by its values on the coordinate vectors. -/
-theorem apply_eq_add (μ : ℤ × ℤ →+ ℤ) (x : ℤ × ℤ) : μ x = x.1 * μ (1, 0) + x.2 * μ (0, 1) := by
-  simpa using apply_coord (1, 0) (0, 1) μ x
-
 /-- If `m` is primitive, every integral normal vanishing on `m` is an integral multiple of
 `det(·, m)`. -/
 theorem exists_eq_zsmul_normal (hm : TauCeti.IsPrimitive m) {μ : ℤ × ℤ →+ ℤ} (hμ : μ m = 0) :
     ∃ c : ℤ, μ = c • normal m := by
   obtain ⟨f, hf⟩ := TauCeti.isPrimitive_def.mp hm
   have hf' : m.1 * f (1, 0) + m.2 * f (0, 1) = 1 := by
-    have h := apply_eq_add f.toAddMonoidHom m
+    have h := AddMonoidHom.apply_eq_fst_mul_add_snd_mul f.toAddMonoidHom m
     simp only [LinearMap.toAddMonoidHom_coe] at h
     rw [← h, hf]
-  rw [apply_eq_add] at hμ
+  rw [AddMonoidHom.apply_eq_fst_mul_add_snd_mul] at hμ
   refine ⟨μ (1, 0) * f (0, 1) - μ (0, 1) * f (1, 0), AddMonoidHom.ext fun x => ?_⟩
-  rw [apply_eq_add, AddMonoidHom.smul_apply, normal_apply, Prod.det_apply, smul_eq_mul]
+  rw [AddMonoidHom.apply_eq_fst_mul_add_snd_mul, AddMonoidHom.smul_apply, normal_apply,
+    Prod.det_apply, smul_eq_mul]
   linear_combination (x.1 * f (1, 0) + x.2 * f (0, 1)) * hμ -
     (x.1 * μ (1, 0) + x.2 * μ (0, 1)) * hf'
 
