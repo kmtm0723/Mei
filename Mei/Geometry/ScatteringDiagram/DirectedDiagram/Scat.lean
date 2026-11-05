@@ -16,7 +16,8 @@ A finitely active full-hyperplane input determines a unique class of outgoing
 completions, denoted `DirectedDiagram.Scat`. Its finite-order projection depends
 only on the corresponding finite-order class of the input. Fixed-degree
 wall-space morphisms commute with this construction, including maps that kill
-initial labels or correction labels.
+initial labels or correction labels. A consistent input is its own outgoing completion, so its
+scattering class is its own class (`DirectedDiagram.scat_eq_toClass_of_consistent`).
 
 This packages `DirectedDiagram.exists_outgoingCompletion`,
 `DirectedDiagram.outgoingCompletion_unique` and
@@ -77,6 +78,20 @@ theorem scat_eq_toClass {ι : Type (max u w)}
     (hE : IsOutgoingCompletion D.wall E) : D.Scat hfull = E.toClass := by
   obtain ⟨η, F, hF, hc⟩ := D.scat_spec hfull
   exact hc.trans ((toClass_eq_iff F E).mpr (outgoingCompletion_unique hF hE))
+
+/-- A consistent full-hyperplane input is its own outgoing completion, without additional
+walls, so its scattering class is its own class. Its walls need not be incoming. -/
+theorem scat_eq_toClass_of_consistent (hD : D.Consistent) : D.Scat hfull = D.toClass := by
+  let e : ι ⊕ PEmpty.{u + 1} ≃ ι := Equiv.sumEmpty ι PEmpty
+  let E : DirectedDiagram (d := d) h H (ι ⊕ PEmpty.{u + 1}) :=
+    { wall := fun j => D.wall (e j)
+      finite_active := fun k => (D.finite_active k).preimage e.injective.injOn }
+  have hDE : D.Equivalent E := (Refinement.ofEquiv e fun _ => rfl).equivalent
+  have hE : IsOutgoingCompletion D.wall E :=
+    { wall_inl := fun j => congrArg D.wall (Equiv.sumEmpty_apply_inl j)
+      outgoing_inr := fun j => j.elim
+      consistent := hDE.consistent hD }
+  exact (scat_eq_toClass D hfull hE).trans ((toClass_eq_iff E D).mpr hDE.symm)
 
 variable {D}
 

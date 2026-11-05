@@ -29,7 +29,10 @@ grouping does not change the diagram, so the path products are those of the ray
 presentation. At a regular point lying exactly on the active walls of one group, the
 combined crossing label is the group label, or its inverse for the opposite crossing
 direction. Hence a segment crossing only that germ has the projection of the group label as
-its path product (`FunctionWallGrouping.levelPathProduct_toPath_eq_projection_label`).
+its path product (`FunctionWallGrouping.levelPathProduct_toPath_eq_projection_label`). A
+diagram with primitive normals has the discrete grouping, in which every wall is its own
+function wall with its own label (`FunctionWallGrouping.discrete`,
+`FunctionWallGrouping.label_discrete`).
 
 For an action `σ` of the completed group on the completion of a filtered monoid algebra
 `A[Q]`, a unit `f` is a *wall function* of a group when its label acts on every
@@ -274,6 +277,37 @@ theorem toSet_label (g : κ) : G.toSet.label {j | G.group j = g} = G.label g :=
 /-- A group without walls has the identity label. -/
 theorem label_eq_one {g : κ} (hg : ∀ j, G.group j ≠ g) : G.label g = 1 :=
   ((G.eq_label_iff g 1).mpr fun k => (map_one _).trans (G.groupLabel_eq_one hg k).symm).symm
+
+/-- A group consisting of the single wall `j` has the label of that wall. -/
+theorem label_eq_of_forall_group_eq_iff {j : ι} {g : κ} (hg : ∀ j', G.group j' = g ↔ j' = j) :
+    G.label g = (D.wall j).label := by
+  refine ((G.eq_label_iff g _).mpr fun k => ?_).symm
+  rw [G.groupLabel_eq_noncommProd g k {j}
+    (fun j' hj' => (hg j').mpr (Finset.mem_singleton.mp hj'))
+    fun j' _ hj' => Finset.mem_singleton.mpr ((hg j').mp hj'), Finset.noncommProd_singleton]
+
+variable (D) in
+/-- The discrete grouping of a diagram with primitive normals: every wall is its own function
+wall. -/
+def discrete (hν : ∀ j, TauCeti.IsPrimitive (D.wall j).normal) (π : Γ →+ M) :
+    D.FunctionWallGrouping π ι where
+  group := id
+  support_eq hj := congrArg (fun j => (D.wall j).support) hj
+  normal_eq hj := congrArg (fun j => (D.wall j).normal) hj
+  projectedDirection_eq hj _ _ :=
+    ⟨1, 1, one_pos, one_pos, congrArg (fun j => 1 • π (D.wall j).ray.generator) hj⟩
+  isPrimitive_normal := hν
+
+/-- In the discrete grouping, every wall forms its own group. -/
+@[simp]
+theorem discrete_group (hν : ∀ j, TauCeti.IsPrimitive (D.wall j).normal) (j : ι) :
+    (discrete D hν π).group j = j := (rfl)
+
+/-- In the discrete grouping, the label of the group of `j` is the label of the wall `j`. -/
+@[simp]
+theorem label_discrete (hν : ∀ j, TauCeti.IsPrimitive (D.wall j).normal) (j : ι) :
+    (discrete D hν π).label j = (D.wall j).label :=
+  (discrete D hν π).label_eq_of_forall_group_eq_iff fun _ => Iff.rfl
 
 section WallFunction
 

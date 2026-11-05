@@ -30,15 +30,16 @@ is the cylinder of the projected scattering class.
 
 For a radical degree `n`, with `{-, n} = 0`, `p₁*(n) = 0`, so `ρ(r(n)) = 0` and every
 projected principal wall of degree `r(n)` has zero spatial velocity and is incoming, as is its
-principal cylinder. For the zero form every degree is radical, and by
-`SkewLatticeDatum.consistent_of_form_eq_zero` both adapted polynomial inputs are consistent.
+principal cylinder. For the zero form every degree is radical. If the form vanishes on the
+unfrozen sublattice, in particular for the zero form, both adapted polynomial inputs are
+consistent by `SkewLatticeDatum.consistent_of_forall_form_eq_zero`.
 
 The principal realization follows Gross–Hacking–Keel–Kontsevich, *Canonical bases for
 cluster algebras*, §1 and Appendix B, arXiv:1411.1394v2. We use
 `SkewLatticeDatum.projectedPrincipalGraphWallSpaces`, `DirectedWall.cylinder`,
 `DirectedDiagram.cylinder`, `DirectedDiagram.cylinder_scat`,
 `SkewLatticeDatum.AdaptedBasis.adaptedPolynomialInput` and
-`SkewLatticeDatum.consistent_of_form_eq_zero`.
+`SkewLatticeDatum.consistent_of_forall_form_eq_zero`.
 -/
 
 public section
@@ -252,16 +253,32 @@ theorem projectedAdaptedPolynomialInput_direction_eq_zero_of_form_eq_zero
     ((B.projectedAdaptedPolynomialInput (V := V) ℓ a h).wall k).direction = 0 :=
   projectedPrincipal_direction_eq_zero_of_form_eq_zero _ (n := B.unfrozenBasis k) (by simp) hform
 
+/-- If the form vanishes on the unfrozen sublattice, the projected adapted polynomial input is
+consistent. -/
+theorem projectedAdaptedPolynomialInput_consistent_of_forall_form_eq_zero
+    (hform : ∀ n m : D.unfrozen, D.form n m = 0) :
+    (B.projectedAdaptedPolynomialInput (V := V) ℓ a h).Consistent :=
+  D.consistent_of_forall_form_eq_zero hform _ (B.projectedAdaptedPolynomialInput_full ℓ a h)
+
 /-- For the zero form the projected adapted polynomial input is consistent. -/
 theorem projectedAdaptedPolynomialInput_consistent_of_form_eq_zero (hform : D.form = 0) :
     (B.projectedAdaptedPolynomialInput (V := V) ℓ a h).Consistent :=
-  D.consistent_of_form_eq_zero hform _ (B.projectedAdaptedPolynomialInput_full ℓ a h)
+  B.projectedAdaptedPolynomialInput_consistent_of_forall_form_eq_zero ℓ a h
+    fun _ _ => by simp [hform]
+
+/-- If the form vanishes on the unfrozen sublattice, the adapted polynomial input on the
+principal lattice is consistent. Pairings with frozen vectors are unrestricted. -/
+theorem adaptedPolynomialInput_consistent_of_forall_form_eq_zero
+    (hform : ∀ n m : D.unfrozen, D.form n m = 0)
+    {p : Module.Dual ℤ D.sublattice × D.unfrozen →+ V} (hp : TauCeti.Toric.IsIntegralLattice p) :
+    (B.adaptedPolynomialInput (V := V) ℓ a hp).Consistent :=
+  D.consistent_of_forall_form_eq_zero hform _ (B.adaptedPolynomialInput_full ℓ a hp)
 
 /-- For the zero form the adapted polynomial input on the principal lattice is consistent. -/
 theorem adaptedPolynomialInput_consistent_of_form_eq_zero (hform : D.form = 0)
     {p : Module.Dual ℤ D.sublattice × D.unfrozen →+ V} (hp : TauCeti.Toric.IsIntegralLattice p) :
     (B.adaptedPolynomialInput (V := V) ℓ a hp).Consistent :=
-  D.consistent_of_form_eq_zero hform _ (B.adaptedPolynomialInput_full ℓ a hp)
+  B.adaptedPolynomialInput_consistent_of_forall_form_eq_zero ℓ a (fun _ _ => by simp [hform]) hp
 
 end AdaptedBasis
 
