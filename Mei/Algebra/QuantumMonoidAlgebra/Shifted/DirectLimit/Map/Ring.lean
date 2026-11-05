@@ -12,10 +12,9 @@ public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.Unit
 /-!
 # Ring maps between global quantum coefficient algebras
 
-The global semilinear coefficient map preserves products and the unit. Its ring
-homomorphism structure reuses the existing additive map. Product preservation
-comes from finite quotient transport on each pair of charts, with no alternation,
-injectivity, or spanning assumptions.
+The global scalar and degree coefficient map is a unital ring homomorphism
+compatible with the algebra maps of scalars. The bilinear forms need not be
+alternating, and no injectivity or spanning assumption is required.
 -/
 
 public section
@@ -57,16 +56,6 @@ private local instance : Ring (e.ShiftedDirectLimit (grade q' β')) := inferInst
 private local instance : Algebra S (e.ShiftedDirectLimit (grade q' β')) := inferInstance
 private local instance : Module S (e.ShiftedDirectLimit (grade q' β')) := inferInstance
 
-omit [DecidableEq Γ] in
-private theorem chart_cast {p r : Γ'} (hpr : p = r) (s : Multiset e.monoid)
-    (hr : r - e.coefficientOrigin s ∈ e.monoid)
-    (x : e.ShiftedCoefficients (grade q' β') p) :
-    e.toShiftedDirectLimitOfChart (grade q' β') r s hr
-        (cast (congrArg (e.ShiftedCoefficients (grade q' β')) hpr) x) =
-      e.toShiftedDirectLimitOfChart (grade q' β') p s (by rwa [hpr]) x := by
-  subst r
-  rfl
-
 private theorem map_global_mul_charts (p r : Γ) (s t : Multiset d.monoid)
     (hp : p - d.coefficientOrigin s ∈ d.monoid)
     (hr : r - d.coefficientOrigin t ∈ d.monoid) (u v : Multiset e.monoid)
@@ -94,7 +83,8 @@ private theorem map_global_mul_charts (p r : Γ) (s t : Multiset d.monoid)
   have h₁ := congrArg (mapShiftedDirectLimit d e T φ h) hs
   have h₂ := mapShiftedDirectLimit_toShiftedDirectLimitOfChart d e T φ h
     (p + r) (s + t) hst (u + v) huv' z
-  have h₃ := chart_cast e (map_add T.toAddMonoidHom p r) (u + v) huv
+  have h₃ := e.toShiftedDirectLimitOfChart_cast (grade q' β') (T (p + r)) (T p + T r)
+    (map_add T.toAddMonoidHom p r) (u + v) (u + v) huv' huv
     (mapShiftedCompletion d e T φ h (p + r) z)
   have h₄ := congrArg E (mapShiftedCompletion_mul d e T φ h p r x y)
   have ht := (e.shiftedDirectLimitMul_eq_mul (grade q' β') _ _).symm.trans
@@ -104,20 +94,22 @@ private theorem map_global_mul_charts (p r : Γ) (s t : Multiset d.monoid)
   have hf := congrArg₂ (fun a b : e.ShiftedDirectLimit (grade q' β') => a * b)
     (mapShiftedDirectLimit_toShiftedDirectLimitOfChart d e T φ h p s hp u hu x)
     (mapShiftedDirectLimit_toShiftedDirectLimitOfChart d e T φ h r t hr v hv y)
-  exact h₁.trans (h₂.trans (h₃.symm.trans (h₄.trans (ht.symm.trans hf.symm))))
+  calc
+    _ = _ := h₁
+    _ = _ := h₂
+    _ = _ := h₃.symm
+    _ = _ := h₄
+    _ = _ := ht.symm
+    _ = _ := hf.symm
 
 /-- Global quantum coefficient transport preserves products for arbitrary bilinear forms. -/
 theorem mapShiftedDirectLimit_mul (x y : d.ShiftedDirectLimit (grade q β)) :
     mapShiftedDirectLimit d e T φ h (x * y) =
       mapShiftedDirectLimit d e T φ h x * mapShiftedDirectLimit d e T φ h y := by
-  let hx := d.exists_toShiftedDirectLimit (grade q β) x
-  let hy := d.exists_toShiftedDirectLimit (grade q β) y
-  let s := Classical.choose hx
-  let t := Classical.choose hy
-  let a := Classical.choose (Classical.choose_spec hx)
-  let b := Classical.choose (Classical.choose_spec hy)
-  have ha := Classical.choose_spec (Classical.choose_spec hx)
-  have hb := Classical.choose_spec (Classical.choose_spec hy)
+  refine (d.exists_toShiftedDirectLimit (grade q β) x).elim fun s hs => ?_
+  refine hs.elim fun a ha => ?_
+  refine (d.exists_toShiftedDirectLimit (grade q β) y).elim fun t ht => ?_
+  refine ht.elim fun b hb => ?_
   let u : Multiset e.monoid := {⟨T (s.sum : Γ), T.map_mem s.sum.property⟩}
   let v : Multiset e.monoid := {⟨T (t.sum : Γ), T.map_mem t.sum.property⟩}
   have hu : T (d.coefficientOrigin s) - e.coefficientOrigin u ∈ e.monoid := by
@@ -177,7 +169,11 @@ theorem mapShiftedDirectLimit_one :
   have h₃ := congrArg (e.toShiftedDirectLimitOfChart (grade q' β') (T 0) 0 hzero')
     (mapShiftedCompletion_of_coordinates d e T φ h 0 1)
   have h₄ := global_of_eq_one e (T 0) 0 hzero' b hb
-  exact h₁.symm.trans (h₂.trans (h₃.trans h₄))
+  calc
+    _ = _ := h₁.symm
+    _ = _ := h₂
+    _ = _ := h₃
+    _ = _ := h₄
 
 /-- The global quantum coefficient map, with its unital ring-homomorphism structure. -/
 def mapShiftedDirectLimitRingHom :
@@ -189,7 +185,9 @@ def mapShiftedDirectLimitRingHom :
 /-- The ring map has the same values as the original semilinear global map. -/
 @[simp]
 theorem mapShiftedDirectLimitRingHom_apply (x : d.ShiftedDirectLimit (grade q β)) :
-    mapShiftedDirectLimitRingHom d e T φ h x = mapShiftedDirectLimit d e T φ h x := (rfl)
+    mapShiftedDirectLimitRingHom d e T φ h x = mapShiftedDirectLimit d e T φ h x := by
+  -- This application only projects the defining map record and its unchanged underlying function.
+  rfl
 
 /-- Global coefficient transport acts on central scalars by the prescribed ring homomorphism. -/
 theorem mapShiftedDirectLimitRingHom_algebraMap (r : R) :

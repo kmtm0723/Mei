@@ -67,15 +67,10 @@ private local instance : Module S (G).completion := inferInstance
 theorem mapShiftedDirectLimit_positiveCompletionToDirectLimit (a : (F).completion) :
     mapShiftedDirectLimit d e T φ h (positiveCompletionToDirectLimit q β d a) =
       positiveCompletionToDirectLimit q' β' e (mapPositiveCompletion d e T φ h a) := by
-  have hd0 : (0 : Γ) - d.coefficientOrigin 0 ∈ d.monoid := by
-    rw [d.coefficientOrigin_eq_neg_sum]
-    simp
+  have hd0 : (0 : Γ) - d.coefficientOrigin 0 ∈ d.monoid := d.zero_coefficientOrigin_mem
   have he0 : T 0 - e.coefficientOrigin 0 ∈ e.monoid := by
-    rw [e.coefficientOrigin_eq_neg_sum]
-    simp
-  have he00 : (0 : Γ') - e.coefficientOrigin 0 ∈ e.monoid := by
-    rw [e.coefficientOrigin_eq_neg_sum]
-    simp
+    simpa only [T.map_zero] using e.zero_coefficientOrigin_mem
+  have he00 : (0 : Γ') - e.coefficientOrigin 0 ∈ e.monoid := e.zero_coefficientOrigin_mem
   let b := mapPositiveCompletion d e T φ h a
   have h₁ := congrArg (mapShiftedDirectLimit d e T φ h)
     (positiveCompletionToDirectLimit_apply q β d a)
@@ -88,10 +83,23 @@ theorem mapShiftedDirectLimit_positiveCompletionToDirectLimit (a : (F).completio
           (positiveCompletionShiftEquiv q' β' e r b) =
         e.toShiftedDirectLimitOfChart (grade q' β') 0 0 he00
           (positiveCompletionShiftEquiv q' β' e 0 b) := by
-    subst r
-    rfl
-  exact h₁.trans (h₂.trans (h₃.trans ((hcast (T 0) (T.map_zero) he0).trans
-    (positiveCompletionToDirectLimit_apply q' β' e b).symm)))
+    have hc := e.toShiftedDirectLimitOfChart_cast (grade q' β')
+      r 0 hr 0 0 hrs he00 (positiveCompletionShiftEquiv q' β' e r b)
+    have he : cast (congrArg (e.ShiftedCoefficients (grade q' β')) hr)
+        (positiveCompletionShiftEquiv q' β' e r b) =
+        positiveCompletionShiftEquiv q' β' e 0 b := by
+      simpa only [cast_eq] using
+        Function.cast_apply (A := fun _ : Γ' => (G).completion)
+          (fun u => (positiveCompletionShiftEquiv q' β' e u :
+            (G).completion → e.ShiftedCoefficients (grade q' β') u)) hr b
+    exact hc.symm.trans
+      (congrArg (e.toShiftedDirectLimitOfChart (grade q' β') 0 0 he00) he)
+  calc
+    _ = _ := h₁
+    _ = _ := h₂
+    _ = _ := h₃
+    _ = _ := hcast (T 0) T.map_zero he0
+    _ = _ := (positiveCompletionToDirectLimit_apply q' β' e b).symm
 
 /-- Compatible scalar and degree maps preserve positive global support. -/
 theorem mapShiftedDirectLimit_mem_positiveCoefficientSubalgebra
