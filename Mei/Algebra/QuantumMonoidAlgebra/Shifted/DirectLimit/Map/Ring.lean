@@ -94,13 +94,12 @@ private theorem map_global_mul_charts (p r : Γ) (s t : Multiset d.monoid)
   have hf := congrArg₂ (fun a b : e.ShiftedDirectLimit (grade q' β') => a * b)
     (mapShiftedDirectLimit_toShiftedDirectLimitOfChart d e T φ h p s hp u hu x)
     (mapShiftedDirectLimit_toShiftedDirectLimitOfChart d e T φ h r t hr v hv y)
-  calc
-    _ = _ := h₁
-    _ = _ := h₂
-    _ = _ := h₃.symm
-    _ = _ := h₄
-    _ = _ := ht.symm
-    _ = _ := hf.symm
+  exact (h₁).trans <|
+    (h₂).trans <|
+    (h₃.symm).trans <|
+    (h₄).trans <|
+    (ht.symm).trans <|
+    hf.symm
 
 /-- Global quantum coefficient transport preserves products for arbitrary bilinear forms. -/
 theorem mapShiftedDirectLimit_mul (x y : d.ShiftedDirectLimit (grade q β)) :
@@ -149,12 +148,9 @@ private theorem global_of_eq_one (p : Γ) (s : Multiset d.monoid)
 /-- Global scalar and exponent transport preserves the coefficient-algebra unit. -/
 theorem mapShiftedDirectLimit_one :
     mapShiftedDirectLimit d e T φ h (1 : d.ShiftedDirectLimit (grade q β)) = 1 := by
-  have hzero : (0 : Γ) - d.coefficientOrigin 0 ∈ d.monoid := by
-    rw [PositiveDegrees.coefficientOrigin_eq_neg_sum]
-    simp
+  have hzero : (0 : Γ) - d.coefficientOrigin 0 ∈ d.monoid := d.zero_coefficientOrigin_mem
   have hzero' : T 0 - e.coefficientOrigin 0 ∈ e.monoid := by
-    rw [PositiveDegreeMap.map_zero, PositiveDegrees.coefficientOrigin_eq_neg_sum]
-    simp
+    simpa only [T.map_zero] using e.zero_coefficientOrigin_mem
   let a := positiveShiftEquiv q β d 0 (1 : positiveSubalgebra q β d.monoid)
   let b := positiveShiftEquiv q' β' e (T 0)
     (positiveMap φ T.toAddMonoidHom h d.monoid e.monoid (fun _ hn => T.map_mem hn) 1)
@@ -169,11 +165,10 @@ theorem mapShiftedDirectLimit_one :
   have h₃ := congrArg (e.toShiftedDirectLimitOfChart (grade q' β') (T 0) 0 hzero')
     (mapShiftedCompletion_of_coordinates d e T φ h 0 1)
   have h₄ := global_of_eq_one e (T 0) 0 hzero' b hb
-  calc
-    _ = _ := h₁.symm
-    _ = _ := h₂
-    _ = _ := h₃
-    _ = _ := h₄
+  exact (h₁.symm).trans <|
+    (h₂).trans <|
+    (h₃).trans <|
+    h₄
 
 /-- The global quantum coefficient map, with its unital ring-homomorphism structure. -/
 def mapShiftedDirectLimitRingHom :
