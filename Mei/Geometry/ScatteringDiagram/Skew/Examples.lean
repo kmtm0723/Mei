@@ -18,7 +18,8 @@ hold, the standard basis with multipliers `(1, 2)` is an adapted basis, the ray 
 are `κ(e₁) = 1` and `κ(e₂) = 2`, and the integral functional `{-, κ(e₂) e₂}` is `a ↦ 2 a₁`.
 
 The unimodular variant takes `N° = N`. Its standard basis provides a universal pair with
-skew pairing one for transporting rank-two identities.
+skew pairing one for transporting rank-two identities, and with multipliers `(1, 1)` it is an
+adapted basis (`unimodularRankTwoAdaptedBasis`).
 
 On the datum with `d = (1, 2)`, the multiplicities `ℓ = (1, 2)` give a polynomial input of a
 generalized cluster scattering diagram in the sense of Burcroff–Lee–Mou, *Positivity of
@@ -66,6 +67,36 @@ theorem unimodularRankTwo_sublattice : unimodularRankTwo.sublattice = ⊤ :=
 
 @[simp]
 theorem unimodularRankTwo_form : unimodularRankTwo.form = rankTwoForm :=
+  (rfl)
+
+/-- The standard basis of `ℤ × ℤ`, with both indices unfrozen and multipliers `(1, 1)`, is an
+adapted basis of the unimodular rank-two datum. -/
+noncomputable def unimodularRankTwoAdaptedBasis : unimodularRankTwo.AdaptedBasis (Fin 2) where
+  basis := Module.Basis.finTwoProd ℤ
+  unfrozenIndex := Finset.univ
+  multiplier _ := 1
+  multiplier_pos _ := one_pos
+  unfrozen_eq_span := by
+    rw [Finset.coe_univ, Set.image_univ, Module.Basis.span_eq, unimodularRankTwo_unfrozen]
+  sublattice_eq_span := by
+    simp only [one_smul, unimodularRankTwo_sublattice, Module.Basis.span_eq]
+
+/-- The adapted basis is the standard basis. -/
+@[simp]
+theorem unimodularRankTwoAdaptedBasis_basis :
+    unimodularRankTwoAdaptedBasis.basis = Module.Basis.finTwoProd ℤ :=
+  (rfl)
+
+/-- Both indices are unfrozen. -/
+@[simp]
+theorem unimodularRankTwoAdaptedBasis_unfrozenIndex :
+    unimodularRankTwoAdaptedBasis.unfrozenIndex = Finset.univ :=
+  (rfl)
+
+/-- Both multipliers are one. -/
+@[simp]
+theorem unimodularRankTwoAdaptedBasis_multiplier (i : Fin 2) :
+    unimodularRankTwoAdaptedBasis.multiplier i = 1 :=
   (rfl)
 
 /-- The sublattice `ℤ e₁ ⊕ 2ℤ e₂` of vectors with even second coordinate, the kernel of the
