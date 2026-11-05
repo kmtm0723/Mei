@@ -7,7 +7,6 @@ module
 
 public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.DirectLimit.Positive.Basic
 public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.DirectLimit.Translation
-public import Mei.Logic.Function.Cast
 
 /-!
 # Monomial normal forms of global quantum coefficients
@@ -87,27 +86,12 @@ theorem directLimitMonomial_mul_positiveCompletionToDirectLimit (p : Γ)
     (shiftedCompletedMonomialEquiv_positiveCompletionShiftEquiv_zero q β d p a)
   have he := congrArg (fun z : G => directLimitMonomial q β d hspan p * z)
     (positiveCompletionToDirectLimit_apply q β d a)
-  have hcast (r : Γ) (hr : r = p) (hrs : r - d.coefficientOrigin s ∈ d.monoid) :
-      d.toShiftedDirectLimitOfChart (grade q β) r s hrs
-          (positiveCompletionShiftEquiv q β d r a) =
-        d.toShiftedDirectLimitOfChart (grade q β) p s hp
-          (positiveCompletionShiftEquiv q β d p a) := by
-    have hc := d.toShiftedDirectLimitOfChart_cast (grade q β)
-      r p hr s s hrs hp (positiveCompletionShiftEquiv q β d r a)
-    have he : cast (congrArg (d.ShiftedCoefficients (grade q β)) hr)
-        (positiveCompletionShiftEquiv q β d r a) =
-        positiveCompletionShiftEquiv q β d p a := by
-      simpa only [cast_eq] using
-        Function.cast_apply (A := fun _ : Γ => (F).completion)
-          (fun u => (positiveCompletionShiftEquiv q β d u :
-            (F).completion → d.ShiftedCoefficients (grade q β) u)) hr a
-    exact hc.symm.trans
-      (congrArg (d.toShiftedDirectLimitOfChart (grade q β) p s hp) he)
-  calc
-    _ = _ := he
-    _ = _ := ht
-    _ = _ := hc
-    _ = _ := hcast (p + 0) (add_zero p) hsum
+  have hcast := toShiftedDirectLimitOfChart_positiveCompletionShiftEquiv_congr q β d
+    (add_zero p) s hsum hp a
+  exact (he).trans <|
+    (ht).trans <|
+    (hc).trans <|
+    hcast
 
 /-- For a fixed origin, the positive completed factor is uniquely determined. -/
 theorem directLimitMonomial_mul_positiveCompletionToDirectLimit_injective (p : Γ) :
