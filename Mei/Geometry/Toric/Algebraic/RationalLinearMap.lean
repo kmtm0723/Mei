@@ -19,7 +19,7 @@ map `u : N → N'` for a positive integer `d` (`IsRationalLinearMap.exists_nsmul
 
 If `T` is injective on a subspace `U` cut out by finitely many integral characters, it has a
 rational left inverse on `U`: a rational real-linear map `B : V' → V` with `B (T v) = v` for
-`v ∈ U` (`IsRationalLinearMap.exists_leftInverseOn`). The subspace may be all of `V`, and no
+`v ∈ U` (`IsRationalLinearMap.exists_leftInvOn`). The subspace may be all of `V`, and no
 condition on the ranks is needed. Rational multiples and differences of rational maps are
 rational.
 -/
@@ -76,24 +76,22 @@ theorem exists_nsmul_eq_extend {T : V →ₗ[ℝ] V'} (hT : IsRationalLinearMap 
     rw [Rat.cast_def, hzk, Nat.cast_div hdvd hden]
     field_simp
   let u : N →ₗ[ℤ] N' := ∑ k, (z k • m k).smulRight (b k)
-  refine ⟨d, hd, u.toAddMonoidHom, h.eq_extend fun n => ?_⟩
-  have hT' (k) : c.coord k (T (i n)) = q k * m k n := by
+  -- Compare the coordinates of `d • T (i n)` and `i' (u n)` in the real basis.
+  refine ⟨d, hd, u.toAddMonoidHom, h.eq_extend fun n => c.ext_elem fun k => ?_⟩
+  have hT' : c.repr (T (i n)) k = q k * m k n := by
     simpa using LinearMap.congr_fun (hqm k) (i n)
-  conv_lhs => rw [LinearMap.smul_apply, ← c.sum_repr (T (i n))]
-  simp only [u, Finset.smul_sum, LinearMap.toAddMonoidHom_coe, LinearMap.sum_apply, map_sum,
-    LinearMap.smulRight_apply, map_zsmul, c, IsBaseChange.basis_apply,
-    AddMonoidHom.coe_toIntLinearMap, smul_smul]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  rw [← Int.cast_smul_eq_zsmul ℝ, ← Module.Basis.coord_apply, hT']
-  simp [hz, mul_assoc]
+  have hu : c.repr (i' (u n)) k = z k * m k n := by
+    simpa [c, u, Finsupp.single_apply, mul_comm] using
+      IsBaseChange.basis_repr_comp_apply b h'.isBaseChange (u n) k
+  simp [hT', hu, hz, mul_assoc]
 
 /-- A rational linear map injective on the common kernel `U` of finitely many integral characters
 `m j` has a rational left inverse on `U`. -/
-theorem exists_leftInverseOn {T : V →ₗ[ℝ] V'} (hT : IsRationalLinearMap h h' T) {κ : Type*}
+theorem exists_leftInvOn {T : V →ₗ[ℝ] V'} (hT : IsRationalLinearMap h h' T) {κ : Type*}
     [Finite κ] (m : κ → Module.Dual ℤ N)
     (hinj : ∀ v, (∀ j, h.realCharacter (m j).toAddMonoidHom v = 0) → T v = 0 → v = 0) :
     ∃ B : V' →ₗ[ℝ] V, IsRationalLinearMap h' h B ∧
-      ∀ v, (∀ j, h.realCharacter (m j).toAddMonoidHom v = 0) → B (T v) = v := by
+      Set.LeftInvOn B T {v | ∀ j, h.realCharacter (m j).toAddMonoidHom v = 0} := by
   classical
   let := Fintype.ofFinite κ
   let := h.free
@@ -135,6 +133,7 @@ theorem exists_leftInverseOn {T : V →ₗ[ℝ] V'} (hT : IsRationalLinearMap h 
     · simp only [LinearMap.smul_apply, LinearMap.id_apply, AddMonoidHom.smul_apply,
         AddMonoidHom.id_apply, map_nsmul, Nat.cast_smul_eq_nsmul]
   refine ⟨((d / c : ℚ) : ℝ) • E, (IsRationalLinearMap.extend h' h _).rat_smul _, fun v hv => ?_⟩
+  rw [Set.mem_ofPred_eq] at hv
   have := LinearMap.congr_fun hEF v
   simp only [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.comp_apply, LinearMap.id_apply,
     F, LinearMap.sum_apply, LinearMap.smulRight_apply, hv, zero_smul, Finset.sum_const_zero,

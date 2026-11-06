@@ -66,10 +66,7 @@ theorem isLocallyClosedPolyhedron_setOf_sign_eq (σ : SignType) :
 theorem abs_eq_signSMul {σ : SignType} {x : ℝ} (hx : SignType.sign x = σ) :
     |x| = signSMul σ x := by
   subst hx
-  rcases lt_trichotomy x 0 with hx | rfl | hx
-  · simp [sign_neg hx, abs_of_neg hx]
-  · simp
-  · simp [sign_pos hx, abs_of_pos hx]
+  rw [signSMul_apply, sign_mul_self]
 
 /-- The absolute value on `ℝ` is piecewise affine with rational linear parts. -/
 theorem isRationalPiecewiseAffine_abs :
@@ -107,13 +104,13 @@ theorem bijOn_signSMul (σ : SignType) : BijOn (signSMul σ) {x : ℝ | SignType
       fun w hw => ⟨w, by simpa using hw, by simp⟩⟩
 
 /-- The branch stratification of the folding family by signs: the source stratum `σ` is the
-level set of the sign at `σ`, mapped by multiplication by `σ` onto the target stratum `σ * σ`. -/
+level set of the sign at `σ`, on which the folding map is multiplication by `σ`, mapping it onto
+the target stratum `σ * σ`. -/
 noncomputable def foldStratification : (foldFamily h).BranchStratification SignType SignType where
   target σ := {w : ℝ | SignType.sign w = σ}
   chart _ := ()
   source σ := {x : ℝ | SignType.sign x = σ}
   stratum σ := σ * σ
-  map := signSMul
   nonempty_target σ := by
     cases σ
     exacts [⟨0, by simp⟩, ⟨-1, by simp⟩, ⟨1, by simp⟩]
@@ -121,13 +118,12 @@ noncomputable def foldStratification : (foldFamily h).BranchStratification SignT
   pairwise_disjoint_target σ τ hστ := disjoint_left.mpr fun x hx hy => hστ (hx.symm.trans hy)
   iUnion_target := eq_univ_of_forall fun x => mem_iUnion.mpr ⟨_, rfl⟩
   isLocallyClosedPolyhedron_source := isLocallyClosedPolyhedron_setOf_sign_eq h
-  isRationalLinearMap_map := isRationalLinearMap_signSMul h
-  bijOn := bijOn_signSMul
   domain_eq _ := by
     simp only [foldFamily_domain, iUnion_true]
     exact (eq_univ_of_forall fun x => mem_iUnion.mpr ⟨_, rfl⟩).symm
   disjoint_source σ τ _ hστ := disjoint_left.mpr fun x hx hy => hστ (hx.symm.trans hy)
-  eval_eq σ x hx := by simpa using abs_eq_signSMul hx
+  exists_affineMap σ := ⟨signSMul σ, isRationalLinearMap_signSMul h σ, bijOn_signSMul σ,
+    fun x hx => by simpa using abs_eq_signSMul hx⟩
 
 @[simp]
 theorem foldStratification_target (σ : SignType) :
@@ -145,10 +141,6 @@ theorem foldStratification_source (σ : SignType) :
 
 @[simp]
 theorem foldStratification_stratum (σ : SignType) : (foldStratification h).stratum σ = σ * σ := by
-  simp [foldStratification]
-
-@[simp]
-theorem foldStratification_map (σ : SignType) : (foldStratification h).map σ = signSMul σ := by
   simp [foldStratification]
 
 /-- Over a positive point the folding family has two points: one in each half-line. -/

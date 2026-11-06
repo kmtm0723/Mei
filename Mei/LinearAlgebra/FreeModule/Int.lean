@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.GroupTheory.IndexNSmul
-public import Mathlib.LinearAlgebra.Dual.Basis
+public import Mei.LinearAlgebra.Dual.Basis
 public import TauCeti.LinearAlgebra.FreeModule.Int
 
 /-!
@@ -16,31 +16,13 @@ A map between finite free integer modules of equal rank has image of index zero 
 when it is singular. This complements the determinant formula for injective maps and
 allows index comparisons to include singular maps.
 
-An injective map `f : M → N` between finite free integer modules of arbitrary ranks has a left
+An injective map `f : M → N` from a finite free integer module to a free one has a left
 inverse up to a nonzero natural factor `c`: some `g : N → M` satisfies `g ∘ f = c • id`
 (`LinearMap.exists_comp_eq_nsmul_id_of_injective_left`). Over `ℚ` this is a left inverse
 `c⁻¹ • g` of `f`.
 -/
 
 public section
-
-namespace Module.Basis
-
-/-- The coordinate pairing of a basis is positive definite: a vector pairing to zero with itself
-is zero. -/
-theorem toDual_self_eq_zero_iff {R N ι : Type*} [CommRing R] [LinearOrder R]
-    [IsStrictOrderedRing R] [AddCommGroup N] [Module R N] [Finite ι] [DecidableEq ι]
-    (b : Basis ι R N) {y : N} : b.toDual y y = 0 ↔ y = 0 := by
-  let := Fintype.ofFinite ι
-  refine ⟨fun hy => ?_, fun hy => by simp [hy]⟩
-  -- The self-pairing is the sum of the squares of the coordinates.
-  have hsum : b.toDual y y = ∑ j, b.equivFun y j * b.equivFun y j := by
-    conv_lhs => arg 2; rw [← b.sum_equivFun y]
-    simp only [map_sum, map_smul, b.toDual_eq_equivFun, smul_eq_mul]
-  rw [hsum, Finset.sum_eq_zero_iff_of_nonneg fun j _ => mul_self_nonneg _] at hy
-  exact b.equivFun.injective (funext fun j => by simpa using hy j (Finset.mem_univ j))
-
-end Module.Basis
 
 namespace LinearMap
 
@@ -68,8 +50,9 @@ theorem index_range_eq_zero_iff {f : M →ₗ[ℤ] N} (hrank : finrank ℤ M = f
     have : Finite (N ⧸ (range f).toAddSubgroup) := ‹Finite (N ⧸ range f)›
     exact AddSubgroup.index_ne_zero_of_finite
 
-/-- An injective map between finite free integer modules has a left inverse up to a nonzero
-natural factor. The ranks may differ. -/
+omit [Module.Finite ℤ N] in
+/-- An injective map from a finite free integer module to a free integer module has a left
+inverse up to a nonzero natural factor. The ranks may differ. -/
 theorem exists_comp_eq_nsmul_id_of_injective_left {f : M →ₗ[ℤ] N} (hf : Function.Injective f) :
     ∃ c : ℕ, c ≠ 0 ∧ ∃ g : N →ₗ[ℤ] M, g ∘ₗ f = c • LinearMap.id := by
   classical
