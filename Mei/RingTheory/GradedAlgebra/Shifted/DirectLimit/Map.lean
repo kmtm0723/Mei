@@ -13,7 +13,8 @@ public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.Embedding
 
 A degree-preserving algebra homomorphism extends to the global coefficient
 algebras for the same positive degrees. Multiplicativity is inherited from the
-canonical naturality theorem for completed bilinear pairings. The extension is
+canonical naturality theorem for completed bilinear pairings and needs only
+multiplicatively graded decompositions, with no graded-unit assumptions. The extension is
 functorial and commutes with the finite coefficient embedding when positive
 differences span the grading group. No injectivity of the algebra map is assumed.
 -/
@@ -27,8 +28,12 @@ variable {Γ R A B C : Type*} [AddCommGroup Γ] [CommRing R]
   [Ring A] [Algebra R A] [Ring B] [Algebra R B] [Ring C] [Algebra R C]
   [DecidableEq Γ] (d : PositiveDegrees Γ)
   (𝒜 : Γ → Submodule R A) (ℬ : Γ → Submodule R B)
-  [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
   (f : A →ₐ[R] B) (hf : ∀ u, 𝒜 u ≤ (ℬ u).comap f.toLinearMap)
+
+section Multiplicative
+
+variable [DirectSum.Decomposition 𝒜] [DirectSum.Decomposition ℬ]
+  [SetLike.GradedMul 𝒜] [SetLike.GradedMul ℬ]
 
 /-- The descended linear map preserves global multiplication. -/
 @[simp]
@@ -41,6 +46,10 @@ theorem shiftedDirectLimitMap_mul (x y : d.ShiftedDirectLimit 𝒜) :
   rw [toShiftedDirectLimit_mul, shiftedDirectLimitMap_toShiftedDirectLimitOfChart,
     shiftedDirectLimitMap_toShiftedDirectLimit, shiftedDirectLimitMap_toShiftedDirectLimit,
     toShiftedDirectLimit_mul, completionCoefficientMap_mul]
+
+end Multiplicative
+
+variable [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
 
 /-- The descended linear map preserves the degree-zero algebra unit. -/
 @[simp]
