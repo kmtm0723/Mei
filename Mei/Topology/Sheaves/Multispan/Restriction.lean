@@ -388,9 +388,8 @@ theorem existsUnique_sections_descent_of_local_on_cover
           (SemimoduleCat.sectionsMap (η.sectionsMultispan (U i ⊓ U k))).comp
             ((I.sectionsRestrict inf_le_right).comp (ℓ k)) := by
       simp only [← LinearMap.comp_assoc, sectionsRestrict_naturality]
-      rw [LinearMap.comp_assoc, hmap i, LinearMap.comp_assoc, hmap k,
-        ← LinearMap.comp_assoc, ← LinearMap.comp_assoc, sectionsRestrict_comp,
-        sectionsRestrict_comp]
+      simp only [LinearMap.comp_assoc, hmap]
+      simp only [← LinearMap.comp_assoc, sectionsRestrict_comp]
     apply (I.sectionsIndex (U i ⊓ U k)).linearMap_ext_of_injective
       (hinj i _ inf_le_left)
     intro a j
