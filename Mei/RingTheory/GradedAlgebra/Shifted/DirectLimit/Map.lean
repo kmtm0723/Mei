@@ -30,21 +30,8 @@ variable {Γ R A B C : Type*} [AddCommGroup Γ] [CommRing R]
   [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
   (f : A →ₐ[R] B) (hf : ∀ u, 𝒜 u ≤ (ℬ u).comap f.toLinearMap)
 
-/-- A degree-preserving algebra map intertwines the existing completed shifted products. -/
-theorem completionCoefficientMap_mul (p q : Γ)
-    (x : d.ShiftedCoefficients 𝒜 p) (y : d.ShiftedCoefficients 𝒜 q) :
-    d.completionCoefficientMap 𝒜 ℬ (p + q) f.toLinearMap hf
-        (d.shiftedCompletionMul 𝒜 p q x y) =
-      d.shiftedCompletionMul ℬ p q
-        (d.completionCoefficientMap 𝒜 ℬ p f.toLinearMap hf x)
-        (d.completionCoefficientMap 𝒜 ℬ q f.toLinearMap hf y) := by
-  simp only [completionCoefficientMap_eq_completionMap, shiftedCompletionMul_def]
-  apply ModuleFiltration.completionMap_completionBilinear
-  intro a b
-  apply Subtype.ext
-  simp only [coe_shiftedCoefficientMap, coe_shiftedMul, AlgHom.toLinearMap_apply, map_mul]
-
 /-- The descended linear map preserves global multiplication. -/
+@[simp]
 theorem shiftedDirectLimitMap_mul (x y : d.ShiftedDirectLimit 𝒜) :
     d.shiftedDirectLimitMap 𝒜 ℬ f.toLinearMap hf (x * y) =
       d.shiftedDirectLimitMap 𝒜 ℬ f.toLinearMap hf x *
@@ -64,11 +51,9 @@ theorem shiftedDirectLimitMap_one :
   apply Subtype.ext
   rw [coe_shiftedDirectLimitComponents_map, shiftedDirectLimitComponents_one,
     shiftedDirectLimitComponents_one]
-  have h := DirectSum.map_decompose_shift 𝒜 ℬ f.toAddMonoidHom id
+  have h := DirectSum.map_decompose_shift 𝒜 ℬ (f : A →+ B) id
     Function.injective_id (fun i a ha => hf i ha) u 1
-  change f (DirectSum.decompose 𝒜 1 u : A) =
-    (DirectSum.decompose ℬ (f 1) u : B) at h
-  simpa only [AlgHom.toLinearMap_apply, map_one] using h
+  simpa only [AlgHom.coe_toAddMonoidHom, id_eq, AlgHom.toLinearMap_apply, map_one] using h
 
 /-- Extend a degree-preserving algebra homomorphism to global shifted coefficients. -/
 def shiftedDirectLimitAlgHom : d.ShiftedDirectLimit 𝒜 →ₐ[R] d.ShiftedDirectLimit ℬ :=
