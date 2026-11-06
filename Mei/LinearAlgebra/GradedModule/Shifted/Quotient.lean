@@ -106,6 +106,23 @@ theorem shiftedQuotientComponent_decompose_same (k : ℕ) (n : d.monoid)
   simp only [coe_shiftedInclusion]
   exact DirectSum.decompose_of_mem_same ℳ (Subtype.mem _)
 
+/-- Taking the relative-degree-zero projection preserves the ambient incoming
+component at degree `p`. -/
+@[simp]
+theorem shiftedQuotientComponent_self_decompose_zero (k : ℕ)
+    (x : (d.shiftedFiltration ℳ p).quotient k) :
+    d.shiftedQuotientComponent ℳ p p k (by simp)
+      (DirectSum.decompose (d.shiftedQuotientGrading ℳ p k).piece x 0) =
+      d.shiftedQuotientComponent ℳ p p k (by simp) x := by
+  have h := d.shiftedQuotientComponent_decompose_same ℳ p k 0 (by simp) x
+  simp only [ZeroMemClass.coe_zero] at h
+  -- Generalize the ambient index together with its dependent cutoff proof.
+  generalize_proofs hcut at h
+  generalize hq : p + 0 = q at hcut h
+  rw [add_zero] at hq
+  subst q
+  exact h
+
 /-- The quotient image of a relative piece above the retained order vanishes.
 This is the simplifier normal form of the finite-piece vanishing law. -/
 @[simp]
