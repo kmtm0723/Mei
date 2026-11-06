@@ -56,13 +56,6 @@ theorem directLimitRayAction_atOne (n : d.monoid) (hn : 0 < d.degree n)
     (commute_shiftedDirectLimit_atOne β d (u : G) x)
   exact (directLimitRayAction_eq_conjugation (1 : Rˣ) β d n hn H x).trans hcancel
 
-/-- The global algebra action at `q = 1` is the identity as well. -/
-theorem directLimitRaySkewAlgAction_atOne (n : d.monoid) (hn : 0 < d.degree n)
-    (H : (PowerSeries R)ˣ) (x : G) :
-    directLimitRaySkewAlgAction (1 : Rˣ) β d n hn H x = x :=
-  (directLimitRaySkewAlgAction_apply (1 : Rˣ) β d n hn H x).trans
-    (directLimitRayAction_atOne β d n hn H x)
-
 section Map
 
 variable {S Γ' : Type*} [CommRing S] [AddCommGroup Γ'] [DecidableEq Γ']
