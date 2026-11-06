@@ -14,8 +14,9 @@ public import Mei.Geometry.ScatteringDiagram.BrokenLine.Degeneration
 Finite semilinear endpoint covers, including overlapping patches, admit closed
 polyhedral charts indexed by the original complete decorated types. Their
 interiors partition each full type domain. Every chart chooses one patch and is
-compatible with all other patches; selecting the charts contained in a patch
-recovers exactly the restricted type domain. Hence overlap endpoints contribute
+compatible with all other patches. Selecting the charts whose relative interiors
+lie in a patch and taking the union of those interiors recovers exactly the
+restricted type domain. Hence overlap endpoints contribute
 once to the global weighted evaluation.
 
 The closed charts carry the original global path extension, including its
@@ -46,8 +47,9 @@ local notation "domain" t => CutoffDecoratedType.domain c P W S C t
 
 open Classical in
 /-- A finite overlapping endpoint cover has a common disjoint subdivision of
-all complete decorated types. Each original ray belongs to exactly one chart
-of its type; patch restriction selects these same charts and global paths.
+all complete decorated types. Each original ray has its endpoint in exactly one
+chart relative interior of its type; patch restriction selects these same interiors
+and global paths.
 Weighted evaluation counts each ray once, even on overlaps. -/
 theorem exists_cutoffDecoratedRay_cover_closedCharts
     (hD : ∀ t : Types, IsRationalSemilinear h (domain t))

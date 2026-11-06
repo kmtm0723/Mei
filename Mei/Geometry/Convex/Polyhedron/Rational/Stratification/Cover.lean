@@ -30,8 +30,9 @@ namespace Mei
 variable {N V ι : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i} [Finite ι]
 
-/-- Finite overlapping semilinear covers admit disjoint closed polyhedral charts
-subordinate to the cover. The same charts recover every patch intersection,
+/-- Finite overlapping semilinear covers admit closed polyhedral charts with
+pairwise disjoint relative interiors subordinate to the cover. The same charts
+recover every patch intersection,
 so passing to another patch retains all strata already present on the overlap. -/
 theorem IsRationalSemilinear.exists_cover_polyhedralCharts
     {S : Set V} (hS : IsRationalSemilinear h S)
