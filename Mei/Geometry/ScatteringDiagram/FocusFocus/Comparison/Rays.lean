@@ -149,22 +149,15 @@ private def linePartitionEquiv (Q : ℝ × ℝ) :
     (Σ upper : Bool, {β : SlabBrokenLine t c n b Q //
       if upper then 0 < Q.2 - (β.degree.2 : ℝ) * Q.1 / n
       else Q.2 - (β.degree.2 : ℝ) * Q.1 / n < 0}) ≃ SlabBrokenLine t c n b Q := by
-  apply Equiv.ofBijective (fun z => z.2.val)
-  constructor
-  · rintro ⟨upper, β, hβ⟩ ⟨upper', γ, hγ⟩ he
-    dsimp only at he
-    subst γ
-    have hu : upper = upper' := by
-      cases upper <;> cases upper' <;> simp only [Bool.false_eq_true, ↓reduceIte] at hβ hγ ⊢
-      · exact (not_lt_of_ge hγ.le hβ).elim
-      · exact (not_lt_of_ge hβ.le hγ).elim
-    subst upper'
-    rfl
-  · intro β
-    by_cases hs : 0 < Q.2 - (β.degree.2 : ℝ) * Q.1 / n
-    · exact ⟨⟨true, β, hs⟩, rfl⟩
-    · exact ⟨⟨false, β, lt_of_le_of_ne (le_of_not_gt hs)
-        β.snd_sub_mul_fst_div_ne_zero⟩, rfl⟩
+  classical
+  let f := fun β : SlabBrokenLine t c n b Q =>
+    decide (0 < Q.2 - (β.degree.2 : ℝ) * Q.1 / n)
+  refine (Equiv.sigmaCongrRight fun upper => Equiv.subtypeEquivRight
+    (q := fun β => f β = upper) ?_).trans (Equiv.sigmaFiberEquiv f)
+  intro β
+  cases upper <;> simp only [Bool.false_eq_true, ↓reduceIte, f,
+    decide_eq_false_iff_not, decide_eq_true_eq]
+  rw [not_lt, lt_iff_le_and_ne, and_iff_left β.snd_sub_mul_fst_div_ne_zero]
 
 /-- The disjoint union of shared decorated rays in the two slab charts is
 exactly the explicit focus-focus crossing fiber. Zero transfer components and
