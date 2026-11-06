@@ -18,7 +18,7 @@ holds for every sufficiently small event displacement; the weighted-ray formula
 selects event displacements below that bound. Strictly preceding compatible reads
 are generic for their own degree domains, including zero coefficient terms.
 
-This is a comparison of the two concrete highest-degree component equations.
+This is a comparison of the two concrete positive-degree component equations.
 The event displacements may depend on the weighted-ray coefficient and source
 cell. We do not identify source components or assert a coefficient-independent
 operator or equality of the two fields. We combine
@@ -60,7 +60,7 @@ local notation "component" k:max n:max => d.shiftedQuotientComponent ℳ p (p + 
 local notation "evaluation" k:max b:max C:max Q:max =>
   cutoffWallEventEvaluation d ℳ p ℒ H h B k k (Nat.le_refl k) b C Q
 
-/-- The actual probe and weighted-ray fields satisfy their respective highest-degree
+/-- The actual probe and weighted-ray fields satisfy their respective positive-degree
 recurrences on exactly the same event cuts. Every preceding compatible read is
 in its own generic domain. The independently constructed probe input function
 agrees with the actual lower-cutoff field. No equality of the two fields or their
@@ -73,7 +73,7 @@ theorem exists_commonProbeWallEventRecursionDomains
     (hB : (D.map (chargeZeroGradedLieHom d ℳ p ℒ)
       (chargeZeroGradedLieHom_mem_wall d ℳ p ℒ H)).LevelEquivalent
       (cylinderDiagram d ℳ p ℒ H h h' B) (k + 1))
-    (hout : ∀ n : d.cutoff (k + 1), d.degree n.val = k + 1 →
+    (hout : ∀ n : d.cutoff (k + 1), n.val ≠ 0 →
       ∀ b, Sum.inr b ∈ D.active (k + 2) →
         (p + n.val, 1) ∈ (D.wall (.inr b)).ray.rayDegrees →
           (D.wall (.inr b)).Outgoing)
@@ -87,7 +87,7 @@ theorem exists_commonProbeWallEventRecursionDomains
             (d.mem_cutoff.mp m.property).2.trans
               (Int.ofNat_le.mpr (Nat.le_succ k))⟩⟩
         f z.val m' = (component k m) (field k (hBc.mono (Nat.le_succ k)) z)) ∧
-      ∀ n : d.cutoff (k + 1), d.degree n.val = k + 1 → ∀ Q, (F n).IsGeneric Q →
+      ∀ n : d.cutoff (k + 1), n.val ≠ 0 → ∀ Q, (F n).IsGeneric Q →
         ∃ y : WallComplement (B.activeSupport (k + 1)), y.val = Q ∧
           ∀ᶠ T : ℝ in atTop,
             0 < T ∧
@@ -116,10 +116,10 @@ theorem exists_commonProbeWallEventRecursionDomains
                     U (fun X m => (component (k + 1) m)
                       (evaluation (k + 1) b C X)) Q n := by
   classical
-  -- Reuse the actual lower-field extension already supplied by the independent
-  -- probe recurrence; no values on exceptional points are prescribed.
+  -- Reuse the independently constructed extension of the lower-cutoff field.
   obtain ⟨_, f, hf, -⟩ := exists_backwardRayEndpointStepArrangement
-    d ℳ p ℒ H h h' D₀ a D B hinitial k hBc hD hB hout A
+    d ℳ p ℒ H h h' D₀ a D B hinitial k hBc hD hB
+    (fun n hn => hout n (by intro hz; rw [hz, map_zero] at hn; omega)) A
   obtain ⟨G, hG⟩ := exists_eventwiseProbeStepArrangement
     d ℳ p ℒ H h h' D B k hBc hD hB A
   obtain ⟨I, hI⟩ := exists_incomingSegmentArrangement
@@ -128,10 +128,9 @@ theorem exists_commonProbeWallEventRecursionDomains
     d ℳ p ℒ H h B k (A.union (G.union I))
   refine ⟨F, f, fun n Q hQ => (ExceptionalArrangement.isGeneric_union.mp
     (hFA n Q hQ)).1, hf, fun n hn Q hQ => ?_⟩
-  have hn0 : n.val ≠ 0 := by intro hz; rw [hz, map_zero] at hn; omega
   obtain ⟨-, hQG, hQI⟩ := (ExceptionalArrangement.isGeneric_union.mp
     (hFA n Q hQ)).imp_right ExceptionalArrangement.isGeneric_union.mp
-  obtain ⟨y, hy, hrec⟩ := hF n hn0 Q hQ
+  obtain ⟨y, hy, hrec⟩ := hF n hn Q hQ
   obtain ⟨y', hy', hfar⟩ := hI Q hQI
   refine ⟨y, hy, ?_⟩
   filter_upwards [hrec, hfar n (hout n hn)] with T hrec hfar
@@ -140,12 +139,12 @@ theorem exists_commonProbeWallEventRecursionDomains
   have hxx : x' = x := WallComplement.ext (hx'.trans hx.symm)
   have hne : p ≠ p + n.val := by
     intro heq
-    exact hn0 (by simpa only [left_eq_add] using heq)
+    exact hn (by simpa only [left_eq_add] using heq)
   have hzero : (component (k + 1) n) (field (k + 1) hBc x) = 0 := by
     simpa only [hxx] using hvalue.trans
       (Subtype.ext (DirectSum.decompose_of_mem_ne ℳ a.property hne))
   have hxy : x.val - y.val = T • i (ρ (p + n.val)) := by rw [hx, hy]; module
-  obtain ⟨ε, hε, hprobe⟩ := hG x y (hy ▸ hQG) e n hn T hT hxy f hf
+  obtain ⟨ε, hε, hprobe⟩ := hG x y (hy ▸ hQG) e n T hT hxy f hf
   refine ⟨hT, htail, x, e, hx, fun b C θ hθ => ?_⟩
   obtain ⟨η, hη, hray⟩ := he b C (min θ ε) (lt_min hθ hε)
   have hprobe' := (hprobe η (fun c hc =>

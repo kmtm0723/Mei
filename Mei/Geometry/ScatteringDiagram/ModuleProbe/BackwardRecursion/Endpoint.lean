@@ -138,7 +138,7 @@ theorem exists_backwardRayEndpointStepArrangement
     hvalue.trans (Subtype.ext (DirectSum.decompose_of_mem_ne ℳ a.property hne))
   refine ⟨hT, htail, x, e, hx, ?_⟩
   have hxy : x.val - y.val = T • i (ρ (p + n.val)) := by rw [hx, hy]; module
-  filter_upwards [hG x y (hy ▸ hQG) e n hn T hT hxy f hf] with δ hδ
+  filter_upwards [hG x y (hy ▸ hQG) e n T hT hxy f hf] with δ hδ
   simpa only [hy, hzero, zero_add] using hδ
 
 end Mei.ModuleProbe
