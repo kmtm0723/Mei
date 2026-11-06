@@ -666,30 +666,23 @@ theorem isWallFunction_discrete_pentagonDiagram
     (DirectedDiagram.FunctionWallGrouping.discrete (hA.pentagonDiagram h a)
       (hA.isPrimitive_pentagonDiagram_normal h a) π).IsWallFunction σ j
       (hA.pentagonWallFunction a Q j) := by
-  rw [DirectedDiagram.FunctionWallGrouping.isWallFunction_iff]
-  intro j' hj'
-  rw [DirectedDiagram.FunctionWallGrouping.discrete_group] at hj'
-  subst hj'
   -- Destructuring with `obtain` re-elaborates the goal and times out.
-  let χ := (hA.exists_principalNormal_pentagonDegree_eq_one j').choose
-  have hχ := (hA.exists_principalNormal_pentagonDegree_eq_one j').choose_spec
-  have hν := hA.pentagonDiagram_normal h a j'
-  have hmul : (single (⟨(χ, 0), hQ χ⟩ : Q) (1 : R) *
-      single ⟨(-χ, 0), hQ (-χ)⟩ 1 : AddMonoidAlgebra R Q) = 1 := by
-    rw [single_mul_single, mul_one, one_def]
-    exact congrArg (single · 1) (Subtype.ext (by simp))
-  refine ⟨⟨⟨(χ, 0), hQ χ⟩, by rw [hν]; exact hχ,
-    (isUnit_iff_exists_inv.mpr ⟨_, hmul⟩).map (F).toCompletion⟩, fun p c => ?_⟩
+  let χ := (hA.exists_principalNormal_pentagonDegree_eq_one j).choose
+  have hχ := (hA.exists_principalNormal_pentagonDegree_eq_one j).choose_spec
+  have hν := hA.pentagonDiagram_normal h a j
+  refine DirectedDiagram.FunctionWallGrouping.isWallFunction_discrete σ _
+    (p := ⟨(χ, 0), hQ χ⟩) (by rw [hν]; exact hχ)
+    (TropicalVertexCoefficientAction.isUnit_toCompletion_single (hQ χ) (by simpa using hQ (-χ)))
+    fun p c => ?_
   -- The label and the normal are transported by `congrArg`: rewriting them with `rw` in
   -- goals containing the completed coefficient algebra times out.
   refine (congrArg (fun g => (σ) g ((F).toCompletion (single p c)))
-    ((DirectedDiagram.FunctionWallGrouping.label_discrete _ j').trans
-      (hA.pentagonDiagram_label h a j'))).trans
+      (hA.pentagonDiagram_label h a j)).trans
     ((B.completedBCHAction_graphBCHGroupEquiv_rayExp_rescale_negDilogNeg Q
-      (B.pentagonDegree_mem_positiveDegrees_monoid i₁ i₂ j') (hA.pentagonDegree_ne_zero j')
-      (hA.rayIndex_pentagonDegree j') _ _ (B.coe_pentagonExponent Q i₁ i₂ j') _
-      (hA.coe_pentagonWallFunction a Q j') p c).trans ?_)
-  exact congrArg (fun k : ℤ => ((hA.pentagonWallFunction a Q j' ^ k : (F).completionˣ) :
+      (B.pentagonDegree_mem_positiveDegrees_monoid i₁ i₂ j) (hA.pentagonDegree_ne_zero j)
+      (hA.rayIndex_pentagonDegree j) _ _ (B.coe_pentagonExponent Q i₁ i₂ j) _
+      (hA.coe_pentagonWallFunction a Q j) p c).trans ?_)
+  exact congrArg (fun k : ℤ => ((hA.pentagonWallFunction a Q j ^ k : (F).completionˣ) :
     (F).completion) * (F).toCompletion (single p c))
     (congrArg (fun ν : Lpr →+ ℤ => ν p.val) hν).symm
 

@@ -195,14 +195,8 @@ omit [Algebra ℚ R] [DecidableEq Γ] in
 ideal. -/
 theorem sum_single_mem_filtration_ideal_one [Fintype κ] (he : ∀ s, ((e s : T) : Γ) ≠ 0) :
     (∑ s, single (e s) (r s) : R[T]) ∈ (G).ideal 1 := by
-  refine Ideal.sum_mem _ fun s _ => ?_
-  rw [TropicalVertexCoefficientAction.filtration_ideal,
-    AddSubmonoid.single_mem_monoidAlgebraIdeal_iff]
-  have hP := tropicalTangentMonoid_le d ρ χ (e s).property
-  refine Or.inr ⟨e s, hP, ?_, 0, by simp⟩
-  have := d.degree_pos hP (he s)
-  simp only [AddMonoidHom.coe_comp, AddSubmonoid.coe_subtype, Function.comp_apply, Nat.cast_one]
-  omega
+  exact Ideal.sum_mem _ fun s _ => TropicalVertexCoefficientAction.single_mem_filtration_ideal_one
+    d T (tropicalTangentMonoid_le d ρ χ (e s).property) (he s) (r s)
 
 omit [Algebra ℚ R] [DecidableEq Γ] in
 /-- The completed tangent polynomial `1 + ∑_s r_s z^{e_s}` with nonzero exponents is congruent

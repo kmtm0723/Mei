@@ -113,6 +113,12 @@ theorem finite_linesAtOrder (k : ℕ) : (I.linesAtOrder k).Finite :=
 theorem linesAtOrder_mono : Monotone I.linesAtOrder := fun _ _ hkl _ ⟨n, hn, hnk⟩ =>
   ⟨n, hn, hnk.trans (by exact_mod_cast hkl)⟩
 
+/-- The exponent of a line whose only exponent is `n` is `n`. -/
+theorem mem_exponents_of_eq_singleton {j : ι} {n : L} (hj : I.exponents j = {n}) :
+    n ∈ I.exponents j := by
+  rw [hj]
+  exact Finset.mem_singleton_self n
+
 /-- The primitive integral normal `ν_j ∘ π` of the cylinder over the incoming line `j`. -/
 def wallNormal (j : ι) : L →+ ℤ :=
   (I.normal j).toAddMonoidHom.comp I.projection

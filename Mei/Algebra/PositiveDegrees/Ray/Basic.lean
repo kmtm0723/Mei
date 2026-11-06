@@ -149,6 +149,11 @@ def ofMem (n : N) (hn : n ∈ d.monoid) (hprim : TauCeti.IsPrimitive n) :
 theorem generator_ofMem (n : N) (hn : n ∈ d.monoid) (hprim : TauCeti.IsPrimitive n) :
     (ofMem n hn hprim).generator = n := (rfl)
 
+/-- A primitive allowed vector lies on the ray it supplies. -/
+theorem mem_rayDegrees_ofMem (n : N) (hn : n ∈ d.monoid) (hprim : TauCeti.IsPrimitive n) :
+    n ∈ (ofMem n hn hprim).rayDegrees :=
+  mem_rayDegrees.mpr ⟨hn, 1, one_pos, by rw [generator_ofMem, one_smul]⟩
+
 /-- Membership of an integer multiple uses exactly its positive multipliers and
 the original monoid membership condition. -/
 @[simp]

@@ -9,6 +9,7 @@ public import Mei.Geometry.ScatteringDiagram.RankTwoPolynomialInput.Basic
 public import Mei.Geometry.ScatteringDiagram.WallSpace.Logarithmic.RayFactor
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.RayFactor
 public import Mei.RingTheory.FilteredAlgebra.Positive.Basic
+public import Mei.Algebra.Lie.Logarithmic.WallFunction.Binomial
 
 /-!
 # Incoming diagrams of rank-two polynomial inputs
@@ -18,7 +19,9 @@ Let `I` be a rank-two polynomial input on positive degree data `(L, P, δ)`, wit
 `f_j = 1 + ∑_n c_{j,n} z^n` of the line `j` is tangent to the cylinder normal `ν_j ∘ π`, so its
 logarithm is a completed tangent field and `exp(log(f_j) ∂_{ν_j ∘ π})` is a completed label
 (`RankTwoPolynomialInput.initialLabel`). It acts on `z^p` by multiplication by
-`f_j^{⟨ν_j, π(p)⟩}` (`RankTwoPolynomialInput.completedBCHAction_initialLabel`).
+`f_j^{⟨ν_j, π(p)⟩}` (`RankTwoPolynomialInput.completedBCHAction_initialLabel`). For a line with
+a single term `c z^n` it is the binomial label `exp(log(1 + c z^n) ∂_{ν_j ∘ π})`
+(`RankTwoPolynomialInput.initialLabel_eq_binomialLabel`).
 
 The logarithm generally has terms on many supported rays of `L`. Its ray presentation has the
 commuting labels `exp((log f_j)_w ∂_{ν_j ∘ π})`, the ray factors on the supported primitive rays
@@ -74,6 +77,12 @@ theorem coe_tangentExponent (j : ι) (n : I.exponents j) :
 def tangentInitialFunction (c : I.Variable → R) (j : ι) : R[T j] :=
   1 + ∑ n : I.exponents j, single (I.tangentExponent j n) (c ⟨j, n⟩)
 
+/-- The defining sum of the tangent wall function. -/
+theorem tangentInitialFunction_def (c : I.Variable → R) (j : ι) :
+    I.tangentInitialFunction c j =
+      1 + ∑ n : I.exponents j, single (I.tangentExponent j n) (c ⟨j, n⟩) :=
+  (rfl)
+
 /-- The completed wall function is congruent to one, since its exponents are nonzero allowed
 degrees. -/
 theorem toCompletion_tangentInitialFunction_sub_one_mem (c : I.Variable → R)
@@ -98,6 +107,25 @@ theorem initialLabel_def (c : I.Variable → R) (j : ι) :
     I.initialLabel c j = d.completedBCHExp ℒ (completedTropicalTangentField d ρ (χ j)
       ((F j).completedLog ⟨(F j).toCompletion (I.tangentInitialFunction c j),
         I.toCompletion_tangentInitialFunction_sub_one_mem c j⟩)) := (rfl)
+
+/-- The unsplit label of a line with the single term `c z^n` is the binomial label
+`exp(log(1 + c z^n) ∂_{ν_j ∘ π})`. -/
+theorem initialLabel_eq_binomialLabel (c : I.Variable → R) {j : ι} {n : L}
+    (hj : I.exponents j = {n}) :
+    I.initialLabel c j = binomialLabel d ρ (I.wallNormal j)
+      (I.mem_monoid_of_mem_exponents (I.mem_exponents_of_eq_singleton hj))
+      (I.ne_zero_of_mem_exponents (I.mem_exponents_of_eq_singleton hj))
+      (I.wallNormal_eq_zero_of_mem_exponents (I.mem_exponents_of_eq_singleton hj))
+      (c ⟨j, ⟨n, I.mem_exponents_of_eq_singleton hj⟩⟩) := by
+  have hf : I.tangentInitialFunction c j = 1 + single (binomialExponent d ρ (I.wallNormal j)
+      (I.mem_monoid_of_mem_exponents (I.mem_exponents_of_eq_singleton hj))
+      (I.wallNormal_eq_zero_of_mem_exponents (I.mem_exponents_of_eq_singleton hj)))
+      (c ⟨j, ⟨n, I.mem_exponents_of_eq_singleton hj⟩⟩) := by
+    rw [tangentInitialFunction_def, Fintype.sum_eq_single ⟨n, I.mem_exponents_of_eq_singleton hj⟩
+      fun x hx => absurd (Subtype.ext (Finset.mem_singleton.mp (hj ▸ x.property))) hx]
+    exact congrArg (fun q => 1 + single q _)
+      (Subtype.ext ((coe_tangentExponent ..).trans (coe_binomialExponent ..).symm))
+  simp only [initialLabel_def, binomialLabel_def, hf]
 
 /-- Every degree in which the logarithm of the unsplit label has a nonzero coefficient projects
 to a positive multiple of the tangent `m_j`: the exponents do, and the logarithmic degrees lie in

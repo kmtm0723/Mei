@@ -332,11 +332,8 @@ theorem isWallFunction_adaptedPolynomialGrouping
   refine ⟨⟨⟨(χ, 0), hQ χ⟩, (congrArg (fun ν : Lpr →+ ℤ => ν (χ, 0))
     (B.adaptedPolynomialInput_normal ℓ a h j)).trans hχ, ?_⟩,
     B.completedBCHAction_label_adaptedPolynomialGrouping ℓ a Q h π j⟩
-  have hmul : (single (⟨(χ, 0), hQ χ⟩ : Q) (1 : R) *
-      single ⟨(-χ, 0), hQ (-χ)⟩ 1 : AddMonoidAlgebra R Q) = 1 := by
-    rw [single_mul_single, mul_one, one_def]
-    exact congrArg (single · 1) (Subtype.ext (by simp))
-  exact (isUnit_iff_exists_inv.mpr ⟨_, hmul⟩).map (F).toCompletion
+  exact TropicalVertexCoefficientAction.isUnit_toCompletion_single (hQ χ)
+    (by simpa using hQ (-χ))
 
 /-- If the coefficient monoid contains every character `(χ, 0)` and every coefficient `aᵢₛ`
 is the image of an element of `S`, the grouping of the input walls is positive for the image

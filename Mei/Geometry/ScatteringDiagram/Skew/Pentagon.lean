@@ -231,38 +231,20 @@ theorem rayExp_smul_negDilogNeg_pentagon {n₁ n₂ : Γ} (hn₁ : n₁ ∈ d.mo
   have hp := E.rayExp_smul_negDilogNeg_pentagon_integral (R := R) δ hv₁ hv₂ hv₁0 hv₂0
     (c := 1) (s₁ := 1) (s₂ := 1) (by simpa using hpair) (by simp [hκ₁]) (by simp [hκ₂])
   simp only [map_one, one_smul] at hp
-  -- The basis map preserves positivity, with source degree bounded by target degree.
-  let f : E.unfrozen →ₗ[ℤ] Γ := b.constr ℤ ![n₁, n₂]
-  have f₁ : f v₁ = n₁ := by simp [f, v₁]
-  have f₂ : f v₂ = n₂ := by simp [f, v₂]
-  have f_apply (v : E.unfrozen) : f v = b.repr v 0 • n₁ + b.repr v 1 • n₂ := by
-    conv_lhs => rw [← b.sum_repr v]
-    simp [Fin.sum_univ_two, f]
-  have hfmem (v : E.unfrozen) (hv : v ∈ δ.monoid) : f v ∈ d.monoid := by
-    have hv' := (b.mem_positiveDegrees_monoid v).mp hv
-    rw [f_apply]
-    have h₁ := d.monoid.nsmul_mem hn₁ (b.repr v 0).toNat
-    have h₂ := d.monoid.nsmul_mem hn₂ (b.repr v 1).toNat
-    simpa only [← Nat.cast_smul_eq_nsmul ℤ, Int.toNat_of_nonneg (hv' 0),
-      Int.toNat_of_nonneg (hv' 1)] using add_mem h₁ h₂
-  have hbound (v : E.unfrozen) (hv : v ∈ δ.monoid) : δ.degree v ≤ 1 * d.degree (f v) := by
-    have hv' := (b.mem_positiveDegrees_monoid v).mp hv
-    have h₁ := d.degree_pos hn₁ hn₁0
-    have h₂ := d.degree_pos hn₂ hn₂0
-    rw [Module.Basis.positiveDegrees_degree, Fin.sum_univ_two, f_apply, map_add,
-      map_zsmul, map_zsmul, smul_eq_mul, smul_eq_mul, one_mul]
-    exact add_le_add (le_mul_of_one_le_right (hv' 0) (by omega))
-      (le_mul_of_one_le_right (hv' 1) (by omega))
-  let T : PositiveDegreeMap δ d := PositiveDegreeMap.ofBound f.toAddMonoidHom hfmem 1 hbound
+  -- The basis map `(a, b) ↦ a n₁ + b n₂` is a positive degree map with identity modulus.
+  let T : PositiveDegreeMap δ d := b.positiveDegreeMap ![n₁, n₂]
+    (Fin.forall_fin_two.mpr ⟨hn₁, hn₂⟩) (Fin.forall_fin_two.mpr ⟨hn₁0, hn₂0⟩)
+  have f₁ : T v₁ = n₁ := b.positiveDegreeMap_self _ _ _ 0
+  have f₂ : T v₂ = n₂ := b.positiveDegreeMap_self _ _ _ 1
+  have f_apply (v : E.unfrozen) : T v = b.repr v 0 • n₁ + b.repr v 1 • n₂ := by
+    simp [T, Module.Basis.constr_apply_fintype, Fin.sum_univ_two]
   -- Scaling generators by `c` compensates for the change in skew pairing.
   have hform (v w : E.unfrozen) :
       E.coefficientForm R v w = c * β (T v) (T w) := by
     have he (v : E.unfrozen) : (v : ℤ × ℤ) = (b.repr v 0, b.repr v 1) := by
       -- The mapped standard basis reads exactly the two coordinates of `v`.
       rfl
-    have hTapply (v : E.unfrozen) : T v = f v :=
-      PositiveDegreeMap.ofBound_apply _ _ _ _ v
-    simp only [hTapply, SkewLatticeDatum.coefficientForm_apply, E,
+    simp only [SkewLatticeDatum.coefficientForm_apply, E,
       Examples.unimodularRankTwo_form, Examples.rankTwoForm_apply, he,
       Int.cast_sub, Int.cast_mul, map_sub, map_mul, map_intCast]
     rw [f_apply, f_apply]
@@ -275,9 +257,7 @@ theorem rayExp_smul_negDilogNeg_pentagon {n₁ n₂ : Γ} (hn₁ : n₁ ∈ d.mo
   -- Transport each finite projection; the degree estimate gives the same source cutoff.
   apply CompletedGroup.ext
   intro k
-  have hk : T.modulus k ≤ k := by
-    have hmod : T.modulus k = 1 * k := PositiveDegreeMap.ofBound_modulus _ _ _ _ k
-    omega
+  have hk : T.modulus k ≤ k := (b.positiveDegreeMap_modulus _ _ _ k).le
   let ψ := (φ.truncatedMap k hk).bchGroupMap.comp
     (CompletedGroup.projection (F := δ.groupTower
       (SkewLieAlgebra.positiveGrading (E.coefficientForm R) (E.isAlt_coefficientForm R) δ)) k)
@@ -291,9 +271,7 @@ theorem rayExp_smul_negDilogNeg_pentagon {n₁ n₂ : Γ} (hn₁ : n₁ ∈ d.mo
       (E.coefficientForm R) (E.isAlt_coefficientForm R) β hβ c T hform
       hv hv0 (negDilogNeg R) k k hk
   simp only [hmap] at h
-  have hTapply (v : E.unfrozen) : T v = f v :=
-    PositiveDegreeMap.ofBound_apply _ _ _ _ v
-  simp only [hTapply, f₁, f₂, map_add] at h
+  simp only [f₁, f₂, map_add] at h
   simp only [map_mul]
   exact h
 

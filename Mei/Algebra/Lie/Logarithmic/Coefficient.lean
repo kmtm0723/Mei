@@ -149,6 +149,26 @@ theorem filtration_ideal {R : Type*} [Semiring R] (k : ℕ) :
       (d.monoid.comap Q.subtype).monoidAlgebraIdeal (d.degree.comp Q.subtype) k := by
   rw [filtration, AddSubmonoid.monoidAlgebraFiltration_ideal]
 
+/-- A monomial `r z^q` of a nonzero allowed degree `q` lies in the first term of the coefficient
+filtration of `R[Q]`. -/
+theorem single_mem_filtration_ideal_one {R : Type*} [Semiring R] {q : Q}
+    (hq : (q : Γ) ∈ d.monoid) (hq0 : (q : Γ) ≠ 0) (r : R) :
+    single q r ∈ (filtration (R := R) d Q).ideal 1 := by
+  rw [filtration_ideal, AddSubmonoid.single_mem_monoidAlgebraIdeal_iff]
+  refine Or.inr ⟨q, hq, ?_, 0, by rw [zero_add]⟩
+  have := d.degree_pos hq hq0
+  simp only [AddMonoidHom.coe_comp, AddSubmonoid.coe_subtype, Function.comp_apply, Nat.cast_one]
+  omega
+
+/-- A monomial `z^p` with `p, -p ∈ Q` is a unit of the completed coefficient algebra. -/
+theorem isUnit_toCompletion_single {G : Type*} [AddCommGroup G] {e : PositiveDegrees G}
+    {P : AddSubmonoid G} {p : G} (hp : p ∈ P) (hnp : -p ∈ P) :
+    IsUnit ((filtration (R := R) e P).toCompletion (single ⟨p, hp⟩ 1)) := by
+  have hmul : (single (⟨p, hp⟩ : P) (1 : R) * single ⟨-p, hnp⟩ 1 : R[P]) = 1 := by
+    rw [single_mul_single, mul_one, one_def]
+    exact congrArg (single · 1) (Subtype.ext (add_neg_cancel p))
+  exact (isUnit_iff_exists_inv.mpr ⟨_, hmul⟩).map (filtration (R := R) e P).toCompletion
+
 section Map
 
 variable {Γ' : Type*} [AddCommMonoid Γ'] {e : PositiveDegrees Γ'} {Q' : AddSubmonoid Γ'}
