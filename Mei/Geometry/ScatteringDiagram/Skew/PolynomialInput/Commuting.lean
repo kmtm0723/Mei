@@ -65,19 +65,6 @@ local notation "ρ" => AddMonoidHom.id (Module.Dual ℤ N × (I.Letter → ℤ))
 local notation "ℒ" => tropicalVertexGrading (R := R) 𝒅 ρ
 local notation "H" => tropicalVertexWallSpaces (R := R) 𝒅 ρ
 
-/-- If `{e_i, a} = 0`, a nontrivial ray label of the initial wall at `i` lies on a supported
-ray whose generator has spatial part vanishing on `a`: that spatial part is a positive rational
-multiple of `wᵢ`, and `wᵢ(a) = 0`. -/
-theorem generator_apply_eq_zero_of_form_eq_zero {i : B.unfrozenIndex} {a : N}
-    (ha : D.form (B.basis i) a = 0) {w : SupportedRay 𝒅}
-    (hw : (𝒅).rayFactor ℒ (I.initialLabel (R := R) i) w ≠ 1) :
-    w.generator.1 a = 0 := by
-  obtain ⟨c, b, hc, -, hcb⟩ := I.rayFactor_initialLabel_projectedDirection i w hw
-  have hj := LinearMap.congr_fun hcb a
-  rw [LinearMap.smul_apply, LinearMap.smul_apply,
-    I.exponent_apply_eq_zero_of_form_eq_zero ha, smul_zero] at hj
-  exact (smul_eq_zero.mp hj).resolve_left hc.ne'
-
 variable [Module.Finite ℤ N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {latticeMap : (Module.Dual ℤ N × (I.Letter → ℤ)) →+ V}
   (h : TauCeti.Toric.IsIntegralLattice latticeMap)

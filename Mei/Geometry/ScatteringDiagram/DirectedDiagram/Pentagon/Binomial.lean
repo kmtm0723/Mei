@@ -39,12 +39,14 @@ labels of `D`. Write `μ₁ = μ_{j₁}` and `μ₂ = μ_{j₂}`.
   (`IsTypeA₂Presentation.commute_outgoingWall_label`).
 * If `D` has a grouping of its walls into function walls (`FunctionWallGrouping`) which is
   positive for the image of `S[Q]` under a semiring map `φ : S →+* R`, and the coefficient
-  monoid `Q` contains an exponent `p` with `-p ∈ Q`, `μ₁(ρ p) = 1` and `μ₂(ρ p) = 0`, then
-  the pentagon diagram is a positive wall representative of the scattering class: its grouping
-  is that of `D` together with the outgoing wall, with the wall function `1 + c₁ c₂ z^{n₁ + n₂}`
-  if `c₁, c₂` lie in the image of `φ`
-  (`IsTypeA₂Presentation.exists_isPositiveWallRepresentative_scat_of_isPositive`). If `D` has no
-  isolated indices and `Q` also contains `p₂` with `-p₂ ∈ Q` and `μ₂(ρ p₂) = 1`, the discrete
+  monoid `Q` contains an exponent `p` with `-p ∈ Q` and `(μ₁ + μ₂)(ρ p) = 1`, then the pentagon
+  diagram is a positive wall representative of the scattering class: its grouping is that of `D`
+  together with the outgoing wall, with the wall function `1 + c₁ c₂ z^{n₁ + n₂}` if the product
+  `c₁ c₂` lies in the image of `φ`
+  (`IsTypeA₂Presentation.isPositiveWallRepresentative_pentagonDiagram_of_isPositive`,
+  `IsTypeA₂Presentation.exists_isPositiveWallRepresentative_scat_of_isPositive`). If `D` has no
+  isolated indices, `c₁, c₂` lie in the image of `φ`, `Q` contains `p₁` with `-p₁ ∈ Q`,
+  `μ₁(ρ p₁) = 1` and `μ₂(ρ p₁) = 0`, and `p₂` with `-p₂ ∈ Q` and `μ₂(ρ p₂) = 1`, the discrete
   grouping of `D` is positive, with the wall functions `1 + c₁ z^{n₁}` and `1 + c₂ z^{n₂}` on the
   walls on the rays through `n₁` and `n₂` and `1` on all other walls
   (`IsTypeA₂Presentation.exists_isPositiveWallRepresentative_scat`).
@@ -414,56 +416,66 @@ variable (Q : AddSubmonoid Γ) [Fact (d.monoid ≤ Q)]
 
 local notation "F" => TropicalVertexCoefficientAction.filtration (R := R) d Q
 
-omit [Fact (d.monoid ≤ Q)] in
-/-- If `Q` contains an exponent `p` whose monomial is invertible, with `μ₁(ρ p) = 1` and
-`μ₂(ρ p) = 0`, the normal `μ₁ + μ₂` of the outgoing wall takes the value one at `p`. -/
-theorem exists_outgoingWall_normal_eq_one_isUnit
+omit hD [DecidableEq Γ] [Fact (d.monoid ≤ Q)] in
+/-- A witness `p ∈ Q` with `-p ∈ Q`, `μ₁(ρ p) = 1` and `μ₂(ρ p) = 0` pairs to one with `μ₁ + μ₂`. -/
+theorem exists_add_apply_eq_one_of_apply_eq
     (hQ₁ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1 ∧ μ j₂ (ρ p) = 0) :
+    ∃ p ∈ Q, -p ∈ Q ∧ (μ j₁ + μ j₂) (ρ p) = 1 := by
+  obtain ⟨p, hp, hp', h₁, h₂⟩ := hQ₁
+  exact ⟨p, hp, hp', by simp [h₁, h₂]⟩
+
+omit [Fact (d.monoid ≤ Q)] in
+/-- If `Q` contains an exponent `p` whose monomial is invertible, with `(μ₁ + μ₂)(ρ p) = 1`, the
+normal `μ₁ + μ₂` of the outgoing wall takes the value one at `p`. -/
+theorem exists_outgoingWall_normal_eq_one_isUnit
+    (hQ : ∃ p ∈ Q, -p ∈ Q ∧ (μ j₁ + μ j₂) (ρ p) = 1) :
     ∃ p : Q, hD.outgoingWall.normal (ρ p) = 1 ∧
       IsUnit ((F).toCompletion (single p (1 : R))) := by
-  obtain ⟨p, hp, hp', h₁, h₂⟩ := hQ₁
-  exact ⟨⟨p, hp⟩, by simp [h₁, h₂],
+  obtain ⟨p, hp, hp', h⟩ := hQ
+  exact ⟨⟨p, hp⟩, by simpa using h,
     TropicalVertexCoefficientAction.isUnit_toCompletion_single hp hp'⟩
 
 variable {M : Type*} [AddCommGroup M] (π : Γ →+ M) [HasUniqueDiv Γ]
-  {S : Type*} [Semiring S] (φ : S →+* R) (hc₁ : c₁ ∈ φ.rangeS) (hc₂ : c₂ ∈ φ.rangeS)
-  (hQ₁ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1 ∧ μ j₂ (ρ p) = 0)
+  {S : Type*} [Semiring S] (φ : S →+* R) (hc : c₁ * c₂ ∈ φ.rangeS)
+  (hQ : ∃ p ∈ Q, -p ∈ Q ∧ (μ j₁ + μ j₂) (ρ p) = 1)
 
 omit [HasUniqueDiv Γ] in
-include hc₁ hc₂ hQ₁ in
-/-- If the coefficients `c₁, c₂` lie in the image of a semiring map `φ : S →+* R`, and the
-coefficient monoid `Q` contains an exponent `p` with invertible monomial, `-p ∈ Q`, `μ₁(ρ p) = 1`
-and `μ₂(ρ p) = 0`, the discrete grouping of the outgoing wall is positive for the image of
-`S[Q]`: its wall function is `1 + c₁ c₂ z^{n₁ + n₂}`. -/
+include hc hQ in
+/-- If the product `c₁ c₂` lies in the image of a semiring map `φ : S →+* R`, and the coefficient
+monoid `Q` contains an exponent `p` with invertible monomial, `-p ∈ Q` and `(μ₁ + μ₂)(ρ p) = 1`,
+the discrete grouping of the outgoing wall is positive for the image of `S[Q]`: its wall function
+is `1 + c₁ c₂ z^{n₁ + n₂}`. -/
 theorem isPositive_discrete_outgoingWall :
     (FunctionWallGrouping.discrete (ofFinite fun _ : Unit => hD.outgoingWall)
       (fun _ => by rw [ofFinite_wall]; exact hD.isPrimitive_outgoingWall_normal) π).IsPositive
       ((F).completedBCHAction d ℒ) (mapRingHom Q φ).rangeS := by
   refine (FunctionWallGrouping.isPositive_iff _ _ _).mpr fun u => ?_
-  obtain ⟨p, hp, hunit⟩ := hD.exists_outgoingWall_normal_eq_one_isUnit Q hQ₁
+  obtain ⟨p, hp, hunit⟩ := hD.exists_outgoingWall_normal_eq_one_isUnit Q hQ
   refine ⟨binomialUnit d Q hD.add_mem_monoid hD.add_ne_zero (c₁ * c₂),
     FunctionWallGrouping.isWallFunction_discrete _ _ (j := u) (by rwa [ofFinite_wall]) hunit
       fun q r => ?_, isPositive_binomialUnit d Q φ hD.add_mem_monoid hD.add_ne_zero
-      (mul_mem hc₁ hc₂)⟩
+      hc⟩
   rw [ofFinite_wall, outgoingWall_label, completedBCHAction_binomialLabel, outgoingWall_normal]
 
 omit [HasUniqueDiv Γ] in
-include hc₁ hc₂ hQ₁ in
+include hc hQ in
 /-- **Positivity of the pentagon diagram from a positive grouping of `D`.** Let `G` be a grouping of
 the walls of `D` into function walls for the projection `π`, positive for the image of `S[Q]`. If
-the coefficients `c₁, c₂` lie in the image of a semiring map `φ : S →+* R`, and the coefficient
-monoid `Q` contains an exponent `p` with `-p ∈ Q`, `μ₁(ρ p) = 1` and `μ₂(ρ p) = 0`, the pentagon
-diagram is a positive wall representative for the image of `S[Q]`: the groups of `G` and the
-outgoing wall, with the wall function `1 + c₁ c₂ z^{n₁ + n₂}`, form a positive grouping. -/
+the product `c₁ c₂` lies in the image of a semiring map `φ : S →+* R`, and the coefficient monoid
+`Q` contains an exponent `p` with `-p ∈ Q` and `(μ₁ + μ₂)(ρ p) = 1`, the pentagon diagram is a
+positive wall representative for the image of `S[Q]`: the groups of `G` and the outgoing wall, with
+the wall function `1 + c₁ c₂ z^{n₁ + n₂}`, form a positive grouping. -/
 theorem isPositiveWallRepresentative_pentagonDiagram_of_isPositive {κ' : Type*}
     {G : D.FunctionWallGrouping π κ'}
     (hG : G.IsPositive ((F).completedBCHAction d ℒ) (mapRingHom Q φ).rangeS) :
     hD.pentagonDiagram.IsPositiveWallRepresentative ((F).completedBCHAction d ℒ)
       (mapRingHom Q φ).rangeS π :=
   (hG.append
-    (hD.isPositive_discrete_outgoingWall Q π φ hc₁ hc₂ hQ₁)).isPositiveWallRepresentative
+    (hD.isPositive_discrete_outgoingWall Q π φ hc hQ)).isPositiveWallRepresentative
 
-variable (hQ₂ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₂ (ρ p) = 1)
+variable (hc₁ : c₁ ∈ φ.rangeS) (hc₂ : c₂ ∈ φ.rangeS)
+  (hQ₁ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1 ∧ μ j₂ (ρ p) = 0)
+  (hQ₂ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₂ (ρ p) = 1)
 
 omit [Fact (d.monoid ≤ Q)] [HasUniqueDiv Γ] in
 include hQ₁ hQ₂ in
@@ -522,7 +534,8 @@ walls. -/
 theorem isPositiveWallRepresentative_pentagonDiagram (hD' : ∀ j, j = j₁ ∨ j = j₂) :
     hD.pentagonDiagram.IsPositiveWallRepresentative ((F).completedBCHAction d ℒ)
       (mapRingHom Q φ).rangeS π :=
-  hD.isPositiveWallRepresentative_pentagonDiagram_of_isPositive Q π φ hc₁ hc₂ hQ₁
+  hD.isPositiveWallRepresentative_pentagonDiagram_of_isPositive Q π φ (mul_mem hc₁ hc₂)
+    (exists_add_apply_eq_one_of_apply_eq Q hQ₁)
     (hD.isPositive_discrete_of_forall_eq_or_eq Q π φ hc₁ hc₂ hQ₁ hQ₂ hD')
 
 end Positive
@@ -653,17 +666,17 @@ open scoped Mei.TropicalVertexCoefficientAction
 
 variable (Q : AddSubmonoid Γ) [Fact (d.monoid ≤ Q)]
   {M : Type*} [AddCommGroup M] (π : Γ →+ M) [Module.Free ℤ Γ]
-  {S : Type*} [Semiring S] (φ : S →+* R) (hc₁ : c₁ ∈ φ.rangeS) (hc₂ : c₂ ∈ φ.rangeS)
-  (hQ₁ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1 ∧ μ j₂ (ρ p) = 0)
+  {S : Type*} [Semiring S] (φ : S →+* R) (hc : c₁ * c₂ ∈ φ.rangeS)
+  (hQ : ∃ p ∈ Q, -p ∈ Q ∧ (μ j₁ + μ j₂) (ρ p) = 1)
 
 local notation "F" => TropicalVertexCoefficientAction.filtration (R := R) d Q
 
-include hc₁ hc₂ hQ₁ in
+include hc hQ in
 /-- **Positivity of ray presentations of type `A₂` with a positive grouping of `D`.** Let `G` be a
 grouping of the walls of `D` into function walls for the projection `π`, positive for the image
-of `S[Q]`. If the coefficients `c₁, c₂` lie in the image of a semiring map `φ : S →+* R`, and the
-coefficient monoid `Q` contains an exponent `p` with `-p ∈ Q`, `μ₁(ρ p) = 1` and `μ₂(ρ p) = 0`,
-the outgoing scattering class of `D` has a consistent outgoing representative, the pentagon
+of `S[Q]`. If the product `c₁ c₂` lies in the image of a semiring map `φ : S →+* R`, and the
+coefficient monoid `Q` contains an exponent `p` with `-p ∈ Q` and `(μ₁ + μ₂)(ρ p) = 1`, the
+outgoing scattering class of `D` has a consistent outgoing representative, the pentagon
 diagram, which is a positive wall representative for the image of `S[Q]`: the groups of `G` and
 the outgoing wall, with the wall function `1 + c₁ c₂ z^{n₁ + n₂}`, form a positive grouping. -/
 theorem exists_isPositiveWallRepresentative_scat_of_isPositive {κ' : Type*}
@@ -676,9 +689,11 @@ theorem exists_isPositiveWallRepresentative_scat_of_isPositive {κ' : Type*}
   let : HasUniqueDiv Γ := .of_isTorsionFree ℤ Γ
   ⟨Unit, hD.pentagonDiagram, hD.isOutgoingCompletion_pentagonDiagram,
     hD.scat_eq_toClass_pentagonDiagram.symm,
-    hD.isPositiveWallRepresentative_pentagonDiagram_of_isPositive Q π φ hc₁ hc₂ hQ₁ hG⟩
+    hD.isPositiveWallRepresentative_pentagonDiagram_of_isPositive Q π φ hc hQ hG⟩
 
-variable (hQ₂ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₂ (ρ p) = 1)
+variable (hc₁ : c₁ ∈ φ.rangeS) (hc₂ : c₂ ∈ φ.rangeS)
+  (hQ₁ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1 ∧ μ j₂ (ρ p) = 0)
+  (hQ₂ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₂ (ρ p) = 1)
 
 include hc₁ hc₂ hQ₁ hQ₂ in
 /-- **Positivity of ray presentations of type `A₂` without isolated indices.** If every index is
@@ -694,7 +709,8 @@ theorem exists_isPositiveWallRepresentative_scat (hD' : ∀ j, j = j₁ ∨ j = 
       IsOutgoingCompletion D.wall E ∧ E.toClass = D.Scat hD.full ∧
       E.IsPositiveWallRepresentative ((F).completedBCHAction d ℒ) (mapRingHom Q φ).rangeS π :=
   let : HasUniqueDiv Γ := .of_isTorsionFree ℤ Γ
-  hD.exists_isPositiveWallRepresentative_scat_of_isPositive Q π φ hc₁ hc₂ hQ₁
+  hD.exists_isPositiveWallRepresentative_scat_of_isPositive Q π φ (mul_mem hc₁ hc₂)
+    (exists_add_apply_eq_one_of_apply_eq Q hQ₁)
     (hD.isPositive_discrete_of_forall_eq_or_eq Q π φ hc₁ hc₂ hQ₁ hQ₂ hD')
 
 end Positive

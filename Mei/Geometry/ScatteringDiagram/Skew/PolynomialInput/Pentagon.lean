@@ -207,10 +207,10 @@ theorem exists_isPositiveWallRepresentative_scat
         (AddMonoidHom.fst _ _) :=
   let := Module.Free.of_basis B.basis
   -- The monomial `z^{(e_{i₁}*, 0)}` is invertible, and the cylinder normals `e_{i₁}`, `e_{i₂}`
-  -- take the values `1` and `0` on its exponent.
+  -- take the values `1` and `0` on its exponent, so `e_{i₁} + e_{i₂}` takes the value `1`.
   (hA.isTypeA₂Presentation h).exists_isPositiveWallRepresentative_scat_of_isPositive Q
-    (AddMonoidHom.fst _ _) φ ⟨1, map_one φ⟩ ⟨1, map_one φ⟩
-    ⟨(B.basis.coord i₁, 0), (hQ i₁).1, by simpa using (hQ i₁).2, by simp,
+    (AddMonoidHom.fst _ _) φ ⟨1, by simp⟩
+    ⟨(B.basis.coord i₁, 0), (hQ i₁).1, by simpa using (hQ i₁).2,
       by simp [Module.Basis.coord_apply, Finsupp.single_eq_of_ne (Subtype.coe_injective.ne
         hA.fst_ne_snd)]⟩
     (I.isPositive_incomingGrouping h Q hQ φ)
