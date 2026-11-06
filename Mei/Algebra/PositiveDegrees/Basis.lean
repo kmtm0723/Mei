@@ -8,6 +8,7 @@ module
 public import Mei.Algebra.PositiveDegrees.Graph
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.Basis.Fin
+public import Mathlib.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Positive degrees from an integral basis
@@ -23,7 +24,10 @@ nonnegative coordinates (`Module.Basis.mem_positiveDegrees_finTwoProd_monoid`).
 For elements `aⱼ` of a commutative monoid, the monomial weight `n ↦ ∏ⱼ aⱼ^{nⱼ}`
 (`Module.Basis.monomialWeight`) is multiplicative on the allowed monoid
 (`Module.Basis.monomialWeight_add`). For graphs in a torsion-free target, every supported
-primitive ray generator already belongs to the graph monoid.
+primitive ray generator already belongs to the graph monoid. The allowed monoid spans `ℚ ⊗ N`
+(`Module.Basis.span_tmul_positiveDegrees_monoid`). Nonzero allowed degrees `vⱼ` of positive degree
+data `d` define the positive degree map `n ↦ ∑ⱼ nⱼ vⱼ` with identity cutoff modulus
+(`Module.Basis.positiveDegreeMap`).
 -/
 
 public section
@@ -87,13 +91,15 @@ theorem positiveDegrees_monoid_eq_closure :
     rintro _ ⟨j, rfl⟩
     simp [mem_positiveDegrees_monoid, Finsupp.single_apply, ite_nonneg]
 
-open Classical in
+/-- The basis vectors are allowed exponents. -/
+theorem mem_positiveDegrees_monoid_self (j : ι) : b j ∈ b.positiveDegrees.monoid := by
+  classical
+  simp [mem_positiveDegrees_monoid, Finsupp.single_apply, ite_nonneg]
+
 /-- The supported primitive ray through an integral basis vector in the
 nonnegative basis monoid. -/
 def positiveDegreesRay (j : ι) : Mei.SupportedRay b.positiveDegrees :=
-  Mei.SupportedRay.ofMem (b j)
-    (by simp [mem_positiveDegrees_monoid, Finsupp.single_apply, ite_nonneg])
-    (b.isPrimitive j)
+  Mei.SupportedRay.ofMem (b j) (b.mem_positiveDegrees_monoid_self j) (b.isPrimitive j)
 
 /-- The generator of a basis ray is the corresponding basis vector. -/
 @[simp]
@@ -196,5 +202,86 @@ theorem supportedRay_generator_mem_positiveDegrees_graph
   let := HasUniqueDiv.of_isTorsionFree ℤ M
   exact w.generator_mem_of_nsmulSaturated
     (b.positiveDegrees.nsmulSaturated_graph_monoid f b.nsmulSaturated_positiveDegrees_monoid)
+
+open scoped TensorProduct in
+/-- The rationalized nonnegative basis monoid spans the rational vector space `ℚ ⊗ N`. -/
+theorem span_tmul_positiveDegrees_monoid :
+    Submodule.span ℚ ((fun p : N => (1 : ℚ) ⊗ₜ[ℤ] p) '' (b.positiveDegrees.monoid : Set N)) =
+      ⊤ := by
+  refine Submodule.eq_top_iff'.mpr fun x => ?_
+  induction x using TensorProduct.inductionOn with
+  | tmul q v =>
+    have hv : (1 : ℚ) ⊗ₜ[ℤ] v ∈ Submodule.span ℚ
+        ((fun p : N => (1 : ℚ) ⊗ₜ[ℤ] p) '' (b.positiveDegrees.monoid : Set N)) := by
+      rw [← b.sum_repr v, TensorProduct.tmul_sum]
+      refine Submodule.sum_mem _ fun j _ => ?_
+      rw [TensorProduct.tmul_smul]
+      exact zsmul_mem (Submodule.subset_span
+        (Set.mem_image_of_mem _ (b.mem_positiveDegrees_monoid_self j))) _
+    rw [show q ⊗ₜ[ℤ] v = q • ((1 : ℚ) ⊗ₜ[ℤ] v) by rw [TensorProduct.smul_tmul', smul_eq_mul,
+      mul_one]]
+    exact Submodule.smul_mem _ q hv
+  | add x y hx hy => exact add_mem hx hy
+
+section DegreeMap
+
+variable {Γ : Type*} [AddCommGroup Γ] {d : Mei.PositiveDegrees Γ} (v : ι → Γ)
+  (hv : ∀ j, v j ∈ d.monoid) (hv0 : ∀ j, v j ≠ 0)
+
+include hv hv0 in
+/-- On the nonnegative basis monoid, the additive map `n ↦ ∑ⱼ nⱼ vⱼ` sending each basis vector
+`bⱼ` to a nonzero allowed degree `vⱼ` of `d` does not decrease the degree: every `vⱼ` has degree
+at least one. -/
+theorem degree_le_degree_constr {n : N} (hn : n ∈ b.positiveDegrees.monoid) :
+    b.positiveDegrees.degree n ≤ d.degree (b.constr ℤ v n) := by
+  rw [positiveDegrees_degree, constr_apply_fintype, map_sum]
+  refine Finset.sum_le_sum fun j _ => ?_
+  rw [equivFun_apply, map_zsmul, smul_eq_mul]
+  exact le_mul_of_one_le_right ((b.mem_positiveDegrees_monoid n).mp hn j)
+    (d.degree_pos (hv j) (hv0 j))
+
+include hv in
+/-- The additive map `n ↦ ∑ⱼ nⱼ vⱼ` sends the nonnegative basis monoid into the allowed degrees
+when every `vⱼ` is allowed. -/
+theorem constr_mem_monoid {n : N} (hn : n ∈ b.positiveDegrees.monoid) :
+    b.constr ℤ v n ∈ d.monoid := by
+  rw [constr_apply_fintype]
+  refine AddSubmonoid.sum_mem _ fun j _ => ?_
+  rw [equivFun_apply, ← Int.toNat_of_nonneg ((b.mem_positiveDegrees_monoid n).mp hn j),
+    natCast_zsmul]
+  exact AddSubmonoid.nsmul_mem _ (hv j) _
+
+/-- The additive map `n ↦ ∑ⱼ nⱼ vⱼ` sending each basis vector `bⱼ` to a nonzero allowed degree
+`vⱼ` of `d`, as a positive degree map from the nonnegative basis monoid with identity cutoff
+modulus. -/
+def positiveDegreeMap : Mei.PositiveDegreeMap b.positiveDegrees d where
+  toAddMonoidHom := (b.constr ℤ v).toAddMonoidHom
+  map_mem hn := b.constr_mem_monoid v hv hn
+  map_ne_zero {n} hn hn0 h := by
+    have hle := b.degree_le_degree_constr v hv hv0 hn
+    have hpos := b.positiveDegrees.degree_pos hn hn0
+    rw [LinearMap.toAddMonoidHom_coe] at h
+    rw [h, map_zero] at hle
+    omega
+  modulus := id
+  monotone_modulus := monotone_id
+  degree_gt k hn hk := hk.trans_le (b.degree_le_degree_constr v hv hv0 hn)
+
+/-- The positive degree map of a basis sends `n` to `∑ⱼ nⱼ vⱼ`. -/
+theorem positiveDegreeMap_apply (n : N) :
+    b.positiveDegreeMap v hv hv0 n = b.constr ℤ v n :=
+  (rfl)
+
+/-- The positive degree map of a basis sends the basis vector `bⱼ` to `vⱼ`. -/
+@[simp]
+theorem positiveDegreeMap_self (j : ι) : b.positiveDegreeMap v hv hv0 (b j) = v j := by
+  rw [positiveDegreeMap_apply, constr_basis]
+
+/-- The positive degree map of a basis has the identity cutoff modulus. -/
+@[simp]
+theorem positiveDegreeMap_modulus : (b.positiveDegreeMap v hv hv0).modulus = id :=
+  (rfl)
+
+end DegreeMap
 
 end Module.Basis

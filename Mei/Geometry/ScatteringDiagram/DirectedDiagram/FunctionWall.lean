@@ -338,6 +338,21 @@ theorem isWallFunction_iff (g : κ) (f : F.completionˣ) :
         ((f ^ (D.wall j).normal (ρ p) : F.completionˣ) : F.completion) *
           F.toCompletion (single p c) := Iff.rfl
 
+/-- In the discrete grouping, a unit `f` is the wall function of the wall `j` when some invertible
+monomial `z^p` has `ν(ρ p) = 1` and the label of `j` multiplies every monomial `c z^q` by
+`f^(ν(ρ q))`, where `ν` is the normal of `j`. -/
+theorem isWallFunction_discrete (hν : ∀ j, TauCeti.IsPrimitive (D.wall j).normal) {j : ι}
+    {f : F.completionˣ} {p : Q} (hp : (D.wall j).normal (ρ p) = 1)
+    (hunit : IsUnit (F.toCompletion (single p (1 : A))))
+    (hσ : ∀ (q : Q) (c : A), σ (D.wall j).label (F.toCompletion (single q c)) =
+      ((f ^ (D.wall j).normal (ρ q) : F.completionˣ) : F.completion) *
+        F.toCompletion (single q c)) :
+    (discrete D hν π).IsWallFunction σ j f := by
+  refine ((discrete D hν π).isWallFunction_iff σ j f).mpr fun j' hj' => ?_
+  rw [discrete_group] at hj'
+  subst hj'
+  exact ⟨⟨p, hp, hunit⟩, by rw [label_discrete]; exact hσ⟩
+
 variable {G σ} in
 /-- Wall functions of groups with the same completed label are equal, provided some wall of the
 first group has the same normal as some wall of the second group. The groups may belong to

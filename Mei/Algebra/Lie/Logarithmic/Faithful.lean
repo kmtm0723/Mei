@@ -16,7 +16,9 @@ the tropical vertex action on the completed positive coefficient algebra is
 faithful. A surviving Lie degree is detected on a positive monomial; its output
 has degree too small to belong to the excluded coefficient filtration term.
 The coefficient test may have arbitrarily high degree, so this does not assert
-faithfulness of the representations at individual cutoffs.
+faithfulness of the representations at individual cutoffs. In particular two elements of the
+completed group acting equally on every positive monomial are equal
+(`TropicalVertexCoefficientAction.eq_of_completedBCHAction_toCompletion_single_eq`).
 
 This connects `exists_action_apply_single_coeff_ne_zero_of_notMem_degreeSubmodule`
 to `AlgFiltration.completedBCHAction_injective`, using the monomial ideal support
@@ -104,5 +106,31 @@ theorem completedBCHAction_injective
       (tropicalVertexGrading (R := R) d ρ)) := by
   let := isFiltrationDetected (R := R) d ρ hspan
   exact AlgFiltration.completedBCHAction_injective _ _ _
+
+/-- Monomials detect the completed tropical vertex group when its spatial exponents span the
+rational tangent space: two elements acting equally on every completed positive monomial `z^p`
+are equal. -/
+theorem eq_of_completedBCHAction_toCompletion_single_eq
+    (hspan : Submodule.span ℚ
+      ((fun p : Γ => (1 : ℚ) ⊗ₜ[ℤ] ρ p) '' (d.monoid : Set Γ)) = ⊤)
+    {g h : d.completedBCHGroup (tropicalVertexGrading (R := R) d ρ)}
+    (hgh : ∀ p : d.monoid,
+      (filtration (R := R) d d.monoid).completedBCHAction d (tropicalVertexGrading (R := R) d ρ) g
+          ((filtration (R := R) d d.monoid).toCompletion (single p 1)) =
+        (filtration (R := R) d d.monoid).completedBCHAction d
+          (tropicalVertexGrading (R := R) d ρ) h
+          ((filtration (R := R) d d.monoid).toCompletion (single p 1))) :
+    g = h := by
+  refine completedBCHAction_injective d ρ hspan
+    ((filtration (R := R) d d.monoid).completedBCHAction_eq_of_forall_toCompletion _ _ fun a => ?_)
+  -- Both actions are algebra maps on `R[P]`, and they agree on the monomials `z^p`.
+  have key : (((filtration (R := R) d d.monoid).completedBCHAction d
+        (tropicalVertexGrading (R := R) d ρ) g).toAlgHom.comp
+        ((filtration (R := R) d d.monoid).toCompletionₐ (R := R))) =
+      (((filtration (R := R) d d.monoid).completedBCHAction d
+        (tropicalVertexGrading (R := R) d ρ) h).toAlgHom.comp
+        ((filtration (R := R) d d.monoid).toCompletionₐ (R := R))) :=
+    AddMonoidAlgebra.algHom_ext (fun p => by simpa using hgh p) (Subsingleton.elim _ _)
+  simpa using AlgHom.congr_fun key a
 
 end Mei.TropicalVertexCoefficientAction
