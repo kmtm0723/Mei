@@ -167,6 +167,22 @@ theorem projection_shiftedCompletionMul (k : ℕ)
       Submodule.Quotient.mk (shiftedMul 𝒜 d.monoid p q u v) := by
   rw [projection_shiftedCompletionMul_eq_quotient, ← hu, ← hv, shiftedQuotientMul_mk]
 
+/-- Commuting ambient coefficients give symmetric completed products in a common chart. -/
+theorem shiftedCompletionMul_comm_same_origin
+    (hcomm : ∀ a b : A, Commute a b) (p : Γ) (x y : d.ShiftedCoefficients 𝒜 p) :
+    d.shiftedCompletionMul 𝒜 p p x y = d.shiftedCompletionMul 𝒜 p p y x := by
+  apply (d.shiftedFiltration 𝒜 (p + p)).completion_ext
+  intro k
+  obtain ⟨a, ha⟩ := ((d.shiftedFiltration 𝒜 p).submodule (k + 1)).mkQ_surjective
+    ((d.shiftedFiltration 𝒜 p).projection k x)
+  obtain ⟨b, hb⟩ := ((d.shiftedFiltration 𝒜 p).submodule (k + 1)).mkQ_surjective
+    ((d.shiftedFiltration 𝒜 p).projection k y)
+  rw [d.projection_shiftedCompletionMul 𝒜 p p k x y a b ha hb,
+    d.projection_shiftedCompletionMul 𝒜 p p k y x b a hb ha]
+  apply congrArg Submodule.Quotient.mk
+  apply Subtype.ext
+  simpa only [coe_shiftedMul] using (hcomm a b).eq
+
 /-- Original coefficients multiply before or after passage to the completion. -/
 @[simp]
 theorem shiftedCompletionMul_of
