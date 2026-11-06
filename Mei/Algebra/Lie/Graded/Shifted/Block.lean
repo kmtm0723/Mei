@@ -6,6 +6,7 @@ Authors: DeepSeek V4.1 Flash
 module
 
 public import Mei.Algebra.Lie.Graded.Shifted.Support
+public import Mei.Algebra.Lie.Filtered.Correction
 
 /-!
 # Degree blocks of truncated BCH actions
@@ -144,6 +145,31 @@ theorem labelBlock_apply_component_of_ne (k : ℕ) (g : d.truncatedGroup ℒ k)
       ⟨m.val, (d.mem_cutoff.mp m.property).1⟩ (d.mem_cutoff.mp m.property).2]
   -- The subtype index has value `m.val`; the coerced endomorphism and the
   -- linear equivalence apply the same underlying BCH action.
+  rfl
+
+/-- Every retained component of a BCH correction is a sum of its degree blocks
+on the preceding quotient. The output need not have highest retained degree. -/
+theorem shiftedQuotientComponent_truncatedBCHCorrection_eq_sum_labelBlock
+    (k : ℕ) (g : d.truncatedGroup ℒ (k + 1)) (x : (A).quotient k)
+    (n : d.cutoff (k + 1)) :
+    d.shiftedQuotientComponent ℳ p (p + n.val) (k + 1)
+        (degree_add_val_sub_self_le d p (k + 1) n)
+        ((A).truncatedBCHCorrection d ℒ k g x) =
+      ∑ m : d.cutoff k,
+        labelBlock d ℳ p ℒ (k + 1) g n
+          ⟨m.val, d.cutoff_mono (Nat.le_succ k) m.property⟩
+          (d.shiftedQuotientComponent ℳ p (p + m.val) k
+            (degree_add_val_sub_self_le d p k m) x) := by
+  classical
+  conv_lhs => rw [d.quotient_eq_sum_shiftedQuotientComponent ℳ p k x]
+  simp only [← Submodule.mkQ_apply, map_sum]
+  rw [← Finset.sum_coe_sort_eq_attach]
+  refine Fintype.sum_equiv (d.finite_cutoff k).subtypeEquivToFinset.symm _ _ ?_
+  intro m
+  simp only [Submodule.mkQ_apply, ModuleFiltration.truncatedBCHCorrection_mk,
+    labelBlock_apply, LinearMap.sub_apply, Module.End.one_apply, map_sub,
+    LinearEquiv.coe_coe]
+  -- The reindexing preserves ambient degrees; cutoff membership is proof-irrelevant.
   rfl
 
 /-- A retained coefficient block is independent of enlarging the cutoff, provided

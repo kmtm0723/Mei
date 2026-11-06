@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Geometry.ScatteringDiagram.ModuleProbe.WallEventEvaluation.Block
+public import Mei.Geometry.ScatteringDiagram.ModuleProbe.Segment.Block
 
 /-!
 # Probe recursions at straight incoming cuts
@@ -66,8 +67,8 @@ local notation "component" k:max n:max => d.shiftedQuotientComponent ℳ p (p + 
 /-- One endpoint arrangement makes the independent probe jump equal the event
 endpoint step at straight generic incoming cuts. The endpoint function may be any
 extension of the actual preceding-cutoff components. The formula holds for all independently
-chosen event displacements below one positive bound and every admissible segment in a highest
-retained degree's direction. -/
+chosen event displacements below one positive bound and every admissible segment in a retained
+degree's direction. -/
 theorem exists_eventwiseProbeStepArrangement
     (k : ℕ) (hBc : B.LevelConsistent (k + 1))
     (hD : D.LevelConsistent (k + 2))
@@ -77,7 +78,7 @@ theorem exists_eventwiseProbeStepArrangement
     (F : ExceptionalArrangement V) :
     ∃ G : ExceptionalArrangement V,
       ∀ (x y : WallComplement (B.activeSupport (k + 1))), G.IsGeneric y.val →
-        ∀ (e : x ⟶ y) (n : d.cutoff (k + 1)), d.degree n.val = k + 1 →
+        ∀ (e : x ⟶ y) (n : d.cutoff (k + 1)),
           ∀ T : ℝ, 0 < T → x.val - y.val = T • i (ρ (p + n.val)) →
           ∀ f : PositiveDegrees.ShiftedEndpointFunction d ℳ p V (k + 1),
             (∀ (z : WallComplement (B.activeSupport k)) (m : d.cutoff k),
@@ -108,7 +109,7 @@ theorem exists_eventwiseProbeStepArrangement
     (Nat.le_succ k) (hBc.mono (Nat.le_succ k)) F
     (fun n : d.cutoff (k + 1) => i (ρ (p + n.val)))
     (fun n : d.cutoff (k + 1) => i (ρ (p + n.val)))
-  refine ⟨G, fun x y hy e n hn T hT hxy f hf => ?_⟩
+  refine ⟨G, fun x y hy e n T hT hxy f hf => ?_⟩
   let τ := (orderedCrossingTimes e).reverse
   let g := labels (k + 1) e
   let event (b : Fin g.length) := crossingWallEvent (B.activeNormal (k + 1)) e
@@ -175,9 +176,8 @@ theorem exists_eventwiseProbeStepArrangement
   · rw [eventEndpointStep_apply_sum_cutoff d ℳ p ℒ H h B k (k + 1) (Nat.le_refl _)
       _ _ f y.val n,
       sum_segmentWallEvents]
-    have hsum := shiftedQuotientComponent_extendedCoefficientField_eq_add_sum_crossings
-      d ℳ p ℒ H h h' D B k hBc hD hB e (p + n.val)
-      (by simpa only [add_sub_cancel_left] using hn)
+    have hsum := shiftedQuotientComponent_extendedCoefficientField_eq_add_sum_labelBlock
+      d ℳ p ℒ H h h' D B k hBc hD hB e n
     dsimp only at hsum
     rw [hsum]
     congr 1
@@ -185,18 +185,10 @@ theorem exists_eventwiseProbeStepArrangement
     refine Fintype.sum_equiv (finCongr (by
       simp only [List.length_map, List.length_reverse])) _ _ ?_
     intro b
-    rw [← Finset.sum_coe_sort_eq_attach]
-    refine Fintype.sum_equiv (d.finite_cutoff k).subtypeEquivToFinset.symm _ _ ?_
-    intro m
-    let m' : d.cutoff k := ⟨m.val, (d.finite_cutoff k).mem_toFinset.mp m.property⟩
-    let m'' : d.cutoff (k + 1) := ⟨m.val, d.mem_cutoff.mpr
-      ⟨(d.mem_cutoff.mp m'.property).1,
-        (d.mem_cutoff.mp m'.property).2.trans (Int.ofNat_le.mpr (Nat.le_succ k))⟩⟩
-    have hmn : m.val ≠ n.val := by
-      have hmdeg := (d.mem_cutoff.mp m'.property).2
-      intro he
-      rw [he, hn] at hmdeg
-      omega
+    apply Finset.sum_congr rfl
+    intro m _
+    let m' : d.cutoff k := m
+    let m'' : d.cutoff (k + 1) := ⟨m.val, d.cutoff_mono (Nat.le_succ k) m.property⟩
     have htmem : τ[b.val]'(by simpa only [g, List.length_map] using b.isLt) ∈
         orderedCrossingTimes e := List.mem_reverse.mp (List.getElem_mem (by
           simpa only [g, List.length_map] using b.isLt))
@@ -206,11 +198,11 @@ theorem exists_eventwiseProbeStepArrangement
         (Ioo_subset_Icc_self (mem_Ioo_of_mem_orderedCrossingTimes e htmem)) _
         ((WallEvent.mem_support _ _ _).mpr fun c => mem_crossingWallEvent _ e _ htmem c)
         (normal_sign_crossingWallEvent _ e _ htmem)
-    rw [hlabel]
-    have hblock := eventBlock_apply_of_ne d ℳ p ℒ H h B
-      (k + 1) (k + 1) (Nat.le_refl _) (event b) n m'' hmn
-    simp only [d.truncationMap_refl, LieHom.bchGroupMap_id, MonoidHom.id_apply] at hblock
-    rw [← hblock]
+    have hblock : PositiveDegrees.labelBlock d ℳ p ℒ (k + 1) g[b] n m'' =
+        eventBlock d ℳ p ℒ H h B (k + 1) (k + 1) (Nat.le_refl _) (event b) n m'' := by
+      rw [hlabel, eventBlock_def, d.truncationMap_refl, LieHom.bchGroupMap_id,
+        MonoidHom.id_apply]
+    rw [hblock]
     let input := (A).truncatedBCHAction d ℒ k
       ((d.truncationMap ℒ (Nat.le_succ k)).bchGroupMap (g.drop (b.val + 1)).prod)
       (field k (hBc.mono (Nat.le_succ k))
@@ -240,8 +232,8 @@ theorem exists_eventwiseProbeStepArrangement
 /-- One endpoint arrangement makes the independent probe jump equal the event
 endpoint step at straight generic incoming cuts. The endpoint function may be any
 extension of the actual preceding-cutoff components. The formula holds for every
-sufficiently small common displacement and every admissible segment in a highest
-retained degree's direction. -/
+sufficiently small common displacement and every admissible segment in a retained
+degree's direction. -/
 theorem exists_straightProbeStepArrangement
     (k : ℕ) (hBc : B.LevelConsistent (k + 1))
     (hD : D.LevelConsistent (k + 2))
@@ -251,7 +243,7 @@ theorem exists_straightProbeStepArrangement
     (F : ExceptionalArrangement V) :
     ∃ G : ExceptionalArrangement V,
       ∀ (x y : WallComplement (B.activeSupport (k + 1))), G.IsGeneric y.val →
-        ∀ (e : x ⟶ y) (n : d.cutoff (k + 1)), d.degree n.val = k + 1 →
+        ∀ (e : x ⟶ y) (n : d.cutoff (k + 1)),
           ∀ T : ℝ, 0 < T → x.val - y.val = T • i (ρ (p + n.val)) →
           ∀ f : PositiveDegrees.ShiftedEndpointFunction d ℳ p V (k + 1),
             (∀ (z : WallComplement (B.activeSupport k)) (m : d.cutoff k),
@@ -277,8 +269,8 @@ theorem exists_straightProbeStepArrangement
                       i (ρ (p + r.val)) + δ • i (ρ (p + m.val))) f y.val n := by
   obtain ⟨G, hG⟩ := exists_eventwiseProbeStepArrangement d ℳ p ℒ H h h' D B
     k hBc hD hB F
-  refine ⟨G, fun x y hy e n hn T hT hxy f hf => ?_⟩
-  obtain ⟨θ, hθ, hη⟩ := hG x y hy e n hn T hT hxy f hf
+  refine ⟨G, fun x y hy e n T hT hxy f hf => ?_⟩
+  obtain ⟨θ, hθ, hη⟩ := hG x y hy e n T hT hxy f hf
   filter_upwards [Ioo_mem_nhdsGT hθ] with δ hδ
   exact hη (fun _ => δ) (fun _ _ => hδ)
 
