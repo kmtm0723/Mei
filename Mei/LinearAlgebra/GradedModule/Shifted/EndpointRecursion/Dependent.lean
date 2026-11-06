@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mei.LinearAlgebra.GradedModule.Shifted.EndpointRecursion.Local
-public import Mathlib.Data.Finset.Sigma
 
 /-!
 # Lower-degree recursions with degree-dependent event types

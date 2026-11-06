@@ -40,29 +40,6 @@ variable {R Λ V E ι κ' : Type*} {Γ : Type} {M L : Type u} [CommRing R] [Alge
   {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
   (B : DirectedDiagram (d := d) h H ι)
 
-
-/-- A retained output, viewed at the cutoff equal to its degree. -/
-abbrev degreeCutoffIndex {K : ℕ} (n : d.cutoff K) :
-    d.cutoff (d.degree n.val).toNat :=
-  ⟨n.val, d.mem_cutoff.mpr ⟨(d.mem_cutoff.mp n.property).1, Int.self_le_toNat _⟩⟩
-
-omit [DecidableEq Γ] in
-/-- The degree-cutoff inclusion retains the output index. -/
-@[simp] theorem degreeCutoffIndex_val {K : ℕ} (n : d.cutoff K) :
-    (degreeCutoffIndex d n).val = n.val := by rfl
-
-/-- A strictly preceding input also lies in the output's degree cutoff. -/
-abbrev precedingDegreeCutoffIndex {K : ℕ} (n m : d.cutoff K)
-    (hmn : d.Precedes m.val n.val) : d.cutoff (d.degree n.val).toNat :=
-  ⟨m.val, d.mem_cutoff.mpr ⟨(d.mem_cutoff.mp m.property).1,
-    (d.degree_lt_of_precedes hmn).le.trans (Int.self_le_toNat _)⟩⟩
-
-omit [DecidableEq Γ] in
-/-- The preceding input retains its index at the output's cutoff. -/
-@[simp] theorem precedingDegreeCutoffIndex_val {K : ℕ} (n m : d.cutoff K)
-    (hmn : d.Precedes m.val n.val) :
-    (precedingDegreeCutoffIndex d n m hmn).val = m.val := by rfl
-
 open Classical in
 /-- An event block at the output's geometric cutoff, with the normal-velocity
 condition required by its actual incoming cut. -/
@@ -72,7 +49,7 @@ def degreeEventBlock (K : ℕ) (n : d.cutoff K)
   if b.normal (B.activeNormal (d.degree n.val).toNat) (i (ρ (p + n.val))) =
       b.normal (B.activeNormal (d.degree n.val).toNat) (i (ρ (p + m.val))) then
     eventBlock d ℳ p ℒ H h B _ _ (Nat.le_refl _)
-      b (degreeCutoffIndex d n) (precedingDegreeCutoffIndex d n m hmn)
+      b (d.degreeCutoffIndex n) (d.precedingDegreeCutoffIndex n m hmn)
   else 0
 
 open Classical in
@@ -84,7 +61,7 @@ theorem degreeEventBlock_def (K : ℕ) (n : d.cutoff K)
       if b.normal (B.activeNormal (d.degree n.val).toNat) (i (ρ (p + n.val))) =
           b.normal (B.activeNormal (d.degree n.val).toNat) (i (ρ (p + m.val))) then
         eventBlock d ℳ p ℒ H h B _ _ (Nat.le_refl _)
-          b (degreeCutoffIndex d n) (precedingDegreeCutoffIndex d n m hmn)
+          b (d.degreeCutoffIndex n) (d.precedingDegreeCutoffIndex n m hmn)
       else 0 := by rfl
 
 /-- The ambient endpoint step assembled from degree-dependent geometric inventories. -/
@@ -136,7 +113,7 @@ theorem degreeEventEndpointStep_apply_eq (K : ℕ)
       eventEndpointStep d ℳ p ℒ H h B _ _ (Nat.le_refl _)
         (fun _ _ => events Q n)
         (fun b X _ m => point n b X ⟨m.val, d.cutoff_mono hnK m.property⟩)
-        (PositiveDegrees.shiftedEndpointRestrict d ℳ p hnK F) Q (degreeCutoffIndex d n) := by
+        (PositiveDegrees.shiftedEndpointRestrict d ℳ p hnK F) Q (d.degreeCutoffIndex n) := by
   classical
   rw [degreeEventEndpointStep_apply, eventEndpointStep_apply]
   apply Finset.sum_congr rfl
@@ -150,27 +127,27 @@ theorem degreeEventEndpointStep_apply_eq (K : ℕ)
     have hnot : ¬ d.Precedes m.val n.val := by
       intro hmn
       apply hm
-      exact ⟨precedingDegreeCutoffIndex d n m hmn, Subtype.ext rfl⟩
+      exact ⟨d.precedingDegreeCutoffIndex n m hmn, Subtype.ext rfl⟩
     simp only [hnot, ↓reduceDIte]
   · intro m
     by_cases hmn : d.Precedes m.val n.val
-    · simp only [degreeCutoffIndex, hmn, ↓reduceDIte, degreeEventBlock_def,
-        precedingDegreeCutoffIndex, PositiveDegrees.shiftedEndpointRestrict_apply]
+    · simp only [PositiveDegrees.degreeCutoffIndex, hmn, ↓reduceDIte, degreeEventBlock_def,
+        PositiveDegrees.precedingDegreeCutoffIndex, PositiveDegrees.shiftedEndpointRestrict_apply]
     · simp only [hmn, ↓reduceDIte]
 
 /-- A local recurrence assembled from the degree-specific event inventories has
-a finite-sum solution whenever compatible lower-degree reads stay in their domains. -/
+a finite-sum solution whenever nonzero compatible lower-degree blocks read in their domains.
+Zero blocks impose no condition on the input point. -/
 theorem eqOn_degreeEventEndpointStep_finiteRecursion (K : ℕ)
     (events : (Q : V) → (n : d.cutoff K) →
       Finset (WallEvent (B.active (d.degree n.val).toNat)))
     (point : (n : d.cutoff K) → WallEvent (B.active (d.degree n.val).toNat) →
       V → d.cutoff K → V)
     (Ω : d.cutoff K → Set V)
-    (hΩ : ∀ Q n, Q ∈ Ω n → ∀ b ∈ events Q n, ∀ m,
-      d.Precedes m.val n.val →
+    (hΩ : ∀ Q n, Q ∈ Ω n → ∀ b ∈ events Q n, ∀ m (hmn : d.Precedes m.val n.val),
       b.normal (B.activeNormal (d.degree n.val).toNat) (i (ρ (p + n.val))) =
         b.normal (B.activeNormal (d.degree n.val).toNat) (i (ρ (p + m.val))) →
-      point n b Q m ∈ Ω m)
+      degreeEventBlock d ℳ p ℒ H h B K n b m hmn ≠ 0 → point n b Q m ∈ Ω m)
     (a F : PositiveDegrees.ShiftedEndpointFunction d ℳ p V K)
     (hF : ∀ Q n, Q ∈ Ω n → F Q n = a Q n +
       degreeEventEndpointStep d ℳ p ℒ H h B K events point F Q n) :
@@ -180,7 +157,7 @@ theorem eqOn_degreeEventEndpointStep_finiteRecursion (K : ℕ)
   apply PositiveDegrees.eqOn_finiteRecursion_of_shiftedDependentLowerStep_eq_add
     d ℳ p K events (degreeEventBlock d ℳ p ℒ H h B K) point Ω ?_ a F hF
   intro Q n hQ b hb m hmn hblock
-  apply hΩ Q n hQ b hb m hmn
+  apply hΩ Q n hQ b hb m hmn ?_ hblock
   by_contra hnormal
   exact hblock (by simp only [degreeEventBlock_def, hnormal, ↓reduceIte])
 

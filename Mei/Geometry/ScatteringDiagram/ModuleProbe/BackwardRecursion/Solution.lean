@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mei.Geometry.ScatteringDiagram.ModuleProbe.BackwardRecursion.Domains
-public import Mei.Geometry.ScatteringDiagram.ModuleProbe.Asymptotic.Extension
 
 /-!
 # A finite recursive solution for the actual coherent probe field
@@ -146,8 +145,9 @@ theorem exists_coherentProbeEndpoint_finiteRecursion
       simp only [events, hQ, ↓reduceDIte, hn, ne_eq, not_true_eq_false,
         Finset.notMem_empty] at hb
     simp only [events, dite_eq_left hQ, dite_eq_left hn] at hb
-    simpa only [point, dite_eq_left hQ, dite_eq_left hn, precedingDegreeCutoffIndex_val] using
-      (hδ Q n hQ hn).1.1 b hb (precedingDegreeCutoffIndex d n m hmn) hmn hnormal
+    simpa only [point, dite_eq_left hQ, dite_eq_left hn,
+      PositiveDegrees.precedingDegreeCutoffIndex_val] using
+      (hδ Q n hQ hn).1.1 b hb (d.precedingDegreeCutoffIndex n m hmn) hmn hnormal
   have hrec (Q : V) (n : d.cutoff K) (hQ : (E n).IsGeneric Q) :
       F Q n = source Q n + U F Q n := by
     by_cases hn : n.val = 0
@@ -182,11 +182,21 @@ theorem exists_coherentProbeEndpoint_finiteRecursion
       rw [degreeEventEndpointStep_apply_eq d ℳ p ℒ H h B K events point F Q n
         (hnK Q n hQ hn), hrestrict]
       have houtput := coherentProbeEndpointFunction_cutoff_inclusion d ℳ p ℒ H h h'
-        D B (hnK Q n hQ hn) (Nat.le_refl K) hBc Q (degreeCutoffIndex d n)
+        D B (hnK Q n hQ hn) (Nat.le_refl K) hBc Q (d.degreeCutoffIndex n)
+      have hreinclude : (⟨(d.degreeCutoffIndex n).val,
+          d.cutoff_mono (hnK Q n hQ hn) (d.degreeCutoffIndex n).property⟩ : d.cutoff K) = n :=
+        Subtype.ext (d.degreeCutoffIndex_val n)
+      -- Compare in M so the explicit index equality acts on a constant codomain.
+      have hindexVal := congrArg (fun m : d.cutoff K =>
+        (coherentProbeEndpointFunction d ℳ p ℒ H h h' D B
+          K K (Nat.le_refl _) hBc Q m : M)) hreinclude
+      have houtputVal := hindexVal.symm.trans (congrArg Subtype.val houtput)
+      -- The index transport is explicit above; this show only unfolds the local name F.
       rw [show F Q n = coherentProbeEndpointFunction d ℳ p ℒ H h h' D B
-        (d.degree n.val).toNat K (hnK Q n hQ hn) hBc Q (degreeCutoffIndex d n) from houtput]
+        (d.degree n.val).toNat K (hnK Q n hQ hn) hBc Q (d.degreeCutoffIndex n) from
+          Subtype.ext houtputVal]
       simpa only [eventEndpointStep_apply, events, point, dite_eq_left hQ, dite_eq_left hn,
-        degreeCutoffIndex_val] using (hδ Q n hQ hn).1.2
+        PositiveDegrees.degreeCutoffIndex_val] using (hδ Q n hQ hn).1.2
   refine ⟨E, events, point, hEA, ?_, ?_, hread,
     degreeEventEndpointStep_pow_eq_zero d ℳ p ℒ H h B K events point, hrec, ?_⟩
   · intro Q n hn
@@ -201,6 +211,7 @@ theorem exists_coherentProbeEndpoint_finiteRecursion
     · intro b hb m
       simp only [point, dite_eq_left hQ, dite_eq_left hn]
   · exact eqOn_degreeEventEndpointStep_finiteRecursion d ℳ p ℒ H h B K events point
-      (fun n => {Q | (E n).IsGeneric Q}) hread source F hrec
+      (fun n => {Q | (E n).IsGeneric Q})
+      (fun Q n hQ b hb m hmn hnormal _ => hread Q n hQ b hb m hmn hnormal) source F hrec
 
 end Mei.ModuleProbe

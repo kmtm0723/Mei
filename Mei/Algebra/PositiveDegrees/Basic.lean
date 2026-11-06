@@ -118,6 +118,15 @@ def cutoff (k : ℕ) : Set N := {n | n ∈ d.monoid ∧ d.degree n ≤ k}
 theorem mem_cutoff {k : ℕ} {n : N} :
     n ∈ d.cutoff k ↔ n ∈ d.monoid ∧ d.degree n ≤ k := Iff.rfl
 
+/-- A retained output, viewed at the cutoff equal to its degree. -/
+abbrev degreeCutoffIndex {K : ℕ} (n : d.cutoff K) :
+    d.cutoff (d.degree n.val).toNat :=
+  ⟨n.val, d.mem_cutoff.mpr ⟨(d.mem_cutoff.mp n.property).1, Int.self_le_toNat _⟩⟩
+
+/-- The degree-cutoff inclusion retains the output index. -/
+@[simp] theorem degreeCutoffIndex_val {K : ℕ} (n : d.cutoff K) :
+    (degreeCutoffIndex d n).val = n.val := by rfl
+
 /-- Every degree cutoff is finite. -/
 theorem finite_cutoff (k : ℕ) : (d.cutoff k).Finite := d.finite_le k
 
@@ -223,6 +232,17 @@ theorem degree_lt_of_precedes {m n : G} (h : d.Precedes m n) :
   have := congrArg d.degree hsplit
   simp only [map_add] at this
   omega
+
+/-- A strictly preceding input also lies in the output's degree cutoff. -/
+abbrev precedingDegreeCutoffIndex {K : ℕ} (n m : d.cutoff K)
+    (hmn : d.Precedes m.val n.val) : d.cutoff (d.degree n.val).toNat :=
+  ⟨m.val, d.mem_cutoff.mpr ⟨(d.mem_cutoff.mp m.property).1,
+    (d.degree_lt_of_precedes hmn).le.trans (Int.self_le_toNat _)⟩⟩
+
+/-- The preceding input retains its index at the output's cutoff. -/
+@[simp] theorem precedingDegreeCutoffIndex_val {K : ℕ} (n m : d.cutoff K)
+    (hmn : d.Precedes m.val n.val) :
+    (precedingDegreeCutoffIndex d n m hmn).val = m.val := by rfl
 
 /-- The output-degree bound after cancelling an ambient shift. -/
 theorem degree_add_val_sub_self_le (p : G) (k : ℕ) (n : d.cutoff k) :

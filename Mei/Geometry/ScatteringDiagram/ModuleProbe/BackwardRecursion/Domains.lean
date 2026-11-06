@@ -78,14 +78,14 @@ theorem exists_coherentProbeRecursionDomains
                       (Q + segmentEventParameter (B.activeNormal (d.degree n.val).toNat) e T b •
                         i (ρ (p + n.val)) + δ • i (ρ (p + m.val)))) ∧
                 coherentProbeEndpointFunction d ℳ p ℒ H h h' D B
-                  (d.degree n.val).toNat K hnK hBc Q (degreeCutoffIndex d n) =
+                  (d.degree n.val).toNat K hnK hBc Q (d.degreeCutoffIndex n) =
                   eventEndpointStep d ℳ p ℒ H h B _ _ (Nat.le_refl _)
                     (fun _ _ => segmentWallEvents (B.activeNormal (d.degree n.val).toNat) e)
                     (fun b X r m => X +
                       segmentEventParameter (B.activeNormal (d.degree n.val).toNat) e T b •
                         i (ρ (p + r.val)) + δ • i (ρ (p + m.val)))
                     (coherentProbeEndpointFunction d ℳ p ℒ H h h' D B
-                      (d.degree n.val).toNat K hnK hBc) Q (degreeCutoffIndex d n) := by
+                      (d.degree n.val).toNat K hnK hBc) Q (d.degreeCutoffIndex n) := by
   classical
   let := h.finiteDimensional
   obtain ⟨S, hS⟩ := exists_ray_admissibilityArrangement
@@ -175,10 +175,10 @@ theorem exists_coherentProbeRecursionDomains
     have hrec := (hnext _ hnNat hnK (domains ((d.degree n.val).toNat - 1))).2 Q houtQ
     obtain ⟨y, hy, hrec⟩ := hrec
     refine ⟨hnK, y, hy, ?_⟩
-    have hn' : d.degree (degreeCutoffIndex d n).val = ((d.degree n.val).toNat : ℤ) := by
-      rw [degreeCutoffIndex_val]
+    have hn' : d.degree (d.degreeCutoffIndex n).val = ((d.degree n.val).toNat : ℤ) := by
+      rw [PositiveDegrees.degreeCutoffIndex_val]
       omega
-    filter_upwards [hrec (degreeCutoffIndex d n) hn'] with T hT
+    filter_upwards [hrec (d.degreeCutoffIndex n) hn'] with T hT
     obtain ⟨hT, htail, x, e, hx, hcuts⟩ := hT
     refine ⟨hT, htail, x, e, hx, ?_⟩
     filter_upwards [hcuts] with δ hδ
