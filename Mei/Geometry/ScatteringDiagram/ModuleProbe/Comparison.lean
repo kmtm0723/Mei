@@ -63,8 +63,9 @@ local notation "component" k:max n:max => d.shiftedQuotientComponent ℳ p (p + 
 
 /-- The finite probe field equals the actual simultaneous-event weighted ray
 sum on the common generic locus of finitely many arrangements. Extra probe
-walls are outgoing, and the homogeneous finite input represents the same entire
-incoming coefficient as the probe. No geometric recursion is assumed. -/
+walls carrying the compared charge-one degrees are outgoing, and the homogeneous
+finite input represents the same entire incoming coefficient as the probe. No
+geometric recursion is assumed. -/
 theorem exists_extendedCoefficientField_eq_cutoffWallEventEvaluation
     (hinitial : ∀ c, D.wall (.inl c) =
       (initialDiagram d ℳ p ℒ H h h' D₀ a).wall c)
@@ -73,7 +74,9 @@ theorem exists_extendedCoefficientField_eq_cutoffWallEventEvaluation
     (hB : (D.map (chargeZeroGradedLieHom d ℳ p ℒ)
       (chargeZeroGradedLieHom_mem_wall d ℳ p ℒ H)).LevelEquivalent
       (cylinderDiagram d ℳ p ℒ H h h' B) K)
-    (hout : ∀ c, Sum.inr c ∈ D.active (K + 1) → (D.wall (.inr c)).Outgoing)
+    (hout : ∀ n : d.cutoff K, ∀ c, Sum.inr c ∈ D.active (K + 1) →
+      (p + n.val, 1) ∈ (D.wall (.inr c)).ray.rayDegrees →
+        (D.wall (.inr c)).Outgoing)
     (b : (d.shiftedQuotientGrading ℳ p K).piece 0)
     (hb : d.shiftedQuotientComponent ℳ p p K (by simp only [sub_self, map_zero]; omega)
       b = a) :
@@ -96,7 +99,8 @@ theorem exists_extendedCoefficientField_eq_cutoffWallEventEvaluation
       simpa only [d.cutoff_zero, mem_singleton_iff] using n.property
     have hp := shiftedQuotientComponent_extendedCoefficientField_self
       d ℳ p ℒ H h h' D₀ a D B hinitial 0 hD hBc hB
-      (fun c hc _ => hout c hc) ⟨Q, fun c => (B.not_mem_active_zero c.val c.property).elim⟩
+      (fun c hc hdeg => hout n c hc (by rwa [hn, add_zero]))
+      ⟨Q, fun c => (B.not_mem_active_zero c.val c.property).elim⟩
     have hr := hA Q (hQ n) 0 (Nat.le_refl _) b
     -- The only retained ambient index is `p`; transport its dependent bound
     -- at the same time to avoid inserting casts into component values.
@@ -119,7 +123,7 @@ theorem exists_extendedCoefficientField_eq_cutoffWallEventEvaluation
       exact hy ▸ y.notMem
     obtain ⟨F, f, hFA, hf, hF⟩ := exists_commonProbeWallEventRecursionDomains
       d ℳ p ℒ H h h' D₀ a D B hinitial k hBc hD hB
-      (fun _ _ c hc _ => hout c hc) (A.union C)
+      (fun n _ c hc hdeg => hout n c hc hdeg) (A.union C)
     let Ω (n : d.cutoff (k + 1)) := {Q | (F n).IsGeneric Q}
     let P := coherentProbeEndpointFunction d ℳ p ℒ H h h' D B
       (k + 1) (k + 1) (Nat.le_refl _) hBc
@@ -170,7 +174,8 @@ theorem exists_extendedCoefficientField_eq_cutoffWallEventEvaluation
           · intro _
             have hp := shiftedQuotientComponent_extendedCoefficientField_self
               d ℳ p ℒ H h h' D₀ a D B hinitial (k + 1) hD hBc hB
-              (fun c hc _ => hout c (D.active_mono (by omega) hc)) ⟨Q, hallow Q n hQ⟩
+              (fun c hc hdeg => hout n c (D.active_mono (by omega) hc)
+                (by rwa [hn, add_zero])) ⟨Q, hallow Q n hQ⟩
             dsimp only [P, source]
             rw [coherentProbeEndpointFunction_apply_of_allowed d ℳ p ℒ H h h' D B
               (k + 1) (k + 1) (Nat.le_refl _) hBc Q n (hallow Q n hQ),
