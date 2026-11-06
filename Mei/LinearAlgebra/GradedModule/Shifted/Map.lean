@@ -438,16 +438,53 @@ theorem completionCoefficientMap_of (p : Γ) (a : shiftedSubmodule ℳ d.monoid 
     (d.shiftedCoefficientMap ℳ 𝓝 p f hf) id monotone_id
     (fun k _ ha => d.shiftedCoefficientMap_mem_filtration ℳ 𝓝 p f hf k ha) a
 
+omit [DirectSum.Decomposition 𝓝] in
 /-- Degree-preserving completed maps commute with enlarging a support translate. -/
 theorem completionCoefficientMap_inclusion (p q : Γ) (hpq : p - q ∈ d.monoid)
     (x : d.ShiftedCoefficients ℳ p) :
     d.completionCoefficientMap ℳ 𝓝 q f hf (d.shiftedCompletedInclusion ℳ p q hpq x) =
       d.shiftedCompletedInclusion 𝓝 p q hpq (d.completionCoefficientMap ℳ 𝓝 p f hf x) := by
-  apply d.shiftedCoefficients_ext 𝓝 q
-  intro u
-  apply Subtype.ext
-  simp only [coe_shiftedHomogeneousComponent_completionCoefficientMap,
-    shiftedHomogeneousComponent_inclusion]
+  have hi : (d.shiftedCoefficientMap ℳ 𝓝 q f hf).comp
+      (shiftedSupportInclusion ℳ d.monoid p q hpq) =
+      (shiftedSupportInclusion 𝓝 d.monoid p q hpq).comp
+        (d.shiftedCoefficientMap ℳ 𝓝 p f hf) := by
+    ext a
+    simp only [LinearMap.comp_apply, coe_shiftedCoefficientMap, coe_shiftedSupportInclusion]
+  have h₁ := ModuleFiltration.completionMap_comp
+    (d.shiftedFiltration ℳ p) (d.shiftedFiltration ℳ q)
+    (shiftedSupportInclusion ℳ d.monoid p q hpq) id monotone_id
+    (fun k => d.shiftedSupportInclusion_filtered ℳ p q hpq (k + 1))
+    (d.shiftedFiltration 𝓝 q) (d.shiftedCoefficientMap ℳ 𝓝 q f hf) id monotone_id
+    (fun k _ ha => d.shiftedCoefficientMap_mem_filtration ℳ 𝓝 q f hf k ha)
+  have h₂ := ModuleFiltration.completionMap_comp
+    (d.shiftedFiltration ℳ p) (d.shiftedFiltration 𝓝 p)
+    (d.shiftedCoefficientMap ℳ 𝓝 p f hf) id monotone_id
+    (fun k _ ha => d.shiftedCoefficientMap_mem_filtration ℳ 𝓝 p f hf k ha)
+    (d.shiftedFiltration 𝓝 q) (shiftedSupportInclusion 𝓝 d.monoid p q hpq) id monotone_id
+    (fun k => d.shiftedSupportInclusion_filtered 𝓝 p q hpq (k + 1))
+  simp only [hi] at h₁
+  simpa only [completionCoefficientMap_eq_completionMap, shiftedCompletedInclusion_def,
+    LinearMap.comp_apply] using congrArg (fun F => F x) (h₁.symm.trans h₂)
+
+/-- Degree-preserving completion maps respect composition without a target decomposition. -/
+theorem completionCoefficientMap_comp {P : Type*} [AddCommGroup P] [Module R P]
+    (ℒ : Γ → Submodule R P) (g : N →ₗ[R] P) (hg : ∀ u, 𝓝 u ≤ (ℒ u).comap g)
+    (p : Γ) (x : d.ShiftedCoefficients ℳ p) :
+    d.completionCoefficientMap 𝓝 ℒ p g hg (d.completionCoefficientMap ℳ 𝓝 p f hf x) =
+      d.completionCoefficientMap ℳ ℒ p (g.comp f) (fun u _ ha => hg u (hf u ha)) x := by
+  have hi : (d.shiftedCoefficientMap 𝓝 ℒ p g hg).comp
+      (d.shiftedCoefficientMap ℳ 𝓝 p f hf) =
+      d.shiftedCoefficientMap ℳ ℒ p (g.comp f) (fun u _ ha => hg u (hf u ha)) := by
+    ext a
+    simp only [LinearMap.comp_apply, coe_shiftedCoefficientMap]
+  have h := ModuleFiltration.completionMap_comp
+    (d.shiftedFiltration ℳ p) (d.shiftedFiltration 𝓝 p)
+    (d.shiftedCoefficientMap ℳ 𝓝 p f hf) id monotone_id
+    (fun k _ ha => d.shiftedCoefficientMap_mem_filtration ℳ 𝓝 p f hf k ha)
+    (d.shiftedFiltration ℒ p) (d.shiftedCoefficientMap 𝓝 ℒ p g hg) id monotone_id
+    (fun k _ ha => d.shiftedCoefficientMap_mem_filtration 𝓝 ℒ p g hg k ha)
+  simpa only [hi, Function.id_comp, completionCoefficientMap_eq_completionMap,
+    LinearMap.comp_apply] using (congrArg (fun F => F x) h).symm
 
 end FixedCompletion
 
