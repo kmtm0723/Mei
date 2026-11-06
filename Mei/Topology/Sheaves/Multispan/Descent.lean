@@ -217,7 +217,8 @@ theorem existsUnique_sections_descent_of_local_on_generators
     have he := congrArg (fun q => q.val (.left b)) (LinearMap.congr_fun hℓ zP)
     simpa only [ev, LinearMap.comp_apply, SemimoduleCat.sectionsMap_apply,
       SemimoduleCat.sectionsEval_apply, Submodule.subtype_apply] using he
-  have ha := hspan (show a ∈ Submodule.span R s from hs.ge Submodule.mem_top)
+  have has : a ∈ Submodule.span R s := hs.ge Submodule.mem_top
+  have ha := hspan has
   simpa only [Submodule.mem_comap, ev, LinearMap.comp_apply,
     SemimoduleCat.sectionsEval_apply] using ha
 
