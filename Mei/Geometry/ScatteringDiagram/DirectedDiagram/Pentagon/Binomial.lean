@@ -395,14 +395,14 @@ theorem isPrimitive_outgoingWall_normal : TauCeti.IsPrimitive hD.outgoingWall.no
   TauCeti.isPrimitive_def.mpr ⟨AddMonoidHom.toIntLinearMap (AddMonoidHom.eval (ρ n₁)),
     by simp [hD.apply_fst_fst, hD.apply_snd_fst]⟩
 
-/-- If every index is `j₁` or `j₂`, the coorientations of the walls of `D` are primitive: `μ₁`
-takes the value one at `-ρ n₂` and `μ₂` takes the value one at `ρ n₁`. -/
-theorem isPrimitive_normal_of_forall_eq_or_eq (hD' : ∀ j, j = j₁ ∨ j = j₂)
-    (x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}) :
+/-- The coorientation of a wall of `D` at the index `j₁` or `j₂` is primitive: `μ₁` takes the value
+one at `-ρ n₂` and `μ₂` takes the value one at `ρ n₁`. -/
+theorem isPrimitive_normal_of_eq_or_eq
+    {x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}} (hx : x.1 = j₁ ∨ x.1 = j₂) :
     TauCeti.IsPrimitive (D.wall x).normal := by
   obtain ⟨j, w⟩ := x
   rw [hD.isRayFactorPresentation.normal]
-  rcases hD' j with rfl | rfl
+  rcases hx with (rfl : j = j₁) | (rfl : j = j₂)
   · exact TauCeti.isPrimitive_def.mpr ⟨AddMonoidHom.toIntLinearMap (AddMonoidHom.eval (ρ (-n₂))),
       by simp [hD.apply_fst_snd]⟩
   · exact TauCeti.isPrimitive_def.mpr ⟨AddMonoidHom.toIntLinearMap (AddMonoidHom.eval (ρ n₁)),
@@ -488,18 +488,17 @@ variable (hc₁ : c₁ ∈ φ.rangeS) (hc₂ : c₂ ∈ φ.rangeS)
 
 omit [Fact (d.monoid ≤ Q)] [HasUniqueDiv Γ] in
 include hQ₁ hQ₂ in
-/-- If every index is `j₁` or `j₂`, and `Q` contains exponents `p₁, p₂` with invertible monomials,
-`-p₁, -p₂ ∈ Q`, `μ₁(ρ p₁) = 1` and `μ₂(ρ p₂) = 1`, the normal of every wall of `D` takes the value
-one at one of them: `p₁` for the walls cooriented by `μ₁`, and `p₂` for those cooriented by
-`μ₂`. -/
-theorem exists_normal_eq_one_isUnit (hD' : ∀ j, j = j₁ ∨ j = j₂)
-    (x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}) :
+/-- If `Q` contains exponents `p₁, p₂` with invertible monomials, `-p₁, -p₂ ∈ Q`, `μ₁(ρ p₁) = 1`
+and `μ₂(ρ p₂) = 1`, the normal of every wall of `D` at the index `j₁` or `j₂` takes the value one
+at one of them: `p₁` for the walls cooriented by `μ₁`, and `p₂` for those cooriented by `μ₂`. -/
+theorem exists_normal_eq_one_isUnit
+    {x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}} (hx : x.1 = j₁ ∨ x.1 = j₂) :
     ∃ p : Q, (D.wall x).normal (ρ p) = 1 ∧ IsUnit ((F).toCompletion (single p (1 : R))) := by
   obtain ⟨p₁, hp₁, hp₁', h₁₁⟩ := hQ₁
   obtain ⟨p₂, hp₂, hp₂', h₂₂⟩ := hQ₂
   obtain ⟨j, w⟩ := x
   rw [hD.isRayFactorPresentation.normal]
-  rcases hD' j with rfl | rfl
+  rcases hx with (rfl : j = j₁) | (rfl : j = j₂)
   · exact ⟨⟨p₁, hp₁⟩, h₁₁, TropicalVertexCoefficientAction.isUnit_toCompletion_single hp₁ hp₁'⟩
   · exact ⟨⟨p₂, hp₂⟩, h₂₂, TropicalVertexCoefficientAction.isUnit_toCompletion_single hp₂ hp₂'⟩
 
@@ -510,10 +509,10 @@ the image of a semiring map `φ : S →+* R`: its wall functions are `1 + c₁ z
 `1 + c₂ z^{n₂}` on the walls over the rays through `n₁` and `n₂`, and `1` on all other walls. -/
 theorem isPositive_discrete_of_forall_eq_or_eq (hD' : ∀ j, j = j₁ ∨ j = j₂) :
     (FunctionWallGrouping.discrete D
-      (hD.isPrimitive_normal_of_forall_eq_or_eq hD') π).IsPositive
+      (fun x => hD.isPrimitive_normal_of_eq_or_eq (hD' x.1)) π).IsPositive
       ((F).completedBCHAction d ℒ) (mapRingHom Q φ).rangeS := by
   refine (FunctionWallGrouping.isPositive_iff _ _ _).mpr fun x => ?_
-  obtain ⟨p, hp, hunit⟩ := hD.exists_normal_eq_one_isUnit Q hQ₁ hQ₂ hD' x
+  obtain ⟨p, hp, hunit⟩ := hD.exists_normal_eq_one_isUnit Q hQ₁ hQ₂ (hD' x.1)
   by_cases hfst : x = hD.fstIndex
   · subst hfst
     refine ⟨binomialUnit d Q hD.mem_monoid_fst hD.ne_zero_fst c₁,
