@@ -417,6 +417,14 @@ variable (Q : AddSubmonoid Γ) [Fact (d.monoid ≤ Q)]
 local notation "F" => TropicalVertexCoefficientAction.filtration (R := R) d Q
 
 omit hD [DecidableEq Γ] [Fact (d.monoid ≤ Q)] in
+/-- A witness `p ∈ Q` with `-p ∈ Q`, `μ₁(ρ p) = 1` and `μ₂(ρ p) = 0` also pairs to one with `μ₁`. -/
+theorem exists_apply_fst_eq_one_of_apply_eq
+    (hQ₁ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1 ∧ μ j₂ (ρ p) = 0) :
+    ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1 := by
+  obtain ⟨p, hp, hp', h₁, -⟩ := hQ₁
+  exact ⟨p, hp, hp', h₁⟩
+
+omit hD [DecidableEq Γ] [Fact (d.monoid ≤ Q)] in
 /-- A witness `p ∈ Q` with `-p ∈ Q`, `μ₁(ρ p) = 1` and `μ₂(ρ p) = 0` pairs to one with `μ₁ + μ₂`. -/
 theorem exists_add_apply_eq_one_of_apply_eq
     (hQ₁ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1 ∧ μ j₂ (ρ p) = 0) :
@@ -474,19 +482,20 @@ theorem isPositiveWallRepresentative_pentagonDiagram_of_isPositive {κ' : Type*}
     (hD.isPositive_discrete_outgoingWall Q π φ hc hQ)).isPositiveWallRepresentative
 
 variable (hc₁ : c₁ ∈ φ.rangeS) (hc₂ : c₂ ∈ φ.rangeS)
-  (hQ₁ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1 ∧ μ j₂ (ρ p) = 0)
+  (hQ₁ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1)
+  (hQ₁' : ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1 ∧ μ j₂ (ρ p) = 0)
   (hQ₂ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₂ (ρ p) = 1)
 
 omit [Fact (d.monoid ≤ Q)] [HasUniqueDiv Γ] in
 include hQ₁ hQ₂ in
 /-- If every index is `j₁` or `j₂`, and `Q` contains exponents `p₁, p₂` with invertible monomials,
-`-p₁, -p₂ ∈ Q`, `μ₁(ρ p₁) = 1`, `μ₂(ρ p₁) = 0` and `μ₂(ρ p₂) = 1`, the normal of every wall of `D`
-takes the value one at one of them: `p₁` for the walls cooriented by `μ₁`, and `p₂` for those
-cooriented by `μ₂`. -/
+`-p₁, -p₂ ∈ Q`, `μ₁(ρ p₁) = 1` and `μ₂(ρ p₂) = 1`, the normal of every wall of `D` takes the value
+one at one of them: `p₁` for the walls cooriented by `μ₁`, and `p₂` for those cooriented by
+`μ₂`. -/
 theorem exists_normal_eq_one_isUnit (hD' : ∀ j, j = j₁ ∨ j = j₂)
     (x : Σ j, {w : SupportedRay d // μ j (ρ w.generator) = 0}) :
     ∃ p : Q, (D.wall x).normal (ρ p) = 1 ∧ IsUnit ((F).toCompletion (single p (1 : R))) := by
-  obtain ⟨p₁, hp₁, hp₁', h₁₁, h₂₁⟩ := hQ₁
+  obtain ⟨p₁, hp₁, hp₁', h₁₁⟩ := hQ₁
   obtain ⟨p₂, hp₂, hp₂', h₂₂⟩ := hQ₂
   obtain ⟨j, w⟩ := x
   rw [hD.isRayFactorPresentation.normal]
@@ -524,7 +533,7 @@ theorem isPositive_discrete_of_forall_eq_or_eq (hD' : ∀ j, j = j₁ ∨ j = j�
     rw [hD.label_eq_one (hD' x.1) hfst hsnd, map_one, AlgEquiv.one_apply, one_zpow,
       Units.val_one, one_mul]
 
-include hc₁ hc₂ hQ₁ hQ₂ in
+include hc₁ hc₂ hQ₁' hQ₂ in
 /-- **Positivity of the pentagon diagram without isolated indices.** If every index is `j₁` or
 `j₂`, the coefficients `c₁, c₂` lie in the image of a semiring map `φ : S →+* R`, and `Q` contains
 exponents `p₁, p₂` with `-p₁, -p₂ ∈ Q`, `μ₁(ρ p₁) = 1`, `μ₂(ρ p₁) = 0` and `μ₂(ρ p₂) = 1`, the
@@ -535,8 +544,9 @@ theorem isPositiveWallRepresentative_pentagonDiagram (hD' : ∀ j, j = j₁ ∨ 
     hD.pentagonDiagram.IsPositiveWallRepresentative ((F).completedBCHAction d ℒ)
       (mapRingHom Q φ).rangeS π :=
   hD.isPositiveWallRepresentative_pentagonDiagram_of_isPositive Q π φ (mul_mem hc₁ hc₂)
-    (exists_add_apply_eq_one_of_apply_eq Q hQ₁)
-    (hD.isPositive_discrete_of_forall_eq_or_eq Q π φ hc₁ hc₂ hQ₁ hQ₂ hD')
+    (exists_add_apply_eq_one_of_apply_eq Q hQ₁')
+    (hD.isPositive_discrete_of_forall_eq_or_eq Q π φ hc₁ hc₂
+      (exists_apply_fst_eq_one_of_apply_eq Q hQ₁') hQ₂ hD')
 
 end Positive
 
@@ -692,10 +702,11 @@ theorem exists_isPositiveWallRepresentative_scat_of_isPositive {κ' : Type*}
     hD.isPositiveWallRepresentative_pentagonDiagram_of_isPositive Q π φ hc hQ hG⟩
 
 variable (hc₁ : c₁ ∈ φ.rangeS) (hc₂ : c₂ ∈ φ.rangeS)
-  (hQ₁ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1 ∧ μ j₂ (ρ p) = 0)
+  (hQ₁ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1)
+  (hQ₁' : ∃ p ∈ Q, -p ∈ Q ∧ μ j₁ (ρ p) = 1 ∧ μ j₂ (ρ p) = 0)
   (hQ₂ : ∃ p ∈ Q, -p ∈ Q ∧ μ j₂ (ρ p) = 1)
 
-include hc₁ hc₂ hQ₁ hQ₂ in
+include hc₁ hc₂ hQ₁' hQ₂ in
 /-- **Positivity of ray presentations of type `A₂` without isolated indices.** If every index is
 `j₁` or `j₂`, the coefficients `c₁, c₂` lie in the image of a semiring map `φ : S →+* R`, and the
 coefficient monoid `Q` contains exponents `p₁, p₂` with `-p₁, -p₂ ∈ Q`, `μ₁(ρ p₁) = 1`,
@@ -710,8 +721,9 @@ theorem exists_isPositiveWallRepresentative_scat (hD' : ∀ j, j = j₁ ∨ j = 
       E.IsPositiveWallRepresentative ((F).completedBCHAction d ℒ) (mapRingHom Q φ).rangeS π :=
   let : HasUniqueDiv Γ := .of_isTorsionFree ℤ Γ
   hD.exists_isPositiveWallRepresentative_scat_of_isPositive Q π φ (mul_mem hc₁ hc₂)
-    (exists_add_apply_eq_one_of_apply_eq Q hQ₁)
-    (hD.isPositive_discrete_of_forall_eq_or_eq Q π φ hc₁ hc₂ hQ₁ hQ₂ hD')
+    (exists_add_apply_eq_one_of_apply_eq Q hQ₁')
+    (hD.isPositive_discrete_of_forall_eq_or_eq Q π φ hc₁ hc₂
+      (exists_apply_fst_eq_one_of_apply_eq Q hQ₁') hQ₂ hD')
 
 end Positive
 
