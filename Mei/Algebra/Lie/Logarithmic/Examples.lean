@@ -152,6 +152,7 @@ theorem axisField_ne_zero : axisField ≠ 0 := by
   simp at h1
 
 /-- The nonzero field `z^{e₁} ∂_{e₂*}` acts by zero on the coefficient algebra of `ℕ e₁`. -/
+@[simp]
 theorem tropicalVertexCoefficientAction_axisField :
     tropicalVertexCoefficientAction axisDegrees (AddMonoidHom.id (Fin 2 → ℤ))
       axisDegrees.monoid le_rfl axisField = 0 := by
@@ -250,6 +251,7 @@ theorem signPairing_characterMap (m : (⊤ : Submodule ℚ ((Fin 2 → ℤ) →+
 local notation "μ₂" => Pi.evalAddMonoidHom (fun _ : Fin 2 => ℤ) 1
 
 /-- The sign pairing sends the binomial label `exp(log(1 + c z^{e₁}) ∂_{e₂*})` to its inverse. -/
+@[simp]
 theorem completedMap_signPairing_binomialLabel (c : ℚ) :
     signPairing.tropicalVertexGradedLieHom.completedMap
         (binomialLabel axisDegrees (AddMonoidHom.id (Fin 2 → ℤ)) μ₂
@@ -266,6 +268,7 @@ local instance : Fact (axisDegrees.monoid ≤ axisDegrees.monoid) := ⟨le_rfl�
 
 /-- The binomial label `exp(log(1 + c z^{e₁}) ∂_{e₂*})` acts trivially on every monomial of the
 completed coefficient algebra of `ℕ e₁`, since `e₂*` vanishes on `ℕ e₁`. -/
+@[simp]
 theorem completedBCHAction_binomialLabel_axis (c : ℚ) (p : axisDegrees.monoid) :
     (TropicalVertexCoefficientAction.filtration (R := ℚ) axisDegrees
         axisDegrees.monoid).completedBCHAction axisDegrees
@@ -292,14 +295,17 @@ theorem mem_rightHalfPlane {n : Fin 2 → ℤ} : n ∈ rightHalfPlane ↔ 0 ≤ 
 local instance : Fact (axisDegrees.monoid ≤ rightHalfPlane) := ⟨fun _ h => by simpa using h.1⟩
 
 /-- For `c ≠ 0` the binomial label `exp(log(1 + c z^{e₁}) ∂_{e₂*})` is not its own inverse in the
-completed tropical vertex group of `ℕ e₁`. Hence the inversion by the sign pairing is not vacuous.
-The proof compares the actions of the label and its inverse on the completed coefficient algebra
-of the half-plane `{0 ≤ a}`. -/
+completed tropical vertex group of `ℕ e₁`. Hence the inversion by the sign pairing is not
+vacuous. -/
 theorem binomialLabel_ne_inv {c : ℚ} (hc : c ≠ 0) :
     binomialLabel axisDegrees (AddMonoidHom.id (Fin 2 → ℤ)) μ₂
       single_zero_mem_axisDegrees (by simp) (by simp) c ≠
     (binomialLabel axisDegrees (AddMonoidHom.id (Fin 2 → ℤ)) μ₂
       single_zero_mem_axisDegrees (by simp) (by simp) c)⁻¹ := by
+  -- Proof plan: if the label were its own inverse, its action and the action of its inverse on the
+  -- completed coefficient algebra of the half-plane `{0 ≤ a}` would agree. This gives
+  -- `a * a + 2 * a = 0` modulo the filtration ideal for the monomial `a = c z^{e₁}`, and the
+  -- coefficient of `z^{e₁}` in it is `2 * c`.
   intro h
   have hn : (Pi.single 0 1 : Fin 2 → ℤ) ∈ axisDegrees.monoid := single_zero_mem_axisDegrees
   let p : rightHalfPlane := ⟨Pi.single 1 1, by simp⟩
