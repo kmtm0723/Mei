@@ -13,8 +13,9 @@ public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.Embedding
 
 A degree-preserving algebra homomorphism extends to the global coefficient
 algebras for the same positive degrees. Multiplicativity is inherited from the
-canonical naturality theorem for completed bilinear pairings and needs only
-multiplicatively graded decompositions, with no graded-unit assumptions. The extension is
+canonical naturality theorem for completed bilinear pairings. Multiplication is
+already preserved by multiplicative linear maps between multiplicatively graded
+decompositions, without unit preservation or graded-unit assumptions. The extension is
 functorial and commutes with the finite coefficient embedding when positive
 differences span the grading group. No injectivity of the algebra map is assumed.
 -/
@@ -28,28 +29,31 @@ variable {Γ R A B C : Type*} [AddCommGroup Γ] [CommRing R]
   [Ring A] [Algebra R A] [Ring B] [Algebra R B] [Ring C] [Algebra R C]
   [DecidableEq Γ] (d : PositiveDegrees Γ)
   (𝒜 : Γ → Submodule R A) (ℬ : Γ → Submodule R B)
-  (f : A →ₐ[R] B) (hf : ∀ u, 𝒜 u ≤ (ℬ u).comap f.toLinearMap)
 
 section Multiplicative
 
 variable [DirectSum.Decomposition 𝒜] [DirectSum.Decomposition ℬ]
   [SetLike.GradedMul 𝒜] [SetLike.GradedMul ℬ]
+  (f : A →ₗ[R] B) (hf : ∀ u, 𝒜 u ≤ (ℬ u).comap f)
+  (hmul : ∀ a b, f (a * b) = f a * f b)
 
+include hmul in
 /-- The descended linear map preserves global multiplication. -/
 @[simp]
 theorem shiftedDirectLimitMap_mul (x y : d.ShiftedDirectLimit 𝒜) :
-    d.shiftedDirectLimitMap 𝒜 ℬ f.toLinearMap hf (x * y) =
-      d.shiftedDirectLimitMap 𝒜 ℬ f.toLinearMap hf x *
-        d.shiftedDirectLimitMap 𝒜 ℬ f.toLinearMap hf y := by
+    d.shiftedDirectLimitMap 𝒜 ℬ f hf (x * y) =
+      d.shiftedDirectLimitMap 𝒜 ℬ f hf x *
+        d.shiftedDirectLimitMap 𝒜 ℬ f hf y := by
   obtain ⟨s, a, rfl⟩ := d.exists_toShiftedDirectLimit 𝒜 x
   obtain ⟨t, b, rfl⟩ := d.exists_toShiftedDirectLimit 𝒜 y
   rw [toShiftedDirectLimit_mul, shiftedDirectLimitMap_toShiftedDirectLimitOfChart,
     shiftedDirectLimitMap_toShiftedDirectLimit, shiftedDirectLimitMap_toShiftedDirectLimit,
-    toShiftedDirectLimit_mul, completionCoefficientMap_mul]
+    toShiftedDirectLimit_mul, completionCoefficientMap_mul d 𝒜 ℬ f hf hmul]
 
 end Multiplicative
 
 variable [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
+  (f : A →ₐ[R] B) (hf : ∀ u, 𝒜 u ≤ (ℬ u).comap f.toLinearMap)
 
 /-- The descended linear map preserves the degree-zero algebra unit. -/
 @[simp]
@@ -67,7 +71,8 @@ theorem shiftedDirectLimitMap_one :
 /-- Extend a degree-preserving algebra homomorphism to global shifted coefficients. -/
 def shiftedDirectLimitAlgHom : d.ShiftedDirectLimit 𝒜 →ₐ[R] d.ShiftedDirectLimit ℬ :=
   AlgHom.ofLinearMap (d.shiftedDirectLimitMap 𝒜 ℬ f.toLinearMap hf)
-    (d.shiftedDirectLimitMap_one 𝒜 ℬ f hf) (d.shiftedDirectLimitMap_mul 𝒜 ℬ f hf)
+    (d.shiftedDirectLimitMap_one 𝒜 ℬ f hf)
+    (d.shiftedDirectLimitMap_mul 𝒜 ℬ f.toLinearMap hf f.map_mul)
 
 /-- The global algebra homomorphism has the descended linear map as its underlying function. -/
 theorem shiftedDirectLimitAlgHom_apply (x : d.ShiftedDirectLimit 𝒜) :
