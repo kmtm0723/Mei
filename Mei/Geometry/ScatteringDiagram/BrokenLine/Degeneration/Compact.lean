@@ -29,13 +29,13 @@ open Set Filter Topology
 
 namespace Mei
 
-variable {R M Γ V J K : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+variable {R M Γ V J K O : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
   [AddCommGroup Γ] [DecidableEq Γ] {d : PositiveDegrees Γ}
   {ℳ : Γ → Submodule R M} [DirectSum.Decomposition ℳ]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [Finite J]
   {T : J → Module.End R M} {a : ℳ 0} {v : Γ → V}
   {f : J → V →L[ℝ] ℝ} {ε : J → SignType} {k : ℕ}
-  (c : J → ℝ) (P W : J → Set V) (S : K → Set V) (C : Set V)
+  (c : J → ℝ) (P : J → Set V) (W : O → Set V) (S : K → Set V) (C : Set V)
 
 /-- Closing the endpoint domains of every complete type gives a compact family
 of paths over any compact endpoint set, as a finite union of type-indexed images. -/

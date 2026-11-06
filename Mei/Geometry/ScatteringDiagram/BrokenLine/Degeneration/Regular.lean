@@ -7,11 +7,12 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.BrokenLine.Degeneration.Avoidance
 public import Mei.Geometry.ScatteringDiagram.BrokenLine.Degeneration.Compact
+public import Mei.Geometry.ScatteringDiagram.BrokenLine.Degeneration.Incoming
 
 /-!
 # Actual decorated rays at regular limits
 
-With closed selected supports and a rational-normal polyhedral incoming source,
+With closed selected supports and a convex polyhedral incoming source,
 a closed type path is admissible when its endpoint misses the walls and its
 entire negative half-line avoids both wall singular support and the prescribed
 singular sets. Regularity excludes collapsed encounter intervals and new wall
@@ -33,14 +34,13 @@ open Set Filter Topology Mei.Convex
 
 namespace Mei
 
-variable {R M Γ V J K O Λ : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+variable {R M Γ V J K O : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
   [AddCommGroup Γ] [DecidableEq Γ] {d : PositiveDegrees Γ}
   {ℳ : Γ → Submodule R M} [DirectSum.Decomposition ℳ]
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   {T : J → Module.End R M} {a : ℳ 0} {v : Γ → V}
   {f : J → V →L[ℝ] ℝ} {ε : J → SignType} {k : ℕ}
   (c : J → ℝ) (P : J → Set V) (W : O → Set V) (S : K → Set V) (C : Set V)
-  [AddCommGroup Λ] {i : Λ →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
 
 namespace CutoffDecoratedType
 
@@ -61,7 +61,7 @@ theorem mem_domain_of_mem_closure_of_regular
     (hheight : ∀ j x, x ∈ W (wall j) → f j x = c j)
     (ν : O → V →L[ℝ] ℝ) (z : O → ℝ)
     (hspan : ∀ j, (affineSpan ℝ (W j) : Set V) = {x | ν j x = z j})
-    (hC : IsRationalNormalPolyhedron h C)
+    (hC : TauCeti.IsConvexPolyhedron C)
     {Q : V} (hQ : Q ∈ closure (domain c P W S C t))
     (hoff : ∀ j, Q ∉ W j)
     (hregular : ∀ s ≤ 0, t.path c Q s ∉ singularSupport W)
@@ -86,7 +86,7 @@ theorem mem_domain_of_mem_closure_of_regular
       t.path_avoids_walls_of_regular c P W S C wall hWclosed hP hheight
         ν z hspan hQ hoff hregular
   · simpa only [he, FiniteAffineRay.toContinuousMap_apply] using
-      t.path_eventually_mem c P W S C hC hQ
+      t.path_eventually_mem_of_isConvexPolyhedron c P W S C hC hQ
   · simpa only [he, FiniteAffineRay.toContinuousMap_apply] using havoid
 
 /-- If a closed type endpoint is not admitted, some wall contains the endpoint
@@ -98,7 +98,7 @@ theorem not_mem_domain_imp_terminal_or_singular
     (hheight : ∀ j x, x ∈ W (wall j) → f j x = c j)
     (ν : O → V →L[ℝ] ℝ) (z : O → ℝ)
     (hspan : ∀ j, (affineSpan ℝ (W j) : Set V) = {x | ν j x = z j})
-    (hC : IsRationalNormalPolyhedron h C)
+    (hC : TauCeti.IsConvexPolyhedron C)
     {Q : V} (hQ : Q ∈ closure (domain c P W S C t))
     (hnot : Q ∉ domain c P W S C t) :
     (∃ j, Q ∈ W j) ∨ (∃ s ≤ 0, t.path c Q s ∈ singularSupport W) ∨
@@ -112,18 +112,18 @@ end CutoffDecoratedType
 
 section ActualRay
 
-variable [Finite J] (W : J → Set V)
+variable [Finite J]
 
 /-- A regular closed type limit is realized by an actual ray with the same
 complete decorated type, whole final decoration and compact-open path. -/
 theorem CutoffDecoratedType.exists_ray_of_mem_closure_of_regular
     (t : CutoffDecoratedType d ℳ T a v f ε k)
-    (hPclosed : ∀ j, IsClosed (P j)) (wall : J → J)
+    (hPclosed : ∀ j, IsClosed (P j)) (wall : J → O)
     (hWclosed : ∀ j, IsClosed (W j)) (hP : ∀ j, P j ⊆ W (wall j))
     (hheight : ∀ j x, x ∈ W (wall j) → f j x = c j)
-    (ν : J → V →L[ℝ] ℝ) (z : J → ℝ)
+    (ν : O → V →L[ℝ] ℝ) (z : O → ℝ)
     (hspan : ∀ j, (affineSpan ℝ (W j) : Set V) = {x | ν j x = z j})
-    (hC : IsRationalNormalPolyhedron h C)
+    (hC : TauCeti.IsConvexPolyhedron C)
     {Q : V} (hQ : Q ∈ closure (CutoffDecoratedType.domain c P W S C t))
     (hoff : ∀ j, Q ∉ W j)
     (hregular : ∀ s ≤ 0, t.path c Q s ∉ singularSupport W)
@@ -144,12 +144,12 @@ theorem CutoffDecoratedType.exists_ray_of_mem_closure_of_regular
 any sequence of actual rays has an actual limiting ray. The extracted subsequence
 retains the limit ray's entire type and whole final decoration. -/
 theorem CutoffDecoratedRay.exists_actual_tendsto_subseq_of_regular
-    (hPclosed : ∀ j, IsClosed (P j)) (wall : J → J)
+    (hPclosed : ∀ j, IsClosed (P j)) (wall : J → O)
     (hWclosed : ∀ j, IsClosed (W j)) (hP : ∀ j, P j ⊆ W (wall j))
     (hheight : ∀ j x, x ∈ W (wall j) → f j x = c j)
-    (ν : J → V →L[ℝ] ℝ) (z : J → ℝ)
+    (ν : O → V →L[ℝ] ℝ) (z : O → ℝ)
     (hspan : ∀ j, (affineSpan ℝ (W j) : Set V) = {x | ν j x = z j})
-    (hC : IsRationalNormalPolyhedron h C)
+    (hC : TauCeti.IsConvexPolyhedron C)
     {B : Set V} (hB : IsCompact B) (hoff : ∀ Q ∈ B, ∀ j, Q ∉ W j)
     (hregular : ∀ (t : CutoffDecoratedType d ℳ T a v f ε k) Q,
       Q ∈ B ∩ closure (CutoffDecoratedType.domain c P W S C t) →
@@ -169,7 +169,7 @@ theorem CutoffDecoratedRay.exists_actual_tendsto_subseq_of_regular
   obtain ⟨t, q, φ, hq, hφ, ht, hd, hend, hp⟩ :=
     CutoffDecoratedRay.exists_type_tendsto_subseq c P W S C hB hQ r
   obtain ⟨hr, hs⟩ := hregular t q hq
-  obtain ⟨r₀, ht₀, hp₀, hd₀⟩ := t.exists_ray_of_mem_closure_of_regular c P S C W
+  obtain ⟨r₀, ht₀, hp₀, hd₀⟩ := t.exists_ray_of_mem_closure_of_regular c P W S C
     hPclosed wall hWclosed hP hheight ν z hspan hC hq.2 (hoff q hq.1) hr hs
   refine ⟨q, hq.1, r₀, φ, hφ, ?_, ?_, hend, ?_⟩
   · exact fun n => (ht n).trans ht₀.symm
