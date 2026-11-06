@@ -5,9 +5,8 @@ Authors: Claude Code
 -/
 module
 
-public import Mei.Algebra.Lie.Logarithmic.Coefficient
-public import Mei.Algebra.Lie.Logarithmic.Pairing.Full
 public import Mei.Algebra.Lie.Logarithmic.WallFunction.Binomial
+public import Mei.Algebra.MonoidAlgebra.Filtration.PowerSeries
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 
 /-!
@@ -28,8 +27,8 @@ over `ℚ`, its tropical pairings and their action on binomial labels.
   derivation of `ℚ[z]` intertwining `y x ∂_x` on `ℚ[x, y]` with the substitution `x, y ↦ z`.
 * On `ℕ e₁ ⊆ ℤ²` precomposition with `(a, b) ↦ (a, -b)` is a tropical pairing on all
   characters sending `e₂*` to `-e₂*`. It sends the binomial label
-  `exp(log(1 + c z^{e₁}) ∂_{e₂*})` to its inverse, which for `c ≠ 0` is different from the label
-  on the completed coefficient algebra of the half-plane `{0 ≤ a}`.
+  `exp(log(1 + c z^{e₁}) ∂_{e₂*})` to its inverse, which for `c ≠ 0` is a different element of the
+  completed tropical vertex group; the label acts trivially on the coefficient algebra of `ℕ e₁`.
 
 The Lie algebra of logarithmic derivations and the pairing condition are those of Mandel,
 *Scattering diagrams, theta functions, and refined tropical curve counts*, Example 2.1(i),
@@ -69,7 +68,7 @@ theorem linearIndependent_single_coordinate :
   have h1 := DFunLike.congr_fun (single_injective ρ₃ e[0] h0)
   exact ⟨by simpa using h1 e[1], by simpa using h1 e[2]⟩
 
-/-- Both fields lie in the degree-`e₁` piece of the tropical vertex Lie algebra. -/
+/-- For `i ≠ 0` the field `z^{e₁} ∂_{e_i*}` lies in the tropical vertex Lie algebra of `ℕ³`. -/
 theorem single_coordinate_mem_tropicalVertexLieAlgebra {i : Fin 3} (hi : i ≠ 0) :
     single ρ₃ e[0] (coordinate i) ∈
       tropicalVertexLieAlgebra (R := ℚ) (PositiveDegrees.orthant (Fin 3)) ρ₃ :=
@@ -130,7 +129,7 @@ theorem mem_axisDegrees_monoid {n : Fin 2 → ℤ} :
 @[simp]
 theorem axisDegrees_degree (n : Fin 2 → ℤ) : axisDegrees.degree n = n 0 := (rfl)
 
-/-- The first basis vector is a nonzero allowed degree of `ℕ e₁`. -/
+/-- The first basis vector is an allowed degree of `ℕ e₁`. -/
 theorem single_zero_mem_axisDegrees : (Pi.single 0 1 : Fin 2 → ℤ) ∈ axisDegrees.monoid := by
   simp
 
@@ -138,6 +137,12 @@ theorem single_zero_mem_axisDegrees : (Pi.single 0 1 : Fin 2 → ℤ) ∈ axisDe
 def axisField : tropicalVertexLieAlgebra (R := ℚ) axisDegrees (AddMonoidHom.id (Fin 2 → ℤ)) :=
   ⟨single (AddMonoidHom.id (Fin 2 → ℤ)) (Pi.single 0 1) (coordinate 1),
     single_mem_tropicalVertexLieAlgebra _ _ single_zero_mem_axisDegrees (by simp) _ (by simp)⟩
+
+/-- The underlying logarithmic vector field of `axisField` is `z^{e₁} ∂_{e₂*}`. -/
+@[simp]
+theorem coe_axisField : (axisField : LogarithmicVectorField ℚ (Fin 2 → ℤ) (Fin 2 → ℤ)
+    (AddMonoidHom.id (Fin 2 → ℤ))) = single (AddMonoidHom.id (Fin 2 → ℤ)) (Pi.single 0 1)
+      (coordinate 1) := (rfl)
 
 /-- The field `z^{e₁} ∂_{e₂*}` is nonzero in the tropical vertex Lie algebra. -/
 theorem axisField_ne_zero : axisField ≠ 0 := by
@@ -251,7 +256,7 @@ theorem completedMap_signPairing_binomialLabel (c : ℚ) :
           single_zero_mem_axisDegrees (by simp) (by simp) c) =
       (binomialLabel axisDegrees (AddMonoidHom.id (Fin 2 → ℤ)) μ₂
         single_zero_mem_axisDegrees (by simp) (by simp) c)⁻¹ := by
-  rw [← binomialLabel_neg single_zero_mem_axisDegrees (by simp) (by simp) (by simp)]
+  rw [← binomialLabel_neg single_zero_mem_axisDegrees (by simp) (by simp)]
   refine signPairing.completedMap_binomialLabel (μ' := -μ₂) ?_ _ _ _ _ _ _ ?_ _
   · ext x
     simp
@@ -286,9 +291,10 @@ theorem mem_rightHalfPlane {n : Fin 2 → ℤ} : n ∈ rightHalfPlane ↔ 0 ≤ 
 
 local instance : Fact (axisDegrees.monoid ≤ rightHalfPlane) := ⟨fun _ h => by simpa using h.1⟩
 
-/-- On the completed coefficient algebra of the half-plane, the binomial label
-`exp(log(1 + c z^{e₁}) ∂_{e₂*})` with `c ≠ 0` is not its own inverse. Hence the inversion by the
-sign pairing is not vacuous. -/
+/-- For `c ≠ 0` the binomial label `exp(log(1 + c z^{e₁}) ∂_{e₂*})` is not its own inverse in the
+completed tropical vertex group of `ℕ e₁`. Hence the inversion by the sign pairing is not vacuous.
+The proof compares the actions of the label and its inverse on the completed coefficient algebra
+of the half-plane `{0 ≤ a}`. -/
 theorem binomialLabel_ne_inv {c : ℚ} (hc : c ≠ 0) :
     binomialLabel axisDegrees (AddMonoidHom.id (Fin 2 → ℤ)) μ₂
       single_zero_mem_axisDegrees (by simp) (by simp) c ≠
@@ -301,7 +307,7 @@ theorem binomialLabel_ne_inv {c : ℚ} (hc : c ≠ 0) :
     rightHalfPlane hn (by simp) (by simp) c p 1
   have k₂ := completedBCHAction_binomialLabel axisDegrees (AddMonoidHom.id (Fin 2 → ℤ)) (-μ₂)
     rightHalfPlane hn (by simp) (by simp) c p 1
-  rw [binomialLabel_neg hn (by simp) (by simp) (by simp), ← h] at k₂
+  rw [binomialLabel_neg hn (by simp) (by simp), ← h] at k₂
   have ht : IsUnit ((TropicalVertexCoefficientAction.filtration (R := ℚ) axisDegrees
       rightHalfPlane).toCompletion (AddMonoidAlgebra.single p 1)) :=
     TropicalVertexCoefficientAction.isUnit_toCompletion_single (e := axisDegrees)
@@ -321,17 +327,15 @@ theorem binomialLabel_ne_inv {c : ℚ} (hc : c ≠ 0) :
       rightHalfPlane).ideal 2 := by
     rw [← AlgFiltration.toCompletion_mem_completionIdeal_iff, h2]
     exact zero_mem _
-  rw [TropicalVertexCoefficientAction.filtration_ideal,
-    AddSubmonoid.mem_monoidAlgebraIdeal_iff] at h3
+  rw [TropicalVertexCoefficientAction.filtration_ideal] at h3
   have hcoeff : (a * a + 2 * a).coeff ⟨Pi.single 0 1, by simp⟩ = 2 * c := by
     rw [two_mul, ← add_assoc, ha, single_mul_single]
     simp [two_mul]
-  obtain ⟨m, hm, hdeg, q, hq⟩ := h3 ⟨Pi.single 0 1, by simp⟩
-    (Finsupp.mem_support_iff.mpr (by rw [hcoeff]; simpa using hc))
-  have h0 := congrArg (fun q : rightHalfPlane => q.val 0) hq
-  have hq0 : 0 ≤ q.val 0 := q.property
-  simp at hm hdeg h0
-  omega
+  have h4 := AddSubmonoid.coeff_eq_zero_of_mem_monoidAlgebraIdeal (δ :=
+    axisDegrees.degree.comp rightHalfPlane.subtype) _ (fun q => q.property) h3
+    (p := ⟨Pi.single 0 1, by simp⟩) (k := 2) (by simp)
+  rw [hcoeff] at h4
+  exact hc (by simpa using h4)
 
 end Sign
 

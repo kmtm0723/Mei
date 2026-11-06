@@ -208,10 +208,12 @@ local notation "G'" => TropicalVertexCoefficientAction.filtration (R := R) d
   (tropicalTangentMonoid d ρ (AddMonoidHom.comp (Int.castAddHom R) (-μ)))
 
 /-- Reversing the sign of the character inverts the binomial label:
-`exp(log(1 + c z^n) ∂_{-μ}) = exp(log(1 + c z^n) ∂_μ)⁻¹`. -/
-theorem binomialLabel_neg {n : Γ} (hn : n ∈ d.monoid) (hn0 : n ≠ 0) (hμ : μ (ρ n) = 0)
-    (hμ' : (-μ) (ρ n) = 0) (c : R) :
-    binomialLabel d ρ (-μ) hn hn0 hμ' c = (binomialLabel d ρ μ hn hn0 hμ c)⁻¹ := by
+`exp(log(1 + c z^n) ∂_{-μ}) = exp(log(1 + c z^n) ∂_μ)⁻¹`. The tangency `(-μ)(ρ n) = 0` is
+a consequence of `μ(ρ n) = 0`. -/
+@[simp]
+theorem binomialLabel_neg {n : Γ} (hn : n ∈ d.monoid) (hn0 : n ≠ 0) (hμ : μ (ρ n) = 0) (c : R) :
+    binomialLabel d ρ (-μ) hn hn0 (by simp [hμ]) c = (binomialLabel d ρ μ hn hn0 hμ c)⁻¹ := by
+  have hμ' : (-μ) (ρ n) = 0 := by simp [hμ]
   -- The identity map sends each field `z^q ∂_μ` to `-z^q ∂_{-μ}`, hence the label of `μ` to the
   -- inverse of the label of `-μ`.
   have hneg : (Int.castAddHom R).comp (-μ) = -((Int.castAddHom R).comp μ) := by
