@@ -5,7 +5,6 @@ Authors: Codex
 -/
 module
 
-public import Mei.LinearAlgebra.GradedModule.Shifted.Basic
 public import Mei.LinearAlgebra.GradedModule.Shifted.Map
 public import Mei.LinearAlgebra.ModuleFiltration.Bilinear
 public import TauCeti.RingTheory.GradedAlgebra.Basic
