@@ -165,14 +165,6 @@ theorem mem_slabThetaChartDomain_iff_terminal_resolution
 variable (h : TauCeti.Toric.IsIntegralLattice
   ((Int.castAddHom ℝ).prodMap (Int.castAddHom ℝ)))
 
-private theorem fiber_cast_fst
-    {F G : FiniteSemilinearFamily h h (SlabThetaChartIndex t c n b)} (e : F = G)
-    (Q : ℝ × ℝ) (z : F.fiber Q) :
-    (cast (congrArg (fun F : FiniteSemilinearFamily h h (SlabThetaChartIndex t c n b) =>
-      F.fiber Q) e) z).1 = z.1 := by
-  subst G
-  rfl
-
 /-- The actual common-family fiber is precisely the incident resolution on
 the chosen side, retaining the complete chart label rather than its image. -/
 def slabThetaTerminalResolutionEquiv {v : ℝ}
@@ -195,7 +187,7 @@ theorem slabThetaTerminalResolutionEquiv_apply_val {v : ℝ}
   simp only [slabThetaTerminalResolutionEquiv, Equiv.trans_apply,
     Equiv.subtypeEquivRight_apply, FiniteSemilinearFamily.fiberOfDomainsEquiv_apply_val,
     Equiv.cast_apply]
-  exact fiber_cast_fst t c n b h (slabThetaFamily_def t c n b h) Q z
+  exact FiniteSemilinearFamily.fiber_cast_fst (slabThetaFamily_def t c n b h) Q z
 
 /-- Reconstructing an actual fiber from its incident history retains its label. -/
 @[simp]
@@ -207,7 +199,7 @@ theorem slabThetaTerminalResolutionEquiv_symm_apply_fst {v : ℝ}
       z.val := by
   simp only [slabThetaTerminalResolutionEquiv, Equiv.symm_trans_apply,
     ← Equiv.cast_symm, Equiv.cast_apply]
-  rw [fiber_cast_fst t c n b h (slabThetaFamily_def t c n b h).symm]
+  rw [FiniteSemilinearFamily.fiber_cast_fst (slabThetaFamily_def t c n b h).symm]
   simp only [FiniteSemilinearFamily.fiberOfDomainsEquiv_symm_apply_fst,
     Equiv.subtypeEquivRight_symm_apply]
 
