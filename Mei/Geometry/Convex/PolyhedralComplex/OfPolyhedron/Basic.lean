@@ -11,13 +11,13 @@ public import Mei.Geometry.Convex.Polyhedron.Rational.Face
 /-!
 # The complex of a polyhedron and its faces
 
-A rational-normal polyhedron `P` is a cell of the complex `FinitePolyhedralComplex.ofPolyhedron`
-whose cells are `P` and its nonempty exposed faces. No boundedness, salience or rationality of the
-offsets is assumed, so `P` may be unbounded, have lineality, or be a point with irrational
-coordinates.
+The complex `FinitePolyhedralComplex.ofPolyhedron` of a rational-normal polyhedron `P` has as cells
+the nonempty exposed faces of `P`; in particular `P` is a cell exactly when it is nonempty. No
+boundedness, salience or rationality of the offsets is assumed, so `P` may be unbounded, have
+lineality, or be a point with irrational coordinates.
 
 The cells of the complex are exactly the nonempty exposed faces of `P`
-(`FinitePolyhedralComplex.mem_cells_ofPolyhedron`), and for nonempty `P` its support is `P`
+(`FinitePolyhedralComplex.mem_cells_ofPolyhedron`), and its support is `P`
 (`FinitePolyhedralComplex.support_ofPolyhedron`). For a polyhedron, exposed faces of exposed
 faces are exposed faces, and the intersection of two faces is a face of each of them; this is
 what makes the cells a complex. If `P` is a cell of a complex `C`, then the complex of `P` is a
@@ -31,40 +31,32 @@ namespace Mei
 variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
 
-/-- A rational-normal polyhedron is a convex polyhedron in the sense of the supplier library. -/
-theorem IsRationalNormalPolyhedron.isConvexPolyhedron {P : Set V}
-    (hP : IsRationalNormalPolyhedron h P) : TauCeti.IsConvexPolyhedron P := by
-  obtain ⟨Q, rfl⟩ := isRationalNormalPolyhedron_iff.mp hP
-  exact Q.isConvexPolyhedron
-
 namespace FinitePolyhedralComplex
 
-/-- A rational-normal polyhedron has finitely many nonempty exposed faces. -/
-theorem finite_isPolyhedralFace {P : Set V} (hP : IsRationalNormalPolyhedron h P) :
+/-- A convex polyhedron has finitely many nonempty exposed faces. -/
+theorem finite_isPolyhedralFace {P : Set V} (hP : TauCeti.IsConvexPolyhedron P) :
     {F : Set V | IsPolyhedralFace P F}.Finite :=
-  hP.isConvexPolyhedron.finite_exposed_sets.subset fun _ hF => (isPolyhedralFace_iff.mp hF).2
+  hP.finite_exposed_sets.subset fun _ hF => (isPolyhedralFace_iff.mp hF).2
 
 variable (h)
 
 /-- The complex of a rational-normal polyhedron `P`: its cells are the nonempty exposed faces of
-`P`, including `P` itself when `P` is nonempty. -/
+`P`. -/
 noncomputable def ofPolyhedron (P : Set V) (hP : IsRationalNormalPolyhedron h P) :
-    FinitePolyhedralComplex h where
-  cells := (finite_isPolyhedralFace hP).toFinset
-  nonempty _ hF :=
-    (isPolyhedralFace_iff.mp ((finite_isPolyhedralFace hP).mem_toFinset.mp hF)).1
-  rational _ hF := by
-    have hF := isPolyhedralFace_iff.mp ((finite_isPolyhedralFace hP).mem_toFinset.mp hF)
-    exact hF.2.isExtreme.isRationalNormalPolyhedron hP (hF.2.convex hP.convex)
-  face_closed _ hF _ hG :=
-    (finite_isPolyhedralFace hP).mem_toFinset.mpr (isPolyhedralFace_iff.mpr ⟨
-      (isPolyhedralFace_iff.mp hG).1,
-      (isPolyhedralFace_iff.mp ((finite_isPolyhedralFace hP).mem_toFinset.mp hF)).2
-        |>.trans_of_isConvexPolyhedron (isPolyhedralFace_iff.mp hG).2 hP.isConvexPolyhedron⟩)
-  inter_face F hF _ hG _ := by
-    have hF := (isPolyhedralFace_iff.mp ((finite_isPolyhedralFace hP).mem_toFinset.mp hF)).2
-    have hG := (isPolyhedralFace_iff.mp ((finite_isPolyhedralFace hP).mem_toFinset.mp hG)).2
-    simpa only [Set.inter_eq_left.mpr hF.subset] using (IsExposed.refl F).inter_inter hG
+    FinitePolyhedralComplex h :=
+  have hfin := finite_isPolyhedralFace hP.isConvexPolyhedron
+  have hface {F : Set V} (hF : F ∈ hfin.toFinset) :=
+    isPolyhedralFace_iff.mp (hfin.mem_toFinset.mp hF)
+  { cells := hfin.toFinset
+    nonempty _ hF := (hface hF).1
+    rational _ hF := (hface hF).2.isExtreme.isRationalNormalPolyhedron hP
+      ((hface hF).2.convex hP.convex)
+    face_closed _ hF _ hG := hfin.mem_toFinset.mpr (isPolyhedralFace_iff.mpr
+      ⟨(isPolyhedralFace_iff.mp hG).1, (hface hF).2.trans_of_isConvexPolyhedron
+        (isPolyhedralFace_iff.mp hG).2 hP.isConvexPolyhedron⟩)
+    inter_face F hF _ hG _ := by
+      simpa only [Set.inter_eq_left.mpr (hface hF).2.subset] using
+        (IsExposed.refl F).inter_inter (hface hG).2 }
 
 variable {h} {P : Set V} (hP : IsRationalNormalPolyhedron h P)
 
@@ -72,21 +64,21 @@ variable {h} {P : Set V} (hP : IsRationalNormalPolyhedron h P)
 @[simp]
 theorem mem_cells_ofPolyhedron {F : Set V} :
     F ∈ (ofPolyhedron h P hP).cells ↔ IsPolyhedralFace P F :=
-  (finite_isPolyhedralFace hP).mem_toFinset
+  (finite_isPolyhedralFace hP.isConvexPolyhedron).mem_toFinset
 
 /-- A nonempty polyhedron is a cell of its own complex. -/
 theorem self_mem_cells_ofPolyhedron (hne : P.Nonempty) : P ∈ (ofPolyhedron h P hP).cells :=
   (mem_cells_ofPolyhedron hP).mpr (isPolyhedralFace_iff.mpr ⟨hne, IsExposed.refl P⟩)
 
-/-- A nonempty polyhedron is the support of its complex. -/
+/-- A polyhedron is the support of its complex. -/
 @[simp]
-theorem support_ofPolyhedron (hne : P.Nonempty) : (ofPolyhedron h P hP).support = P := by
+theorem support_ofPolyhedron : (ofPolyhedron h P hP).support = P := by
   ext x
   rw [mem_support]
   constructor
   · rintro ⟨F, hF, hxF⟩
     exact (isPolyhedralFace_iff.mp ((mem_cells_ofPolyhedron hP).mp hF)).2.subset hxF
-  · exact fun hx => ⟨P, self_mem_cells_ofPolyhedron hP hne, hx⟩
+  · exact fun hx => ⟨P, self_mem_cells_ofPolyhedron hP ⟨x, hx⟩, hx⟩
 
 /-- If a polyhedron is a cell of a complex, its complex of faces is a subcomplex. -/
 theorem isSubcomplex_ofPolyhedron (C : FinitePolyhedralComplex h) (hPC : P ∈ C.cells) :

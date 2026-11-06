@@ -78,10 +78,8 @@ theorem zero_mem_support : (0 : V) ∈ W.support := by
   exact hσ ▸ σ.zero_mem
 
 /-- The support is a closed convex polyhedron. -/
-theorem isConvexPolyhedron : TauCeti.IsConvexPolyhedron W.support := by
-  obtain ⟨P, hP⟩ := isRationalNormalPolyhedron_iff.mp W.rational_support
-  rw [← hP]
-  exact P.isConvexPolyhedron
+theorem isConvexPolyhedron : TauCeti.IsConvexPolyhedron W.support :=
+  W.rational_support.isConvexPolyhedron
 
 /-- The support has a presentation by linear inequalities. -/
 theorem exists_presentation_map_zero :

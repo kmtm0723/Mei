@@ -38,8 +38,7 @@ cell, including all their own lower-dimensional faces. -/
 theorem intrinsicFrontier_eq_biUnion_boundaryFacets (σ : OrientedCell h k) :
     intrinsicFrontier ℝ σ.carrier = ⋃ τ ∈ σ.boundaryFacets, τ.carrier := by
   have := h.finiteDimensional
-  obtain ⟨P, hP⟩ := isRationalNormalPolyhedron_iff.mp σ.rational
-  have hpoly : TauCeti.IsConvexPolyhedron σ.carrier := hP ▸ P.isConvexPolyhedron
+  have hpoly : TauCeti.IsConvexPolyhedron σ.carrier := σ.rational.isConvexPolyhedron
   apply Set.Subset.antisymm
   · intro x hx
     obtain ⟨F, hF, hxF, hFd⟩ := hpoly.exists_facet_of_mem_intrinsicFrontier hx

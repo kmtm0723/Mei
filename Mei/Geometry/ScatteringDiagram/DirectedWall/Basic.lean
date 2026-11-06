@@ -92,10 +92,8 @@ namespace DirectedWall
 variable {h H} (W : DirectedWall (d := d) h H)
 
 /-- The support is a closed convex polyhedron on the existing polyhedral carrier. -/
-theorem isConvexPolyhedron : TauCeti.IsConvexPolyhedron W.support := by
-  obtain ⟨P, hP⟩ := isRationalNormalPolyhedron_iff.mp W.rational_support
-  rw [← hP]
-  exact P.isConvexPolyhedron
+theorem isConvexPolyhedron : TauCeti.IsConvexPolyhedron W.support :=
+  W.rational_support.isConvexPolyhedron
 
 /-- The nonzero normal makes the support a codimension-one polyhedron. -/
 theorem finrank_direction_add_one :

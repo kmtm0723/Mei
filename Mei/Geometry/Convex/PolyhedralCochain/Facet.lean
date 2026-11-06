@@ -272,8 +272,7 @@ private theorem finite_boundaryFacets (σ : OrientedCell h k) :
     simp only [boundaryFacet_carrier] at heq
     subst G
     rfl
-  · obtain ⟨P, hP⟩ := isRationalNormalPolyhedron_iff.mp σ.rational
-    exact hP ▸ P.isConvexPolyhedron.finite_exposed_sets
+  · exact σ.rational.isConvexPolyhedron.finite_exposed_sets
 
 /-- All nonempty exposed facets, with their signed boundary orientations. Each geometric
 facet occurs once, regardless of redundant inequalities in a presentation of the cell. -/
@@ -330,9 +329,7 @@ theorem carrier_eq_cut_zero_or_inter_boundaryFacet (σ τ : OrientedCell h k)
       finrank ℝ (vectorSpan ℝ σ.carrier) := by
     rw [← hτ]
     omega
-  have hpoly : TauCeti.IsConvexPolyhedron σ.carrier := by
-    obtain ⟨P, hP⟩ := isRationalNormalPolyhedron_iff.mp σ.rational
-    exact hP ▸ P.isConvexPolyhedron
+  have hpoly : TauCeti.IsConvexPolyhedron σ.carrier := σ.rational.isConvexPolyhedron
   have hface : IsExposed ℝ (σ.carrier ∩ {x | g x ≤ 0}) F := by rwa [← hτ]
   rcases (hpoly.facet_cut_iff g hFne hcut (by omega)).mp hface with he | ⟨G, hG, hGdim, he⟩
   · left

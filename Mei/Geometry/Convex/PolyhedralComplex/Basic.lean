@@ -68,9 +68,8 @@ theorem mem_support {C : FinitePolyhedralComplex h} {x : V} :
 
 /-- Each cell is a convex polyhedron in the existing supplier's sense. -/
 theorem isConvexPolyhedron (C : FinitePolyhedralComplex h) {P : Set V} (hP : P ∈ C.cells) :
-    TauCeti.IsConvexPolyhedron P := by
-  obtain ⟨Q, rfl⟩ := isRationalNormalPolyhedron_iff.mp (C.rational P hP)
-  exact Q.isConvexPolyhedron
+    TauCeti.IsConvexPolyhedron P :=
+  (C.rational P hP).isConvexPolyhedron
 
 /-- A nonempty intersection of two cells is again a cell. -/
 theorem inter_mem_cells (C : FinitePolyhedralComplex h) {P Q : Set V}

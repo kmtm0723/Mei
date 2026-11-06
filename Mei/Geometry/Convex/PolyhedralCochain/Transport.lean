@@ -55,9 +55,8 @@ private theorem wallCrossingSum_loop_eq_zero_of_eq_coboundary
     p.wallCrossingSum ν c = 0 := by
   classical
   let := h.finiteDimensional
-  have hpoly (τ : OrientedCell h 1) : TauCeti.IsConvexPolyhedron τ.carrier := by
-    obtain ⟨P, hP⟩ := isRationalNormalPolyhedron_iff.mp τ.rational
-    exact hP ▸ P.isConvexPolyhedron
+  have hpoly (τ : OrientedCell h 1) : TauCeti.IsConvexPolyhedron τ.carrier :=
+    τ.rational.isConvexPolyhedron
   have hker (j : ι) : (ν j).ker = (affineSpan ℝ (σ j).carrier).direction := by
     obtain ⟨m, _, hm, hs⟩ := (σ j).exists_integral_coorientation
     ext v

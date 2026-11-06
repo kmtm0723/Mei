@@ -106,8 +106,7 @@ theorem levelConsistent_succ_of_closed_residual
   let W := fun j => (υ j).carrier
   have hpoly : ∀ j, TauCeti.IsConvexPolyhedron (W j) := by
     intro j
-    obtain ⟨Q, hQ⟩ := isRationalNormalPolyhedron_iff.mp (υ j).rational
-    simpa only [W, hQ] using Q.isConvexPolyhedron
+    exact (υ j).rational.isConvexPolyhedron
   have hdim (j) : Module.finrank ℝ (affineSpan ℝ (W j)).direction + 1 =
       Module.finrank ℝ V := (υ j).finrank_direction_add
   let FD : WallComplement W ⥤q

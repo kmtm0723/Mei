@@ -170,8 +170,7 @@ theorem exists_ball_sum_intersectionIndex_boundaryFacets_eq_sum_succAbove_of_fac
         ∑ m : Fin 3, (-1 : ℤ) ^ (m : ℕ) * σ.intersectionIndex (s.points ∘ m.succAbove) := by
   classical
   have := h.finiteDimensional
-  obtain ⟨P, hP⟩ := isRationalNormalPolyhedron_iff.mp σ.rational
-  have hpoly : TauCeti.IsConvexPolyhedron σ.carrier := hP ▸ P.isConvexPolyhedron
+  have hpoly : TauCeti.IsConvexPolyhedron σ.carrier := σ.rational.isConvexPolyhedron
   obtain ⟨l, ε, hε, hl, hlocal, -⟩ :=
     hpoly.exists_ball_inter_eq_halfspace_of_facet hF hdim hp
   obtain ⟨δ, hδ, hδball⟩ := σ.exists_ball_disjoint_other_boundaryFacets hF hdim hp
