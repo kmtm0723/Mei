@@ -5,6 +5,7 @@ Authors: Claude Code
 -/
 module
 
+public import Mei.Analysis.Normed.ContinuousLinearMap.Plane
 public import Mei.Geometry.Convex.PolyhedralComplex.CoordinateAxes
 public import Mei.Geometry.Convex.PolyhedralComplex.OfPolyhedron.Basic
 public import Mei.Geometry.Convex.Recession
@@ -54,17 +55,6 @@ namespace ContinuousLinearMap
 
 open Mei.FinitePolyhedralComplex.Examples
 
-/-- On a horizontal line, a functional is determined by its value at one point and its value at
-`(1, 0)`. -/
-theorem apply_eq_of_snd_eq (l : (ℝ × ℝ) →L[ℝ] ℝ) {p q : ℝ × ℝ} (hpq : q.2 = p.2) :
-    l q = l p + (q.1 - p.1) * l (1, 0) := by
-  have : q = p + (q.1 - p.1) • ((1 : ℝ), (0 : ℝ)) := by
-    ext
-    · simp
-    · simp [hpq]
-  calc l q = l (p + (q.1 - p.1) • ((1 : ℝ), (0 : ℝ))) := congrArg l this
-    _ = l p + (q.1 - p.1) * l (1, 0) := by rw [map_add, map_smul, smul_eq_mul]
-
 /-- A functional that attains its maximum over a horizontal line at some point vanishes on the
 direction `(1, 0)` of the line, hence is constant on the line. -/
 theorem apply_one_zero_eq_zero (l : (ℝ × ℝ) →L[ℝ] ℝ) {c : ℝ} {x : ℝ × ℝ}
@@ -74,11 +64,6 @@ theorem apply_one_zero_eq_zero (l : (ℝ × ℝ) →L[ℝ] ℝ) {c : ℝ} {x : �
   have hneg := hmax (x - (1, 0)) (by simpa using hx)
   simp only [map_add, map_sub] at hpos hneg
   linarith
-
-/-- On the horizontal axis, a functional is its first coordinate times its value at `(1, 0)`. -/
-theorem apply_eq_of_snd_eq_zero (l : (ℝ × ℝ) →L[ℝ] ℝ) {p : ℝ × ℝ} (hp : p.2 = 0) :
-    l p = p.1 * l (1, 0) := by
-  simpa using l.apply_eq_of_snd_eq (p := 0) (q := p) (by simpa using hp)
 
 end ContinuousLinearMap
 
