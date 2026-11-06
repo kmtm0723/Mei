@@ -44,9 +44,12 @@ variable {R Λ V E ι κ κ' : Type*} {Γ : Type} {M L : Type u} [CommRing R] [A
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   {i : Λ →+ V} (h : TauCeti.Toric.IsIntegralLattice i)
   {j : ℤ →+ E} (h' : TauCeti.Toric.IsIntegralLattice j)
-  (D₀ : DirectedDiagram (d := d) h H ι) (a : ℳ p)
+
+section ArbitraryProbe
+
+variable {σ : Type*}
   (D : DirectedDiagram (d := positiveDegrees d p) (h.prod h')
-    (wallSpaces d ℳ p ℒ H) ((ι ⊕ Unit) ⊕ κ))
+    (wallSpaces d ℳ p ℒ H) σ)
   (B : DirectedDiagram (d := d) h H κ')
 
 local notation "field" => extendedCoefficientField d ℳ p ℒ H h h' D B
@@ -65,6 +68,70 @@ def coherentProbeEndpointFunction (k K : ℕ) (hkK : k ≤ K)
         (Int.ofNat_le.mpr hkK)) (field K hBc ⟨Q, hQ⟩)
   else 0
 
+open Classical in
+/-- The coherent endpoint function reads the actual larger-cutoff component on
+its allowed locus and is zero elsewhere. -/
+theorem coherentProbeEndpointFunction_def (k K : ℕ) (hkK : k ≤ K)
+    (hBc : B.LevelConsistent K) :
+    coherentProbeEndpointFunction d ℳ p ℒ H h h' D B k K hkK hBc = fun Q n =>
+      if hQ : ∀ c : B.active K, Q ∉ (B.wall c).support then
+        d.shiftedQuotientComponent ℳ p (p + n.val) K
+          ((PositiveDegrees.degree_add_val_sub_self_le d p k n).trans
+            (Int.ofNat_le.mpr hkK)) (field K hBc ⟨Q, hQ⟩)
+      else 0 := by rfl
+
+/-- At an allowed endpoint, read the larger-cutoff component directly. No
+consistency or charge-zero comparison hypothesis on the probe is needed. -/
+@[simp]
+theorem coherentProbeEndpointFunction_apply_of_allowed
+    (k K : ℕ) (hkK : k ≤ K) (hBc : B.LevelConsistent K)
+    (Q : V) (n : d.cutoff k) (hQ : ∀ c : B.active K, Q ∉ (B.wall c).support) :
+    coherentProbeEndpointFunction d ℳ p ℒ H h h' D B k K hkK hBc Q n =
+      d.shiftedQuotientComponent ℳ p (p + n.val) K
+        ((PositiveDegrees.degree_add_val_sub_self_le d p k n).trans
+          (Int.ofNat_le.mpr hkK)) (field K hBc ⟨Q, hQ⟩) := by
+  simp only [coherentProbeEndpointFunction_def]
+  rw [dite_eq_left hQ]
+
+/-- Outside the larger-cutoff allowed locus, all totalized coefficients vanish. -/
+theorem coherentProbeEndpointFunction_apply_of_not_allowed
+    (k K : ℕ) (hkK : k ≤ K) (hBc : B.LevelConsistent K)
+    (Q : V) (n : d.cutoff k) (hQ : ¬ ∀ c : B.active K, Q ∉ (B.wall c).support) :
+    coherentProbeEndpointFunction d ℳ p ℒ H h h' D B k K hkK hBc Q n = 0 := by
+  simp only [coherentProbeEndpointFunction_def, hQ, ↓reduceDIte]
+
+/-- The zero branch in simp normal form: a wall containing the point has a
+nonidentity projected label, so it is active at the ambient cutoff. -/
+@[simp]
+theorem coherentProbeEndpointFunction_apply_of_active_wall
+    (k K : ℕ) (hkK : k ≤ K) (hBc : B.LevelConsistent K)
+    (Q : V) (n : d.cutoff k)
+    (hQ : ∃ c, CompletedGroup.projection K (B.wall c).label ≠ 1 ∧ Q ∈ (B.wall c).support) :
+    coherentProbeEndpointFunction d ℳ p ℒ H h h' D B k K hkK hBc Q n = 0 := by
+  apply coherentProbeEndpointFunction_apply_of_not_allowed d ℳ p ℒ H h h' D B
+    k K hkK hBc Q n
+  obtain ⟨c, hc, hQc⟩ := hQ
+  intro hallowed
+  exact hallowed ⟨c, (B.mem_active K c).mpr hc⟩ hQc
+
+/-- A point on any active larger-cutoff wall has zero totalized coefficients. -/
+theorem coherentProbeEndpointFunction_apply_of_mem_support
+    (k K : ℕ) (hkK : k ≤ K) (hBc : B.LevelConsistent K)
+    (Q : V) (n : d.cutoff k) (c : B.active K) (hQ : Q ∈ (B.wall c).support) :
+    coherentProbeEndpointFunction d ℳ p ℒ H h h' D B k K hkK hBc Q n = 0 := by
+  exact coherentProbeEndpointFunction_apply_of_not_allowed d ℳ p ℒ H h h' D B
+    k K hkK hBc Q n (fun hQ' => hQ' c hQ)
+
+/-- Enlarging the retained degree index at a fixed ambient cutoff does not
+change any retained endpoint coefficient, including on the zero-totalized locus. -/
+theorem coherentProbeEndpointFunction_cutoff_inclusion
+    {k l K : ℕ} (hkl : k ≤ l) (hlK : l ≤ K) (hBc : B.LevelConsistent K)
+    (Q : V) (n : d.cutoff k) :
+    coherentProbeEndpointFunction d ℳ p ℒ H h h' D B l K hlK hBc Q
+        ⟨n.val, d.cutoff_mono hkl n.property⟩ =
+      coherentProbeEndpointFunction d ℳ p ℒ H h h' D B k K (hkl.trans hlK) hBc Q n := by
+  rw [coherentProbeEndpointFunction_def, coherentProbeEndpointFunction_def]
+
 /-- At a larger-cutoff allowed endpoint, the coherent endpoint function is the
 actual lower-cutoff probe component. Anchor choices disappear by probe transport
 and coefficient transition compatibility. -/
@@ -79,10 +146,22 @@ theorem coherentProbeEndpointFunction_eq_component
       (component k n) (field k (hBc.mono hkK)
         ((WallComplement.restrictPrefunctor (B.activeSupport K)
           (Set.inclusion (B.active_mono hkK))).obj z)) := by
-  rw [coherentProbeEndpointFunction, dite_eq_left z.notMem]
+  rw [coherentProbeEndpointFunction_apply_of_allowed d ℳ p ℒ H h h' D B
+    k K hkK hBc z.val n z.notMem]
   rw [← transition_extendedCoefficientField d ℳ p ℒ H h h' D B hkK
     (hBc.mono hkK) hBc hD hB,
     d.shiftedQuotientComponent_transition]
+
+end ArbitraryProbe
+
+variable (D₀ : DirectedDiagram (d := d) h H ι) (a : ℳ p)
+  (D : DirectedDiagram (d := positiveDegrees d p) (h.prod h')
+    (wallSpaces d ℳ p ℒ H) ((ι ⊕ Unit) ⊕ κ))
+  (B : DirectedDiagram (d := d) h H κ')
+
+local notation "field" => extendedCoefficientField d ℳ p ℒ H h h' D B
+local notation "component" k:max n:max => d.shiftedQuotientComponent ℳ p (p + (n : Γ)) k
+  (PositiveDegrees.degree_add_val_sub_self_le d p k n)
 
 /-- The actual probe field at any common larger cutoff satisfies the backward
 endpoint recurrence at each highest retained positive degree. All normal-compatible
@@ -187,6 +266,12 @@ theorem exists_coherentBackwardRayEndpointStepArrangement
     have hg' := hg zlow m
     have hf' := coherentProbeEndpointFunction_eq_component d ℳ p ℒ H h h' D B
       k K ((Nat.le_succ k).trans hkK) hBc hD hB z m
+    -- Expand only the local names for the incoming point and retained index here.
+    -- The change of cutoff is performed explicitly by the public lemma below.
+    change g Z m' = coherentProbeEndpointFunction d ℳ p ℒ H h h' D B
+      (k + 1) K hkK hBc Z m'
+    rw [coherentProbeEndpointFunction_cutoff_inclusion d ℳ p ℒ H h h' D B
+      (Nat.le_succ k) hkK hBc Z m]
     exact hg'.trans hf'.symm
   · rfl
 
