@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Geometry.ScatteringDiagram.BrokenLine.Degeneration
+public import Mei.Geometry.ScatteringDiagram.BrokenLine.Itineraries.Continuation
 
 /-!
 # Coherent local transport of actual decorated rays
@@ -51,6 +51,7 @@ def endpointEquiv {Q Q' : V} (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ doma
   (fiber(Q)).trans ((Equiv.subtypeEquivRight h).trans (fiber(Q')).symm)
 
 /-- Canonical endpoint continuation preserves the entire decorated type. -/
+@[simp↓]
 theorem endpointEquiv_type {Q Q' : V}
     (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) (r : Rays(Q)) :
     (fiber(Q') (endpointEquiv c P W S C h r)).val = (fiber(Q) r).val := by
@@ -94,6 +95,7 @@ theorem endpointEquiv_symm {Q Q' : V}
   rw [Equiv.apply_symm_apply, endpointEquiv_trans, endpointEquiv_self]
 
 /-- The whole decoration is constant along canonical endpoint continuation. -/
+@[simp↓]
 theorem endpointEquiv_decoration {Q Q' : V}
     (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) (r : Rays(Q)) :
     (endpointEquiv c P W S C h r).decoration = r.decoration := by
@@ -101,31 +103,47 @@ theorem endpointEquiv_decoration {Q Q' : V}
     endpointEquiv_type, cutoffDecoratedRayFiberEquiv_decoration]
 
 /-- A neighborhood with constant admitted types is a product of its endpoints
-and one actual ray fiber. All actual rays over the neighborhood are retained.
-The endpoint projection is exposed so the dependent target fiber reduces to the
-specified endpoint without inserting casts. -/
-@[expose] def familyTrivialization {U : Set V} {Q₀ : V}
+and one actual ray fiber. All actual rays over the neighborhood are retained. -/
+def familyTrivialization {U : Set V} {Q₀ : V}
     (hU : ∀ Q ∈ U, ∀ t : Types, Q₀ ∈ domain(t) ↔ Q ∈ domain(t)) :
-    U × Rays(Q₀) ≃ Σ Q : U, Rays(Q.val) where
-  toFun z := ⟨z.1, endpointEquiv c P W S C (hU z.1 z.1.property) z.2⟩
-  invFun z := ⟨z.1, (endpointEquiv c P W S C (hU z.1 z.1.property)).symm z.2⟩
-  left_inv z := by simp
-  right_inv z := by simp
+    U × Rays(Q₀) ≃ Σ Q : U, Rays(Q.val) :=
+  (Equiv.sigmaEquivProdOfEquiv
+    (fun Q : U => (endpointEquiv c P W S C (hU Q Q.property)).symm)).symm
+
+/-- The forward chart map keeps the endpoint and continues the reference ray. -/
+@[simp]
+theorem familyTrivialization_apply {U : Set V} {Q₀ : V}
+    (hU : ∀ Q ∈ U, ∀ t : Types, Q₀ ∈ domain(t) ↔ Q ∈ domain(t)) (z : U × Rays(Q₀)) :
+    familyTrivialization c P W S C hU z =
+      ⟨z.1, endpointEquiv c P W S C (hU z.1 z.1.property) z.2⟩ := (rfl)
+
+/-- The inverse chart map returns the ray to the reference fiber. -/
+@[simp]
+theorem familyTrivialization_symm_apply {U : Set V} {Q₀ : V}
+    (hU : ∀ Q ∈ U, ∀ t : Types, Q₀ ∈ domain(t) ↔ Q ∈ domain(t)) (z : Σ Q : U, Rays(Q.val)) :
+    (familyTrivialization c P W S C hU).symm z =
+      ⟨z.1, (endpointEquiv c P W S C (hU z.1 z.1.property)).symm z.2⟩ := (rfl)
 
 /-- The trivialization leaves the endpoint coordinate unchanged. -/
-@[simp]
 theorem familyTrivialization_endpoint {U : Set V} {Q₀ : V}
     (hU : ∀ Q ∈ U, ∀ t : Types, Q₀ ∈ domain(t) ↔ Q ∈ domain(t)) (z : U × Rays(Q₀)) :
-    (familyTrivialization c P W S C hU z).1 = z.1 := by rfl
+    (familyTrivialization c P W S C hU z).1 = z.1 := (rfl)
+
+/-- The inverse trivialization also leaves the endpoint coordinate unchanged. -/
+theorem familyTrivialization_symm_endpoint {U : Set V} {Q₀ : V}
+    (hU : ∀ Q ∈ U, ∀ t : Types, Q₀ ∈ domain(t) ↔ Q ∈ domain(t)) (z : Σ Q : U, Rays(Q.val)) :
+    ((familyTrivialization c P W S C hU).symm z).1 = z.1 := (rfl)
 
 /-- Every product branch retains its exact complete decorated type. -/
-@[simp]
+@[simp↓]
 theorem familyTrivialization_type {U : Set V} {Q₀ : V}
     (hU : ∀ Q ∈ U, ∀ t : Types, Q₀ ∈ domain(t) ↔ Q ∈ domain(t)) (z : U × Rays(Q₀)) :
-    (fiber(z.1.val) (familyTrivialization c P W S C hU z).2).val = (fiber(Q₀) z.2).val :=
+    (fiber((familyTrivialization c P W S C hU z).1.val)
+      (familyTrivialization c P W S C hU z).2).val = (fiber(Q₀) z.2).val :=
   endpointEquiv_type c P W S C (hU z.1 z.1.property) z.2
 
 /-- The whole coefficient, not just its homogeneous degree, is preserved. -/
+@[simp↓]
 theorem familyTrivialization_decoration {U : Set V} {Q₀ : V}
     (hU : ∀ Q ∈ U, ∀ t : Types, Q₀ ∈ domain(t) ↔ Q ∈ domain(t)) (z : U × Rays(Q₀)) :
     (familyTrivialization c P W S C hU z).2.decoration = z.2.decoration :=
@@ -138,15 +156,11 @@ theorem familyTrivialization_change_base {U : Set V} {Q₀ Q₁ : V}
     (h₁ : ∀ Q ∈ U, ∀ t : Types, Q₁ ∈ domain(t) ↔ Q ∈ domain(t))
     (h₀₁ : ∀ t : Types, Q₀ ∈ domain(t) ↔ Q₁ ∈ domain(t))
     (Q : U) (r : Rays(Q₀)) :
-    (familyTrivialization c P W S C h₁
-      (Q, endpointEquiv c P W S C h₀₁ r)).2 =
-        (familyTrivialization c P W S C h₀ (Q, r)).2 := by
-  -- Expand only the forward maps of the two product charts.
-  change endpointEquiv c P W S C (h₁ Q Q.property)
-    (endpointEquiv c P W S C h₀₁ r) = endpointEquiv c P W S C (h₀ Q Q.property) r
-  apply (fiber(Q.val)).injective
-  apply Subtype.ext
-  simp only [endpointEquiv_type]
+    familyTrivialization c P W S C h₁ (Q, endpointEquiv c P W S C h₀₁ r) =
+      familyTrivialization c P W S C h₀ (Q, r) := by
+  rw [familyTrivialization_apply, familyTrivialization_apply]
+  congr 1
+  exact endpointEquiv_trans c P W S C h₀₁ (h₁ Q Q.property) r
 
 /-- The path of a product branch is the continuous extension of its reference
 ray's complete type, evaluated at the new endpoint. -/
@@ -154,9 +168,7 @@ theorem familyTrivialization_path {U : Set V} {Q₀ : V}
     (hU : ∀ Q ∈ U, ∀ t : Types, Q₀ ∈ domain(t) ↔ Q ∈ domain(t)) (z : U × Rays(Q₀)) :
     (familyTrivialization c P W S C hU z).2.realization.2.ray.toContinuousMap =
       (fiber(Q₀) z.2).val.path c z.1.val := by
-  -- Expand the product chart's forward map, leaving endpoint continuation abstract.
-  change (endpointEquiv c P W S C (hU z.1 z.1.property) z.2).realization.2.ray.toContinuousMap = _
-  rw [toContinuousMap_eq_typePath c P W S C, endpointEquiv_type]
+  rw [familyTrivialization_apply, toContinuousMap_eq_typePath c P W S C, endpointEquiv_type]
 
 /-- Each actual product branch varies continuously in compact-open path space.
 The path includes its entire incoming half-line. -/
@@ -164,13 +176,13 @@ theorem continuous_familyTrivialization_path {U : Set V} {Q₀ : V}
     (hU : ∀ Q ∈ U, ∀ t : Types, Q₀ ∈ domain(t) ↔ Q ∈ domain(t)) (r : Rays(Q₀)) :
     Continuous (fun Q : U =>
       (familyTrivialization c P W S C hU (Q, r)).2.realization.2.ray.toContinuousMap) := by
-  have he : (fun Q : U =>
-      (familyTrivialization c P W S C hU (Q, r)).2.realization.2.ray.toContinuousMap) =
-      fun Q : U => (fiber(Q₀) r).val.path c Q.val := by
-    funext Q
-    exact familyTrivialization_path c P W S C hU (Q, r)
-  rw [he]
-  exact ((fiber(Q₀) r).val.path c).continuous.comp continuous_subtype_val
+  apply continuous_of_type_eq c P W S C
+    (fun Q : U => (familyTrivialization c P W S C hU (Q, r)).2)
+    (fiber(Q₀) r).val
+  · simpa only [familyTrivialization_endpoint] using
+      (continuous_subtype_val : Continuous (fun Q : U => Q.val))
+  · intro Q
+    exact familyTrivialization_type c P W S C hU (Q, r)
 
 /-- A single exceptional arrangement supplies genuine local product charts of
 actual rays, with continuous path branches and constant complete types and weights.
@@ -186,7 +198,7 @@ theorem exists_localFamilyTrivialization
           (hU : ∀ Q ∈ U, ∀ t : Types, Q₀ ∈ domain(t) ↔ Q ∈ domain(t)),
           let e := familyTrivialization c P W S C hU
           (∀ z, (e z).1 = z.1) ∧
-          (∀ z, (fiber(z.1.val) (e z).2).val = (fiber(Q₀) z.2).val) ∧
+          (∀ z, (fiber((e z).1.val) (e z).2).val = (fiber(Q₀) z.2).val) ∧
           (∀ z, (e z).2.decoration = z.2.decoration) ∧
           ∀ r : Rays(Q₀), Continuous
             (fun Q : U => (e (Q, r)).2.realization.2.ray.toContinuousMap) := by
