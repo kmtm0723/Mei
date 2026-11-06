@@ -317,22 +317,18 @@ theorem unimodularBLMPolynomialInput_multiplicity
     unimodularBLMPolynomialInput.multiplicity i = 1 :=
   (rfl)
 
-/-- The unfrozen index of the basis vector `e_k` of the unimodular plane. -/
-def unimodularIndex (k : Fin 2) : unimodularRankTwoAdaptedBasis.unfrozenIndex :=
-  ⟨k, by simp⟩
-
 /-- The polynomial input on the unimodular plane is of type `A₂` at `e₀, e₁`:
 `d₀ {e₀, e₁} = d₁ {e₀, e₁} = 1`. -/
 theorem isTypeA₂_unimodularBLMPolynomialInput :
-    unimodularBLMPolynomialInput.IsTypeA₂ (unimodularIndex 0) (unimodularIndex 1) where
+    unimodularBLMPolynomialInput.IsTypeA₂ unimodularRankTwoFst unimodularRankTwoSnd where
   eq_or_eq i := by
     obtain ⟨i, hi⟩ := i
     fin_cases i
     exacts [Or.inl rfl, Or.inr rfl]
   multiplicity_fst := unimodularBLMPolynomialInput_multiplicity _
   multiplicity_snd := unimodularBLMPolynomialInput_multiplicity _
-  multiplier_mul_form_fst := by simp [unimodularIndex]
-  multiplier_mul_form_snd := by simp [unimodularIndex]
+  multiplier_mul_form_fst := by simp
+  multiplier_mul_form_snd := by simp
 
 /-- The alphabet degrees of the input are allowed exponents of its coefficient monoid. -/
 instance unimodularBLMPolynomialInput_coefficientMonoid_fact :
