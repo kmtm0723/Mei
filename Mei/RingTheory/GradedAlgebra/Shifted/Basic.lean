@@ -243,7 +243,7 @@ section Map
 variable {Γ R A B : Type*} [AddCommGroup Γ] [CommRing R]
   [Ring A] [Algebra R A] [Ring B] [Algebra R B] [DecidableEq Γ]
   (d : PositiveDegrees Γ) (𝒜 : Γ → Submodule R A) (ℬ : Γ → Submodule R B)
-  [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
+  [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜] [SetLike.GradedMul ℬ]
   (f : A →ₐ[R] B) (hf : ∀ u, 𝒜 u ≤ (ℬ u).comap f.toLinearMap)
 
 /-- A degree-preserving algebra map intertwines the existing completed shifted products. -/
