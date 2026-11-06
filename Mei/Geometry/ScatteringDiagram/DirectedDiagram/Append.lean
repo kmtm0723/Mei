@@ -296,15 +296,13 @@ theorem forall_notMem_append_iff (k : ℕ) (y : V) :
 
 /-- **Commuting families.** If `D` and `E` are consistent at order `k` and every projected label
 of `D` commutes with every projected label of `E` at that order, then the union `D.append E` is
-consistent at order `k`. The walls of the two families may cross, overlap or coincide.
-
-The pointwise product of the two transport functions `D.levelTransportFun` and
-`E.levelTransportFun`, whose values commute, satisfies the local criterion
-`levelConsistent_of_local`. -/
+consistent at order `k`. The walls of the two families may cross, overlap or coincide. -/
 theorem LevelConsistent.append {k : ℕ} (hD : D.LevelConsistent k) (hE : E.LevelConsistent k)
     (hDE : ∀ a b, Commute (CompletedGroup.projection k (D.wall a).label)
       (CompletedGroup.projection k (E.wall b).label)) :
     (D.append E).LevelConsistent k := by
+  -- The pointwise product of the two transport functions, whose values commute, satisfies the
+  -- local criterion.
   refine ((D.append E).levelConsistent_iff_loops k).mpr fun x p => ?_
   obtain ⟨hxD, hxE⟩ := (D.forall_notMem_append_iff E k x.val).mp x.notMem
   let xD : WallComplement (fun j : D.active k => (D.wall j).support) := ⟨x.val, hxD⟩

@@ -162,6 +162,13 @@ theorem levelTransportFun_val (y : WallComplement (fun j : D.active k => (D.wall
     D.levelTransportFun hD x y.val = D.levelTransport k hD x y :=
   D.levelTransportFun_of_notMem hD x y.notMem
 
+/-- On the active walls, the transport function is `1`. -/
+theorem levelTransportFun_of_mem {y : V} (hy : ¬ ∀ j : D.active k, y ∉ (D.wall j).support) :
+    D.levelTransportFun hD x y = 1 := by
+  classical
+  rw [levelTransportFun]
+  exact dite_eq_right hy
+
 /-- The transport function takes values in every subgroup containing the projected labels of
 the walls active at order `k`. -/
 theorem levelTransportFun_mem {S : Subgroup (d.truncatedGroup ℒ k)}
@@ -171,8 +178,7 @@ theorem levelTransportFun_mem {S : Subgroup (d.truncatedGroup ℒ k)}
   · obtain ⟨p⟩ := D.exists_level_path k x ⟨y, hy⟩
     rw [D.levelTransportFun_of_notMem hD x hy, D.levelTransport_eq_levelPathProduct hD p]
     exact D.levelPathProduct_mem k hS p
-  · classical
-    rw [levelTransportFun, dite_eq_right hy]
+  · rw [D.levelTransportFun_of_mem hD x hy]
     exact S.one_mem
 
 /-- Off the active walls, the transport function is locally constant. -/
