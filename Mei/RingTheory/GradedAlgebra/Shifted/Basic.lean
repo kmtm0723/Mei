@@ -244,22 +244,25 @@ variable {Γ R A B : Type*} [AddCommGroup Γ] [CommRing R]
   [Ring A] [Algebra R A] [Ring B] [Algebra R B] [DecidableEq Γ]
   (d : PositiveDegrees Γ) (𝒜 : Γ → Submodule R A) (ℬ : Γ → Submodule R B)
   [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜] [SetLike.GradedMul ℬ]
-  (f : A →ₐ[R] B) (hf : ∀ u, 𝒜 u ≤ (ℬ u).comap f.toLinearMap)
+  (f : A →ₗ[R] B) (hf : ∀ u, 𝒜 u ≤ (ℬ u).comap f)
+  (hmul : ∀ a b, f (a * b) = f a * f b)
 
-/-- A degree-preserving algebra map intertwines the existing completed shifted products. -/
+include hmul in
+/-- A multiplicative degree-preserving linear map intertwines the existing completed
+shifted products. -/
 @[simp]
 theorem completionCoefficientMap_mul (p q : Γ)
     (x : d.ShiftedCoefficients 𝒜 p) (y : d.ShiftedCoefficients 𝒜 q) :
-    d.completionCoefficientMap 𝒜 ℬ (p + q) f.toLinearMap hf
+    d.completionCoefficientMap 𝒜 ℬ (p + q) f hf
         (d.shiftedCompletionMul 𝒜 p q x y) =
       d.shiftedCompletionMul ℬ p q
-        (d.completionCoefficientMap 𝒜 ℬ p f.toLinearMap hf x)
-        (d.completionCoefficientMap 𝒜 ℬ q f.toLinearMap hf y) := by
+        (d.completionCoefficientMap 𝒜 ℬ p f hf x)
+        (d.completionCoefficientMap 𝒜 ℬ q f hf y) := by
   simp only [completionCoefficientMap_eq_completionMap, shiftedCompletionMul_def]
   apply ModuleFiltration.completionMap_completionBilinear
   intro a b
   apply Subtype.ext
-  simp only [coe_shiftedCoefficientMap, coe_shiftedMul, AlgHom.toLinearMap_apply, map_mul]
+  simp only [coe_shiftedCoefficientMap, coe_shiftedMul, hmul]
 
 end Map
 
