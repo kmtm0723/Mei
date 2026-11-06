@@ -60,8 +60,60 @@ local notation "action" => d.shiftedLieFiltration ℒ ℳ p
 
 variable (b : (k : ℕ) → (d.shiftedQuotientGrading ℳ p k).piece 0)
 
-local notation "evaluation" k:max Q:max =>
-  cutoffWallEventEvaluation d ℳ p ℒ H h B k k (Nat.le_refl k) (b k) univ Q
+local notation "evaluation" =>
+  (fun (k : ℕ) (Q : V) =>
+    cutoffWallEventEvaluation d ℳ p ℒ H h B k k (Nat.le_refl k) (b k) univ Q)
+
+/-- Assemble completed actual ray values from finite comparison on any family
+of allowed endpoints. Geometric inventories vary with the cutoff; their
+compatibility follows from the probe transition law. No genericity, initial
+wall, or outgoing-wall assumptions are needed beyond the supplied equality. -/
+theorem exists_completedWallEventEvaluation_of_eq
+    (hBc : B.Consistent) (hD : D.Consistent)
+    (hB : (D.map (chargeZeroGradedLieHom d ℳ p ℒ)
+      (chargeZeroGradedLieHom_mem_wall d ℳ p ℒ H)).Equivalent
+      (cylinderDiagram d ℳ p ℒ H h h' B))
+    {X : Type*} (point : X → B.Point)
+    (hvalue : ∀ Q k, extendedCoefficientField d ℳ p ℒ H h h' D B k
+      ((B.consistent_iff.mp hBc) k) (CommonWallComplement.projection k (point Q)) =
+        evaluation k (point Q).val) :
+    ∃ Θ : X → (F).completion,
+      (∀ Q k l (hkl : k ≤ l), (F).transition hkl
+        (evaluation l (point Q).val) = evaluation k (point Q).val) ∧
+      (∀ Q k, (F).projection k (Θ Q) = evaluation k (point Q).val) ∧
+      (∀ Q Ψ, (∀ k, (F).projection k Ψ = evaluation k (point Q).val) → Ψ = Θ Q) ∧
+      (∀ Q, Θ Q = completedExtendedCoefficientField d ℳ p ℒ H h h' D B
+        hD hBc hB (point Q)) ∧
+      (∀ Q Q', Θ Q' = (action).completedBCHAction d ℒ
+        (B.transport hBc (point Q) (point Q')) (Θ Q)) := by
+  have hcompatible (Q : X) (k l : ℕ) (hkl : k ≤ l) :
+      (F).transition hkl (evaluation l (point Q).val) = evaluation k (point Q).val := by
+    rw [← hvalue Q l, ← hvalue Q k]
+    exact transition_extendedCoefficientField d ℳ p ℒ H h h' D B hkl
+      ((B.consistent_iff.mp hBc) k) ((B.consistent_iff.mp hBc) l)
+      ((D.consistent_iff.mp hD) (l + 1))
+      ((DirectedDiagram.equivalent_iff _ _).mp hB l)
+      (CommonWallComplement.projection l (point Q))
+  let Θ (Q : X) : (F).completion :=
+    ⟨fun k => evaluation k.unop (point Q).val,
+      ((F).mem_completionSubmodule_iff _).mpr (hcompatible Q)⟩
+  have hprojection (Q : X) (k : ℕ) :
+      (F).projection k (Θ Q) = evaluation k (point Q).val := by
+    dsimp only [Θ]
+    rw [ModuleFiltration.projection_mk]
+  have hcompleted (Q : X) : Θ Q =
+      completedExtendedCoefficientField d ℳ p ℒ H h h' D B hD hBc hB (point Q) := by
+    apply (F).completion_ext
+    intro k
+    rw [hprojection, projection_completedExtendedCoefficientField]
+    exact (hvalue Q k).symm
+  refine ⟨Θ, hcompatible, hprojection, ?_, hcompleted, ?_⟩
+  · intro Q Ψ hΨ
+    exact (F).completion_ext fun k => (hΨ k).trans (hprojection Q k).symm
+  · intro Q Q'
+    rw [hcompleted Q, hcompleted Q']
+    exact completedExtendedCoefficientField_eq_transport d ℳ p ℒ H h h' D B hD hBc hB
+      (point Q) (point Q')
 
 /-- Actual finite ray sums at their own geometric cutoffs are compatible on a
 dense Gδ common endpoint locus. Their inverse-limit values are the independently
@@ -111,34 +163,13 @@ theorem exists_completedWallEventEvaluation
       extendedCoefficientField d ℳ p ℒ H h h' D B k (hBk k)
         (CommonWallComplement.projection k (point Q)) = evaluation k Q.val :=
     heq Q k
-  have hcompatible (Q : Ω) (k l : ℕ) (hkl : k ≤ l) :
-      (F).transition hkl (evaluation l Q.val) = evaluation k Q.val := by
-    rw [← hvalue Q l, ← hvalue Q k]
-    exact transition_extendedCoefficientField d ℳ p ℒ H h h' D B hkl
-      (hBk k) (hBk l) (hDk l) (hBk' l) (CommonWallComplement.projection l (point Q))
-  let Θ (Q : Ω) : (F).completion :=
-    ⟨fun k => evaluation k.unop Q.val,
-      ((F).mem_completionSubmodule_iff _).mpr (hcompatible Q)⟩
-  have hprojection (Q : Ω) (k : ℕ) : (F).projection k (Θ Q) = evaluation k Q.val := by
-    dsimp only [Θ]
-    rw [ModuleFiltration.projection_mk]
-  have hcompleted (Q : Ω) : Θ Q =
-      completedExtendedCoefficientField d ℳ p ℒ H h h' D B hD hBc hB (point Q) := by
-    apply (F).completion_ext
-    intro k
-    rw [hprojection, projection_completedExtendedCoefficientField]
-    exact (hvalue Q k).symm
+  obtain ⟨Θ, hcompatible, hprojection, hunique, hcompleted, htransport⟩ :=
+    exists_completedWallEventEvaluation_of_eq d ℳ p ℒ H h h' D B b hBc hD hB point hvalue
   refine ⟨A, ?_, ?_, point, Θ, fun _ => rfl, hcompatible, hprojection,
-    ?_, hcompleted, ?_⟩
+    hunique, hcompleted, htransport⟩
   · simpa only [Sigma.forall] using ExceptionalArrangement.dense_iInter_isGeneric
       (fun kn : Σ k, d.cutoff k => A kn.1 kn.2)
   · simpa only [Sigma.forall] using ExceptionalArrangement.isGδ_iInter_isGeneric
       (fun kn : Σ k, d.cutoff k => A kn.1 kn.2)
-  · intro Q Ψ hΨ
-    exact (F).completion_ext fun k => (hΨ k).trans (hprojection Q k).symm
-  · intro Q Q'
-    rw [hcompleted Q, hcompleted Q']
-    exact completedExtendedCoefficientField_eq_transport d ℳ p ℒ H h h' D B hD hBc hB
-      (point Q) (point Q')
 
 end Mei.ModuleProbe

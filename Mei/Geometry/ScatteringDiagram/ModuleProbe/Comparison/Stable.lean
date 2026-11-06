@@ -60,8 +60,6 @@ variable {R Λ V E ι κ κ' : Type*} {Γ : Type} {M L : Type u} [CommRing R] [A
     (p + n.val, 1) ∈ (D.wall (.inr c)).ray.rayDegrees →
       (D.wall (.inr c)).Outgoing)
   (b : (d.shiftedQuotientGrading ℳ p K).piece 0)
-  (hb : d.shiftedQuotientComponent ℳ p p K (by simp only [sub_self, map_zero]; omega)
-    b = a)
 
 local notation "field" => extendedCoefficientField d ℳ p ℒ H h h' D B K hBc
 local notation "evaluation" => cutoffWallEventEvaluation d ℳ p ℒ H h B
@@ -76,12 +74,14 @@ local notation "domain" => CutoffDecoratedType.domain
   (fun e => WallEvent.support e (B.activeSupport K)) (B.activeSupport K)
   (fun _ : Unit => singularSupport (B.activeSupport K)) (univ : Set V)
 
-include hinitial hBc hD hB hout hb
+include hinitial hBc hD hB hout
 
 /-- Extend the independent probe/ray comparison to any allowed endpoint at
 which the actual weighted evaluation is locally constant. The point may belong
 to the auxiliary exceptional arrangements used in the recursion comparison. -/
 theorem extendedCoefficientField_eq_cutoffWallEventEvaluation_of_eventually_eq
+    (hb : d.shiftedQuotientComponent ℳ p p K (by simp only [sub_self, map_zero]; omega)
+    b = a)
     (x : WallComplement (B.activeSupport K))
     (hx : ∀ᶠ Q in 𝓝 x.val, evaluation Q = evaluation x.val) :
     field x = evaluation x.val := by
@@ -108,6 +108,8 @@ theorem extendedCoefficientField_eq_cutoffWallEventEvaluation_of_eventually_eq
 field is the weighted sum of actual rays. Only the base walls must be avoided;
 no auxiliary probe or recursion genericity is imposed at the endpoint. -/
 theorem extendedCoefficientField_eq_cutoffWallEventEvaluation_of_notMem_frontier
+    (hb : d.shiftedQuotientComponent ℳ p p K (by simp only [sub_self, map_zero]; omega)
+    b = a)
     (x : WallComplement (B.activeSupport K))
     (hx : ∀ t : types, x.val ∉ frontier (domain t)) :
     field x = evaluation x.val := by
@@ -121,6 +123,8 @@ theorem extendedCoefficientField_eq_cutoffWallEventEvaluation_of_notMem_frontier
 are related by the base path product along any admissible path. The incoming
 source is still the whole space, even when the path visits only a small region. -/
 theorem cutoffWallEventEvaluation_eq_truncatedBCHAction_levelPathProduct
+    (hb : d.shiftedQuotientComponent ℳ p p K (by simp only [sub_self, map_zero]; omega)
+    b = a)
     {x y : WallComplement (B.activeSupport K)} (γ : AdmissiblePLPath x y)
     (hx : ∀ t : types, x.val ∉ frontier (domain t))
     (hy : ∀ t : types, y.val ∉ frontier (domain t)) :
