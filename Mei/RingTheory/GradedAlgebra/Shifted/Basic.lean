@@ -241,9 +241,9 @@ end Ring
 section Map
 
 variable {Γ R A B : Type*} [AddCommGroup Γ] [CommRing R]
-  [Ring A] [Algebra R A] [Ring B] [Algebra R B] [DecidableEq Γ]
+  [Ring A] [Algebra R A] [Ring B] [Algebra R B]
   (d : PositiveDegrees Γ) (𝒜 : Γ → Submodule R A) (ℬ : Γ → Submodule R B)
-  [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜] [SetLike.GradedMul ℬ]
+  [SetLike.GradedMul 𝒜] [SetLike.GradedMul ℬ]
   (f : A →ₗ[R] B) (hf : ∀ u, 𝒜 u ≤ (ℬ u).comap f)
   (hmul : ∀ a b, f (a * b) = f a * f b)
 
