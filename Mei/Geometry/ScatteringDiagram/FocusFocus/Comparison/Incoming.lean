@@ -54,15 +54,8 @@ This equality retains the whole incoming half-line, not only its endpoint. -/
 theorem IncomingSlabChartRay.ray_eq_straight (α : IncomingSlabChartIndex c n b)
     (Q : ℝ × ℝ) (r : IncomingSlabChartRay c n b α Q) :
     r.2.ray = FiniteAffineRay.straight Q ((n : ℝ), (b : ℝ)) := by
-  have hb : r.2.ray.bends = 0 := by
-    apply Finsupp.support_eq_empty.mp
-    apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro t ht
-    obtain ⟨j, _⟩ := r.2.bends_recorded t ht
-    exact j.elim0
-  rw [(FiniteAffineRay.eq_straight_iff r.2.ray).mpr hb, r.2.endpoint_eq,
-    r.2.ray_direction]
-  simp only [Fin.snoc_zero]
+  obtain ⟨_, _, hr⟩ := r.2.eq_backwardRay
+  simpa only [backwardRay_zero, Fin.snoc_zero] using hr
 
 /-- The global incoming-source and wall-avoidance conditions force the endpoint
 to lie in the same open half-plane, also for zero normal velocity. -/
