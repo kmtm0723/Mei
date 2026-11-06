@@ -17,8 +17,7 @@ subsequence with one fixed complete decorated type, convergent endpoints, and
 convergent geometric paths. The limiting finite affine ray retains its incoming
 direction and the whole type's decoration; a polyhedral incoming source persists.
 
-This is a compactness supplier for the closed-family part of ScatteringDiagrams
-§5.3/R3. The endpoint construction follows Carl–Pumperla–Siebert,
+The endpoint construction follows Carl–Pumperla–Siebert,
 *A tropical view on Landau–Ginzburg models*, §4 (arXiv:2205.07753v2).
 A boundary limit is not asserted to be admissible: encounter times may collapse
 and singular sets may be met. Equal geometric limits do not identify types.
@@ -72,22 +71,20 @@ theorem CutoffDecoratedRay.exists_type_tendsto_subseq {B : Set V} (hB : IsCompac
     intro n
     have hh := (cutoffDecoratedRayFiberEquiv d ℳ T a v f c ε P W S C k
       (Q (φ n)) (r (φ n))).property
-    change Q (φ n) ∈ CutoffDecoratedType.domain c P W S C (types (φ n)) at hh
-    rwa [htφ n] at hh
+    exact congrArg (CutoffDecoratedType.domain c P W S C) (htφ n) ▸ hh
   have hq' : Tendsto (Q ∘ φ) atTop (𝓝 q) := hq
   refine ⟨t, q, φ, ⟨hqB, isClosed_closure.mem_of_tendsto hq'
     (Eventually.of_forall fun n => subset_closure (hdom n))⟩, hψ.comp hη,
     htφ, ?_, hq', ?_⟩
   · intro n
     rw [← cutoffDecoratedRayFiberEquiv_decoration d ℳ T a v f c ε P W S C]
-    change (types (φ n)).decoration = t.decoration
-    rw [htφ n]
+    exact congrArg CutoffDecoratedType.decoration (htφ n)
   · have hp := (t.path c).continuous.tendsto q |>.comp hq'
     convert hp using 1
     funext n
     rw [(r (φ n)).toContinuousMap_eq_typePath c P W S C]
-    change (types (φ n)).path c (Q (φ n)) = t.path c (Q (φ n))
-    rw [htφ n]
+    exact congrArg (fun u : CutoffDecoratedType d ℳ T a v f ε k =>
+      u.path c (Q (φ n))) (htφ n)
 
 /-- Compact endpoint confinement also supplies an actual limiting affine ray
 on the entire negative half-line, with unchanged incoming direction and source.
