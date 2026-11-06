@@ -14,7 +14,8 @@ The independent probe recurrence reads the same straight incoming cuts as
 weighted decorated rays. At every simultaneous event, each retained input degree
 uses its own spatial direction. Normal-velocity conservation removes incompatible
 blocks. One exceptional arrangement makes all compatible cuts generic for any
-prescribed finite arrangement, with a common sufficiently small displacement.
+prescribed finite arrangement. Displacements may be chosen independently at each
+event below one positive bound; a common displacement is a special case.
 
 The resulting component equation uses `eventEndpointStep` and any extension of
 the preceding-cutoff probe components to endpoint functions. Values outside the
@@ -64,10 +65,10 @@ local notation "component" k:max n:max => d.shiftedQuotientComponent ℳ p (p + 
 
 /-- One endpoint arrangement makes the independent probe jump equal the event
 endpoint step at straight generic incoming cuts. The endpoint function may be any
-extension of the actual preceding-cutoff components. The formula holds for every
-sufficiently small common displacement and every admissible segment in a highest
+extension of the actual preceding-cutoff components. The formula holds for all independently
+chosen event displacements below one positive bound and every admissible segment in a highest
 retained degree's direction. -/
-theorem exists_straightProbeStepArrangement
+theorem exists_eventwiseProbeStepArrangement
     (k : ℕ) (hBc : B.LevelConsistent (k + 1))
     (hD : D.LevelConsistent (k + 2))
     (hB : (D.map (chargeZeroGradedLieHom d ℳ p ℒ)
@@ -85,21 +86,23 @@ theorem exists_straightProbeStepArrangement
                   (d.mem_cutoff.mp m.property).2.trans
                     (Int.ofNat_le.mpr (Nat.le_succ k))⟩⟩
               f z.val m' = (component k m) (field k (hBc.mono (Nat.le_succ k)) z)) →
-          ∀ᶠ δ : ℝ in 𝓝[>] 0,
+          ∃ θ > (0 : ℝ), ∀ η : WallEvent (B.active (k + 1)) → ℝ,
+            (∀ b ∈ segmentWallEvents (B.activeNormal (k + 1)) e,
+              0 < η b ∧ η b < θ) →
             (∀ b ∈ segmentWallEvents (B.activeNormal (k + 1)) e,
               ∀ m : d.cutoff (k + 1),
                 b.normal (B.activeNormal (k + 1)) (i (ρ (p + n.val))) =
                   b.normal (B.activeNormal (k + 1)) (i (ρ (p + m.val))) →
                 F.IsGeneric (y.val +
                   segmentEventParameter (B.activeNormal (k + 1)) e T b •
-                    i (ρ (p + n.val)) + δ • i (ρ (p + m.val)))) ∧
+                    i (ρ (p + n.val)) + η b • i (ρ (p + m.val)))) ∧
             (component (k + 1) n) (field (k + 1) hBc y) =
               (component (k + 1) n) (field (k + 1) hBc x) +
                 eventEndpointStep d ℳ p ℒ H h B (k + 1) (k + 1) (Nat.le_refl _)
                   (fun _ _ => segmentWallEvents (B.activeNormal (k + 1)) e)
                   (fun b X r m => X +
                     segmentEventParameter (B.activeNormal (k + 1)) e T b •
-                      i (ρ (p + r.val)) + δ • i (ρ (p + m.val))) f y.val n := by
+                      i (ρ (p + r.val)) + η b • i (ρ (p + m.val))) f y.val n := by
   classical
   obtain ⟨G, hG⟩ := exists_straightEventInputArrangement d ℳ p ℒ H h h' D B
     (Nat.le_succ k) (hBc.mono (Nat.le_succ k)) F
@@ -147,11 +150,18 @@ theorem exists_straightProbeStepArrangement
       exact htrans (by rw [← neg_sub, hxy, map_neg, map_smul, hz]; simp only [smul_zero, neg_zero])
     rw [← heq]
     exact mul_self_pos.mpr hvn
-  filter_upwards [hG x y hy e n T hT hxy] with δ hδ
+  obtain ⟨θ, hθ, hsmall⟩ := mem_nhdsGT_iff_exists_Ioo_subset.mp
+    (hG x y hy e n T hT hxy)
+  refine ⟨θ, hθ, fun η hη => ?_⟩
+  have heventMem (b : Fin g.length) :
+      event b ∈ segmentWallEvents (B.activeNormal (k + 1)) e :=
+    (mem_segmentWallEvents_iff (B.activeNormal (k + 1)) e (event b)).mpr
+      ⟨_, List.mem_reverse.mp (List.getElem_mem (by
+        simpa only [g, List.length_map] using b.isLt)), rfl⟩
   have hinput (b : Fin g.length) (m : d.cutoff (k + 1))
       (hv : (event b).normal (B.activeNormal (k + 1)) (i (ρ (p + n.val))) =
         (event b).normal (B.activeNormal (k + 1)) (i (ρ (p + m.val)))) :=
-    hδ b m (hsign b m hv)
+    hsmall (hη (event b) (heventMem b)) b m (hsign b m hv)
   refine ⟨?_, ?_⟩
   · intro b hb m hv
     obtain ⟨t, ht, rfl⟩ := (mem_segmentWallEvents_iff (B.activeNormal (k + 1)) e b).mp hb
@@ -214,17 +224,62 @@ theorem exists_straightProbeStepArrangement
           (event b).normal (B.activeNormal (k + 1)) (i (ρ (p + m.val))) then
         eventBlock d ℳ p ℒ H h B (k + 1) (k + 1) (Nat.le_refl _) (event b) n m''
       else 0) (f (y.val + segmentEventParameter (B.activeNormal (k + 1)) e T
-        (event b) • i (ρ (p + n.val)) + δ • i (ρ (p + m.val))) m'')
+        (event b) • i (ρ (p + n.val)) + η (event b) • i (ρ (p + m.val))) m'')
     by_cases hv : (event b).normal (B.activeNormal (k + 1)) (i (ρ (p + n.val))) =
         (event b).normal (B.activeNormal (k + 1)) (i (ρ (p + m.val)))
     · obtain ⟨z, hz, -, he⟩ := hinput b m'' hv
       have hz' : z.val = y.val +
           segmentEventParameter (B.activeNormal (k + 1)) e T (event b) •
-            i (ρ (p + n.val)) + δ • i (ρ (p + m.val)) := by rw [hz, hline b]
+            i (ρ (p + n.val)) + η (event b) • i (ρ (p + m.val)) := by rw [hz, hline b]
       have he' : field k (hBc.mono (Nat.le_succ k)) z = input := he
       rw [ite_eq_left hv, ← he', ← hf z m', hz']
     · rw [ite_eq_right hv, eventBlock_eq_zero_of_normal_ne d ℳ p ℒ H h B
         (k + 1) (k + 1) (Nat.le_refl _) (event b) n m'' hv]
       rfl
+
+/-- One endpoint arrangement makes the independent probe jump equal the event
+endpoint step at straight generic incoming cuts. The endpoint function may be any
+extension of the actual preceding-cutoff components. The formula holds for every
+sufficiently small common displacement and every admissible segment in a highest
+retained degree's direction. -/
+theorem exists_straightProbeStepArrangement
+    (k : ℕ) (hBc : B.LevelConsistent (k + 1))
+    (hD : D.LevelConsistent (k + 2))
+    (hB : (D.map (chargeZeroGradedLieHom d ℳ p ℒ)
+      (chargeZeroGradedLieHom_mem_wall d ℳ p ℒ H)).LevelEquivalent
+      (cylinderDiagram d ℳ p ℒ H h h' B) (k + 1))
+    (F : ExceptionalArrangement V) :
+    ∃ G : ExceptionalArrangement V,
+      ∀ (x y : WallComplement (B.activeSupport (k + 1))), G.IsGeneric y.val →
+        ∀ (e : x ⟶ y) (n : d.cutoff (k + 1)), d.degree n.val = k + 1 →
+          ∀ T : ℝ, 0 < T → x.val - y.val = T • i (ρ (p + n.val)) →
+          ∀ f : PositiveDegrees.ShiftedEndpointFunction d ℳ p V (k + 1),
+            (∀ (z : WallComplement (B.activeSupport k)) (m : d.cutoff k),
+              let m' : d.cutoff (k + 1) := ⟨m.val, d.mem_cutoff.mpr
+                ⟨(d.mem_cutoff.mp m.property).1,
+                  (d.mem_cutoff.mp m.property).2.trans
+                    (Int.ofNat_le.mpr (Nat.le_succ k))⟩⟩
+              f z.val m' = (component k m) (field k (hBc.mono (Nat.le_succ k)) z)) →
+          ∀ᶠ δ : ℝ in 𝓝[>] 0,
+            (∀ b ∈ segmentWallEvents (B.activeNormal (k + 1)) e,
+              ∀ m : d.cutoff (k + 1),
+                b.normal (B.activeNormal (k + 1)) (i (ρ (p + n.val))) =
+                  b.normal (B.activeNormal (k + 1)) (i (ρ (p + m.val))) →
+                F.IsGeneric (y.val +
+                  segmentEventParameter (B.activeNormal (k + 1)) e T b •
+                    i (ρ (p + n.val)) + δ • i (ρ (p + m.val)))) ∧
+            (component (k + 1) n) (field (k + 1) hBc y) =
+              (component (k + 1) n) (field (k + 1) hBc x) +
+                eventEndpointStep d ℳ p ℒ H h B (k + 1) (k + 1) (Nat.le_refl _)
+                  (fun _ _ => segmentWallEvents (B.activeNormal (k + 1)) e)
+                  (fun b X r m => X +
+                    segmentEventParameter (B.activeNormal (k + 1)) e T b •
+                      i (ρ (p + r.val)) + δ • i (ρ (p + m.val))) f y.val n := by
+  obtain ⟨G, hG⟩ := exists_eventwiseProbeStepArrangement d ℳ p ℒ H h h' D B
+    k hBc hD hB F
+  refine ⟨G, fun x y hy e n hn T hT hxy f hf => ?_⟩
+  obtain ⟨θ, hθ, hη⟩ := hG x y hy e n hn T hT hxy f hf
+  filter_upwards [Ioo_mem_nhdsGT hθ] with δ hδ
+  exact hη (fun _ => δ) (fun _ _ => hδ)
 
 end Mei.ModuleProbe
