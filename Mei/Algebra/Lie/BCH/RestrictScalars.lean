@@ -105,6 +105,26 @@ theorem projection_completedBCHRestrictScalarsEquiv_symm (k : ℕ)
   conv_lhs => arg 2; rw [← BCHGroup.exp_log (CompletedGroup.projection k x)]
   exact d.groupTowerRestrictScalarsIso_inv_app_exp (R := R) ℒ _ _
 
+/-- The comparison preserves and reflects triviality at every finite cutoff. -/
+theorem projection_completedBCHRestrictScalarsEquiv_eq_one_iff (k : ℕ)
+    (x : d.completedBCHGroup (fun n => (ℒ n).restrictScalars R)) :
+    CompletedGroup.projection k (d.completedBCHRestrictScalarsEquiv (R := R) ℒ x) = 1 ↔
+      CompletedGroup.projection k x = 1 := by
+  rw [projection_completedBCHRestrictScalarsEquiv, ← LieEquiv.coe_bchGroupEquiv]
+  exact (d.truncatedRestrictScalarsEquiv (R := R) ℒ k).bchGroupEquiv.injective.eq_iff' (map_one _)
+
+/-- At every finite cutoff, the finite comparison sends the projection of the inverse
+comparison of `x` back to the projection of `x`. -/
+theorem bchGroupEquiv_projection_completedBCHRestrictScalarsEquiv_symm (k : ℕ)
+    (x : d.completedBCHGroup ℒ) :
+    (d.truncatedRestrictScalarsEquiv (R := R) ℒ k).bchGroupEquiv
+        (CompletedGroup.projection k ((d.completedBCHRestrictScalarsEquiv (R := R) ℒ).symm x)) =
+      CompletedGroup.projection k x := by
+  have hx := d.projection_completedBCHRestrictScalarsEquiv (R := R) ℒ k
+    ((d.completedBCHRestrictScalarsEquiv (R := R) ℒ).symm x)
+  rw [MulEquiv.apply_symm_apply] at hx
+  rw [hx, ← LieEquiv.coe_bchGroupEquiv, MonoidHom.coe_ofClass]
+
 /-- The comparison identifies the two degree filtrations exactly. -/
 @[simp]
 theorem completedBCHRestrictScalarsEquiv_mem_degreeFiltration_iff (a : ℕ)

@@ -7,6 +7,7 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.RankTwoPolynomialInput.Grouping
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall.Pushforward
+public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall.RestrictScalars
 public import Mei.Geometry.ScatteringDiagram.RankTwoPolynomialInput.Translation
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Hyperplane
 public import Mei.Geometry.ScatteringDiagram.DirectedDiagram.Uniqueness
@@ -70,6 +71,18 @@ single-wall diagram is an outgoing completion of the pushed incoming wall
 diagram is a positive wall representative for the tropical vertex action of `ℕ²` on
 `ℚ[c][[ℤ²]]` (`RankTwoPolynomialInput.Examples.isPositiveWallRepresentative_pushforward`), by
 `DirectedDiagram.IsPositiveWallRepresentative.pushforward_ofTropicalDegreeMap_rangeS`.
+
+## Specializing the coefficient
+
+The incoming diagram of the horizontal input is consistent
+(`RankTwoPolynomialInput.Examples.incomingDiagram_consistent`), so its scattering class over
+`ℚ[c]` is its own class, with the positive wall representative above. Changing the coefficient
+ring along the specialization `c ↦ 1`, `ℚ[c] → ℚ`, which maps `ℕ[c][ℤ²]` into `ℕ[ℤ²]`
+(`RankTwoPolynomialInput.Examples.mapAlgHom_aeval_one_mem_rangeS`), the scattering class over `ℚ`
+of the specialized incoming diagram has a representative whose grouped wall functions have
+natural-number coefficients
+(`RankTwoPolynomialInput.Examples.hasPositiveWallRepresentative_scat_aeval_one`), by
+`DirectedDiagram.Class.HasPositiveWallRepresentative.scat_coefficientMonoidGradedLieHom`.
 
 ## Three concurrent lines
 
@@ -437,6 +450,59 @@ theorem isPositiveWallRepresentative_pushforward :
     (fun q => by simp) Function.surjective_id (fun q _ => by simp) (fun n _ => by simp) _
 
 end Orthant
+
+section Specialization
+
+open LogarithmicVectorField
+
+local notation "φ₁" => MvPolynomial.aeval (R := ℚ) fun _ : horizontalInput.Variable => (1 : ℚ)
+local notation "φ₁*" => coefficientMonoidGradedLieHom ρ φ₁ ⊤ 1 evenOrthant le_top
+local notation "hφ₁*" => coefficientMonoidGradedLieHom_mem_wall evenOrthant ρ φ₁ ⊤ 1 le_top
+
+/-- The incoming diagram of the horizontal input is consistent: its single wall is a full
+hyperplane. -/
+theorem incomingDiagram_consistent : (horizontalInput.incomingDiagram h c).Consistent := by
+  obtain ⟨a, ha⟩ := horizontalInput.incomingDiagram_full h c default
+  exact DirectedDiagram.consistent_of_support_eq
+    (W := (horizontalInput.incomingDiagram h c).wall default)
+    (fun j => by rw [Unique.eq_default j]) a ha
+
+/-- The specialization `c ↦ 1`, applied coefficientwise, maps `ℕ[c][ℤ²]` into `ℕ[ℤ²]`. -/
+theorem mapAlgHom_aeval_one_mem_rangeS
+    {x : AddMonoidAlgebra (MvPolynomial horizontalInput.Variable ℚ) (⊤ : AddSubmonoid (ℤ × ℤ))}
+    (hx : x ∈ (AddMonoidAlgebra.mapRingHom (⊤ : AddSubmonoid (ℤ × ℤ))
+      (MvPolynomial.map (σ := horizontalInput.Variable) (Nat.castRingHom ℚ))).rangeS) :
+    AddMonoidAlgebra.mapAlgHom (⊤ : AddSubmonoid (ℤ × ℤ)) φ₁ x ∈
+      (AddMonoidAlgebra.mapRingHom (⊤ : AddSubmonoid (ℤ × ℤ)) (Nat.castRingHom ℚ)).rangeS :=
+  map_mem_rangeS_mapRingHom_coefficientMonoidMap ⊤ φ₁ 1 _ (mapAlgHom_single_eq_mul_one ⊤ φ₁)
+    _ _ (fun a => ⟨MvPolynomial.eval (fun _ => 1) a, by
+      rw [MvPolynomial.aeval_def, MvPolynomial.eval₂_map, MvPolynomial.eval,
+        MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_comp_left]
+      -- Both sides evaluate at `1` along a ring homomorphism `ℕ → ℚ`, and there is only one.
+      congr 1⟩)
+    (fun _ => one_mem _) hx
+
+/-- Specializing the coefficient of the horizontal input at `c = 1` keeps a positive
+representative of the scattering class: the scattering class over `ℚ` of the incoming diagram
+with coefficients changed along `c ↦ 1` has a representative whose grouped wall functions have
+natural-number coefficients. It is obtained from the positive representative over `ℚ[c]` by
+`DirectedDiagram.Class.HasPositiveWallRepresentative.scat_coefficientMonoidGradedLieHom`. -/
+theorem hasPositiveWallRepresentative_scat_aeval_one :
+    (((horizontalInput.incomingDiagram h MvPolynomial.X).mapRestrictScalars φ₁* hφ₁*).Scat (by
+      simpa only [DirectedDiagram.mapRestrictScalars_wall,
+        DirectedWall.mapRestrictScalars_support, DirectedWall.mapRestrictScalars_normal] using
+        horizontalInput.incomingDiagram_full h MvPolynomial.X)).HasPositiveWallRepresentative
+      ((TropicalVertexCoefficientAction.filtration (R := ℚ) evenOrthant ⊤).completedBCHAction
+        evenOrthant (tropicalVertexGrading (R := ℚ) evenOrthant ρ))
+      (AddMonoidAlgebra.mapRingHom (⊤ : AddSubmonoid (ℤ × ℤ)) (Nat.castRingHom ℚ)).rangeS
+      horizontalInput.projection := by
+  refine DirectedDiagram.Class.HasPositiveWallRepresentative.scat_coefficientMonoidGradedLieHom φ₁
+    (fun _ hx => mapAlgHom_aeval_one_mem_rangeS hx) _
+    (horizontalInput.incomingDiagram_full h MvPolynomial.X) ?_
+  rw [DirectedDiagram.scat_eq_toClass_of_consistent _ _ (incomingDiagram_consistent _ h)]
+  exact (isPositiveWallRepresentative h).hasPositiveWallRepresentative_toClass
+
+end Specialization
 
 section Concurrent
 

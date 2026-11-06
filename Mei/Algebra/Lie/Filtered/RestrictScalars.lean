@@ -240,4 +240,11 @@ theorem completedBCHAction_restrictScalars
   rw [AlgEquiv.restrictScalars_apply, F.truncatedBCHAction_apply d ℒ] at h
   exact h
 
+/-- Scalar restriction identifies the completed BCH actions elementwise. -/
+theorem completedBCHAction_restrictScalars_apply
+    (g : d.completedBCHGroup (fun n => (ℒ n).restrictScalars R)) (a : F.completion) :
+    F.completedBCHAction d (fun n => (ℒ n).restrictScalars R) g a =
+      F.completedBCHAction d ℒ (d.completedBCHRestrictScalarsEquiv (R := R) ℒ g) a := by
+  rw [completedBCHAction_restrictScalars, AlgEquiv.restrictScalars_apply]
+
 end Mei.AlgFiltration
