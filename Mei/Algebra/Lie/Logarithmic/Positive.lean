@@ -86,6 +86,13 @@ theorem map_mem_rangeS_mapRingHom_coefficientMonoidMap {A A' : Type*} [Semiring 
   obtain ⟨c, hc⟩ := ι'.rangeS.mul_mem (hφ a) (hχ (.ofAdd q))
   exact ⟨_root_.AddMonoidAlgebra.single q c, by simp [hf, hc]⟩
 
+/-- The coefficientwise map `r z^q ↦ φ(r) z^q` is the twisted coefficient-monoid map of `φ`
+with trivial twist. -/
+theorem mapAlgHom_single_eq_mul_one (p : Q) (r : R) :
+    mapAlgHom Q φ (_root_.AddMonoidAlgebra.single p r) =
+      _root_.AddMonoidAlgebra.single p (φ r * (1 : Multiplicative Q →* S) (.ofAdd p)) := by
+  rw [mapAlgHom_single, MonoidHom.one_apply, mul_one]
+
 end CoefficientImage
 
 section Specialization

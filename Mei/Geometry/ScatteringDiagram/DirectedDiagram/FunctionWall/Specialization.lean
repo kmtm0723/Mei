@@ -43,10 +43,12 @@ which again has one (`DirectedDiagram.Class.HasPositiveWallRepresentative.scat_m
 The coefficient ring may change: the Lie algebras are taken over a common scalar ring `R`
 (for instance `ℚ`), while the coefficient algebras `A` and `A'` are arbitrary `R`-algebras.
 The hypothesis `hconst` that the target action fixes the constants of `A'` is automatic only
-when `A' = R`, by `AlgFiltration.algEquiv_toCompletion_single_zero`. Applying these results to
-a coefficientwise specialization such as `a ↦ 1`
-(`LogarithmicVectorField.coefficientMonoidPositiveSpecialization` with trivial twist) also
-requires proving `hconst` for the target action, which is not done here.
+when `A' = R`, by `AlgFiltration.algEquiv_toCompletion_single_zero`. Coefficientwise
+specializations such as `a ↦ 1` between diagrams over different coefficient rings
+(`LogarithmicVectorField.coefficientMonoidPositiveSpecialization` with trivial twist) are
+reduced to this case by restriction of scalars in
+`Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall.RestrictScalars`, where `hconst`
+follows from the linearity of the target action over its own coefficient ring.
 
 This is the fixed-degree case of the positive specialization statements of
 Burcroff–Lee–Mou, *Positivity of generalized cluster scattering diagrams*, §8.1 and §9.2
