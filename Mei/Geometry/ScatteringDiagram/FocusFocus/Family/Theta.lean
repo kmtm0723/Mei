@@ -186,6 +186,129 @@ def slabThetaFamilyFiberEquiv (Q : ℝ × ℝ) :
           {_u : Unit // (n, b) = 0 ∧ c ≠ 0} :=
   (FiniteSemilinearFamily.fiberOfDomainsEquiv _ _ Q).trans (slabThetaChartEquiv t c n b Q)
 
+/-- The common chart equivalence retains the incoming sector. -/
+@[simp]
+theorem slabThetaChartEquiv_incoming (Q : ℝ × ℝ)
+    (α : IncomingSlabChartIndex c n b) (hQ : Q ∈ slabThetaChartDomain t c n b (.inl α)) :
+    slabThetaChartEquiv t c n b Q ⟨.inl α, hQ⟩ =
+      .inl ((incomingSlabChartRayEquiv c n b Q).symm (incomingSlabChartEquiv c n b Q
+        ⟨α, by simpa only [slabThetaChartDomain_incoming] using hQ⟩)) := (rfl)
+
+/-- The common chart equivalence retains the crossing sector and branch label. -/
+@[simp]
+theorem slabThetaChartEquiv_crossing (Q : ℝ × ℝ)
+    (α : SlabChartIndex t c n)
+    (hQ : Q ∈ slabThetaChartDomain t c n b (.inr (.inl α))) :
+    slabThetaChartEquiv t c n b Q ⟨.inr (.inl α), hQ⟩ =
+      .inr (.inl ((slabChartRayEquiv t c n b Q).symm (slabChartEquiv t c n b Q
+        ⟨α, by simpa only [slabThetaChartDomain_crossing] using hQ⟩))) := (rfl)
+
+/-- The common chart equivalence retains the nonzero constant section. -/
+@[simp]
+theorem slabThetaChartEquiv_constant (Q : ℝ × ℝ) (u : Unit)
+    (hQ : Q ∈ slabThetaChartDomain t c n b (.inr (.inr u))) :
+    slabThetaChartEquiv t c n b Q ⟨.inr (.inr u), hQ⟩ =
+      .inr (.inr ⟨u, (mem_slabThetaChartDomain_constant t c n b Q u).mp hQ⟩) := (rfl)
+
+/-- Recover the incoming chart label from an actual incoming ray. -/
+@[simp]
+theorem slabThetaChartEquiv_symm_incoming_val (Q : ℝ × ℝ)
+    (β : Σ α : IncomingSlabChartIndex c n b, IncomingSlabChartRay c n b α Q) :
+    ((slabThetaChartEquiv t c n b Q).symm (.inl β)).val =
+      .inl ((incomingSlabChartEquiv c n b Q).symm
+        (incomingSlabChartRayEquiv c n b Q β)).val := (rfl)
+
+/-- Recover the surviving binomial branch and side from an actual crossing ray. -/
+@[simp]
+theorem slabThetaChartEquiv_symm_crossing_val (Q : ℝ × ℝ)
+    (β : Σ upper : Bool, SlabChartRay t c n b upper Q) :
+    ((slabThetaChartEquiv t c n b Q).symm (.inr (.inl β))).val =
+      .inr (.inl ((slabChartEquiv t c n b Q).symm (slabChartRayEquiv t c n b Q β)).val) := (rfl)
+
+/-- Recover the constant chart label from its section. -/
+@[simp]
+theorem slabThetaChartEquiv_symm_constant_val (Q : ℝ × ℝ)
+    (u : {_u : Unit // (n, b) = 0 ∧ c ≠ 0}) :
+    ((slabThetaChartEquiv t c n b Q).symm (.inr (.inr u))).val =
+      .inr (.inr u.val) := (rfl)
+
+/-- The endpoint fiber equivalence retains the incoming sector. -/
+@[simp]
+theorem slabThetaFamilyFiberEquiv_incoming (Q : ℝ × ℝ)
+    (α : IncomingSlabChartIndex c n b)
+    (hQ : Q ∈ (slabThetaFamily t c n b h).domain (.inl α)) :
+    slabThetaFamilyFiberEquiv t c n b h Q
+      ⟨.inl α, ⟨⟨Q, hQ⟩, by simp only [slabThetaFamily_eval]⟩⟩ =
+        .inl ((incomingSlabChartRayEquiv c n b Q).symm (incomingSlabChartEquiv c n b Q
+          ⟨α, by simpa only [slabThetaFamily_domain,
+            slabThetaChartDomain_incoming] using hQ⟩)) := by
+  exact (congrArg (slabThetaChartEquiv t c n b Q)
+    (Subtype.ext (FiniteSemilinearFamily.fiberOfDomainsEquiv_apply_val _ _ _ _))).trans
+      (slabThetaChartEquiv_incoming t c n b Q α
+        (by simpa only [slabThetaFamily_domain] using hQ))
+
+/-- The endpoint fiber equivalence retains the crossing sector and branch label. -/
+@[simp]
+theorem slabThetaFamilyFiberEquiv_crossing (Q : ℝ × ℝ)
+    (α : SlabChartIndex t c n)
+    (hQ : Q ∈ (slabThetaFamily t c n b h).domain (.inr (.inl α))) :
+    slabThetaFamilyFiberEquiv t c n b h Q
+      ⟨.inr (.inl α), ⟨⟨Q, hQ⟩, by simp only [slabThetaFamily_eval]⟩⟩ =
+        .inr (.inl ((slabChartRayEquiv t c n b Q).symm (slabChartEquiv t c n b Q
+          ⟨α, by simpa only [slabThetaFamily_domain,
+            slabThetaChartDomain_crossing] using hQ⟩))) := by
+  exact (congrArg (slabThetaChartEquiv t c n b Q)
+    (Subtype.ext (FiniteSemilinearFamily.fiberOfDomainsEquiv_apply_val _ _ _ _))).trans
+      (slabThetaChartEquiv_crossing t c n b Q α
+        (by simpa only [slabThetaFamily_domain] using hQ))
+
+/-- The endpoint fiber equivalence retains the nonzero constant section. -/
+@[simp]
+theorem slabThetaFamilyFiberEquiv_constant (Q : ℝ × ℝ) (u : Unit)
+    (hQ : Q ∈ (slabThetaFamily t c n b h).domain (.inr (.inr u))) :
+    slabThetaFamilyFiberEquiv t c n b h Q
+      ⟨.inr (.inr u), ⟨⟨Q, hQ⟩, by simp only [slabThetaFamily_eval]⟩⟩ =
+      .inr (.inr ⟨u, by simpa only [slabThetaFamily_domain,
+        mem_slabThetaChartDomain_constant] using hQ⟩) := by
+  exact (congrArg (slabThetaChartEquiv t c n b Q)
+    (Subtype.ext (FiniteSemilinearFamily.fiberOfDomainsEquiv_apply_val _ _ _ _))).trans
+      (slabThetaChartEquiv_constant t c n b Q u
+        (by simpa only [slabThetaFamily_domain] using hQ))
+
+/-- Recover the incoming chart label from its point in the common endpoint fiber. -/
+@[simp]
+theorem slabThetaFamilyFiberEquiv_symm_incoming_fst (Q : ℝ × ℝ)
+    (β : Σ α : IncomingSlabChartIndex c n b, IncomingSlabChartRay c n b α Q) :
+    ((slabThetaFamilyFiberEquiv t c n b h Q).symm (.inl β)).1 =
+      .inl ((incomingSlabChartEquiv c n b Q).symm
+        (incomingSlabChartRayEquiv c n b Q β)).val := by
+  unfold slabThetaFamilyFiberEquiv slabThetaFamily
+  simp only [Equiv.symm_trans_apply,
+    FiniteSemilinearFamily.fiberOfDomainsEquiv_symm_apply_fst,
+    slabThetaChartEquiv_symm_incoming_val]
+
+/-- Recover the binomial branch and side from its point in the endpoint fiber. -/
+@[simp]
+theorem slabThetaFamilyFiberEquiv_symm_crossing_fst (Q : ℝ × ℝ)
+    (β : Σ upper : Bool, SlabChartRay t c n b upper Q) :
+    ((slabThetaFamilyFiberEquiv t c n b h Q).symm (.inr (.inl β))).1 =
+      .inr (.inl ((slabChartEquiv t c n b Q).symm (slabChartRayEquiv t c n b Q β)).val) := by
+  unfold slabThetaFamilyFiberEquiv slabThetaFamily
+  simp only [Equiv.symm_trans_apply,
+    FiniteSemilinearFamily.fiberOfDomainsEquiv_symm_apply_fst,
+    slabThetaChartEquiv_symm_crossing_val]
+
+/-- Recover the constant chart label from its point in the endpoint fiber. -/
+@[simp]
+theorem slabThetaFamilyFiberEquiv_symm_constant_fst (Q : ℝ × ℝ)
+    (u : {_u : Unit // (n, b) = 0 ∧ c ≠ 0}) :
+    ((slabThetaFamilyFiberEquiv t c n b h Q).symm (.inr (.inr u))).1 =
+      .inr (.inr u.val) := by
+  unfold slabThetaFamilyFiberEquiv slabThetaFamily
+  simp only [Equiv.symm_trans_apply,
+    FiniteSemilinearFamily.fiberOfDomainsEquiv_symm_apply_fst,
+    slabThetaChartEquiv_symm_constant_val]
+
 /-- The comparison preserves the full compact-open path, including the original
 incoming tail and the developed upper/lower chart, at every admitted endpoint. -/
 theorem slabThetaChartEquiv_path (Q : ℝ × ℝ)
