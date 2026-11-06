@@ -95,12 +95,11 @@ private theorem terminalChamberMap_eq
         (if side then exponentRightMap (C t * (1 + T 1)) else
           exponentLeftMap (C t * (1 + T 1))) (α i a • theta t (n i) (b i)) := by
     have hQi := (mem_slabTerminalFiniteDomain s n b v Q).mp hQ i hi
-    have hv : v ≠ 0 := by
-      have hp := (mem_slabTerminalDomain (n i) (b i) v Q).mp hQi ⟨0, by omega⟩
-      exact left_ne_zero_of_mul hp.ne'
     rw [slabThetaFamily_weightedEvaluation_eq_terminal_resolution
-      t (α i a) (n i) (b i) h hv hQi side hs,
-      slabThetaTerminalResolution_weightedSum t (α i a) (n i) (b i) h hv side]
+      t (α i a) (n i) (b i) h hQi side hs,
+      slabThetaTerminalResolution_weightedSum t (α i a) (n i) (b i) (by
+        have hp := (mem_slabTerminalDomain (n i) (b i) v Q).mp hQi ⟨0, by omega⟩
+        exact left_ne_zero_of_mul hp.ne') side]
   cases side
   · simp only [terminalChamberMap_false, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
       Bool.false_eq_true, ↓reduceIte, slabTerminalFiniteLift_apply, map_sum]

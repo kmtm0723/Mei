@@ -110,6 +110,81 @@ theorem slabThetaChartPath_constant (u : Unit) (Q : ℝ × ℝ) (s : ℝ) :
     slabThetaChartPath t c n b (.inr (.inr u)) Q s = Q := by
   simp [slabThetaChartPath, slabBranchPath_apply]
 
+/-- The incoming developed exponent retained by a complete chart. Above the
+origin the crossing history uses the upper frame, including its vertical shift. -/
+def slabThetaChartIncomingExponent (α : SlabThetaChartIndex t c n b) : ℤ × ℤ :=
+  match α with
+  | .inl _ => (n, b)
+  | .inr (.inl j) => (n, if j.2 then b + n.natAbs else b)
+  | .inr (.inr _) => (0, 0)
+
+@[simp]
+theorem slabThetaChartIncomingExponent_incoming (j : IncomingSlabChartIndex c n b) :
+    slabThetaChartIncomingExponent t c n b (.inl j) = (n, b) := (rfl)
+
+@[simp]
+theorem slabThetaChartIncomingExponent_crossing (j : SlabChartIndex t c n) :
+    slabThetaChartIncomingExponent t c n b (.inr (.inl j)) =
+      (n, if j.2 then b + n.natAbs else b) := (rfl)
+
+@[simp]
+theorem slabThetaChartIncomingExponent_constant (u : Unit) :
+    slabThetaChartIncomingExponent t c n b (.inr (.inr u)) = (0, 0) := (rfl)
+
+/-- At the terminal center the whole negative half-line of every chart is its
+original incoming half-line. In particular the outgoing binomial index drops
+out, whereas the developed incoming exponent and the endpoint are retained. -/
+theorem slabThetaChartPath_terminal (α : SlabThetaChartIndex t c n b)
+    (v s : ℝ) (hs : s ≤ 0) :
+    slabThetaChartPath t c n b α (0, v) s =
+      (-(s * (slabThetaChartIncomingExponent t c n b α).1),
+        v - s * (slabThetaChartIncomingExponent t c n b α).2) := by
+  rcases α with j | j | u
+  · rw [slabThetaChartPath_incoming, slabThetaChartIncomingExponent_incoming]
+    exact slabBranchPath_terminal _ _ _ v s hs
+  · rw [slabThetaChartPath_crossing, slabThetaChartIncomingExponent_crossing]
+    exact slabBranchPath_terminal _ _ _ v s hs
+  · simp only [slabThetaChartPath_constant, slabThetaChartIncomingExponent,
+      Int.cast_zero, mul_zero, neg_zero, sub_zero]
+
+
+/-- The whole theta evaluation is the finite sum on its admitted complete chart labels.
+This combinatorial identity does not require a choice of integral lattice proof. -/
+theorem slabThetaEvaluation_eq_sum_charts (Q : ℝ × ℝ) :
+    slabThetaEvaluation t c n b Q =
+      let := Fintype.ofFinite
+        {α : SlabThetaChartIndex t c n b // Q ∈ slabThetaChartDomain t c n b α}
+      ∑ α : {α : SlabThetaChartIndex t c n b // Q ∈ slabThetaChartDomain t c n b α},
+        slabThetaChartWeight t c n b α.val := by
+  classical
+  let := Fintype.ofFinite
+    {α : SlabThetaChartIndex t c n b // Q ∈ slabThetaChartDomain t c n b α}
+  let e : {α : SlabThetaChartIndex t c n b // Q ∈ slabThetaChartDomain t c n b α} ≃
+      {α : IncomingSlabChartIndex c n b // Q ∈ incomingSlabDomain α.val} ⊕
+        {α : SlabChartIndex t c n // Q ∈ slabBranchDomain n (b + α.1.val.val) α.2} ⊕
+          {_u : Unit // (n, b) = 0 ∧ c ≠ 0} :=
+    Equiv.subtypeSum.trans (Equiv.sumCongr (Equiv.refl _)
+      (Equiv.subtypeSum.trans (Equiv.sumCongr (Equiv.refl _)
+        (Equiv.subtypeEquivRight fun u => mem_slabThetaChartDomain_constant t c n b Q u))))
+  symm
+  calc
+    _ = ∑ α : {α : IncomingSlabChartIndex c n b // Q ∈ incomingSlabDomain α.val} ⊕
+        {α : SlabChartIndex t c n // Q ∈ slabBranchDomain n (b + α.1.val.val) α.2} ⊕
+          {_u : Unit // (n, b) = 0 ∧ c ≠ 0},
+        Sum.elim (fun _ => single ((n.natAbs : ℤ), b) c)
+          (Sum.elim (fun α => single (-(n.natAbs : ℤ), b + α.val.1.val.val)
+            (c * t ^ n.natAbs * (n.natAbs.choose α.val.1.val.val : R)))
+            (fun _ => single (0, 0) c)) α :=
+      Fintype.sum_equiv e _ _ (fun α => by rcases α with ⟨α | α | u, hα⟩ <;> rfl)
+    _ = _ := by
+      rw [Fintype.sum_sum_type, Fintype.sum_sum_type]
+      simp only [Sum.elim_inl, Sum.elim_inr]
+      rw [← incomingSlabWeightedEvaluation_eq_sum_charts,
+        ← slabWeightedEvaluation_eq_sum_charts, slabThetaEvaluation_def, add_assoc]
+      congr 1
+      congr 1
+      by_cases hn : (n, b) = 0 <;> by_cases hc : c = 0 <;> simp [hn, hc]
+
 variable (h : TauCeti.Toric.IsIntegralLattice
   ((Int.castAddHom ℝ).prodMap (Int.castAddHom ℝ)))
 
@@ -154,6 +229,24 @@ instance (Q : ℝ × ℝ) : Finite ((slabThetaFamily t c n b h).fiber Q) :=
     (slabThetaChartDomain t c n b)
     (isRationalSemilinear_slabThetaChartDomain t c n b h)).fiber Q))
 
+/-- The common-family fiber consists exactly of its admitted complete chart labels. -/
+def slabThetaFamilyChartEquiv (Q : ℝ × ℝ) :
+    (slabThetaFamily t c n b h).fiber Q ≃
+      {α : SlabThetaChartIndex t c n b // Q ∈ slabThetaChartDomain t c n b α} :=
+  FiniteSemilinearFamily.fiberOfDomainsEquiv _ _ Q
+
+@[simp]
+theorem slabThetaFamilyChartEquiv_apply_val (Q : ℝ × ℝ)
+    (z : (slabThetaFamily t c n b h).fiber Q) :
+    (slabThetaFamilyChartEquiv t c n b h Q z).val = z.1 :=
+  FiniteSemilinearFamily.fiberOfDomainsEquiv_apply_val ..
+
+@[simp]
+theorem slabThetaFamilyChartEquiv_symm_apply_fst (Q : ℝ × ℝ)
+    (z : {α : SlabThetaChartIndex t c n b // Q ∈ slabThetaChartDomain t c n b α}) :
+    ((slabThetaFamilyChartEquiv t c n b h Q).symm z).1 = z.val :=
+  FiniteSemilinearFamily.fiberOfDomainsEquiv_symm_apply_fst ..
+
 /-- Exact chart comparison with actual incoming and crossing rays, including
 one nonzero constant contribution in zero spatial degree. -/
 private def slabThetaExplicitChartEquiv (Q : ℝ × ℝ) :
@@ -184,7 +277,7 @@ def slabThetaFamilyFiberEquiv (Q : ℝ × ℝ) :
       (Σ α : IncomingSlabChartIndex c n b, IncomingSlabChartRay c n b α Q) ⊕
         (Σ upper : Bool, SlabChartRay t c n b upper Q) ⊕
           {_u : Unit // (n, b) = 0 ∧ c ≠ 0} :=
-  (FiniteSemilinearFamily.fiberOfDomainsEquiv _ _ Q).trans (slabThetaChartEquiv t c n b Q)
+  (slabThetaFamilyChartEquiv t c n b h Q).trans (slabThetaChartEquiv t c n b Q)
 
 /-- The common chart equivalence retains the incoming sector. -/
 @[simp]
@@ -282,9 +375,9 @@ theorem slabThetaFamilyFiberEquiv_symm_incoming_fst (Q : ℝ × ℝ)
     ((slabThetaFamilyFiberEquiv t c n b h Q).symm (.inl β)).1 =
       .inl ((incomingSlabChartEquiv c n b Q).symm
         (incomingSlabChartRayEquiv c n b Q β)).val := by
-  unfold slabThetaFamilyFiberEquiv slabThetaFamily
+  unfold slabThetaFamilyFiberEquiv
   simp only [Equiv.symm_trans_apply,
-    FiniteSemilinearFamily.fiberOfDomainsEquiv_symm_apply_fst,
+    slabThetaFamilyChartEquiv_symm_apply_fst,
     slabThetaChartEquiv_symm_incoming_val]
 
 /-- Recover the binomial branch and side from its point in the endpoint fiber. -/
@@ -293,9 +386,9 @@ theorem slabThetaFamilyFiberEquiv_symm_crossing_fst (Q : ℝ × ℝ)
     (β : Σ upper : Bool, SlabChartRay t c n b upper Q) :
     ((slabThetaFamilyFiberEquiv t c n b h Q).symm (.inr (.inl β))).1 =
       .inr (.inl ((slabChartEquiv t c n b Q).symm (slabChartRayEquiv t c n b Q β)).val) := by
-  unfold slabThetaFamilyFiberEquiv slabThetaFamily
+  unfold slabThetaFamilyFiberEquiv
   simp only [Equiv.symm_trans_apply,
-    FiniteSemilinearFamily.fiberOfDomainsEquiv_symm_apply_fst,
+    slabThetaFamilyChartEquiv_symm_apply_fst,
     slabThetaChartEquiv_symm_crossing_val]
 
 /-- Recover the constant chart label from its point in the endpoint fiber. -/
@@ -304,9 +397,9 @@ theorem slabThetaFamilyFiberEquiv_symm_constant_fst (Q : ℝ × ℝ)
     (u : {_u : Unit // (n, b) = 0 ∧ c ≠ 0}) :
     ((slabThetaFamilyFiberEquiv t c n b h Q).symm (.inr (.inr u))).1 =
       .inr (.inr u.val) := by
-  unfold slabThetaFamilyFiberEquiv slabThetaFamily
+  unfold slabThetaFamilyFiberEquiv
   simp only [Equiv.symm_trans_apply,
-    FiniteSemilinearFamily.fiberOfDomainsEquiv_symm_apply_fst,
+    slabThetaFamilyChartEquiv_symm_apply_fst,
     slabThetaChartEquiv_symm_constant_val]
 
 /-- The comparison preserves the full compact-open path, including the original
@@ -459,26 +552,10 @@ theorem slabThetaFamily_weightedEvaluation (Q : ℝ × ℝ) :
   classical
   let := Fintype.ofFinite ((slabThetaFamily t c n b h).fiber Q)
   let := Fintype.ofFinite
-    (Σ α : IncomingSlabChartIndex c n b, IncomingSlabChartRay c n b α Q)
-  let := Fintype.ofFinite (Σ upper : Bool, SlabChartRay t c n b upper Q)
-  rw [FiniteSemilinearFamily.weightedEvaluation_def]
-  calc
-    _ = ∑ β : (Σ α : IncomingSlabChartIndex c n b, IncomingSlabChartRay c n b α Q) ⊕
-        (Σ upper : Bool, SlabChartRay t c n b upper Q) ⊕
-          {_u : Unit // (n, b) = 0 ∧ c ≠ 0},
-        Sum.elim (fun r => r.2.decoration 0)
-          (Sum.elim (fun r => r.2.val.decoration 0) (fun _ => single (0, 0) c)) β :=
-      Fintype.sum_equiv (slabThetaFamilyFiberEquiv t c n b h Q) _ _
-        (fun z => (slabThetaFamilyFiberEquiv_weight t c n b h Q z).symm)
-    _ = _ := ?_
-  rw [Fintype.sum_sum_type, Fintype.sum_sum_type]
-  simp only [Sum.elim_inl, Sum.elim_inr]
-  rw [← incomingSlabWeightedEvaluation_eq_sum_decoratedRays,
-    ← slabWeightedEvaluation_eq_sum_decoratedRays,
-    slabThetaEvaluation_def, add_assoc]
-  congr 1
-  congr 1
-  by_cases hn : (n, b) = 0 <;> by_cases hc : c = 0 <;> simp [hn, hc]
+    {α : SlabThetaChartIndex t c n b // Q ∈ slabThetaChartDomain t c n b α}
+  rw [slabThetaEvaluation_eq_sum_charts, FiniteSemilinearFamily.weightedEvaluation_def]
+  exact Fintype.sum_equiv (slabThetaFamilyChartEquiv t c n b h Q) _ _
+    (fun z => by rw [slabThetaFamilyChartEquiv_apply_val])
 
 open Classical in
 /-- Restricting endpoints does not replace or truncate incoming histories. -/

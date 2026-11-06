@@ -116,12 +116,14 @@ theorem slabThetaChart_incident_constant (u : Unit) (v : ℝ) :
 membership is closed-chart incidence together with the chosen chamber side.
 No genericity, noncancellation or branchwise face lift is assumed. -/
 theorem mem_slabThetaChartDomain_iff_terminal_resolution
-    (α : SlabThetaChartIndex t c n b) {v : ℝ} (hv : v ≠ 0)
+    (α : SlabThetaChartIndex t c n b) {v : ℝ}
     {Q : ℝ × ℝ} (hQ : Q ∈ slabTerminalDomain n b v)
     (right : Bool) (hside : Q ∈ incomingSlabDomain right) :
     Q ∈ slabThetaChartDomain t c n b α ↔
       (0, v) ∈ closure (slabThetaChartDomain t c n b α) ∧
         slabThetaChartOnSide t c n b α right := by
+  have hp := (mem_slabTerminalDomain n b v Q).mp hQ ⟨0, by omega⟩
+  have hv : v ≠ 0 := left_ne_zero_of_mul hp.ne'
   rcases α with j | j | u
   · rw [and_iff_right (by simp :
       (0, v) ∈ closure (slabThetaChartDomain t c n b (.inl j)))]
@@ -165,54 +167,39 @@ variable (h : TauCeti.Toric.IsIntegralLattice
 
 /-- The actual common-family fiber is precisely the incident resolution on
 the chosen side, retaining the complete chart label rather than its image. -/
-def slabThetaTerminalResolutionEquiv {v : ℝ} (hv : v ≠ 0)
+def slabThetaTerminalResolutionEquiv {v : ℝ}
     {Q : ℝ × ℝ} (hQ : Q ∈ slabTerminalDomain n b v)
     (right : Bool) (hside : Q ∈ incomingSlabDomain right) :
     (slabThetaFamily t c n b h).fiber Q ≃
       SlabThetaTerminalResolution t c n b v right :=
-  { toFun := fun z => ⟨z.1, by
-      have hxQ : z.2.1.val = Q :=
-        (slabThetaFamily_eval t c n b h z.1 z.2.1).symm.trans z.2.2
-      apply (mem_slabThetaChartDomain_iff_terminal_resolution t c n b z.1 hv
-        hQ right hside).mp
-      have hz : z.2.1.val ∈ slabThetaChartDomain t c n b z.1 := by
-        simpa only [slabThetaFamily_domain] using z.2.1.property
-      simpa only [hxQ] using hz⟩
-    invFun := fun z => ⟨z.val, ⟨Q, by
-      rw [slabThetaFamily_domain]
-      exact (mem_slabThetaChartDomain_iff_terminal_resolution t c n b z.val hv
-        hQ right hside).mpr z.property⟩,
-      slabThetaFamily_eval t c n b h _ _⟩
-    left_inv := by
-      rintro ⟨α, x, hx⟩
-      have hxQ : x.val = Q := (slabThetaFamily_eval t c n b h α x).symm.trans hx
-      cases x
-      cases hxQ
-      rfl
-    right_inv := fun _ => rfl }
+  (slabThetaFamilyChartEquiv t c n b h Q).trans
+    (Equiv.subtypeEquivRight fun α =>
+      mem_slabThetaChartDomain_iff_terminal_resolution t c n b α hQ right hside)
 
 /-- The forward resolution comparison preserves the complete label. -/
 @[simp]
-theorem slabThetaTerminalResolutionEquiv_apply_val {v : ℝ} (hv : v ≠ 0)
+theorem slabThetaTerminalResolutionEquiv_apply_val {v : ℝ}
     {Q : ℝ × ℝ} (hQ : Q ∈ slabTerminalDomain n b v)
     (right : Bool) (hside : Q ∈ incomingSlabDomain right)
     (z : (slabThetaFamily t c n b h).fiber Q) :
-    (slabThetaTerminalResolutionEquiv t c n b h hv hQ right hside z).val = z.1 := (rfl)
+    (slabThetaTerminalResolutionEquiv t c n b h hQ right hside z).val = z.1 := by
+  simp [slabThetaTerminalResolutionEquiv]
 
 /-- Reconstructing an actual fiber from its incident history retains its label. -/
 @[simp]
-theorem slabThetaTerminalResolutionEquiv_symm_apply_fst {v : ℝ} (hv : v ≠ 0)
+theorem slabThetaTerminalResolutionEquiv_symm_apply_fst {v : ℝ}
     {Q : ℝ × ℝ} (hQ : Q ∈ slabTerminalDomain n b v)
     (right : Bool) (hside : Q ∈ incomingSlabDomain right)
     (z : SlabThetaTerminalResolution t c n b v right) :
-    ((slabThetaTerminalResolutionEquiv t c n b h hv hQ right hside).symm z).1 =
-      z.val := (rfl)
+    ((slabThetaTerminalResolutionEquiv t c n b h hQ right hside).symm z).1 =
+      z.val := by
+  simp [slabThetaTerminalResolutionEquiv]
 
 /-- The exact local-resolution expansion sums whole weights of geometrically
 incident histories. The index set is independent of the endpoint inside the
 chosen side of the uniform terminal neighborhood. -/
 theorem slabThetaFamily_weightedEvaluation_eq_terminal_resolution
-    {v : ℝ} (hv : v ≠ 0) {Q : ℝ × ℝ} (hQ : Q ∈ slabTerminalDomain n b v)
+    {v : ℝ} {Q : ℝ × ℝ} (hQ : Q ∈ slabTerminalDomain n b v)
     (right : Bool) (hside : Q ∈ incomingSlabDomain right) :
     (slabThetaFamily t c n b h).weightedEvaluation (slabThetaChartWeight t c n b) Q =
       let := Fintype.ofFinite (SlabThetaTerminalResolution t c n b v right)
@@ -223,10 +210,9 @@ theorem slabThetaFamily_weightedEvaluation_eq_terminal_resolution
   let := Fintype.ofFinite (SlabThetaTerminalResolution t c n b v right)
   rw [FiniteSemilinearFamily.weightedEvaluation_def]
   exact Fintype.sum_equiv
-    (slabThetaTerminalResolutionEquiv t c n b h hv hQ right hside) _ _
+    (slabThetaTerminalResolutionEquiv t c n b h hQ right hside) _ _
     (fun z => by rw [slabThetaTerminalResolutionEquiv_apply_val])
 
-include h in
 /-- The incident weighted resolution on each side is the corresponding chamber
 image of the common theta lift. This is a statement about the geometrically
 selected histories, not the unrestricted binomial expansion. -/
@@ -240,6 +226,21 @@ theorem slabThetaTerminalResolution_weightedSum {v : ℝ} (hv : v ≠ 0)
         Mei.NodeAlgebra.exponentLeftMap
           (_root_.LaurentPolynomial.C t * (1 + _root_.LaurentPolynomial.T 1)))
         (c • theta t n b) := by
+  classical
+  have expand (Q : ℝ × ℝ) (hQ : Q ∈ slabTerminalDomain n b v)
+      (side : Bool) (hs : Q ∈ incomingSlabDomain side) :
+      (let := Fintype.ofFinite (SlabThetaTerminalResolution t c n b v side)
+       ∑ z : SlabThetaTerminalResolution t c n b v side,
+         slabThetaChartWeight t c n b z.val) = slabThetaEvaluation t c n b Q := by
+    let := Fintype.ofFinite (SlabThetaTerminalResolution t c n b v side)
+    let := Fintype.ofFinite
+      {α : SlabThetaChartIndex t c n b // Q ∈ slabThetaChartDomain t c n b α}
+    rw [slabThetaEvaluation_eq_sum_charts]
+    exact (Fintype.sum_equiv
+      (Equiv.subtypeEquivRight fun α =>
+        mem_slabThetaChartDomain_iff_terminal_resolution t c n b α hQ side hs)
+      (fun α => slabThetaChartWeight t c n b α.val)
+      (fun α => slabThetaChartWeight t c n b α.val) (fun _ => rfl)).symm
   obtain ⟨L, U, hL, hU, hsL, hsU⟩ :=
     slabTerminalFiniteDomain_meets_chambers ({()} : Finset Unit)
       (fun _ => n) (fun _ => b) hv
@@ -248,51 +249,12 @@ theorem slabThetaTerminalResolution_weightedSum {v : ℝ} (hv : v ≠ 0)
   have hU' : U ∈ slabTerminalDomain n b v :=
     (mem_slabTerminalFiniteDomain _ _ _ v U).mp hU () (by simp)
   cases right
-  · rw [← slabThetaFamily_weightedEvaluation_eq_terminal_resolution
-      t c n b h hv hL' false (by simpa using hsL), slabThetaFamily_weightedEvaluation]
+  · rw [expand L hL' false (by simpa using hsL)]
     exact slabThetaEvaluation_eq_exponentLeftMap t c n b L hsL
       (fun _ j _ => slabTerminalDomain_crossingHeight_ne_zero hL' j)
-  · rw [← slabThetaFamily_weightedEvaluation_eq_terminal_resolution
-      t c n b h hv hU' true (by simpa using hsU), slabThetaFamily_weightedEvaluation]
+  · rw [expand U hU' true (by simpa using hsU)]
     exact slabThetaEvaluation_eq_exponentRightMap t c n b U hsU
       (fun _ j _ => slabTerminalDomain_crossingHeight_ne_zero hU' j)
-
-/-- The incoming developed exponent retained by a complete chart. Above the
-origin the crossing history uses the upper frame, including its vertical shift. -/
-def slabThetaChartIncomingExponent (α : SlabThetaChartIndex t c n b) : ℤ × ℤ :=
-  match α with
-  | .inl _ => (n, b)
-  | .inr (.inl j) => (n, if j.2 then b + n.natAbs else b)
-  | .inr (.inr _) => (0, 0)
-
-@[simp]
-theorem slabThetaChartIncomingExponent_incoming (j : IncomingSlabChartIndex c n b) :
-    slabThetaChartIncomingExponent t c n b (.inl j) = (n, b) := (rfl)
-
-@[simp]
-theorem slabThetaChartIncomingExponent_crossing (j : SlabChartIndex t c n) :
-    slabThetaChartIncomingExponent t c n b (.inr (.inl j)) =
-      (n, if j.2 then b + n.natAbs else b) := (rfl)
-
-@[simp]
-theorem slabThetaChartIncomingExponent_constant (u : Unit) :
-    slabThetaChartIncomingExponent t c n b (.inr (.inr u)) = (0, 0) := (rfl)
-
-/-- At the terminal center the whole negative half-line of every chart is its
-original incoming half-line. In particular the outgoing binomial index drops
-out, whereas the developed incoming exponent and the endpoint are retained. -/
-theorem slabThetaChartPath_terminal (α : SlabThetaChartIndex t c n b)
-    (v s : ℝ) (hs : s ≤ 0) :
-    slabThetaChartPath t c n b α (0, v) s =
-      (-(s * (slabThetaChartIncomingExponent t c n b α).1),
-        v - s * (slabThetaChartIncomingExponent t c n b α).2) := by
-  rcases α with j | j | u
-  · rw [slabThetaChartPath_incoming, slabThetaChartIncomingExponent_incoming]
-    exact slabBranchPath_terminal _ _ _ v s hs
-  · rw [slabThetaChartPath_crossing, slabThetaChartIncomingExponent_crossing]
-    exact slabBranchPath_terminal _ _ _ v s hs
-  · simp only [slabThetaChartPath_constant, slabThetaChartIncomingExponent,
-      Int.cast_zero, mul_zero, neg_zero, sub_zero]
 
 /-- Incident crossing histories above or below a regular slab point all have
 the same developed incoming exponent, even when their outgoing degrees differ. -/
@@ -301,7 +263,7 @@ theorem slabThetaChartIncomingExponent_of_incident_crossing
     (hj : (0, v) ∈ closure (slabThetaChartDomain t c n b (.inr (.inl j)))) :
     slabThetaChartIncomingExponent t c n b (.inr (.inl j)) =
       (n, if 0 < v then b + n.natAbs else b) := by
-  rw [slabThetaChartIncomingExponent,
+  rw [slabThetaChartIncomingExponent_crossing,
     (slabThetaChart_incident_crossing t c n b j hv).mp hj |>.2]
   simp
 
