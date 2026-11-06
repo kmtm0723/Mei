@@ -1,0 +1,181 @@
+/-
+Copyright (c) 2026 Mei contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Claude Code
+-/
+module
+
+public import Mei.Geometry.Convex.PolyhedralComplex.CoordinateAxes
+public import Mei.Geometry.Convex.PolyhedralComplex.OfPolyhedron.Basic
+public import Mei.Geometry.Convex.Recession
+
+/-!
+# Complexes with a line and with a ray at a real offset
+
+In the plane `ℝ²` with the standard lattice `ℤ²`, consider
+
+* the line `H = {y = c}`. Its only nonempty exposed face is itself, so its complex has the single
+  cell `H` (`mem_cells_ofPolyhedron_lineAtHeight_iff`), and this cell has nonzero lineality
+  (`lineal_recessionCone_lineAtHeight_ne_bot`);
+* the ray `r = {(x, 0) | a ≤ x}` with endpoint `(a, 0)` for an arbitrary real `a`, for instance
+  `a = √2`. Its nonempty exposed faces are `r` and `{(a, 0)}`, so its complex has these two cells
+  (`mem_cells_ofPolyhedron_rightRay_iff`), and its cells have trivial lineality
+  (`lineal_recessionCone_rightRay`).
+
+Both are complexes of rational-normal polyhedra: the normals are coordinate functionals, while
+the offset `a` of the ray is not required to be rational. They are the complexes
+`FinitePolyhedralComplex.ofPolyhedron` of the line and of the ray.
+-/
+
+public section
+
+open Set
+
+namespace Mei.FinitePolyhedralComplex.Examples
+
+variable (h : TauCeti.Toric.IsIntegralLattice ((Int.castAddHom ℝ).prodMap (Int.castAddHom ℝ)))
+
+/-- The horizontal line `{y = c}` in the plane. -/
+def lineAtHeight (c : ℝ) : Set (ℝ × ℝ) := {p | p.2 = c}
+
+/-- The horizontal ray `{(x, 0) | a ≤ x}` with endpoint `(a, 0)`. -/
+def rightRay (a : ℝ) : Set (ℝ × ℝ) := {p | p.2 = 0 ∧ a ≤ p.1}
+
+/-- A horizontal line is a rational-normal polyhedron. -/
+theorem isRationalNormalPolyhedron_lineAtHeight (c : ℝ) :
+    IsRationalNormalPolyhedron h (lineAtHeight c) := by
+  have hs := isRationalFunctional_axisRow h true
+  have h₁ := isRationalNormalPolyhedron_setOf_le (h := h) (axisRow true) hs c
+  have h₂ := isRationalNormalPolyhedron_setOf_le (h := h) (-axisRow true)
+    (by simpa using hs.neg) (-c)
+  convert h₁.inter h₂ using 1
+  ext p
+  simp [lineAtHeight, le_antisymm_iff, neg_le_neg_iff]
+
+/-- A horizontal ray with any real endpoint is a rational-normal polyhedron. -/
+theorem isRationalNormalPolyhedron_rightRay (a : ℝ) :
+    IsRationalNormalPolyhedron h (rightRay a) := by
+  have h₁ := isRationalNormalPolyhedron_lineAtHeight h 0
+  have h₂ := isRationalNormalPolyhedron_setOf_le (h := h) (-axisRow false)
+    (by simpa using (isRationalFunctional_axisRow h false).neg) (-a)
+  convert h₁.inter h₂ using 1
+  ext p
+  simp [rightRay, lineAtHeight, and_comm, neg_le_neg_iff]
+
+/-- On a horizontal line, a functional is determined by its value at one point and its value at
+`(1, 0)`. -/
+theorem apply_eq_of_mem_lineAtHeight (l : (ℝ × ℝ) →L[ℝ] ℝ) {c : ℝ} {p q : ℝ × ℝ}
+    (hp : p ∈ lineAtHeight c) (hq : q ∈ lineAtHeight c) :
+    l q = l p + (q.1 - p.1) * l (1, 0) := by
+  have : q = p + (q.1 - p.1) • ((1 : ℝ), (0 : ℝ)) := by
+    ext
+    · simp
+    · simp [hp.trans hq.symm |>.symm]
+  calc l q = l (p + (q.1 - p.1) • ((1 : ℝ), (0 : ℝ))) := congrArg l this
+    _ = l p + (q.1 - p.1) * l (1, 0) := by rw [map_add, map_smul, smul_eq_mul]
+
+/-- A functional that attains its maximum over a horizontal line vanishes along the line. -/
+theorem apply_one_zero_eq_zero (l : (ℝ × ℝ) →L[ℝ] ℝ) {c : ℝ} {x : ℝ × ℝ}
+    (hx : x ∈ lineAtHeight c) (hmax : ∀ y ∈ lineAtHeight c, l y ≤ l x) : l (1, 0) = 0 := by
+  have hpos := hmax (x + (1, 0)) (by simpa [lineAtHeight] using hx)
+  have hneg := hmax (x - (1, 0)) (by simpa [lineAtHeight] using hx)
+  simp only [map_add, map_sub] at hpos hneg
+  linarith
+
+/-- On a horizontal ray, a functional is its first coordinate times its value at `(1, 0)`. -/
+theorem apply_eq_of_mem_rightRay (l : (ℝ × ℝ) →L[ℝ] ℝ) {a : ℝ} {p : ℝ × ℝ}
+    (hp : p ∈ rightRay a) : l p = p.1 * l (1, 0) := by
+  have : p = p.1 • ((1 : ℝ), (0 : ℝ)) := by
+    ext
+    · simp
+    · simp [hp.1]
+  calc l p = l (p.1 • ((1 : ℝ), (0 : ℝ))) := congrArg l this
+    _ = p.1 * l (1, 0) := by rw [map_smul, smul_eq_mul]
+
+/-- The endpoint of a ray lies on it. -/
+theorem endpoint_mem_rightRay (a : ℝ) : (a, (0 : ℝ)) ∈ rightRay a := ⟨rfl, le_rfl⟩
+
+/-- The line has nonzero lineality: both directions along it preserve it. -/
+theorem lineal_recessionCone_lineAtHeight_ne_bot (c : ℝ) :
+    (recessionCone (lineAtHeight c)).lineal ≠ ⊥ := by
+  intro hbot
+  have hmem : ((1 : ℝ), (0 : ℝ)) ∈ (recessionCone (lineAtHeight c)).lineal := by
+    rw [PointedCone.mem_lineal, mem_recessionCone, mem_recessionCone]
+    constructor <;> intro x hx t _ <;> simpa [lineAtHeight] using hx
+  rw [hbot, Submodule.mem_bot] at hmem
+  exact one_ne_zero (congrArg Prod.fst hmem)
+
+/-- The ray has trivial lineality: it is pointed. -/
+theorem lineal_recessionCone_rightRay (a : ℝ) : (recessionCone (rightRay a)).lineal = ⊥ := by
+  refine (Submodule.eq_bot_iff _).mpr fun v hv => ?_
+  obtain ⟨h₁, h₂⟩ := PointedCone.mem_lineal.mp hv
+  rw [mem_recessionCone] at h₁ h₂
+  have a₁ := h₁ (a, 0) (endpoint_mem_rightRay a) 1 zero_le_one
+  have a₂ := h₂ (a, 0) (endpoint_mem_rightRay a) 1 zero_le_one
+  simp only [rightRay, mem_ofPred_eq, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd,
+    smul_eq_mul, one_mul, zero_add, Prod.fst_neg, Prod.snd_neg] at a₁ a₂
+  ext <;> simp <;> linarith [a₁.1, a₁.2, a₂.1, a₂.2]
+
+/-- The only nonempty exposed face of a horizontal line is the line itself, so its complex has
+the single cell `H`. -/
+theorem mem_cells_ofPolyhedron_lineAtHeight_iff (c : ℝ) (F : Set (ℝ × ℝ)) :
+    F ∈ (ofPolyhedron h (lineAtHeight c) (isRationalNormalPolyhedron_lineAtHeight h c)).cells
+      ↔ F = lineAtHeight c := by
+  rw [mem_cells_ofPolyhedron, isPolyhedralFace_iff]
+  constructor
+  · rintro ⟨⟨x, hxF⟩, hexp⟩
+    obtain ⟨l, rfl⟩ := hexp ⟨x, hxF⟩
+    obtain ⟨hx, hmax⟩ := hxF
+    ext y
+    refine Set.mem_sep_iff.trans ⟨fun hy => hy.1, fun hy => ⟨hy, fun z hz => ?_⟩⟩
+    rw [apply_eq_of_mem_lineAtHeight l hx hz, apply_eq_of_mem_lineAtHeight l hx hy,
+      apply_one_zero_eq_zero l hx hmax]
+    simp
+  · rintro rfl
+    exact ⟨⟨(0, c), rfl⟩, IsExposed.refl _⟩
+
+/-- The nonempty exposed faces of the ray with endpoint `(a, 0)` are the ray and its endpoint, so
+its complex has the two cells `r` and `{(a, 0)}`. For `a = √2` the endpoint has an irrational
+coordinate. -/
+theorem mem_cells_ofPolyhedron_rightRay_iff (a : ℝ) (F : Set (ℝ × ℝ)) :
+    F ∈ (ofPolyhedron h (rightRay a) (isRationalNormalPolyhedron_rightRay h a)).cells
+      ↔ F = rightRay a ∨ F = {(a, 0)} := by
+  rw [mem_cells_ofPolyhedron, isPolyhedralFace_iff]
+  constructor
+  · rintro ⟨⟨x, hxF⟩, hexp⟩
+    obtain ⟨l, rfl⟩ := hexp ⟨x, hxF⟩
+    obtain ⟨hx, hmax⟩ := hxF
+    -- The functional is nonpositive along the ray, since `x` maximizes it.
+    have hle : l (1, 0) ≤ 0 := by
+      have hy : (x.1 + 1, (0 : ℝ)) ∈ rightRay a := ⟨rfl, by linarith [hx.2]⟩
+      have := hmax _ hy
+      rw [apply_eq_of_mem_rightRay l hy, apply_eq_of_mem_rightRay l hx] at this
+      nlinarith
+    rcases hle.eq_or_lt with h0 | hlt
+    · refine Or.inl (Set.ext fun y => Set.mem_sep_iff.trans
+        ⟨fun hy => hy.1, fun hy => ⟨hy, fun z hz => ?_⟩⟩)
+      rw [apply_eq_of_mem_rightRay l hz, apply_eq_of_mem_rightRay l hy, h0]
+      simp
+    · refine Or.inr (Set.ext fun y => Set.mem_sep_iff.trans ⟨fun ⟨hy, hy'⟩ => ?_, ?_⟩)
+      · have := hy' _ (endpoint_mem_rightRay a)
+        rw [apply_eq_of_mem_rightRay l (endpoint_mem_rightRay a),
+          apply_eq_of_mem_rightRay l hy] at this
+        exact Prod.ext (le_antisymm (by nlinarith) hy.2) hy.1
+      · rintro rfl
+        refine ⟨endpoint_mem_rightRay a, fun z hz => ?_⟩
+        rw [apply_eq_of_mem_rightRay l hz, apply_eq_of_mem_rightRay l (endpoint_mem_rightRay a)]
+        nlinarith [hz.2]
+  · rintro (rfl | rfl)
+    · exact ⟨⟨(a, 0), endpoint_mem_rightRay a⟩, IsExposed.refl _⟩
+    · refine ⟨⟨(a, 0), rfl⟩, fun _ => ⟨-ContinuousLinearMap.fst ℝ ℝ ℝ, ?_⟩⟩
+      ext y
+      rw [Set.mem_singleton_iff, Set.mem_sep_iff]
+      constructor
+      · rintro rfl
+        exact ⟨endpoint_mem_rightRay a, fun z hz => by simpa using hz.2⟩
+      · rintro ⟨hy, hmax⟩
+        have := hmax (a, 0) (endpoint_mem_rightRay a)
+        simp only [neg_apply, ContinuousLinearMap.coe_fst', neg_le_neg_iff] at this
+        exact Prod.ext (le_antisymm this hy.2) hy.1
+
+end Mei.FinitePolyhedralComplex.Examples
