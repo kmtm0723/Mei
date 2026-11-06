@@ -19,8 +19,9 @@ walls. Coplanar commutation follows from `DirectedWall.commute_label_of_directio
 
 The product uses `Quiver.Path.wallPathProduct` and its grouped crossing events.
 It has the left-action convention: the first crossing is rightmost, concatenation
-multiplies in the opposite order, and reversal inverts the product. Finite indexed
-families are included, while no local finiteness of all supports is imposed.
+multiplies in the opposite order, and reversal inverts the product. Products lie in every
+subgroup containing the active labels. Finite indexed families are included, while no local
+finiteness of all supports is imposed.
 -/
 
 public section
@@ -181,6 +182,15 @@ theorem levelPathProduct_reverse (k : ℕ)
   unfold levelPathProduct
   exact p.wallPathProduct_reverse _ _ _
     (fun j : D.active k => (D.wall j).direction_support.symm)
+
+/-- Finite-order transport lies in every subgroup containing the projected labels of the walls
+active at that order. -/
+theorem levelPathProduct_mem (k : ℕ) {S : Subgroup (d.truncatedGroup ℒ k)}
+    (hS : ∀ j : D.active k, CompletedGroup.projection k (D.wall j).label ∈ S)
+    {x y : WallComplement (fun j : D.active k => (D.wall j).support)}
+    (p : AdmissiblePLPath x y) : D.levelPathProduct k p ∈ S := by
+  rw [D.levelPathProduct_eq_wallPathProduct k p (D.activeLabels_commute k)]
+  exact Quiver.Path.wallPathProduct_mem _ _ _ hS p
 
 end DirectedDiagram
 end Mei
