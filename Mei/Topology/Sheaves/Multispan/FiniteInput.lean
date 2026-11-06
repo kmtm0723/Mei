@@ -54,7 +54,7 @@ theorem existsUnique_sections_lift_of_finite_inputs
     ∃! ℓ : E →ₗ[R] SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan,
       ∀ a j, (ℓ a).val (.right j) = f j a := by
   classical
-  have hex j := LinearMap.existsUnique_of_finite_span_interpolation (f j) (by
+  have hex j := Function.existsUnique_linearMap_of_finite_span_interpolation (f j) (by
     intro s
     obtain ⟨β, hβ, -⟩ := hfin s
     exact ⟨(β j).hom, hβ j⟩)

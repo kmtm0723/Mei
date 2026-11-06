@@ -18,7 +18,7 @@ This permits different finite expansions or refinements for each input test.
 
 public section
 
-namespace LinearMap
+namespace Function
 
 variable {R E F : Type*} [Semiring R] [AddCommMonoid E] [Module R E]
   [AddCommMonoid F] [Module R F]
@@ -26,7 +26,7 @@ variable {R E F : Type*} [Semiring R] [AddCommMonoid E] [Module R E]
 /-- Finite linear interpolation forces a function to be linear, even when the
 incoming module is not finitely generated. Only the tested vectors, not their
 whole span, must agree with the chosen interpolation. -/
-theorem existsUnique_of_finite_span_interpolation (f : E → F)
+theorem existsUnique_linearMap_of_finite_span_interpolation (f : E → F)
     (hfin : ∀ s : Finset E, ∃ g : Submodule.span R (s : Set E) →ₗ[R] F,
       ∀ a (ha : a ∈ s), g ⟨a, Submodule.subset_span ha⟩ = f a) :
     ∃! g : E →ₗ[R] F, ∀ a, g a = f a := by
@@ -50,4 +50,4 @@ theorem existsUnique_of_finite_span_interpolation (f : E → F)
   intro g hg
   exact LinearMap.ext hg
 
-end LinearMap
+end Function
