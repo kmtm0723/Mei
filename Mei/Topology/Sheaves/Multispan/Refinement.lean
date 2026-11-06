@@ -69,32 +69,15 @@ theorem existsUnique_sections_gluing_of_local_subdivisions
       ⟨⟨homOfLE (le_inf le_rfl le_rfl), Subsingleton.elim _ _, Subsingleton.elim _ _⟩⟩
     exact ((asIso ((I.right j).obj.map
       (homOfLE (inf_le_left : U i ⊓ U i ≤ U i)).op)).toLinearEquivₛ.injective) h
-  let chosen i j : (D i).chambers j := Classical.choice inferInstance
-  let α i j : E →ₗ[R] (I.sectionsIndex (U i)).right j :=
-    (SemimoduleCat.sectionsEval ((D i).index (I.sectionsIndex (U i))).multispan
-      (.right ⟨j, chosen i j⟩)).comp (ℓ i)
-  have hα i x b : (α i (J.fst b) x, α i (J.snd b) x) ∈
-      LinearMap.range (((I.sectionsIndex (U i)).fst b).hom.prod
-        ((I.sectionsIndex (U i)).snd b).hom) := by
-    let c : (D i).faces b := Classical.choice inferInstance
-    have hm := ((D i).index (I.sectionsIndex (U i))).mem_sectionsSubmodule_multispan.mp
-      (ℓ i x).property
-    refine ⟨(ℓ i x).val (.left (.inl ⟨b, c⟩)), Prod.ext ?_ ?_⟩
-    · dsimp only [α]
-      erw [LinearMap.comp_apply, SemimoduleCat.sectionsEval_apply]
-      exact
-        (hm.1 (.inl ⟨b, c⟩)).trans (hconst i x _ _ (chosen i (J.fst b)))
-    · dsimp only [α]
-      erw [LinearMap.comp_apply, SemimoduleCat.sectionsEval_apply]
-      exact
-        (hm.2 (.inl ⟨b, c⟩)).trans (hconst i x _ _ (chosen i (J.snd b)))
-  let a i := (I.sectionsIndex (U i)).sectionsLift (α i) (hinj i) (hα i)
+  choose a hp using fun i =>
+    ((D i).existsUnique_sectionsPullback_lift_of_copies_eq
+      (I.sectionsIndex (U i)) (hinj i) (ℓ i) (hconst i)).exists
   have har i x j (c : (D i).chambers j) :
       (a i x).val (.right j) = (ℓ i x).val (.right ⟨j, c⟩) := by
-    rw [MultispanIndex.sectionsLift_apply_right]
-    dsimp only [α]
-    erw [LinearMap.comp_apply, SemimoduleCat.sectionsEval_apply]
-    exact hconst i x j (chosen i j) c
+    have h := congrArg (fun s => s.val (.right ⟨j, c⟩)) (LinearMap.congr_fun (hp i) x)
+    erw [MultispanShape.Subdivision.sectionsPullback_apply_right] at h
+    exact h
+  let chosen i j : (D i).chambers j := Classical.choice inferInstance
   have ha i k : (I.sectionsRestrict (inf_le_left : U i ⊓ U k ≤ U i)).comp (a i) =
       (I.sectionsRestrict (inf_le_right : U i ⊓ U k ≤ U k)).comp (a k) := by
     apply (I.sectionsIndex (U i ⊓ U k)).linearMap_ext_of_injective
@@ -103,26 +86,17 @@ theorem existsUnique_sections_gluing_of_local_subdivisions
     simp only [LinearMap.comp_apply, sectionsRestrict_apply_right]
     rw [har i x j (chosen i j), har k x j (chosen k j)]
     exact hcompat i k x j (chosen i j) (chosen k j)
-  have hp i x : (D i).sectionsPullback (I.sectionsIndex (U i)) (a i x) = ℓ i x := by
-    apply ((D i).index (I.sectionsIndex (U i))).restrictSections_injective
-      ((D i).index_jointly_injective _ (hinj i))
-    ext ⟨j, c⟩
-    erw [MultispanIndex.restrictSections_apply, MultispanIndex.restrictSections_apply,
-      MultispanShape.Subdivision.sectionsPullback_apply_right]
-    exact har i x j c
   obtain ⟨L, hL, huniq⟩ := I.existsUnique_sections_gluing E U a ha
   refine ⟨L, ?_, ?_⟩
   · intro i
     rw [hL i]
-    apply LinearMap.ext
-    intro x
-    exact hp i x
+    exact hp i
   · intro q hq
     apply huniq q
     intro i
     apply LinearMap.ext
     intro x
     apply (D i).sectionsPullback_injective_of_face_coverage (I.sectionsIndex (U i))
-    exact (LinearMap.congr_fun (hq i) x).trans (hp i x).symm
+    exact (LinearMap.congr_fun (hq i) x).trans (LinearMap.congr_fun (hp i) x).symm
 
 end CategoryTheory.Limits.MultispanIndex
