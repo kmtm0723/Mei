@@ -7,7 +7,6 @@ module
 
 public import Mei.Geometry.ScatteringDiagram.ModuleProbe.WallEventEvaluation
 public import Mei.Geometry.Convex.Polyhedron.Rational.SingularSupport
-public import Mei.Geometry.Convex.Sweep.Admissible.Union
 
 /-!
 # Intrinsic stable loci of actual wall-event evaluations
