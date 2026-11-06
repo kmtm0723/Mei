@@ -73,21 +73,4 @@ theorem globalCoefficientMap_toShiftedDirectLimitAlgHom
   rw [globalCoefficientMap_def,
     PositiveDegrees.shiftedDirectLimitAlgHom_toShiftedDirectLimitAlgHom, mapAlgHom_apply]
 
-/-- Coefficient change fixes exponents of original quantum monomials, including negative ones. -/
-theorem globalCoefficientMap_monomial
-    (hspan : ∀ p : Γ, ∃ a b : d.monoid, p = (a : Γ) - b) (p : Γ) :
-    globalCoefficientMap d φ h (d.toShiftedDirectLimitAlgHom _ hspan (monomial q β p)) =
-      d.toShiftedDirectLimitAlgHom _ hspan (monomial q' β' p) := by
-  rw [globalCoefficientMap_toShiftedDirectLimitAlgHom, map_monomial, AddMonoidHom.id_apply]
-
-/-- Coefficient change applies its prescribed scalar homomorphism inside the global algebra. -/
-theorem globalCoefficientMap_algebraMap
-    (hspan : ∀ p : Γ, ∃ a b : d.monoid, p = (a : Γ) - b) (r : R) :
-    globalCoefficientMap d φ h
-        (d.toShiftedDirectLimitAlgHom _ hspan (algebraMap R _ r)) =
-      d.toShiftedDirectLimitAlgHom _ hspan (algebraMap S _ (φ r)) := by
-  rw [globalCoefficientMap_toShiftedDirectLimitAlgHom, map_algebraMap]
-  -- `AlgHom` and its underlying ring homomorphism have the same scalar action.
-  rfl
-
 end Mei.QuantumMonoidAlgebra
