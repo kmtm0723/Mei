@@ -31,16 +31,6 @@ variable {k R S Γ : Type*} [CommRing k] [CommRing R] [CommRing S]
   (φ : R →ₐ[k] S)
   (h : ∀ p r, Units.map φ.toMonoidHom (q ^ β p r) = q' ^ β' p r)
 
-omit [DecidableEq Γ] in
-/-- Restricting scalars to the common base preserves homogeneity of coefficient change. -/
-theorem coefficientMap_mem_grade (u : Γ) :
-    (grade q β u).restrictScalars k ≤ ((grade q' β' u).restrictScalars k).comap
-      (mapAlgHom φ (AddMonoidHom.id Γ) h).toLinearMap := by
-  intro x hx
-  change mapAlgHom φ (AddMonoidHom.id Γ) h x ∈ grade q' β' u
-  rw [mapAlgHom_apply]
-  exact map_mem_grade φ.toRingHom (AddMonoidHom.id Γ) h hx
-
 /-- Change quantum coefficients in the global algebra, restricting grading scalars to the
 common base. Compatibility of factor sets permits specializations as well as embeddings. -/
 def globalCoefficientMap :
