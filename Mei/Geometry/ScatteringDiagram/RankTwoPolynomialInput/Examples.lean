@@ -476,10 +476,8 @@ theorem mapAlgHom_aeval_one_mem_rangeS
       (AddMonoidAlgebra.mapRingHom (⊤ : AddSubmonoid (ℤ × ℤ)) (Nat.castRingHom ℚ)).rangeS :=
   map_mem_rangeS_mapRingHom_coefficientMonoidMap ⊤ φ₁ 1 _ (mapAlgHom_single_eq_mul_one ⊤ φ₁)
     _ _ (fun a => ⟨MvPolynomial.eval (fun _ => 1) a, by
-      rw [MvPolynomial.aeval_def, MvPolynomial.eval₂_map, MvPolynomial.eval,
-        MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_comp_left]
-      -- Both sides evaluate at `1` along a ring homomorphism `ℕ → ℚ`, and there is only one.
-      congr 1⟩)
+      simpa [MvPolynomial.eval_map, Function.comp_def] using
+        MvPolynomial.eval₂_comp_left (Nat.castRingHom ℚ) (RingHom.id ℕ) (fun _ => 1) a⟩)
     (fun _ => one_mem _) hx
 
 /-- Specializing the coefficient of the horizontal input at `c = 1` keeps a positive

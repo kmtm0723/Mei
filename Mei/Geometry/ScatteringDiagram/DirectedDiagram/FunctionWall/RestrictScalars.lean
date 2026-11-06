@@ -27,9 +27,11 @@ restriction of scalars preserves and reflects positive wall representatives
 Combined with the fixed-degree positive specializations of
 `Mei.Geometry.ScatteringDiagram.DirectedDiagram.FunctionWall.Specialization`, this gives positive
 specializations across a change of the coefficient ring. Let `f` be a `K`-linear fixed-degree
-graded Lie map of the restricted gradings preserving the restricted wall spaces, and `φ` a
-positive specialization of completed coefficients that intertwines the restricted actions along
-`f` and fixes the monomials, and assume that the target action fixes the constants. Then the
+graded Lie map of the restricted gradings preserving the restricted wall spaces. A
+`DirectedDiagram.PositiveCoefficientChange` along `f` consists of actions of the restricted
+completed groups that are the original actions through the scalar-restriction comparisons, and a
+positive specialization of completed coefficients that intertwines them along `f` and fixes the
+monomials, such that the target action fixes the constants. For such data the
 coefficient change `DirectedDiagram.mapRestrictScalars` sends positive wall representatives to
 positive wall representatives (`DirectedDiagram.IsPositiveWallRepresentative.mapRestrictScalars`),
 and positive wall representatives of outgoing completions to positive wall representatives of
@@ -45,8 +47,10 @@ specialization `z^n ∂_m ↦ z^n ∂_(φ ∘ m)` (`LogarithmicVectorField.coeff
 with trivial twist) preserves the restricted tropical vertex wall spaces, and all the hypotheses
 above hold for the monoid-local positive specialization
 `LogarithmicVectorField.coefficientMonoidPositiveSpecialization`, the target action fixing the
-constants because it is `S`-linear. Hence changing the coefficients along `φ` preserves positive
-wall representatives (`DirectedDiagram.IsPositiveWallRepresentative.coefficientMonoidGradedLieHom`),
+constants because it is `S`-linear
+(`DirectedDiagram.coefficientMonoidPositiveCoefficientChange`). Hence changing the coefficients
+along `φ` preserves positive wall representatives
+(`DirectedDiagram.IsPositiveWallRepresentative.coefficientMonoidGradedLieHom`),
 outgoing completions with positive wall representatives
 (`DirectedDiagram.IsOutgoingCompletion.isPositiveWallRepresentative_coefficientMonoidGradedLieHom`)
 and the existence of positive wall representatives of scattering classes
@@ -163,6 +167,12 @@ theorem ofRestrictScalars_restrictScalars : (G.restrictScalars K).ofRestrictScal
   ext j
   rw [ofRestrictScalars_group, restrictScalars_group]
 
+/-- Unrestricting and then restricting a grouping of the restriction recovers it. -/
+@[simp]
+theorem restrictScalars_ofRestrictScalars : G'.ofRestrictScalars.restrictScalars K = G' := by
+  ext j
+  rw [restrictScalars_group, ofRestrictScalars_group]
+
 /-- The completed group labels of the restricted grouping are the inverse images of the group
 labels under the scalar-restriction comparison. -/
 theorem label_restrictScalars (g : κ) :
@@ -242,54 +252,77 @@ variable {S : Type*} {L' : Type u} [CommRing S] [Algebra ℚ S] [SMul K S]
   [Algebra S A'] [Algebra K A']
   {Q : AddSubmonoid Γ} {F : AlgFiltration (AddMonoidAlgebra A Q)}
   {F' : AlgFiltration (AddMonoidAlgebra A' Q)}
-  {σ : d.completedBCHGroup ℒ →* (F.completion ≃ₐ[R] F.completion)}
-  {σK : d.completedBCHGroup (fun n => (ℒ n).restrictScalars K) →*
-    (F.completion ≃ₐ[K] F.completion)}
+
+variable (σ : d.completedBCHGroup ℒ →* (F.completion ≃ₐ[R] F.completion))
+  (σ' : d.completedBCHGroup ℳ →* (F'.completion ≃ₐ[S] F'.completion))
+  (P : Subsemiring (AddMonoidAlgebra A Q)) (P' : Subsemiring (AddMonoidAlgebra A' Q)) in
+/-- A positive specialization of completed coefficients compatible with a change of the
+coefficient ring along a `K`-linear fixed-degree graded Lie map `f` of the restricted gradings:
+actions `restrictedAction` and `restrictedAction'` of the restricted completed groups that are
+the actions `σ` and `σ'` composed with the scalar-restriction comparisons, and a positive
+specialization `specialization` from `P` to `P'` that intertwines them along `f`, fixes the
+monomials, and such that `σ'` fixes the constants. -/
+@[ext]
+structure PositiveCoefficientChange where
+  /-- The action of the restricted completed source group. -/
+  restrictedAction : d.completedBCHGroup (fun n => (ℒ n).restrictScalars K) →*
+    (F.completion ≃ₐ[K] F.completion)
+  /-- The action of the restricted completed target group. -/
+  restrictedAction' : d.completedBCHGroup (fun n => (ℳ n).restrictScalars K) →*
+    (F'.completion ≃ₐ[K] F'.completion)
+  /-- The restricted source action is `σ` through the scalar-restriction comparison. -/
+  restrictedAction_apply (g x) :
+    restrictedAction g x = σ (d.completedBCHRestrictScalarsEquiv (R := K) ℒ g) x
+  /-- The restricted target action is `σ'` through the scalar-restriction comparison. -/
+  restrictedAction'_apply (g x) :
+    restrictedAction' g x = σ' (d.completedBCHRestrictScalarsEquiv (R := K) ℳ g) x
+  /-- The positive specialization of completed coefficients. -/
+  specialization : PositiveSpecialization F F' P P'
+  /-- The specialization intertwines the restricted actions along `f`. -/
+  completionMap_restrictedAction (g x) : specialization.completionMap (restrictedAction g x) =
+    restrictedAction' (f.completedMap g) (specialization.completionMap x)
+  /-- The specialization fixes the monomials. -/
+  toRingHom_single_one (p : Q) : specialization.toRingHom (single p 1) = single p 1
+  /-- The target action fixes the constants. -/
+  action_single_zero (g) (c : A') :
+    σ' g (F'.toCompletion (single 0 c)) = F'.toCompletion (single 0 c)
+
+variable {σ : d.completedBCHGroup ℒ →* (F.completion ≃ₐ[R] F.completion)}
   {σ' : d.completedBCHGroup ℳ →* (F'.completion ≃ₐ[S] F'.completion)}
-  {σ'K : d.completedBCHGroup (fun n => (ℳ n).restrictScalars K) →*
-    (F'.completion ≃ₐ[K] F'.completion)}
-  (hσ : ∀ g x, σK g x = σ (d.completedBCHRestrictScalarsEquiv (R := K) ℒ g) x)
-  (hσ' : ∀ g x, σ'K g x = σ' (d.completedBCHRestrictScalarsEquiv (R := K) ℳ g) x)
   {P : Subsemiring (AddMonoidAlgebra A Q)} {P' : Subsemiring (AddMonoidAlgebra A' Q)}
-  (φ : PositiveSpecialization F F' P P')
-  (hφσ : ∀ g x, φ.completionMap (σK g x) = σ'K (f.completedMap g) (φ.completionMap x))
-  (hφ : ∀ p : Q, φ.toRingHom (single p 1) = single p 1)
-  (hconst : ∀ g (c : A'),
-    σ' g (F'.toCompletion (single 0 c)) = F'.toCompletion (single 0 c))
+  (c : PositiveCoefficientChange f σ σ' P P')
 
-include hσ hσ' hφσ hφ hconst
+include c
 
-/-- **Positive specializations across a change of the coefficient ring.** Let `f` be a
-`K`-linear fixed-degree graded Lie map of the restricted gradings preserving the restricted wall
-spaces, and `φ` a positive specialization of completed coefficients that intertwines the
-restricted actions along `f` and fixes the monomials. Assume that each restricted action is the
-original action composed with the scalar-restriction comparison, and that the target action fixes
-the constants. Then the coefficient change of a positive wall representative is a positive wall
-representative. -/
+/-- **Positive specializations across a change of the coefficient ring.** For a positive
+specialization compatible with the change of the coefficient ring along `f`, the coefficient
+change of a positive wall representative is a positive wall representative. -/
 theorem IsPositiveWallRepresentative.mapRestrictScalars
     (hD : D.IsPositiveWallRepresentative σ P π) :
     (D.mapRestrictScalars f hf).IsPositiveWallRepresentative σ' P' π := by
-  rw [← isPositiveWallRepresentative_restrictScalars_iff _ hσ',
+  rw [← isPositiveWallRepresentative_restrictScalars_iff _ c.restrictedAction'_apply,
     restrictScalars_mapRestrictScalars]
   -- The constants are fixed by the restricted target action, which is the original one.
-  refine IsPositiveWallRepresentative.map f hf φ hφσ hφ (fun g c => by rw [hσ', hconst]) ?_
-  exact (isPositiveWallRepresentative_restrictScalars_iff _ hσ).mpr hD
+  refine IsPositiveWallRepresentative.map f hf c.specialization c.completionMap_restrictedAction
+    c.toRingHom_single_one
+    (fun g a => by rw [c.restrictedAction'_apply, c.action_single_zero]) ?_
+  exact (isPositiveWallRepresentative_restrictScalars_iff _ c.restrictedAction_apply).mpr hD
 
-/-- Under the hypotheses of `IsPositiveWallRepresentative.mapRestrictScalars`, the coefficient
-change of a positive wall representative `E` of an outgoing completion of `D₀` is a positive wall
-representative of an outgoing completion of the image input. -/
+/-- For a positive specialization compatible with the change of the coefficient ring along `f`,
+the coefficient change of a positive wall representative `E` of an outgoing completion of `D₀` is
+a positive wall representative of an outgoing completion of the image input. -/
 theorem IsOutgoingCompletion.isPositiveWallRepresentative_mapRestrictScalars {ι₀ η : Type v}
     {D₀ : ι₀ → DirectedWall (d := d) h H} {E : DirectedDiagram (d := d) h H (ι₀ ⊕ η)}
     (hE : IsOutgoingCompletion D₀ E) (hpos : E.IsPositiveWallRepresentative σ P π) :
     IsOutgoingCompletion (fun j => (D₀ j).mapRestrictScalars f hf) (E.mapRestrictScalars f hf) ∧
       (E.mapRestrictScalars f hf).IsPositiveWallRepresentative σ' P' π :=
-  ⟨hE.mapRestrictScalars f hf, hpos.mapRestrictScalars f hf hσ hσ' φ hφσ hφ hconst⟩
+  ⟨hE.mapRestrictScalars f hf, hpos.mapRestrictScalars f hf c⟩
 
 variable [Module.Free ℤ Γ]
 
-/-- If the scattering class of a full-hyperplane input has a positive wall representative, so
-does the scattering class of the image input under a change of the coefficient ring satisfying
-the hypotheses of `IsPositiveWallRepresentative.mapRestrictScalars`. -/
+/-- For a positive specialization compatible with the change of the coefficient ring along `f`,
+if the scattering class of a full-hyperplane input has a positive wall representative, so does
+the scattering class of the image input. -/
 theorem Class.HasPositiveWallRepresentative.scat_mapRestrictScalars
     (D : DirectedDiagram (d := d) h H ι)
     (hfull : ∀ j, ∃ a : ℝ,
@@ -301,8 +334,7 @@ theorem Class.HasPositiveWallRepresentative.scat_mapRestrictScalars
       σ' P' π := by
   obtain ⟨κ, E, hE, hpos⟩ := (Class.hasPositiveWallRepresentative_iff _ _ _ _).mp hD
   exact (Class.hasPositiveWallRepresentative_iff _ _ _ _).mpr ⟨κ, E.mapRestrictScalars f hf,
-    toClass_mapRestrictScalars_eq_scat f hf D hfull hE,
-    hpos.mapRestrictScalars f hf hσ hσ' φ hφσ hφ hconst⟩
+    toClass_mapRestrictScalars_eq_scat f hf D hfull hE, hpos.mapRestrictScalars f hf c⟩
 
 end Map
 
@@ -345,6 +377,47 @@ local notation "φ*" => coefficientMonoidGradedLieHom ρ φ Q 1 d Fact.out
 local notation "hφ*" => coefficientMonoidGradedLieHom_mem_wall d ρ φ Q 1 Fact.out
 
 include hP in
+/-- The coefficientwise specialization along `φ`, as a positive specialization compatible with
+the change of coefficient ring along `z^n ∂_m ↦ z^n ∂_(φ ∘ m)`, for the tropical vertex actions on
+`R[[Q]]` and `S[[Q]]`: the restricted actions are the completed BCH actions of the restricted
+gradings, and the specialization is `coefficientMonoidPositiveSpecialization` with trivial
+twist. -/
+def coefficientMonoidPositiveCoefficientChange :
+    PositiveCoefficientChange φ* ((F).completedBCHAction d ℒ) ((G).completedBCHAction d ℳ)
+      P P' where
+  restrictedAction := (F).completedBCHAction (R := ℚ) d ℒℚ
+  restrictedAction' := (G).completedBCHAction (R := ℚ) d ℳℚ
+  restrictedAction_apply := (F).completedBCHAction_restrictScalars_apply d ℒ
+  restrictedAction'_apply := (G).completedBCHAction_restrictScalars_apply d ℳ
+  specialization := coefficientMonoidPositiveSpecialization d Q φ 1 (mapAlgHom Q φ)
+    (mapAlgHom_single_eq_mul_one Q φ) P P' hP
+  completionMap_restrictedAction := coefficientMonoidPositiveSpecialization_completedBCHAction
+    d ρ Q φ 1 (mapAlgHom Q φ) (mapAlgHom_single_eq_mul_one Q φ) hP
+  toRingHom_single_one p := by
+    rw [coefficientMonoidPositiveSpecialization_toRingHom, AlgHom.coe_toRingHom,
+      mapAlgHom_single, map_one]
+  action_single_zero g c := AlgFiltration.algEquiv_toCompletion_single_zero _ c
+
+/-- The restricted source action is the completed BCH action of the restricted grading. -/
+@[simp]
+theorem coefficientMonoidPositiveCoefficientChange_restrictedAction :
+    (coefficientMonoidPositiveCoefficientChange φ hP).restrictedAction =
+      (F).completedBCHAction (R := ℚ) d ℒℚ := (rfl)
+
+/-- The restricted target action is the completed BCH action of the restricted grading. -/
+@[simp]
+theorem coefficientMonoidPositiveCoefficientChange_restrictedAction' :
+    (coefficientMonoidPositiveCoefficientChange φ hP).restrictedAction' =
+      (G).completedBCHAction (R := ℚ) d ℳℚ := (rfl)
+
+/-- The specialization is the coefficientwise map along `φ`, with trivial twist. -/
+@[simp]
+theorem coefficientMonoidPositiveCoefficientChange_specialization :
+    (coefficientMonoidPositiveCoefficientChange (ρ := ρ) φ hP).specialization =
+      coefficientMonoidPositiveSpecialization d Q φ (1 : Multiplicative Q →* S) (mapAlgHom Q φ)
+        (mapAlgHom_single_eq_mul_one Q φ) P P' hP := (rfl)
+
+include hP in
 /-- **Tropical vertex coefficient specializations preserve positive wall representatives.**
 Let `φ : R → S` be a homomorphism of `ℚ`-algebras whose coefficientwise map `R[Q] → S[Q]` sends
 the positive subsemiring `P` into `P'`. Changing the coefficients of a tropical vertex diagram
@@ -356,15 +429,7 @@ theorem IsPositiveWallRepresentative.coefficientMonoidGradedLieHom {ι : Type t}
     (hD : D.IsPositiveWallRepresentative ((F).completedBCHAction d ℒ) P π) :
     (D.mapRestrictScalars φ* hφ*).IsPositiveWallRepresentative
       ((G).completedBCHAction d ℳ) P' π :=
-  hD.mapRestrictScalars φ* hφ* ((F).completedBCHAction_restrictScalars_apply d ℒ)
-    ((G).completedBCHAction_restrictScalars_apply d ℳ)
-    (coefficientMonoidPositiveSpecialization d Q φ 1 (mapAlgHom Q φ)
-      (mapAlgHom_single_eq_mul_one Q φ) P P' hP)
-    (coefficientMonoidPositiveSpecialization_completedBCHAction d ρ Q φ 1 (mapAlgHom Q φ)
-      (mapAlgHom_single_eq_mul_one Q φ) hP)
-    (fun p => by rw [coefficientMonoidPositiveSpecialization_toRingHom, AlgHom.coe_toRingHom,
-      mapAlgHom_single, map_one])
-    (fun g c => AlgFiltration.algEquiv_toCompletion_single_zero _ c)
+  hD.mapRestrictScalars φ* hφ* (coefficientMonoidPositiveCoefficientChange φ hP)
 
 include hP in
 /-- Under the hypotheses of `IsPositiveWallRepresentative.coefficientMonoidGradedLieHom`, changing
@@ -379,7 +444,8 @@ theorem IsOutgoingCompletion.isPositiveWallRepresentative_coefficientMonoidGrade
         (E.mapRestrictScalars φ* hφ*) ∧
       (E.mapRestrictScalars φ* hφ*).IsPositiveWallRepresentative
         ((G).completedBCHAction d ℳ) P' π :=
-  ⟨hE.mapRestrictScalars φ* hφ*, hpos.coefficientMonoidGradedLieHom φ hP⟩
+  hE.isPositiveWallRepresentative_mapRestrictScalars φ* hφ*
+    (coefficientMonoidPositiveCoefficientChange φ hP) hpos
 
 include hP in
 /-- Under the hypotheses of `IsPositiveWallRepresentative.coefficientMonoidGradedLieHom`, if the
@@ -394,10 +460,8 @@ theorem Class.HasPositiveWallRepresentative.scat_coefficientMonoidGradedLieHom [
     ((D.mapRestrictScalars φ* hφ*).Scat (by
       simpa only [mapRestrictScalars_wall, DirectedWall.mapRestrictScalars_support,
         DirectedWall.mapRestrictScalars_normal] using hfull)).HasPositiveWallRepresentative
-      ((G).completedBCHAction d ℳ) P' π := by
-  obtain ⟨κ, E, hE, hpos⟩ := (Class.hasPositiveWallRepresentative_iff _ _ _ _).mp hD
-  exact (Class.hasPositiveWallRepresentative_iff _ _ _ _).mpr ⟨κ, E.mapRestrictScalars φ* hφ*,
-    toClass_mapRestrictScalars_eq_scat φ* hφ* D hfull hE, hpos.coefficientMonoidGradedLieHom φ hP⟩
+      ((G).completedBCHAction d ℳ) P' π :=
+  scat_mapRestrictScalars φ* hφ* (coefficientMonoidPositiveCoefficientChange φ hP) D hfull hD
 
 end TropicalVertex
 
