@@ -129,4 +129,22 @@ theorem path_eventually_mem_source_face_of_mem_closure
   exact t.path_eventually_mem_source_face_of_mem_frontier c g
     ((mem_frontier_iff_notMem_interior hsource).mpr hnot)
 
+/-- Eventual admission to any convex polyhedral source persists at limiting
+endpoints of a complete type. The finite affine-inequality presentation need not
+have rational normals, and no lattice or nonzero incoming velocity is required. -/
+theorem path_eventually_mem_of_isConvexPolyhedron
+    {K I : Type*} (P : J → Set V) (W : I → Set V) (S : K → Set V)
+    (C₀ : Set V) (hC : TauCeti.IsConvexPolyhedron C₀)
+    {Q : V} (hQ : Q ∈ closure (domain c P W S C₀ t)) :
+    ∀ᶠ s : ℝ in atBot, t.path c Q s ∈ C₀ := by
+  obtain ⟨n, g, rfl⟩ := TauCeti.isConvexPolyhedron_iff.mp hC
+  have hclosed : IsClosed {Q : V | ∀ᶠ s : ℝ in atBot,
+      t.path c Q s ∈ {x | ∀ j, g j x ≤ 0}} := by
+    simpa only [mem_iInter, mem_ofPred_eq] using t.isClosed_sourceAdmission c g
+  apply closure_minimal ?_ hclosed hQ
+  intro Y hY
+  rw [mem_ofPred_eq, path_def, backwardPath_eventually_mem_iff]
+  rw [domain_def, mem_admissibleBackwardDomain] at hY
+  exact ((mem_backwardIncomingDomain _ _ _ _ _ _ _ _).mp hY.2.1).2.2
+
 end Mei.CutoffDecoratedType
