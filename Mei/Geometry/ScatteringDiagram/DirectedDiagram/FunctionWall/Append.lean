@@ -84,6 +84,7 @@ theorem append_group_inl (j : ι) : (G₁.append G₂).group (.inl j) = .inl (G�
 theorem append_group_inr (j : κ) : (G₁.append G₂).group (.inr j) = .inr (G₂.group j) := (rfl)
 
 /-- The order-`k` label of a group of the first family is unchanged in the union. -/
+@[simp]
 theorem groupLabel_append_inl (g : κ₁) (k : ℕ) :
     (G₁.append G₂).groupLabel (.inl g) k = G₁.groupLabel g k := by
   classical
@@ -108,6 +109,7 @@ theorem groupLabel_append_inl (g : κ₁) (k : ℕ) :
       W.label) (append_wall_inl D E j)) _)
 
 /-- The order-`k` label of a group of the second family is unchanged in the union. -/
+@[simp]
 theorem groupLabel_append_inr (g : κ₂) (k : ℕ) :
     (G₁.append G₂).groupLabel (.inr g) k = G₂.groupLabel g k := by
   classical
@@ -149,6 +151,7 @@ variable {A : Type*} [CommRing A] [Algebra R A] {Q : AddSubmonoid Γ}
 
 /-- A unit is a wall function of a group of the first family in the union exactly when it is one
 in the first family. -/
+@[simp]
 theorem isWallFunction_append_inl_iff (g : κ₁) (f : F.completionˣ) :
     (G₁.append G₂).IsWallFunction σ (.inl g) f ↔ G₁.IsWallFunction σ g f := by
   rw [isWallFunction_iff, isWallFunction_iff]
@@ -160,6 +163,7 @@ theorem isWallFunction_append_inl_iff (g : κ₁) (f : F.completionˣ) :
 
 /-- A unit is a wall function of a group of the second family in the union exactly when it is one
 in the second family. -/
+@[simp]
 theorem isWallFunction_append_inr_iff (g : κ₂) (f : F.completionˣ) :
     (G₁.append G₂).IsWallFunction σ (.inr g) f ↔ G₂.IsWallFunction σ g f := by
   rw [isWallFunction_iff, isWallFunction_iff]

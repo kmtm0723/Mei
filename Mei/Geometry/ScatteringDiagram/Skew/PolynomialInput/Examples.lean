@@ -415,8 +415,11 @@ theorem isTypeA₂WithIsolated_isolatedExtension :
     isolatedExtension.IsTypeA₂WithIsolated
       (isolatedBasis.principalBLMUnfrozenEquiv isolatedMultiplicity isolatedFst)
       (isolatedBasis.principalBLMUnfrozenEquiv isolatedMultiplicity isolatedSnd) :=
-  isolatedBasis.principalBLMExtension_isTypeA₂WithIsolated _ isTypeA₂WithIsolated_isolatedBasis
-    (by simp [isolatedMultiplicity]) (by simp [isolatedMultiplicity])
+  isolatedBasis.principalBLMExtension_isTypeA₂WithIsolated _ (by simp [isolatedMultiplicity])
+    (by simp [isolatedMultiplicity])
+    (by simp [isolatedBasis_multiplier])
+    (by simp [isolatedBasis_multiplier])
+    isTypeA₂WithIsolated_isolatedBasis.form_eq_zero
 
 /-- The alphabet degrees of the extension are allowed exponents of its coefficient monoid. -/
 instance isolatedExtension_coefficientMonoid_fact :
