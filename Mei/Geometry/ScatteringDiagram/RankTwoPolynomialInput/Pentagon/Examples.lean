@@ -127,7 +127,10 @@ theorem scat_axesInput (c : axesInput.Variable → R) :
 
 open scoped Mei.TropicalVertexCoefficientAction
 
-local instance : Fact ((ℕ²).monoid ≤ (⊤ : AddSubmonoid (ℤ × ℤ))) := ⟨le_top⟩
+/-- The quadrant monoid lies in the full coefficient lattice `ℤ²`. Named explicitly so that it does
+not clash with the anonymous instance of the same type in `RankTwoPolynomialInput/Examples`. -/
+local instance factQuadrantMonoidLeTop : Fact ((ℕ²).monoid ≤ (⊤ : AddSubmonoid (ℤ × ℤ))) :=
+  ⟨le_top⟩
 
 /-- For the independent variables `c₀, c₁` over `ℚ` and the full coefficient lattice `ℤ²`, the
 scattering class of the coordinate axes with the wall functions `1 + c₀ z^{e₁}` and
