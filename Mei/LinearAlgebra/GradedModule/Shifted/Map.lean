@@ -7,7 +7,6 @@ module
 
 public import Mei.LinearAlgebra.GradedModule.Shifted.Inclusion
 public import Mei.LinearAlgebra.GradedModule.Shifted.Quotient
-public import Mei.LinearAlgebra.ModuleFiltration.Map
 
 /-!
 # Maps of shifted coefficient modules
