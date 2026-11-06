@@ -158,6 +158,13 @@ def slabBranchPath (n b q : ℤ) : C(ℝ × ℝ, C(ℝ, ℝ × ℝ)) :=
   Convex.backwardPath (fun _ : Fin 1 => ContinuousLinearMap.fst ℝ ℝ ℝ) (fun _ => 0)
     ![((n : ℝ), (q : ℝ)), ((n : ℝ), (b : ℝ))]
 
+/-- The slab path extension is the shared one-face backward path, with its
+outgoing and incoming directions in backward order. -/
+theorem slabBranchPath_def (n b q : ℤ) :
+    slabBranchPath n b q =
+      Convex.backwardPath (fun _ : Fin 1 => ContinuousLinearMap.fst ℝ ℝ ℝ) (fun _ => 0)
+        ![((n : ℝ), (q : ℝ)), ((n : ℝ), (b : ℝ))] := (rfl)
+
 /-- The extended path retains the branch's two affine segments and encounter formula. -/
 @[simp]
 theorem slabBranchPath_apply (n b q : ℤ) (Q : ℝ × ℝ) (s : ℝ) :
