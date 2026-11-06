@@ -20,6 +20,10 @@ need only be jointly injective; the target face legs need not be jointly injecti
 Local source preimages and their neighborhoods can vary with both input and endpoint.
 No finite cover,
 finite incidence diagram, finite generation, or additive inverses are required.
+
+It suffices to test local preimages of terminal face values on a spanning set of
+incoming inputs. Thus finite generators give a finite-input coefficient-descent
+criterion, with neighborhoods allowed to vary separately for each generator.
 -/
 
 public section
@@ -141,5 +145,81 @@ theorem existsUnique_sections_descent_of_local
   rw [show (ηW U).app (.left b) = (η.app (.left b)).hom.app (op U) from
     η.sectionsMultispan_app_left U b]
   exact he
+
+/-- To descend a linear matching family, local source preimages of the prescribed
+terminal face values need only be supplied on a spanning set of incoming inputs.
+The set may be infinite, and neighborhoods and preimages may vary with the
+generator and face. In particular a finite generating set gives a finite-input
+test without assuming either target face leg, or their pair, is injective. -/
+theorem existsUnique_sections_descent_of_local_on_generators
+    (I : MultispanIndex J (X.Sheaf (SemimoduleCat.{v} R)))
+    {I' : MultispanIndex J (X.Sheaf (SemimoduleCat.{v} R))}
+    (η : I.multispan ⟶ I'.multispan) (E : SemimoduleCat.{v} R) (U : Opens X)
+    (m : E →ₗ[R] SemimoduleCat.sectionsSubmodule (I'.sectionsIndex U).multispan)
+    (α : ∀ j, E ⟶ (I.right j).obj.obj (op U))
+    (s : Set E) (hs : Submodule.span R s = ⊤)
+    (hinj : ∀ (W : Opens X), W ≤ U → ∀ b,
+      Function.Injective (((I.sectionsIndex W).fst b).hom.prod
+        ((I.sectionsIndex W).snd b).hom))
+    (hemb : ∀ (W : Opens X), W ≤ U → ∀ j,
+      Function.Injective ((η.app (.right j)).hom.app (op W)).hom)
+    (hα : ∀ a j, ((η.app (.right j)).hom.app (op U)).hom ((α j).hom a) =
+      (m a).val (.right j))
+    (hloc : ∀ a ∈ s, ∀ b x, x ∈ U → ∃ (N : Opens X) (hNU : N ≤ U)
+      (t : (I.left b).obj.obj (op N)), x ∈ N ∧
+        (η.app (.left b)).hom.app (op N) t =
+          (I'.left b).obj.map (homOfLE hNU).op ((m a).val (.left b))) :
+    ∃! ℓ : E →ₗ[R] SemimoduleCat.sectionsSubmodule (I.sectionsIndex U).multispan,
+      (SemimoduleCat.sectionsMap (η.sectionsMultispan U)).comp ℓ = m ∧
+        ∀ a j, (ℓ a).val (.right j) = (α j).hom a := by
+  have hembU (j : J.R) : Function.Injective
+      ((η.sectionsMultispan U).app (.right j)).hom := by
+    rw [η.sectionsMultispan_app_right U j]
+    exact hemb U le_rfl j
+  have hαU (a : E) (j : J.R) :
+      ((η.sectionsMultispan U).app (.right j)).hom ((α j).hom a) =
+        (m a).val (.right j) := by
+    rw [η.sectionsMultispan_app_right U j]
+    exact hα a j
+  apply (existsUnique_sections_descent_iff (η.sectionsMultispan U)
+    (hinj U le_rfl) hembU m (fun j => (α j).hom) hαU).mpr
+  intro a b
+  let ev := SemimoduleCat.sectionsEval (I'.sectionsIndex U).multispan (.left b)
+  have hspan : Submodule.span R s ≤
+      (LinearMap.range ((η.sectionsMultispan U).app (.left b)).hom).comap (ev.comp m) := by
+    apply Submodule.span_le.mpr
+    intro z hz
+    -- First descend a generator on its cyclic submodule. This reuses local
+    -- sheaf descent; the range submodule then extends the result to all inputs.
+    let P : Submodule R E := Submodule.span R {z}
+    let β j := SemimoduleCat.ofHom ((α j).hom.comp P.subtype)
+    obtain ⟨ℓ, ⟨hℓ, -⟩, -⟩ := I.existsUnique_sections_descent_of_local η
+      (SemimoduleCat.of R P) U (m.comp P.subtype) β hinj hemb
+      (fun p j => hα p.val j) (by
+        intro p c x hx
+        obtain ⟨N, hNU, t, hxN, ht⟩ := hloc z hz c x hx
+        let f := ((η.app (.left c)).hom.app (op N)).hom
+        let g := ((I'.left c).obj.map (homOfLE hNU).op).hom.comp
+          ((SemimoduleCat.sectionsEval (I'.sectionsIndex U).multispan (.left c)).comp m)
+        have hg (q : E) : g q =
+            (I'.left c).obj.map (homOfLE hNU).op ((m q).val (.left c)) := by
+          exact congrArg ((I'.left c).obj.map (homOfLE hNU).op)
+            (SemimoduleCat.sectionsEval_apply (I'.sectionsIndex U).multispan (.left c) (m q))
+        have hP : P ≤ f.range.comap g := by
+          apply (Submodule.span_singleton_le_iff_mem _ _).mpr
+          refine ⟨t, ?_⟩
+          exact ht.trans (hg z).symm
+        obtain ⟨q, hq⟩ := hP p.property
+        refine ⟨N, hNU, q, hxN, ?_⟩
+        exact hq.trans (hg p.val))
+    let zP : P := ⟨z, Submodule.mem_span_singleton_self z⟩
+    refine ⟨(ℓ zP).val (.left b), ?_⟩
+    have he := congrArg (fun q => q.val (.left b)) (LinearMap.congr_fun hℓ zP)
+    simpa only [ev, LinearMap.comp_apply, SemimoduleCat.sectionsMap_apply,
+      SemimoduleCat.sectionsEval_apply, Submodule.subtype_apply] using he
+  have has : a ∈ Submodule.span R s := hs.ge Submodule.mem_top
+  have ha := hspan has
+  simpa only [Submodule.mem_comap, ev, LinearMap.comp_apply,
+    SemimoduleCat.sectionsEval_apply] using ha
 
 end CategoryTheory.Limits.MultispanIndex
