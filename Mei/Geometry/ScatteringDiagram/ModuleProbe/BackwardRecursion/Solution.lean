@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Geometry.ScatteringDiagram.ModuleProbe.BackwardRecursion.Domains
+public import Mei.Geometry.ScatteringDiagram.ModuleProbe.WallEventEvaluation.Block.Degree
 
 /-!
 # A finite recursive solution for the actual coherent probe field

@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mei.Geometry.ScatteringDiagram.ModuleProbe.BackwardRecursion.Coherent
-public import Mei.Geometry.ScatteringDiagram.ModuleProbe.WallEventEvaluation.Block.Degree
 
 /-!
 # Compatible domains for the coherent probe recursion
