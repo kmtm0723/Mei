@@ -39,15 +39,11 @@ theorem repr_map_of_injOn (P : Set G) (hf : Set.InjOn f P)
   simp only [← basis_apply, _root_.map_smul, Module.Basis.repr_self,
     Finset.sum_apply', Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul,
     mul_ite, mul_one, mul_zero]
-  rw [Finset.sum_eq_single g]
-  · simp only [ite_true]
-  · intro j hj hjg
-    have hjP := hx j (Finsupp.mem_support_iff.mp hj)
-    have hne : f j ≠ f g := fun he => hjg (hf hjP hg he)
-    simp only [hne, ite_false]
-  · intro hg'
-    have hz : (basis R G α).repr x g = 0 := by
-      simpa only [Finsupp.mem_support_iff, not_not] using hg'
-    simp only [hz, map_zero, ite_true]
+  have hS : (((basis R G α).repr x).support : Set G) ⊆ P := by
+    intro j hj
+    exact hx j (Finsupp.mem_support_iff.mp hj)
+  have hcoeff := congrArg φ (Finsupp.mapDomain_apply' P ((basis R G α).repr x) hS hf hg)
+  simpa only [Finsupp.mapDomain, Finsupp.sum, Finset.sum_apply', Finsupp.single_apply,
+    map_sum, apply_ite, map_zero] using hcoeff
 
 end Mei.TwistedMonoidAlgebra
