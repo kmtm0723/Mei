@@ -532,6 +532,34 @@ theorem cutoffDecoratedEvaluation_eq_sum [Finite J] (k : ℕ) (Q : V) :
       (Finset.univ.filter fun t : CutoffDecoratedType d ℳ T a v f ε k =>
       Q ∈ CutoffDecoratedType.domain c P W S C t) (by simp) (fun t => t.decoration)).symm
 
+/-- Away from every complete type-domain frontier, the actual weighted ray sum
+is constant on an ambient neighborhood. The source and avoidance sets may be
+arbitrary; rationality is needed only to bound the frontiers by affine exceptions. -/
+theorem cutoffDecoratedEvaluation_eventually_eq_of_notMem_frontier [Finite J]
+    (k : ℕ) (Q : V)
+    (hQ : ∀ t : CutoffDecoratedType d ℳ T a v f ε k,
+      Q ∉ frontier (CutoffDecoratedType.domain c P W S C t)) :
+    ∀ᶠ Q' in nhds Q,
+      cutoffDecoratedEvaluation d ℳ T a v f c ε P W S C k Q' =
+        cutoffDecoratedEvaluation d ℳ T a v f c ε P W S C k Q := by
+  classical
+  have hmem (t : CutoffDecoratedType d ℳ T a v f ε k) :
+      ∀ᶠ Q' in nhds Q,
+        Q' ∈ CutoffDecoratedType.domain c P W S C t ↔
+          Q ∈ CutoffDecoratedType.domain c P W S C t := by
+    by_cases ht : Q ∈ CutoffDecoratedType.domain c P W S C t
+    · have he : ∀ᶠ Q' in nhds Q, Q' ∈ CutoffDecoratedType.domain c P W S C t :=
+        mem_interior_iff_mem_nhds.mp ((mem_interior_iff_notMem_frontier ht).mpr (hQ t))
+      exact he.mono fun _ hy => iff_of_true hy ht
+    · have hf : Q ∉ frontier (CutoffDecoratedType.domain c P W S C t)ᶜ := by
+        simpa only [frontier_compl] using hQ t
+      have he : ∀ᶠ Q' in nhds Q, Q' ∉ CutoffDecoratedType.domain c P W S C t :=
+        mem_interior_iff_mem_nhds.mp ((mem_interior_iff_notMem_frontier ht).mpr hf)
+      exact he.mono fun _ hy => iff_of_false hy ht
+  filter_upwards [eventually_all.mpr hmem] with Q' hQ'
+  rw [cutoffDecoratedEvaluation_eq_sum, cutoffDecoratedEvaluation_eq_sum]
+  exact Finset.sum_congr rfl fun t _ => by rw [hQ' t]
+
 section Components
 
 variable {d ℳ T a v f c ε P W S C} {k : ℕ} {Q : V}
@@ -638,18 +666,11 @@ theorem exists_cutoffDecoratedEvaluation_eventually_eq (k : ℕ) :
     ∃ E : ExceptionalArrangement V, ∀ Q, E.IsGeneric Q → ∀ᶠ Q' in nhds Q,
       cutoffDecoratedEvaluation d ℳ T a (fun q => i (w q)) f c ε P W S C k Q' =
         cutoffDecoratedEvaluation d ℳ T a (fun q => i (w q)) f c ε P W S C k Q := by
-  obtain ⟨E, _, hstable⟩ := exists_cutoffDecoratedRay_membershipArrangement d ℳ T a
+  obtain ⟨E, hfrontier, _⟩ := exists_cutoffDecoratedRay_membershipArrangement d ℳ T a
     f c ε P W S C h w hf hP hW hS hC k
-  refine ⟨E, fun Q hQ => (hstable Q hQ).mono fun Q' ⟨e, he⟩ => ?_⟩
-  let := Fintype.ofFinite
-    (CutoffDecoratedRay d ℳ T a (fun q => i (w q)) f c ε P W S C k Q)
-  let := Fintype.ofFinite
-    (CutoffDecoratedRay d ℳ T a (fun q => i (w q)) f c ε P W S C k Q')
-  apply (Fintype.sum_equiv e _ _ ?_).symm
-  intro r
-  rw [← cutoffDecoratedRayFiberEquiv_decoration d ℳ T a (fun q => i (w q))
-    f c ε P W S C k Q' (e r), he r,
-    cutoffDecoratedRayFiberEquiv_decoration]
+  exact ⟨E, fun Q hQ => cutoffDecoratedEvaluation_eventually_eq_of_notMem_frontier
+    d ℳ T a (fun q => i (w q)) f c ε P W S C k Q
+      (fun t ht => hfrontier t ht hQ)⟩
 
 end Rational
 
