@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mei.LinearAlgebra.GradedModule.Shifted.Inclusion
 public import Mei.LinearAlgebra.GradedModule.Shifted.Quotient
 public import Mei.LinearAlgebra.ModuleFiltration.Map
 
@@ -380,5 +381,74 @@ theorem projection_completionCoefficientMap (k : ℕ) (a : d.ShiftedCoefficients
   projection_shiftedCompletionMapAt _ _ _ _ _ _ _ _ _ _ _ a
 
 end FixedGroup
+
+section FixedCompletion
+
+variable {Γ R M N : Type*} [AddCommGroup Γ] [Ring R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [DecidableEq Γ]
+  (d : PositiveDegrees Γ) (ℳ : Γ → Submodule R M) (𝓝 : Γ → Submodule R N)
+  [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝]
+  (f : M →ₗ[R] N) (hf : ∀ u, ℳ u ≤ (𝓝 u).comap f)
+
+omit [DirectSum.Decomposition 𝓝] in
+/-- The fixed-degree coefficient map is the canonical filtered map with identity cutoff. -/
+theorem completionCoefficientMap_eq_completionMap (p : Γ) :
+    d.completionCoefficientMap ℳ 𝓝 p f hf =
+      (d.shiftedFiltration ℳ p).completionMap (d.shiftedFiltration 𝓝 p)
+        (d.shiftedCoefficientMap ℳ 𝓝 p f hf) id monotone_id
+        (fun k _ ha => d.shiftedCoefficientMap_mem_filtration ℳ 𝓝 p f hf k ha) := by
+  apply LinearMap.ext
+  intro x
+  apply (d.shiftedFiltration 𝓝 p).completion_ext
+  intro k
+  rw [projection_completionCoefficientMap, ModuleFiltration.projection_completionMap,
+    quotientCoefficientMap_def]
+  -- Both quotient maps use the identity cutoff and the same induced map.
+  rfl
+
+/-- A fixed-degree completed map applies the original linear map to each ambient component. -/
+@[simp]
+theorem coe_shiftedHomogeneousComponent_completionCoefficientMap (p u : Γ)
+    (x : d.ShiftedCoefficients ℳ p) :
+    (d.shiftedHomogeneousComponent 𝓝 p u (d.completionCoefficientMap ℳ 𝓝 p f hf x) : N) =
+      f (d.shiftedHomogeneousComponent ℳ p u x) := by
+  have h := d.completionComponent_completionMap_of_injective d
+    (shiftedGrading ℳ d.monoid p) (shiftedGrading 𝓝 d.monoid p)
+    (d.shiftedFiltration ℳ p) (d.shiftedFiltration 𝓝 p)
+    (d.shiftedFiltration_succ ℳ p) (d.shiftedFiltration_succ 𝓝 p)
+    (d.shiftedCoefficientMap ℳ 𝓝 p f hf) id
+    (fun _ _ ha => d.shiftedCoefficientMap_mem_shiftedGrading ℳ 𝓝 p f hf ha)
+    id monotone_id (fun k _ ha => d.shiftedCoefficientMap_mem_filtration ℳ 𝓝 p f hf k ha)
+    Function.injective_id (u - p) x
+  have h' := congrArg (fun a : shiftedSubmodule 𝓝 d.monoid p => (a : N)) h
+  rw [coe_shiftedCoefficientMap, coe_completionComponent_shiftedGrading,
+    coe_completionComponent_shiftedGrading] at h'
+  have hp : p + (u - p) = u := by abel
+  rw [id_eq, hp] at h'
+  simpa only [← completionCoefficientMap_eq_completionMap] using h'
+
+omit [DirectSum.Decomposition 𝓝] in
+/-- Completing a degree-preserving map agrees with its map on ordinary shifted coefficients. -/
+@[simp]
+theorem completionCoefficientMap_of (p : Γ) (a : shiftedSubmodule ℳ d.monoid p) :
+    d.completionCoefficientMap ℳ 𝓝 p f hf ((d.shiftedFiltration ℳ p).of a) =
+      (d.shiftedFiltration 𝓝 p).of (d.shiftedCoefficientMap ℳ 𝓝 p f hf a) := by
+  rw [completionCoefficientMap_eq_completionMap]
+  exact (d.shiftedFiltration ℳ p).completionMap_of (d.shiftedFiltration 𝓝 p)
+    (d.shiftedCoefficientMap ℳ 𝓝 p f hf) id monotone_id
+    (fun k _ ha => d.shiftedCoefficientMap_mem_filtration ℳ 𝓝 p f hf k ha) a
+
+/-- Degree-preserving completed maps commute with enlarging a support translate. -/
+theorem completionCoefficientMap_inclusion (p q : Γ) (hpq : p - q ∈ d.monoid)
+    (x : d.ShiftedCoefficients ℳ p) :
+    d.completionCoefficientMap ℳ 𝓝 q f hf (d.shiftedCompletedInclusion ℳ p q hpq x) =
+      d.shiftedCompletedInclusion 𝓝 p q hpq (d.completionCoefficientMap ℳ 𝓝 p f hf x) := by
+  apply d.shiftedCoefficients_ext 𝓝 q
+  intro u
+  apply Subtype.ext
+  simp only [coe_shiftedHomogeneousComponent_completionCoefficientMap,
+    shiftedHomogeneousComponent_inclusion]
+
+end FixedCompletion
 
 end Mei.PositiveDegrees
