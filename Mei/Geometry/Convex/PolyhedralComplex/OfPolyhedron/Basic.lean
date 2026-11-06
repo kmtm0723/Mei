@@ -33,11 +33,6 @@ variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ 
 
 namespace FinitePolyhedralComplex
 
-/-- A convex polyhedron has finitely many nonempty exposed faces. -/
-theorem finite_isPolyhedralFace {P : Set V} (hP : TauCeti.IsConvexPolyhedron P) :
-    {F : Set V | IsPolyhedralFace P F}.Finite :=
-  hP.finite_exposed_sets.subset fun _ hF => (isPolyhedralFace_iff.mp hF).2
-
 variable (h)
 
 /-- The complex of a rational-normal polyhedron `P`: its cells are the nonempty exposed faces of

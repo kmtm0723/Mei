@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mei.Geometry.Convex.Polyhedron.Face
 public import Mei.Geometry.Convex.Polyhedron.Rational
 public import Mei.Analysis.Convex.Exposed
 public import Mathlib.Geometry.Convex.Cone.Pointed
@@ -32,6 +33,11 @@ def IsPolyhedralFace (P F : Set V) : Prop := F.Nonempty ∧ IsExposed ℝ P F
 /-- A polyhedral face is precisely a nonempty exposed subset. -/
 theorem isPolyhedralFace_iff {P F : Set V} :
     IsPolyhedralFace P F ↔ F.Nonempty ∧ IsExposed ℝ P F := Iff.rfl
+
+/-- A convex polyhedron has finitely many nonempty exposed faces. -/
+theorem finite_isPolyhedralFace {P : Set V} (hP : TauCeti.IsConvexPolyhedron P) :
+    {F : Set V | IsPolyhedralFace P F}.Finite :=
+  hP.finite_exposed_sets.subset fun _ hF => (isPolyhedralFace_iff.mp hF).2
 
 /-- A finite complex of actual rational-normal polyhedra, allowing unbounded cells and lineality. -/
 structure FinitePolyhedralComplex (h : TauCeti.Toric.IsIntegralLattice i) where

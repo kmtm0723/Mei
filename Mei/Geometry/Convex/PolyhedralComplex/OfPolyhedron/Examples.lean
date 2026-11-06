@@ -56,13 +56,12 @@ open Mei.FinitePolyhedralComplex.Examples
 
 /-- On a horizontal line, a functional is determined by its value at one point and its value at
 `(1, 0)`. -/
-theorem apply_eq_of_mem_lineAtHeight (l : (ℝ × ℝ) →L[ℝ] ℝ) {c : ℝ} {p q : ℝ × ℝ}
-    (hp : p ∈ lineAtHeight c) (hq : q ∈ lineAtHeight c) :
+theorem apply_eq_of_snd_eq (l : (ℝ × ℝ) →L[ℝ] ℝ) {p q : ℝ × ℝ} (hpq : q.2 = p.2) :
     l q = l p + (q.1 - p.1) * l (1, 0) := by
   have : q = p + (q.1 - p.1) • ((1 : ℝ), (0 : ℝ)) := by
     ext
     · simp
-    · simp [hp.trans hq.symm |>.symm]
+    · simp [hpq]
   calc l q = l (p + (q.1 - p.1) • ((1 : ℝ), (0 : ℝ))) := congrArg l this
     _ = l p + (q.1 - p.1) * l (1, 0) := by rw [map_add, map_smul, smul_eq_mul]
 
@@ -76,15 +75,10 @@ theorem apply_one_zero_eq_zero (l : (ℝ × ℝ) →L[ℝ] ℝ) {c : ℝ} {x : �
   simp only [map_add, map_sub] at hpos hneg
   linarith
 
-/-- On a horizontal ray, a functional is its first coordinate times its value at `(1, 0)`. -/
-theorem apply_eq_of_mem_rightRay (l : (ℝ × ℝ) →L[ℝ] ℝ) {a : ℝ} {p : ℝ × ℝ}
-    (hp : p ∈ rightRay a) : l p = p.1 * l (1, 0) := by
-  have : p = p.1 • ((1 : ℝ), (0 : ℝ)) := by
-    ext
-    · simp
-    · simp [hp.1]
-  calc l p = l (p.1 • ((1 : ℝ), (0 : ℝ))) := congrArg l this
-    _ = p.1 * l (1, 0) := by rw [map_smul, smul_eq_mul]
+/-- On the horizontal axis, a functional is its first coordinate times its value at `(1, 0)`. -/
+theorem apply_eq_of_snd_eq_zero (l : (ℝ × ℝ) →L[ℝ] ℝ) {p : ℝ × ℝ} (hp : p.2 = 0) :
+    l p = p.1 * l (1, 0) := by
+  simpa using l.apply_eq_of_snd_eq (p := 0) (q := p) (by simpa using hp)
 
 end ContinuousLinearMap
 
@@ -150,7 +144,7 @@ theorem isPolyhedralFace_lineAtHeight_iff (c : ℝ) (F : Set (ℝ × ℝ)) :
     obtain ⟨hx, hmax⟩ := hxF
     ext y
     refine Set.mem_sep_iff.trans ⟨fun hy => hy.1, fun hy => ⟨hy, fun z hz => ?_⟩⟩
-    rw [l.apply_eq_of_mem_lineAtHeight hx hz, l.apply_eq_of_mem_lineAtHeight hx hy,
+    rw [l.apply_eq_of_snd_eq (hz.trans hx.symm), l.apply_eq_of_snd_eq (hy.trans hx.symm),
       l.apply_one_zero_eq_zero hx hmax]
     simp
   · rintro rfl
@@ -170,21 +164,21 @@ theorem isPolyhedralFace_rightRay_iff (a : ℝ) (F : Set (ℝ × ℝ)) :
     have hle : l (1, 0) ≤ 0 := by
       have hy : (x.1 + 1, (0 : ℝ)) ∈ rightRay a := ⟨rfl, by linarith [hx.2]⟩
       have := hmax _ hy
-      rw [l.apply_eq_of_mem_rightRay hy, l.apply_eq_of_mem_rightRay hx] at this
+      rw [l.apply_eq_of_snd_eq_zero hy.1, l.apply_eq_of_snd_eq_zero hx.1] at this
       nlinarith
     rcases hle.eq_or_lt with h0 | hlt
     · refine Or.inl (Set.ext fun y => Set.mem_sep_iff.trans
         ⟨fun hy => hy.1, fun hy => ⟨hy, fun z hz => ?_⟩⟩)
-      rw [l.apply_eq_of_mem_rightRay hz, l.apply_eq_of_mem_rightRay hy, h0]
+      rw [l.apply_eq_of_snd_eq_zero hz.1, l.apply_eq_of_snd_eq_zero hy.1, h0]
       simp
     · refine Or.inr (Set.ext fun y => Set.mem_sep_iff.trans ⟨fun ⟨hy, hy'⟩ => ?_, ?_⟩)
       · have := hy' _ (endpoint_mem_rightRay a)
-        rw [l.apply_eq_of_mem_rightRay (endpoint_mem_rightRay a),
-          l.apply_eq_of_mem_rightRay hy] at this
+        rw [l.apply_eq_of_snd_eq_zero (endpoint_mem_rightRay a).1,
+          l.apply_eq_of_snd_eq_zero hy.1] at this
         exact Prod.ext (le_antisymm (by nlinarith) hy.2) hy.1
       · rintro rfl
         refine ⟨endpoint_mem_rightRay a, fun z hz => ?_⟩
-        rw [l.apply_eq_of_mem_rightRay hz, l.apply_eq_of_mem_rightRay (endpoint_mem_rightRay a)]
+        rw [l.apply_eq_of_snd_eq_zero hz.1, l.apply_eq_of_snd_eq_zero (endpoint_mem_rightRay a).1]
         nlinarith [hz.2]
   · rintro (rfl | rfl)
     · exact ⟨⟨(a, 0), endpoint_mem_rightRay a⟩, IsExposed.refl _⟩
