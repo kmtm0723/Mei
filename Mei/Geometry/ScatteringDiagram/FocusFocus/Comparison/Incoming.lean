@@ -50,6 +50,7 @@ abbrev IncomingSlabChartRay (α : IncomingSlabChartIndex c n b) (Q : ℝ × ℝ)
 
 /-- With no recorded encounters, the common path is the straight incoming path.
 This equality retains the whole incoming half-line, not only its endpoint. -/
+@[simp]
 theorem IncomingSlabChartRay.ray_eq_straight (α : IncomingSlabChartIndex c n b)
     (Q : ℝ × ℝ) (r : IncomingSlabChartRay c n b α Q) :
     r.2.ray = FiniteAffineRay.straight Q ((n : ℝ), (b : ℝ)) := by
@@ -134,8 +135,9 @@ private def incomingSlabChartEndpointEquiv (Q : ℝ × ℝ) :
   right_inv _ := Subtype.ext rfl
 
 /-- Shared incoming decorated rays, partitioned by their source half-plane,
-are exactly the explicit incoming fiber. All degrees, including vertical ones,
-and all coefficients of the scalar ring are admitted without cancellation assumptions. -/
+are exactly the explicit incoming fiber over an arbitrary commutative semiring.
+Ray existence requires a nonzero coefficient and nonzero spatial degree. Vertical
+incoming degrees are included; stationary sections remain separate. -/
 def incomingSlabChartRayEquiv (Q : ℝ × ℝ) :
     (Σ α : IncomingSlabChartIndex c n b, IncomingSlabChartRay c n b α Q) ≃
       IncomingSlabBrokenLine c n b Q :=
