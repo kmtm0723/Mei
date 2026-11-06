@@ -15,6 +15,8 @@ A linear map preserving every homogeneous piece acts on the existing shifted
 completions. These maps commute with support inclusions, hence descend through
 Mathlib's module direct limit. The resulting map preserves each ambient
 component, and is functorial without injectivity or a spanning hypothesis.
+Only the source family needs a decomposition to construct the map; a target
+decomposition is needed for component formulas, not for the map or its chart laws.
 -/
 
 public section
@@ -26,7 +28,7 @@ variable {Γ R M N P : Type*} [AddCommGroup Γ] [Ring R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   [AddCommGroup P] [Module R P] [DecidableEq Γ]
   (d : PositiveDegrees Γ) (ℳ : Γ → Submodule R M) (𝓝 : Γ → Submodule R N)
-  [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝]
+  [DirectSum.Decomposition ℳ]
   (f : M →ₗ[R] N) (hf : ∀ u, ℳ u ≤ (𝓝 u).comap f)
 
 /-- The map of global coefficients induced by a degree-preserving linear map. -/
@@ -55,7 +57,8 @@ theorem shiftedDirectLimitMap_toShiftedDirectLimit (s : Multiset d.monoid)
 
 /-- The global map acts componentwise by its original linear map. -/
 @[simp]
-theorem coe_shiftedDirectLimitComponents_map (x : d.ShiftedDirectLimit ℳ) (u : Γ) :
+theorem coe_shiftedDirectLimitComponents_map [DirectSum.Decomposition 𝓝]
+    (x : d.ShiftedDirectLimit ℳ) (u : Γ) :
     (d.shiftedDirectLimitComponents 𝓝 (d.shiftedDirectLimitMap ℳ 𝓝 f hf x) u : N) =
       f (d.shiftedDirectLimitComponents ℳ x u) := by
   obtain ⟨s, a, rfl⟩ := d.exists_toShiftedDirectLimit ℳ x
@@ -83,13 +86,11 @@ theorem shiftedDirectLimitMap_id (x : d.ShiftedDirectLimit ℳ) :
   simp only [coe_shiftedDirectLimitComponents_map, LinearMap.id_apply]
 
 /-- Global coefficient maps preserve composition of degree-preserving linear maps. -/
-theorem shiftedDirectLimitMap_comp (ℒ : Γ → Submodule R P) [DirectSum.Decomposition ℒ]
+theorem shiftedDirectLimitMap_comp [DirectSum.Decomposition 𝓝] (ℒ : Γ → Submodule R P)
     (g : N →ₗ[R] P) (hg : ∀ u, 𝓝 u ≤ (ℒ u).comap g) (x : d.ShiftedDirectLimit ℳ) :
     d.shiftedDirectLimitMap 𝓝 ℒ g hg (d.shiftedDirectLimitMap ℳ 𝓝 f hf x) =
       d.shiftedDirectLimitMap ℳ ℒ (g.comp f) (fun u _ ha => hg u (hf u ha)) x := by
-  apply d.shiftedDirectLimitComponents_injective ℒ
-  funext u
-  apply Subtype.ext
-  simp only [coe_shiftedDirectLimitComponents_map, LinearMap.comp_apply]
+  obtain ⟨s, a, rfl⟩ := d.exists_toShiftedDirectLimit ℳ x
+  simp only [shiftedDirectLimitMap_toShiftedDirectLimit, completionCoefficientMap_comp]
 
 end Mei.PositiveDegrees
