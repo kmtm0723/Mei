@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.Topology.Sheaves.Multispan.Morphism
+public import Mei.Topology.Sheaves.Multispan.Descent
 public import Mei.Topology.Sheaves.Diagram.Gluing
 public import Mei.Topology.Sheaves.Diagram.Morphism
 
@@ -17,6 +17,11 @@ linearly equivalent matching families. Transporting the existing diagram
 restriction and gluing operations through this equivalence retains all face
 and chamber values. Compatible local coefficient descents then glue to a unique
 global descent on an arbitrary endpoint cover.
+
+For coefficient embeddings, patchwise chamber preimages and local preimages of
+the prescribed target face values suffice. Compatibility on overlaps follows
+from the common target family; it need not be supplied separately, and the
+target face pairs need not be jointly injective.
 -/
 
 public noncomputable section
@@ -339,5 +344,73 @@ theorem existsUnique_sections_lift_descent_gluing
     intro a j
     exact (I.sectionsRestrict_apply_right (le_iSup U i) (q a) j).trans
       ((hq.1 i a j).trans (hℓ' i a j).symm)
+
+/-- Patchwise chamber preimages and inputwise local preimages of target face
+values descend to one global linear matching family. The source face pairs and
+chamber coefficient maps must be injective on subopens of the cover; no target
+joint injectivity is required. Overlap compatibility of the local descents is
+a consequence, not an additional hypothesis. The cover and incidence diagram
+may be infinite, and local face preimages need not vary linearly in the input. -/
+theorem existsUnique_sections_descent_of_local_on_cover
+    {I' : MultispanIndex J (X.Sheaf (SemimoduleCat.{v} R))}
+    (η : I.multispan ⟶ I'.multispan) (E : SemimoduleCat.{v} R) {ι : Type*}
+    (U : ι → Opens X)
+    (m : E →ₗ[R] SemimoduleCat.sectionsSubmodule (I'.sectionsIndex (iSup U)).multispan)
+    (α : ∀ i j, E ⟶ (I.right j).obj.obj (op (U i)))
+    (hinj : ∀ i (W : Opens X), W ≤ U i → ∀ b,
+      Function.Injective (((I.sectionsIndex W).fst b).hom.prod
+        ((I.sectionsIndex W).snd b).hom))
+    (hemb : ∀ i (W : Opens X), W ≤ U i → ∀ j,
+      Function.Injective ((η.app (.right j)).hom.app (op W)).hom)
+    (hα : ∀ i a j, ((η.app (.right j)).hom.app (op (U i))).hom ((α i j).hom a) =
+      (I'.sectionsRestrict (le_iSup U i) (m a)).val (.right j))
+    (hloc : ∀ i a b x, x ∈ U i → ∃ (N : Opens X) (hNU : N ≤ U i)
+      (t : (I.left b).obj.obj (op N)), x ∈ N ∧
+        (η.app (.left b)).hom.app (op N) t =
+          (I'.left b).obj.map (homOfLE hNU).op
+            ((I'.sectionsRestrict (le_iSup U i) (m a)).val (.left b))) :
+    ∃! L : E →ₗ[R] SemimoduleCat.sectionsSubmodule (I.sectionsIndex (iSup U)).multispan,
+      (SemimoduleCat.sectionsMap (η.sectionsMultispan (iSup U))).comp L = m ∧
+        ∀ i a j, (I.sectionsRestrict (le_iSup U i) (L a)).val (.right j) =
+          (α i j).hom a := by
+  let mU i := (I'.sectionsRestrict (le_iSup U i)).comp m
+  have hex i := I.existsUnique_sections_descent_of_local η E (U i) (mU i) (α i)
+    (hinj i) (hemb i) (hα i) (hloc i)
+  choose ℓ hℓ huniq using hex
+  have hmap i : (SemimoduleCat.sectionsMap (η.sectionsMultispan (U i))).comp (ℓ i) =
+      (I'.sectionsRestrict (le_iSup U i)).comp m := (hℓ i).1
+  have hc i k :
+      (I.sectionsRestrict (inf_le_left : U i ⊓ U k ≤ U i)).comp (ℓ i) =
+        (I.sectionsRestrict (inf_le_right : U i ⊓ U k ≤ U k)).comp (ℓ k) := by
+    have himage :
+        (SemimoduleCat.sectionsMap (η.sectionsMultispan (U i ⊓ U k))).comp
+            ((I.sectionsRestrict inf_le_left).comp (ℓ i)) =
+          (SemimoduleCat.sectionsMap (η.sectionsMultispan (U i ⊓ U k))).comp
+            ((I.sectionsRestrict inf_le_right).comp (ℓ k)) := by
+      simp only [← LinearMap.comp_assoc, sectionsRestrict_naturality]
+      rw [LinearMap.comp_assoc, hmap i, LinearMap.comp_assoc, hmap k,
+        ← LinearMap.comp_assoc, ← LinearMap.comp_assoc, sectionsRestrict_comp,
+        sectionsRestrict_comp]
+    apply (I.sectionsIndex (U i ⊓ U k)).linearMap_ext_of_injective
+      (hinj i _ inf_le_left)
+    intro a j
+    have hj : Function.Injective
+        ((η.sectionsMultispan (U i ⊓ U k)).app (.right j)).hom := by
+      rw [η.sectionsMultispan_app_right]
+      exact hemb i _ inf_le_left j
+    apply hj
+    have he := congrArg (fun q => (q a).val (.right j)) himage
+    simpa only [LinearMap.comp_apply, SemimoduleCat.sectionsMap_apply] using he
+  obtain ⟨L, ⟨hL, hLm⟩, huniqL⟩ :=
+    I.existsUnique_sections_descent_gluing η E U m ℓ hc hmap
+  refine ⟨L, ⟨hLm, ?_⟩, ?_⟩
+  · intro i a j
+    exact (congrArg (fun q => (q a).val (.right j)) (hL i)).trans ((hℓ i).2 a j)
+  · intro q hq
+    apply huniqL q
+    refine ⟨fun i => ?_, hq.1⟩
+    apply (I.sectionsIndex (U i)).linearMap_ext_of_injective (hinj i _ le_rfl)
+    intro a j
+    exact (hq.2 i a j).trans ((hℓ i).2 a j).symm
 
 end CategoryTheory.Limits.MultispanIndex
