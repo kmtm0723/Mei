@@ -8,10 +8,10 @@ module
 public import Mei.Geometry.Convex.PolyhedralComplex.RegularLocus
 
 /-!
-# Coefficient points avoiding finitely many exceptional arrangements
+# Coefficient points avoiding countably many exceptional arrangements
 
 On the regular locus of a finite polyhedral complex, off-wall coefficient points
-remain dense after imposing any finite family of exceptional-arrangement
+remain dense after imposing any countable family of exceptional-arrangement
 conditions. The existing simultaneous-arrangement density theorem is pulled
 back to the open regular locus and intersected with the dense coefficient points.
 This supplies a dense domain for extending geometrically defined coefficients
@@ -32,20 +32,16 @@ variable {N V J : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace �
 abbrev arrangementCoefficientPoints (A : J → ExceptionalArrangement V) :=
   {x : C.coefficientPoints // ∀ j, (A j).IsGeneric x.val.val}
 
-/-- Simultaneous genericity for a finite family of arrangements preserves density
+/-- Simultaneous genericity for a countable family of arrangements preserves density
 in the full regular locus, including its regular wall points. -/
-theorem denseRange_arrangementCoefficientPoints [Finite J]
+theorem denseRange_arrangementCoefficientPoints [Countable J]
     (A : J → ExceptionalArrangement V) :
     DenseRange (fun x : C.arrangementCoefficientPoints A => x.val.val) := by
   let := h.finiteDimensional
   have hdAll : Dense {x : C.regularSpace | ∀ j, (A j).IsGeneric x.val} :=
     (ExceptionalArrangement.dense_iInter_isGeneric A).preimage
       C.isOpen_regularLocus.isOpenMap_subtype_val
-  have hoAll : IsOpen {x : C.regularSpace | ∀ j, (A j).IsGeneric x.val} := by
-    simpa only [ofPred_forall] using isOpen_iInter_of_finite
-      (fun j => show IsOpen {x : C.regularSpace | (A j).IsGeneric x.val} from
-        (A j).isOpen_isGeneric.preimage continuous_subtype_val)
-  have hdPoints := C.dense_coefficientPoints.inter_of_isOpen_right hdAll hoAll
+  have hdPoints := C.dense_coefficientPoints.inter_of_isOpen_left hdAll C.isOpen_coefficientPoints
   unfold DenseRange
   apply hdPoints.mono
   rintro x ⟨hx, hA⟩
