@@ -165,6 +165,14 @@ theorem mem_slabThetaChartDomain_iff_terminal_resolution
 variable (h : TauCeti.Toric.IsIntegralLattice
   ((Int.castAddHom ℝ).prodMap (Int.castAddHom ℝ)))
 
+private theorem fiber_cast_fst
+    {F G : FiniteSemilinearFamily h h (SlabThetaChartIndex t c n b)} (e : F = G)
+    (Q : ℝ × ℝ) (z : F.fiber Q) :
+    (cast (congrArg (fun F : FiniteSemilinearFamily h h (SlabThetaChartIndex t c n b) =>
+      F.fiber Q) e) z).1 = z.1 := by
+  subst G
+  rfl
+
 /-- The actual common-family fiber is precisely the incident resolution on
 the chosen side, retaining the complete chart label rather than its image. -/
 def slabThetaTerminalResolutionEquiv {v : ℝ}
@@ -172,9 +180,10 @@ def slabThetaTerminalResolutionEquiv {v : ℝ}
     (right : Bool) (hside : Q ∈ incomingSlabDomain right) :
     (slabThetaFamily t c n b h).fiber Q ≃
       SlabThetaTerminalResolution t c n b v right :=
-  (slabThetaFamilyChartEquiv t c n b h Q).trans
-    (Equiv.subtypeEquivRight fun α =>
-      mem_slabThetaChartDomain_iff_terminal_resolution t c n b α hQ right hside)
+  (Equiv.cast (congrArg (fun F => F.fiber Q) (slabThetaFamily_def t c n b h))).trans
+    ((FiniteSemilinearFamily.fiberOfDomainsEquiv _ _ Q).trans
+      (Equiv.subtypeEquivRight fun α =>
+        mem_slabThetaChartDomain_iff_terminal_resolution t c n b α hQ right hside))
 
 /-- The forward resolution comparison preserves the complete label. -/
 @[simp]
@@ -183,7 +192,10 @@ theorem slabThetaTerminalResolutionEquiv_apply_val {v : ℝ}
     (right : Bool) (hside : Q ∈ incomingSlabDomain right)
     (z : (slabThetaFamily t c n b h).fiber Q) :
     (slabThetaTerminalResolutionEquiv t c n b h hQ right hside z).val = z.1 := by
-  simp [slabThetaTerminalResolutionEquiv]
+  simp only [slabThetaTerminalResolutionEquiv, Equiv.trans_apply,
+    Equiv.subtypeEquivRight_apply, FiniteSemilinearFamily.fiberOfDomainsEquiv_apply_val,
+    Equiv.cast_apply]
+  exact fiber_cast_fst t c n b h (slabThetaFamily_def t c n b h) Q z
 
 /-- Reconstructing an actual fiber from its incident history retains its label. -/
 @[simp]
@@ -193,7 +205,11 @@ theorem slabThetaTerminalResolutionEquiv_symm_apply_fst {v : ℝ}
     (z : SlabThetaTerminalResolution t c n b v right) :
     ((slabThetaTerminalResolutionEquiv t c n b h hQ right hside).symm z).1 =
       z.val := by
-  simp [slabThetaTerminalResolutionEquiv]
+  simp only [slabThetaTerminalResolutionEquiv, Equiv.symm_trans_apply,
+    ← Equiv.cast_symm, Equiv.cast_apply]
+  rw [fiber_cast_fst t c n b h (slabThetaFamily_def t c n b h).symm]
+  simp only [FiniteSemilinearFamily.fiberOfDomainsEquiv_symm_apply_fst,
+    Equiv.subtypeEquivRight_symm_apply]
 
 /-- The exact local-resolution expansion sums whole weights of geometrically
 incident histories. The index set is independent of the endpoint inside the

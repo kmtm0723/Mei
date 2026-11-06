@@ -229,24 +229,6 @@ instance (Q : ℝ × ℝ) : Finite ((slabThetaFamily t c n b h).fiber Q) :=
     (slabThetaChartDomain t c n b)
     (isRationalSemilinear_slabThetaChartDomain t c n b h)).fiber Q))
 
-/-- The common-family fiber consists exactly of its admitted complete chart labels. -/
-def slabThetaFamilyChartEquiv (Q : ℝ × ℝ) :
-    (slabThetaFamily t c n b h).fiber Q ≃
-      {α : SlabThetaChartIndex t c n b // Q ∈ slabThetaChartDomain t c n b α} :=
-  FiniteSemilinearFamily.fiberOfDomainsEquiv _ _ Q
-
-@[simp]
-theorem slabThetaFamilyChartEquiv_apply_val (Q : ℝ × ℝ)
-    (z : (slabThetaFamily t c n b h).fiber Q) :
-    (slabThetaFamilyChartEquiv t c n b h Q z).val = z.1 :=
-  FiniteSemilinearFamily.fiberOfDomainsEquiv_apply_val ..
-
-@[simp]
-theorem slabThetaFamilyChartEquiv_symm_apply_fst (Q : ℝ × ℝ)
-    (z : {α : SlabThetaChartIndex t c n b // Q ∈ slabThetaChartDomain t c n b α}) :
-    ((slabThetaFamilyChartEquiv t c n b h Q).symm z).1 = z.val :=
-  FiniteSemilinearFamily.fiberOfDomainsEquiv_symm_apply_fst ..
-
 /-- Exact chart comparison with actual incoming and crossing rays, including
 one nonzero constant contribution in zero spatial degree. -/
 private def slabThetaExplicitChartEquiv (Q : ℝ × ℝ) :
@@ -277,7 +259,7 @@ def slabThetaFamilyFiberEquiv (Q : ℝ × ℝ) :
       (Σ α : IncomingSlabChartIndex c n b, IncomingSlabChartRay c n b α Q) ⊕
         (Σ upper : Bool, SlabChartRay t c n b upper Q) ⊕
           {_u : Unit // (n, b) = 0 ∧ c ≠ 0} :=
-  (slabThetaFamilyChartEquiv t c n b h Q).trans (slabThetaChartEquiv t c n b Q)
+  (FiniteSemilinearFamily.fiberOfDomainsEquiv _ _ Q).trans (slabThetaChartEquiv t c n b Q)
 
 /-- The common chart equivalence retains the incoming sector. -/
 @[simp]
@@ -375,9 +357,9 @@ theorem slabThetaFamilyFiberEquiv_symm_incoming_fst (Q : ℝ × ℝ)
     ((slabThetaFamilyFiberEquiv t c n b h Q).symm (.inl β)).1 =
       .inl ((incomingSlabChartEquiv c n b Q).symm
         (incomingSlabChartRayEquiv c n b Q β)).val := by
-  unfold slabThetaFamilyFiberEquiv
+  unfold slabThetaFamilyFiberEquiv slabThetaFamily
   simp only [Equiv.symm_trans_apply,
-    slabThetaFamilyChartEquiv_symm_apply_fst,
+    FiniteSemilinearFamily.fiberOfDomainsEquiv_symm_apply_fst,
     slabThetaChartEquiv_symm_incoming_val]
 
 /-- Recover the binomial branch and side from its point in the endpoint fiber. -/
@@ -386,9 +368,9 @@ theorem slabThetaFamilyFiberEquiv_symm_crossing_fst (Q : ℝ × ℝ)
     (β : Σ upper : Bool, SlabChartRay t c n b upper Q) :
     ((slabThetaFamilyFiberEquiv t c n b h Q).symm (.inr (.inl β))).1 =
       .inr (.inl ((slabChartEquiv t c n b Q).symm (slabChartRayEquiv t c n b Q β)).val) := by
-  unfold slabThetaFamilyFiberEquiv
+  unfold slabThetaFamilyFiberEquiv slabThetaFamily
   simp only [Equiv.symm_trans_apply,
-    slabThetaFamilyChartEquiv_symm_apply_fst,
+    FiniteSemilinearFamily.fiberOfDomainsEquiv_symm_apply_fst,
     slabThetaChartEquiv_symm_crossing_val]
 
 /-- Recover the constant chart label from its point in the endpoint fiber. -/
@@ -397,9 +379,9 @@ theorem slabThetaFamilyFiberEquiv_symm_constant_fst (Q : ℝ × ℝ)
     (u : {_u : Unit // (n, b) = 0 ∧ c ≠ 0}) :
     ((slabThetaFamilyFiberEquiv t c n b h Q).symm (.inr (.inr u))).1 =
       .inr (.inr u.val) := by
-  unfold slabThetaFamilyFiberEquiv
+  unfold slabThetaFamilyFiberEquiv slabThetaFamily
   simp only [Equiv.symm_trans_apply,
-    slabThetaFamilyChartEquiv_symm_apply_fst,
+    FiniteSemilinearFamily.fiberOfDomainsEquiv_symm_apply_fst,
     slabThetaChartEquiv_symm_constant_val]
 
 /-- The comparison preserves the full compact-open path, including the original
@@ -550,12 +532,14 @@ theorem slabThetaFamily_weightedEvaluation (Q : ℝ × ℝ) :
     (slabThetaFamily t c n b h).weightedEvaluation (slabThetaChartWeight t c n b) Q =
       slabThetaEvaluation t c n b Q := by
   classical
-  let := Fintype.ofFinite ((slabThetaFamily t c n b h).fiber Q)
+  let := Fintype.ofFinite ((FiniteSemilinearFamily.ofDomains
+    (slabThetaChartDomain t c n b)
+    (isRationalSemilinear_slabThetaChartDomain t c n b h)).fiber Q)
   let := Fintype.ofFinite
     {α : SlabThetaChartIndex t c n b // Q ∈ slabThetaChartDomain t c n b α}
   rw [slabThetaEvaluation_eq_sum_charts, FiniteSemilinearFamily.weightedEvaluation_def]
-  exact Fintype.sum_equiv (slabThetaFamilyChartEquiv t c n b h Q) _ _
-    (fun z => by rw [slabThetaFamilyChartEquiv_apply_val])
+  exact Fintype.sum_equiv (FiniteSemilinearFamily.fiberOfDomainsEquiv _ _ Q) _ _
+    (fun z => by rw [FiniteSemilinearFamily.fiberOfDomainsEquiv_apply_val])
 
 open Classical in
 /-- Restricting endpoints does not replace or truncate incoming histories. -/
