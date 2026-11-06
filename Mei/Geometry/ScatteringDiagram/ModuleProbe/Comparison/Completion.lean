@@ -67,8 +67,11 @@ local notation "evaluation" =>
 /-- Assemble completed actual ray values from finite comparison on any family
 of allowed endpoints. Geometric inventories vary with the cutoff; their
 compatibility follows from the probe transition law. No genericity, initial
-wall, or outgoing-wall assumptions are needed beyond the supplied equality. -/
+wall, or outgoing-wall assumptions are needed beyond the supplied equality.
+The probe diagram may use any indexing type, including an empty one. -/
 theorem exists_completedWallEventEvaluation_of_eq
+    {η : Type*} (D : DirectedDiagram (d := positiveDegrees d p) (h.prod h')
+      (wallSpaces d ℳ p ℒ H) η)
     (hBc : B.Consistent) (hD : D.Consistent)
     (hB : (D.map (chargeZeroGradedLieHom d ℳ p ℒ)
       (chargeZeroGradedLieHom_mem_wall d ℳ p ℒ H)).Equivalent
@@ -164,7 +167,7 @@ theorem exists_completedWallEventEvaluation
         (CommonWallComplement.projection k (point Q)) = evaluation k Q.val :=
     heq Q k
   obtain ⟨Θ, hcompatible, hprojection, hunique, hcompleted, htransport⟩ :=
-    exists_completedWallEventEvaluation_of_eq d ℳ p ℒ H h h' D B b hBc hD hB point hvalue
+    exists_completedWallEventEvaluation_of_eq d ℳ p ℒ H h h' B b D hBc hD hB point hvalue
   refine ⟨A, ?_, ?_, point, Θ, fun _ => rfl, hcompatible, hprojection,
     hunique, hcompleted, htransport⟩
   · simpa only [Sigma.forall] using ExceptionalArrangement.dense_iInter_isGeneric

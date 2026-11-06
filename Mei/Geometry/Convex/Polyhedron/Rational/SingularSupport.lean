@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mei.Geometry.Convex.Polyhedron.Rational.Face
-public import Mei.Geometry.Convex.Polyhedron.Boundary
 public import Mei.Geometry.Convex.Polyhedron.SingularSupport
 
 /-!

@@ -107,7 +107,7 @@ theorem exists_completedWallEventEvaluation_on_stableLocus
       d ℳ p ℒ H h h' D₀ a D B hinitial k (hBk k) (hDk k) (hBk' k)
       (hout k) (b k) (hb k) (CommonWallComplement.projection k (point Q)) (hstable Q k).2
   obtain ⟨Θ, _, hprojection, hunique, hcompleted, htransport⟩ :=
-    exists_completedWallEventEvaluation_of_eq d ℳ p ℒ H h h' D B b hBc hD hB point hvalue
+    exists_completedWallEventEvaluation_of_eq d ℳ p ℒ H h h' B b D hBc hD hB point hvalue
   exact ⟨point, Θ, fun _ => rfl, hprojection, hunique, hcompleted, htransport⟩
 
 end Mei.ModuleProbe
