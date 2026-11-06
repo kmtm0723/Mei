@@ -19,7 +19,8 @@ with `μ₁(ρ n₁) = μ₂(ρ n₂) = 0`, `μ₁(ρ n₂) = -1` and `μ₂(ρ 
 binomial label `exp(log(1 + c z^n) ∂_μ)` (`Mei.binomialLabel`). For all coefficients `c₁, c₂` the
 completed tropical vertex group satisfies the pentagon identity
 `θ[μ₂, n₂, c₂] θ[μ₁, n₁, c₁] = θ[μ₁, n₁, c₁] θ[μ₁ + μ₂, n₁ + n₂, c₁ c₂] θ[μ₂, n₂, c₂]`
-(`Mei.binomialLabel_pentagon`). No condition on the positive degree data, on the spatial
+(`Mei.binomialLabel_pentagon`); the case of the coordinate vectors of the quadrant `ℕ² ⊆ ℤ²` is
+`Mei.binomialLabel_pentagon_quadrant`. No condition on the positive degree data, on the spatial
 projection `ρ` or on the coefficients is imposed beyond these pairings; the degrees and lattices
 live in `Type`.
 
@@ -53,10 +54,11 @@ local notation "ℒ₀" => tropicalVertexGrading (R := R) 𝒅 (AddMonoidHom.id 
 local notation "F₀" => TropicalVertexCoefficientAction.filtration (R := R) 𝒅
   (PositiveDegrees.monoid 𝒅)
 
--- The special case from which `binomialLabel_pentagon` is transported; it is not a separate API.
-/-- The pentagon identity in the tropical vertex group of the nonnegative quadrant of `ℤ × ℤ`,
-for the basis vectors `e₁ = (1, 0)`, `e₂ = (0, 1)` and the characters `μ₁ = -e₂*`, `μ₂ = e₁*`. -/
-private theorem binomialLabel_pentagon_quadrant (c₁ c₂ : R) :
+/-- **Pentagon identity on the quadrant.** In the tropical vertex group of the nonnegative quadrant
+`ℕ² ⊆ ℤ²`, with the identity spatial projection, write `e₁ = (1, 0)`, `e₂ = (0, 1)`,
+`μ₁ = -e₂*` and `μ₂ = e₁*`. For all coefficients `c₁, c₂` the binomial labels satisfy
+`θ[μ₂, e₂, c₂] θ[μ₁, e₁, c₁] = θ[μ₁, e₁, c₁] θ[μ₁ + μ₂, e₁ + e₂, c₁ c₂] θ[μ₂, e₂, c₂]`. -/
+theorem binomialLabel_pentagon_quadrant (c₁ c₂ : R) :
     binomialLabel 𝒅 (AddMonoidHom.id _) (AddMonoidHom.fst ℤ ℤ)
         ((b).mem_positiveDegrees_monoid_self 1) ((b).ne_zero 1) (by simp) c₂ *
       binomialLabel 𝒅 (AddMonoidHom.id _) (-AddMonoidHom.snd ℤ ℤ)
