@@ -6,16 +6,16 @@ Authors: Codex
 module
 
 public import Mei.Geometry.Convex.PolyhedralComplex.RegularLocus
-public import Mathlib.Topology.Baire.Lemmas
 
 /-!
 # Coefficient points avoiding finitely many exceptional arrangements
 
 On the regular locus of a finite polyhedral complex, off-wall coefficient points
 remain dense after imposing any finite family of exceptional-arrangement
-conditions. Only finite intersections of open dense sets are used; no Baire-space
-or completeness hypothesis is required. This supplies a dense domain for
-extending geometrically defined coefficients to an ambient transport sheaf.
+conditions. The existing simultaneous-arrangement density theorem is pulled
+back to the open regular locus and intersected with the dense coefficient points.
+This supplies a dense domain for extending geometrically defined coefficients
+to an ambient transport sheaf.
 -/
 
 public noncomputable section
@@ -38,17 +38,13 @@ theorem denseRange_arrangementCoefficientPoints [Finite J]
     (A : J → ExceptionalArrangement V) :
     DenseRange (fun x : C.arrangementCoefficientPoints A => x.val.val) := by
   let := h.finiteDimensional
-  let s (j : J) : Set C.regularSpace := {x | (A j).IsGeneric x.val}
-  have ho (j : J) : IsOpen (s j) :=
-    (A j).isOpen_isGeneric.preimage continuous_subtype_val
-  have hd (j : J) : Dense (s j) :=
-    (A j).dense_isGeneric.preimage C.isOpen_regularLocus.isOpenMap_subtype_val
-  have hdAll : Dense {x : C.regularSpace | ∀ j, (A j).IsGeneric x.val} := by
-    have hd' := (finite_range s).dense_sInter
-      (fun _ ⟨j, hj⟩ => hj ▸ ho j) (fun _ ⟨j, hj⟩ => hj ▸ hd j)
-    simpa only [sInter_range, mem_iInter, mem_ofPred_eq, ofPred_forall, s] using hd'
+  have hdAll : Dense {x : C.regularSpace | ∀ j, (A j).IsGeneric x.val} :=
+    (ExceptionalArrangement.dense_iInter_isGeneric A).preimage
+      C.isOpen_regularLocus.isOpenMap_subtype_val
   have hoAll : IsOpen {x : C.regularSpace | ∀ j, (A j).IsGeneric x.val} := by
-    simpa only [ofPred_forall] using isOpen_iInter_of_finite ho
+    simpa only [ofPred_forall] using isOpen_iInter_of_finite
+      (fun j => show IsOpen {x : C.regularSpace | (A j).IsGeneric x.val} from
+        (A j).isOpen_isGeneric.preimage continuous_subtype_val)
   have hdPoints := C.dense_coefficientPoints.inter_of_isOpen_right hdAll hoAll
   unfold DenseRange
   apply hdPoints.mono
