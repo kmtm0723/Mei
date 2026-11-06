@@ -140,11 +140,7 @@ theorem isWallFunction_ofRayFactors [Module.Free ℤ Γ] (Q : AddSubmonoid Γ) [
   have hF' : (isUnit_completedTropicalTangentInclusion d ρ _ Q hf).unit = F :=
     Units.ext (by rw [IsUnit.unit_spec, hF])
   refine ⟨⟨⟨p, hpQ⟩, by rw [hD.normal]; exact hp, ?_⟩, fun q r => ?_⟩
-  · have hmul : (single (⟨p, hpQ⟩ : Q) (1 : R) * single ⟨-p, hnpQ⟩ 1 : R[Q]) = 1 := by
-      rw [single_mul_single, mul_one, one_def]
-      exact congrArg (single · 1) (Subtype.ext (add_neg_cancel p))
-    exact (isUnit_iff_exists_inv.mpr ⟨_, hmul⟩).map
-      (TropicalVertexCoefficientAction.filtration (R := R) d Q).toCompletion
+  · exact TropicalVertexCoefficientAction.isUnit_toCompletion_single hpQ hnpQ
   · rw [label_ofRayFactors hD hμ π u hu x.1 _ hg, hD.normal, hg, ← hF']
     exact completedBCHAction_completedBCHExp_completedTropicalTangentField_completedLog d ρ Q
       (μ x.1) hf q r

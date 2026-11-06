@@ -125,6 +125,7 @@ def quadrantCharacterMap (μ₁ μ₂ : Λ →+ ℤ) : ((ℤ × ℤ) →+ R) →
     simp only [AddMonoidHom.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply, smul_sub]
 
 /-- The defining formula of `quadrantCharacterMap`. -/
+@[simp]
 theorem quadrantCharacterMap_apply (μ₁ μ₂ : Λ →+ ℤ) (m : (ℤ × ℤ) →+ R) :
     quadrantCharacterMap μ₁ μ₂ m =
       m (1, 0) • (Int.castAddHom R).comp μ₂ - m (0, 1) • (Int.castAddHom R).comp μ₁ :=
@@ -142,7 +143,7 @@ theorem quadrantCharacterMap_apply_constr (m : (ℤ × ℤ) →+ R) (n : ℤ × 
   have he := (Basis.finTwoProd ℤ).ext (f₁ := ((quadrantCharacterMap μ₁ μ₂ m).comp
       (ρ.comp ((Basis.finTwoProd ℤ).constr ℤ ![n₁, n₂]).toAddMonoidHom)).toIntLinearMap)
     (f₂ := m.toIntLinearMap) fun j => by
-      fin_cases j <;> simp [quadrantCharacterMap_apply, h₁₁, h₂₂, h₁₂, h₂₁]
+      fin_cases j <;> simp [h₁₁, h₂₂, h₁₂, h₂₁]
   exact LinearMap.congr_fun he n
 
 variable (R) (hn₁ : n₁ ∈ d.monoid) (hn₂ : n₂ ∈ d.monoid) (hn₁0 : n₁ ≠ 0) (hn₂0 : n₂ ≠ 0)
@@ -202,13 +203,13 @@ theorem binomialLabel_pentagon {R : Type*} [CommRing R] [Algebra ℚ R] {Γ Λ :
   have hT : ∀ j, p.degreeMap (Basis.finTwoProd ℤ j) = ![n₁, n₂] j := fun j => by
     simp only [p, quadrantPairing_degreeMap, Basis.positiveDegreeMap_self]
   have hA := p.completedMap_binomialLabel (μ := -AddMonoidHom.snd ℤ ℤ) (μ' := μ₁)
-    (by ext x; simp [p, quadrantCharacterMap_apply]) he₀ ((Basis.finTwoProd ℤ).ne_zero 0)
+    (by ext x; simp [p]) he₀ ((Basis.finTwoProd ℤ).ne_zero 0)
     (by simp) hn₁ hn₁0 h₁₁ (hT 0) c₁
   have hB := p.completedMap_binomialLabel (μ := AddMonoidHom.fst ℤ ℤ) (μ' := μ₂)
-    (by ext x; simp [p, quadrantCharacterMap_apply]) he₁ ((Basis.finTwoProd ℤ).ne_zero 1)
+    (by ext x; simp [p]) he₁ ((Basis.finTwoProd ℤ).ne_zero 1)
     (by simp) hn₂ hn₂0 h₂₂ (hT 1) c₂
   have hC := p.completedMap_binomialLabel (μ := -AddMonoidHom.snd ℤ ℤ + AddMonoidHom.fst ℤ ℤ)
-    (μ' := μ₁ + μ₂) (by ext x; simp [p, quadrantCharacterMap_apply, add_comm]) (add_mem he₀ he₁)
+    (μ' := μ₁ + μ₂) (by ext x; simp [p, add_comm]) (add_mem he₀ he₁)
     ((Basis.positiveDegrees (Basis.finTwoProd ℤ)).add_ne_zero he₀ he₁
       ((Basis.finTwoProd ℤ).ne_zero 0)) (by simp) (add_mem hn₁ hn₂) (d.add_ne_zero hn₁ hn₂ hn₁0)
     (by simp [h₁₁, h₁₂, h₂₁, h₂₂]) (by

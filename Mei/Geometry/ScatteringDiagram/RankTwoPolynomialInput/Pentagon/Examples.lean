@@ -127,8 +127,9 @@ theorem scat_axesInput (c : axesInput.Variable → R) :
 
 open scoped Mei.TropicalVertexCoefficientAction
 
-/-- The quadrant monoid lies in the full coefficient lattice `ℤ²`. Named explicitly so that it does
-not clash with the anonymous instance of the same type in `RankTwoPolynomialInput/Examples`. -/
+-- Named explicitly: an anonymous instance of the same type in `RankTwoPolynomialInput/Examples`
+-- would get the same automatic name.
+/-- The quadrant monoid lies in the full coefficient lattice `ℤ²`. -/
 local instance factQuadrantMonoidLeTop : Fact ((ℕ²).monoid ≤ (⊤ : AddSubmonoid (ℤ × ℤ))) :=
   ⟨le_top⟩
 

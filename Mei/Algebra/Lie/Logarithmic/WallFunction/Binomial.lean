@@ -40,23 +40,6 @@ namespace Mei
 open _root_.AddMonoidAlgebra
 open scoped Mei.TropicalVertexCoefficientAction
 
-section Ideal
-
-variable {R Γ : Type*} [Semiring R] [AddCommMonoid Γ] (d : PositiveDegrees Γ) (Q : AddSubmonoid Γ)
-
-/-- A monomial `r z^q` of a nonzero allowed degree `q` lies in the first term of the coefficient
-filtration of `R[Q]`. -/
-theorem TropicalVertexCoefficientAction.single_mem_filtration_ideal_one {q : Q}
-    (hq : (q : Γ) ∈ d.monoid) (hq0 : (q : Γ) ≠ 0) (r : R) :
-    single q r ∈ (filtration (R := R) d Q).ideal 1 := by
-  rw [filtration_ideal, AddSubmonoid.single_mem_monoidAlgebraIdeal_iff]
-  refine Or.inr ⟨q, hq, ?_, 0, by rw [zero_add]⟩
-  have := d.degree_pos hq hq0
-  simp only [AddMonoidHom.coe_comp, AddSubmonoid.coe_subtype, Function.comp_apply, Nat.cast_one]
-  omega
-
-end Ideal
-
 section Label
 
 variable {R Γ Λ : Type*} [CommRing R] [AddCommMonoid Γ] [AddCommMonoid Λ]
@@ -145,21 +128,6 @@ theorem isPositive_binomialUnit {S : Type*} [Semiring S] (φ : S →+* R) {n : �
     (add_mem (one_mem _) ⟨single _ s, by rw [mapRingHom_single]⟩)
 
 end Unit
-
-section Monomial
-
-variable {R Γ : Type*} [CommRing R] [AddCommGroup Γ] {d : PositiveDegrees Γ} {Q : AddSubmonoid Γ}
-
-/-- A monomial `z^p` with `p, -p ∈ Q` is a unit of the completed coefficient algebra. -/
-theorem TropicalVertexCoefficientAction.isUnit_toCompletion_single {p : Γ} (hp : p ∈ Q)
-    (hnp : -p ∈ Q) :
-    IsUnit ((filtration (R := R) d Q).toCompletion (single ⟨p, hp⟩ 1)) := by
-  have hmul : (single (⟨p, hp⟩ : Q) (1 : R) * single ⟨-p, hnp⟩ 1 : R[Q]) = 1 := by
-    rw [single_mul_single, mul_one, one_def]
-    exact congrArg (single · 1) (Subtype.ext (add_neg_cancel p))
-  exact (isUnit_iff_exists_inv.mpr ⟨_, hmul⟩).map (filtration (R := R) d Q).toCompletion
-
-end Monomial
 
 section Action
 

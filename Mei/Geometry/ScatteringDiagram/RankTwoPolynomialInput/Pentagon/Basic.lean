@@ -57,7 +57,7 @@ namespace Mei.RankTwoPolynomialInput
 
 open _root_.AddMonoidAlgebra
 
-variable {L : Type} {M ι : Type*} [AddCommGroup L] [AddCommGroup M] {d : PositiveDegrees L}
+variable {L M ι : Type*} [AddCommGroup L] [AddCommGroup M] {d : PositiveDegrees L}
   (I : RankTwoPolynomialInput d M ι)
 
 /-- A rank-two polynomial input is *of type `A₂`* at the lines `j₁, j₂` with exponents `n₁, n₂`
@@ -174,25 +174,16 @@ theorem sndRay_generator : hA.sndRay.generator = n₂ := SupportedRay.generator_
 theorem addRay_generator : hA.addRay.generator = n₁ + n₂ := SupportedRay.generator_ofMem ..
 
 /-- The degree `n₁` lies on the first ray. -/
-theorem mem_fstRay_rayDegrees : n₁ ∈ hA.fstRay.rayDegrees := by
-  have h := (SupportedRay.generator_mem_rayDegrees_iff hA.fstRay).mpr (by
-    rw [hA.fstRay_generator]
-    exact hA.mem_monoid_fst)
-  rwa [hA.fstRay_generator] at h
+theorem mem_fstRay_rayDegrees : n₁ ∈ hA.fstRay.rayDegrees :=
+  SupportedRay.mem_rayDegrees_ofMem ..
 
 /-- The degree `n₂` lies on the second ray. -/
-theorem mem_sndRay_rayDegrees : n₂ ∈ hA.sndRay.rayDegrees := by
-  have h := (SupportedRay.generator_mem_rayDegrees_iff hA.sndRay).mpr (by
-    rw [hA.sndRay_generator]
-    exact hA.mem_monoid_snd)
-  rwa [hA.sndRay_generator] at h
+theorem mem_sndRay_rayDegrees : n₂ ∈ hA.sndRay.rayDegrees :=
+  SupportedRay.mem_rayDegrees_ofMem ..
 
 /-- The degree `n₁ + n₂` lies on the ray through it. -/
-theorem mem_addRay_rayDegrees : n₁ + n₂ ∈ hA.addRay.rayDegrees := by
-  have h := (SupportedRay.generator_mem_rayDegrees_iff hA.addRay).mpr (by
-    rw [hA.addRay_generator]
-    exact hA.add_mem_monoid)
-  rwa [hA.addRay_generator] at h
+theorem mem_addRay_rayDegrees : n₁ + n₂ ∈ hA.addRay.rayDegrees :=
+  SupportedRay.mem_rayDegrees_ofMem ..
 
 /-- The coefficient variable `c₁` of the term `c₁ z^{n₁}` of the first line. -/
 def fstVariable : I.Variable := ⟨j₁, n₁, hA.mem_exponents_fst⟩
@@ -414,57 +405,6 @@ theorem isPentagonConfiguration :
   exists_fst := ⟨latticeMap n₁, by simp [hA.wallNormal_fst_fst], by simp [hA.wallNormal_snd_fst]⟩
   exists_snd := ⟨latticeMap n₂, by simp [hA.wallNormal_snd_snd], by simp [hA.wallNormal_fst_snd]⟩
 
-/-- The labels of the three nontrivial walls satisfy the pentagon identity
-`θ[ν₂, n₂, c₂] θ[ν₁, n₁, c₁] = θ[ν₁, n₁, c₁] θ[ν₁ + ν₂, n₁ + n₂, c₁ c₂] θ[ν₂, n₂, c₂]` of binomial
-labels. -/
-theorem pentagonDiagram_label_pentagon :
-    ((hA.pentagonDiagram h c).wall (.inl hA.sndIndex)).label *
-        ((hA.pentagonDiagram h c).wall (.inl hA.fstIndex)).label =
-      ((hA.pentagonDiagram h c).wall (.inl hA.fstIndex)).label *
-        ((hA.pentagonDiagram h c).wall (.inr ())).label *
-        ((hA.pentagonDiagram h c).wall (.inl hA.sndIndex)).label := by
-  simp only [pentagonDiagram_wall_inl, pentagonDiagram_wall_inr,
-    hA.incomingDiagram_label_fstIndex, hA.incomingDiagram_label_sndIndex, outgoingWall_label]
-  exact binomialLabel_pentagon d ρ hA.mem_monoid_fst hA.mem_monoid_snd hA.ne_zero_fst
-    hA.ne_zero_snd hA.wallNormal_fst_fst hA.wallNormal_snd_snd hA.wallNormal_fst_snd
-    hA.wallNormal_snd_fst _ _
-
-/-- The pentagon diagram is consistent. -/
-theorem pentagonDiagram_consistent : (hA.pentagonDiagram h c).Consistent := by
-  -- The three nontrivial walls are consistent by the pentagon identity; all other walls are full
-  -- hyperplanes with trivial labels.
-  refine DirectedDiagram.consistent_of_restrict_of_restrict_compl
-    ((hA.isPentagonConfiguration h c).consistent ?_) ?_ fun j _ j' hj' => ?_
-  · simpa only [DirectedDiagram.restrict_wall] using hA.pentagonDiagram_label_pentagon h c
-  · refine DirectedDiagram.consistent_of_commute_of_full _ (fun j => ?_) fun j j' => ?_
-    · obtain ⟨j | u, hj⟩ := j
-      · rw [DirectedDiagram.restrict_wall, pentagonDiagram_wall_inl]
-        exact I.incomingDiagram_full h c j
-      · exact absurd (hA.mem_pentagonIndices.mpr (Or.inr (Or.inr rfl))) hj
-    · rw [DirectedDiagram.restrict_wall, hA.pentagonDiagram_label_eq_one h c j.property]
-      exact Commute.one_left _
-  · rw [hA.pentagonDiagram_label_eq_one h c hj']
-    exact Commute.one_right _
-
-/-- The pentagon diagram is an outgoing completion of the input: its walls indexed by the
-incoming index are the incoming walls, its remaining wall is outgoing, and it is consistent. -/
-theorem isOutgoingCompletion_pentagonDiagram :
-    DirectedDiagram.IsOutgoingCompletion (I.incomingDiagram h c).wall (hA.pentagonDiagram h c) where
-  wall_inl := hA.pentagonDiagram_wall_inl h c
-  outgoing_inr u := by
-    rw [pentagonDiagram_wall_inr]
-    exact hA.outgoingWall_outgoing h c
-  consistent := hA.pentagonDiagram_consistent h c
-
-/-- **The scattering diagram of type `A₂` of a rank-two polynomial input.** For an input of type
-`A₂` with arbitrary coefficients `c₁, c₂`, the outgoing scattering class of the incoming diagram
-is the class of the pentagon diagram, with the one additional outgoing wall
-`{ν₁ + ν₂ = 0, ν₁ ≥ 0}` labelled by the binomial label of `1 + c₁ c₂ z^{n₁ + n₂}`. -/
-theorem scat_eq_toClass_pentagonDiagram [Module.Free ℤ L] :
-    (I.incomingDiagram h c).Scat (I.incomingDiagram_full h c) =
-      (hA.pentagonDiagram h c).toClass :=
-  DirectedDiagram.scat_eq_toClass _ _ (hA.isOutgoingCompletion_pentagonDiagram h c)
-
 section Positive
 
 open scoped Mei.TropicalVertexCoefficientAction
@@ -566,6 +506,95 @@ theorem isPositiveWallRepresentative_pentagonDiagram :
       (mapRingHom Q φ).rangeS I.projection :=
   (hA.isPositive_discrete_pentagonDiagram h c Q hQ₁ hQ₂ φ hc₁ hc₂).isPositiveWallRepresentative
 
+end Positive
+
+end Diagram
+
+end IsTypeA₂
+
+end Mei.RankTwoPolynomialInput
+
+/-! ### Consistency, needing the degree lattice in `Type`
+
+The pentagon identity `Mei.binomialLabel_pentagon` is transported through `ℤ × ℤ`, so the
+theorems below take `L : Type`. -/
+
+namespace Mei.RankTwoPolynomialInput.IsTypeA₂
+
+open _root_.AddMonoidAlgebra
+
+variable {L : Type} {M ι : Type*} [AddCommGroup L] [AddCommGroup M] {d : PositiveDegrees L}
+  {I : RankTwoPolynomialInput d M ι} {j₁ j₂ : ι} {n₁ n₂ : L} (hA : I.IsTypeA₂ j₁ j₂ n₁ n₂)
+  {R V : Type*} [CommRing R] [Algebra ℚ R] [DecidableEq L]
+  [NormedAddCommGroup V] [NormedSpace ℝ V] {latticeMap : L →+ V}
+  (h : TauCeti.Toric.IsIntegralLattice latticeMap) (c : I.Variable → R)
+include hA
+
+local notation "ρ" => AddMonoidHom.id L
+local notation "ℒ" => tropicalVertexGrading (R := R) d ρ
+local notation "H" => tropicalVertexWallSpaces (R := R) d ρ
+
+/-- The labels of the three nontrivial walls satisfy the pentagon identity
+`θ[ν₂, n₂, c₂] θ[ν₁, n₁, c₁] = θ[ν₁, n₁, c₁] θ[ν₁ + ν₂, n₁ + n₂, c₁ c₂] θ[ν₂, n₂, c₂]` of binomial
+labels. -/
+theorem pentagonDiagram_label_pentagon :
+    ((hA.pentagonDiagram h c).wall (.inl hA.sndIndex)).label *
+        ((hA.pentagonDiagram h c).wall (.inl hA.fstIndex)).label =
+      ((hA.pentagonDiagram h c).wall (.inl hA.fstIndex)).label *
+        ((hA.pentagonDiagram h c).wall (.inr ())).label *
+        ((hA.pentagonDiagram h c).wall (.inl hA.sndIndex)).label := by
+  simp only [pentagonDiagram_wall_inl, pentagonDiagram_wall_inr,
+    hA.incomingDiagram_label_fstIndex, hA.incomingDiagram_label_sndIndex, outgoingWall_label]
+  exact binomialLabel_pentagon d ρ hA.mem_monoid_fst hA.mem_monoid_snd hA.ne_zero_fst
+    hA.ne_zero_snd hA.wallNormal_fst_fst hA.wallNormal_snd_snd hA.wallNormal_fst_snd
+    hA.wallNormal_snd_fst _ _
+
+/-- The pentagon diagram is consistent. -/
+theorem pentagonDiagram_consistent : (hA.pentagonDiagram h c).Consistent := by
+  -- The three nontrivial walls are consistent by the pentagon identity; all other walls are full
+  -- hyperplanes with trivial labels.
+  refine DirectedDiagram.consistent_of_restrict_of_restrict_compl
+    ((hA.isPentagonConfiguration h c).consistent ?_) ?_ fun j _ j' hj' => ?_
+  · simpa only [DirectedDiagram.restrict_wall] using hA.pentagonDiagram_label_pentagon h c
+  · refine DirectedDiagram.consistent_of_commute_of_full _ (fun j => ?_) fun j j' => ?_
+    · obtain ⟨j | u, hj⟩ := j
+      · rw [DirectedDiagram.restrict_wall, pentagonDiagram_wall_inl]
+        exact I.incomingDiagram_full h c j
+      · exact absurd (hA.mem_pentagonIndices.mpr (Or.inr (Or.inr rfl))) hj
+    · rw [DirectedDiagram.restrict_wall, hA.pentagonDiagram_label_eq_one h c j.property]
+      exact Commute.one_left _
+  · rw [hA.pentagonDiagram_label_eq_one h c hj']
+    exact Commute.one_right _
+
+/-- The pentagon diagram is an outgoing completion of the input: its walls indexed by the
+incoming index are the incoming walls, its remaining wall is outgoing, and it is consistent. -/
+theorem isOutgoingCompletion_pentagonDiagram :
+    DirectedDiagram.IsOutgoingCompletion (I.incomingDiagram h c).wall (hA.pentagonDiagram h c) where
+  wall_inl := hA.pentagonDiagram_wall_inl h c
+  outgoing_inr u := by
+    rw [pentagonDiagram_wall_inr]
+    exact hA.outgoingWall_outgoing h c
+  consistent := hA.pentagonDiagram_consistent h c
+
+/-- **The scattering diagram of type `A₂` of a rank-two polynomial input.** For an input of type
+`A₂` with arbitrary coefficients `c₁, c₂`, the outgoing scattering class of the incoming diagram
+is the class of the pentagon diagram, with the one additional outgoing wall
+`{ν₁ + ν₂ = 0, ν₁ ≥ 0}` labelled by the binomial label of `1 + c₁ c₂ z^{n₁ + n₂}`. -/
+theorem scat_eq_toClass_pentagonDiagram [Module.Free ℤ L] :
+    (I.incomingDiagram h c).Scat (I.incomingDiagram_full h c) =
+      (hA.pentagonDiagram h c).toClass :=
+  DirectedDiagram.scat_eq_toClass _ _ (hA.isOutgoingCompletion_pentagonDiagram h c)
+
+section Positive
+
+open scoped Mei.TropicalVertexCoefficientAction
+
+variable (Q : AddSubmonoid L) [Fact (d.monoid ≤ Q)] (hQ₁ : -n₁ ∈ Q) (hQ₂ : -n₂ ∈ Q)
+  [Module.Free ℤ M] [Module.Finite ℤ M] {S : Type*} [Semiring S] (φ : S →+* R)
+  (hc₁ : c hA.fstVariable ∈ φ.rangeS) (hc₂ : c hA.sndVariable ∈ φ.rangeS)
+
+local notation "F" => TropicalVertexCoefficientAction.filtration (R := R) d Q
+
 include hQ₁ hQ₂ hc₁ hc₂ in
 /-- **Positivity of rank-two polynomial inputs of type `A₂`.** For a rank-two polynomial input of
 type `A₂` whose coefficients `c₁, c₂` lie in the image of a semiring map `φ : S →+* R`, and a
@@ -585,8 +614,4 @@ theorem exists_isPositiveWallRepresentative_scat [Module.Free ℤ L] :
 
 end Positive
 
-end Diagram
-
-end IsTypeA₂
-
-end Mei.RankTwoPolynomialInput
+end Mei.RankTwoPolynomialInput.IsTypeA₂

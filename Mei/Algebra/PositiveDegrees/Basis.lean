@@ -8,7 +8,7 @@ module
 public import Mei.Algebra.PositiveDegrees.Graph
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.Basis.Fin
-public import Mathlib.LinearAlgebra.TensorProduct.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Positive degrees from an integral basis
@@ -208,20 +208,10 @@ open scoped TensorProduct in
 theorem span_tmul_positiveDegrees_monoid :
     Submodule.span ℚ ((fun p : N => (1 : ℚ) ⊗ₜ[ℤ] p) '' (b.positiveDegrees.monoid : Set N)) =
       ⊤ := by
-  refine Submodule.eq_top_iff'.mpr fun x => ?_
-  induction x using TensorProduct.inductionOn with
-  | tmul q v =>
-    have hv : (1 : ℚ) ⊗ₜ[ℤ] v ∈ Submodule.span ℚ
-        ((fun p : N => (1 : ℚ) ⊗ₜ[ℤ] p) '' (b.positiveDegrees.monoid : Set N)) := by
-      rw [← b.sum_repr v, TensorProduct.tmul_sum]
-      refine Submodule.sum_mem _ fun j _ => ?_
-      rw [TensorProduct.tmul_smul]
-      exact zsmul_mem (Submodule.subset_span
-        (Set.mem_image_of_mem _ (b.mem_positiveDegrees_monoid_self j))) _
-    rw [show q ⊗ₜ[ℤ] v = q • ((1 : ℚ) ⊗ₜ[ℤ] v) by rw [TensorProduct.smul_tmul', smul_eq_mul,
-      mul_one]]
-    exact Submodule.smul_mem _ q hv
-  | add x y hx hy => exact add_mem hx hy
+  refine eq_top_iff.mpr ((b.baseChange ℚ).span_eq.symm.le.trans (Submodule.span_mono ?_))
+  rintro _ ⟨j, rfl⟩
+  rw [baseChange_apply]
+  exact Set.mem_image_of_mem _ (b.mem_positiveDegrees_monoid_self j)
 
 section DegreeMap
 
@@ -230,8 +220,7 @@ variable {Γ : Type*} [AddCommGroup Γ] {d : Mei.PositiveDegrees Γ} (v : ι →
 
 include hv hv0 in
 /-- On the nonnegative basis monoid, the additive map `n ↦ ∑ⱼ nⱼ vⱼ` sending each basis vector
-`bⱼ` to a nonzero allowed degree `vⱼ` of `d` does not decrease the degree: every `vⱼ` has degree
-at least one. -/
+`bⱼ` to a nonzero allowed degree `vⱼ` of `d` does not decrease the degree. -/
 theorem degree_le_degree_constr {n : N} (hn : n ∈ b.positiveDegrees.monoid) :
     b.positiveDegrees.degree n ≤ d.degree (b.constr ℤ v n) := by
   rw [positiveDegrees_degree, constr_apply_fintype, map_sum]
@@ -252,35 +241,29 @@ theorem constr_mem_monoid {n : N} (hn : n ∈ b.positiveDegrees.monoid) :
   exact AddSubmonoid.nsmul_mem _ (hv j) _
 
 /-- The additive map `n ↦ ∑ⱼ nⱼ vⱼ` sending each basis vector `bⱼ` to a nonzero allowed degree
-`vⱼ` of `d`, as a positive degree map from the nonnegative basis monoid with identity cutoff
-modulus. -/
-def positiveDegreeMap : Mei.PositiveDegreeMap b.positiveDegrees d where
-  toAddMonoidHom := (b.constr ℤ v).toAddMonoidHom
-  map_mem hn := b.constr_mem_monoid v hv hn
-  map_ne_zero {n} hn hn0 h := by
-    have hle := b.degree_le_degree_constr v hv hv0 hn
-    have hpos := b.positiveDegrees.degree_pos hn hn0
-    rw [LinearMap.toAddMonoidHom_coe] at h
-    rw [h, map_zero] at hle
-    omega
-  modulus := id
-  monotone_modulus := monotone_id
-  degree_gt k hn hk := hk.trans_le (b.degree_le_degree_constr v hv hv0 hn)
+`vⱼ` of `d`, as a positive degree map from the nonnegative basis monoid with the identity cutoff
+modulus `k ↦ 1 * k`. -/
+def positiveDegreeMap : Mei.PositiveDegreeMap b.positiveDegrees d :=
+  Mei.PositiveDegreeMap.ofBound (b.constr ℤ v).toAddMonoidHom
+    (fun _ hn => b.constr_mem_monoid v hv hn) 1
+    (fun _ hn => by simpa using b.degree_le_degree_constr v hv hv0 hn)
 
 /-- The positive degree map of a basis sends `n` to `∑ⱼ nⱼ vⱼ`. -/
+@[simp]
 theorem positiveDegreeMap_apply (n : N) :
-    b.positiveDegreeMap v hv hv0 n = b.constr ℤ v n :=
-  (rfl)
+    b.positiveDegreeMap v hv hv0 n = b.constr ℤ v n := by
+  rw [positiveDegreeMap]
+  exact Mei.PositiveDegreeMap.ofBound_apply _ _ _ _ n
 
 /-- The positive degree map of a basis sends the basis vector `bⱼ` to `vⱼ`. -/
-@[simp]
 theorem positiveDegreeMap_self (j : ι) : b.positiveDegreeMap v hv hv0 (b j) = v j := by
   rw [positiveDegreeMap_apply, constr_basis]
 
 /-- The positive degree map of a basis has the identity cutoff modulus. -/
 @[simp]
-theorem positiveDegreeMap_modulus : (b.positiveDegreeMap v hv hv0).modulus = id :=
-  (rfl)
+theorem positiveDegreeMap_modulus (k : ℕ) : (b.positiveDegreeMap v hv hv0).modulus k = k := by
+  rw [positiveDegreeMap]
+  exact (Mei.PositiveDegreeMap.ofBound_modulus _ _ _ _ k).trans (one_mul k)
 
 end DegreeMap
 
