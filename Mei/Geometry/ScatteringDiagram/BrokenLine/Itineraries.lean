@@ -480,6 +480,109 @@ theorem cutoffDecoratedRayFiberEquiv_decoration [Finite J] (k : ℕ) (Q : V)
   rw [CutoffDecoratedRay.decoration, DecoratedAdmissibleRay.decoration_zero]
   rfl
 
+namespace CutoffDecoratedRay
+
+variable {d ℳ T a v f ε} {k : ℕ} [Finite J]
+
+local notation "Types" => CutoffDecoratedType d ℳ T a v f ε k
+local notation "Rays(" Q ")" => CutoffDecoratedRay d ℳ T a v f c ε P W S C k Q
+local notation "domain(" t ")" => CutoffDecoratedType.domain c P W S C t
+local notation "fiber(" Q ")" => cutoffDecoratedRayFiberEquiv d ℳ T a v f c ε P W S C k Q
+
+/-- Canonical continuation between endpoints admitting exactly the same complete
+types. The geometric ray is reconstructed at the new endpoint. -/
+def endpointEquiv {Q Q' : V} (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) :
+    Rays(Q) ≃ Rays(Q') :=
+  (fiber(Q)).trans ((Equiv.subtypeEquivRight h).trans (fiber(Q')).symm)
+
+/-- Canonical endpoint continuation preserves the entire decorated type. -/
+@[simp↓]
+theorem endpointEquiv_type {Q Q' : V}
+    (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) (r : Rays(Q)) :
+    (fiber(Q') (endpointEquiv c P W S C h r)).val = (fiber(Q) r).val := by
+  simp only [endpointEquiv, Equiv.trans_apply, Equiv.apply_symm_apply]
+  rfl
+
+/-- A ray at the new endpoint with the same complete type is the canonical
+continuation. No equality of geometric paths is substituted for equality of types. -/
+theorem endpointEquiv_eq_of_type_eq {Q Q' : V}
+    (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) (r : Rays(Q)) (r' : Rays(Q'))
+    (ht : (fiber(Q') r').val = (fiber(Q) r).val) :
+    endpointEquiv c P W S C h r = r' := by
+  apply (fiber(Q')).injective
+  apply Subtype.ext
+  exact (endpointEquiv_type c P W S C h r).trans ht.symm
+
+/-- Continuing a ray to its own endpoint is the identity. -/
+@[simp]
+theorem endpointEquiv_self {Q : V}
+    (h : ∀ t : Types, Q ∈ domain(t) ↔ Q ∈ domain(t)) (r : Rays(Q)) :
+    endpointEquiv c P W S C h r = r :=
+  endpointEquiv_eq_of_type_eq c P W S C h r r rfl
+
+/-- Endpoint continuation is coherent under composition. -/
+@[simp]
+theorem endpointEquiv_trans {Q₀ Q₁ Q₂ : V}
+    (h₀₁ : ∀ t : Types, Q₀ ∈ domain(t) ↔ Q₁ ∈ domain(t))
+    (h₁₂ : ∀ t : Types, Q₁ ∈ domain(t) ↔ Q₂ ∈ domain(t)) (r : Rays(Q₀)) :
+    endpointEquiv c P W S C h₁₂ (endpointEquiv c P W S C h₀₁ r) =
+      endpointEquiv c P W S C (fun t => (h₀₁ t).trans (h₁₂ t)) r := by
+  apply (fiber(Q₂)).injective
+  apply Subtype.ext
+  simp only [endpointEquiv_type]
+
+/-- Reversing the endpoint comparison gives the inverse continuation. -/
+@[simp]
+theorem endpointEquiv_symm {Q Q' : V}
+    (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) :
+    (endpointEquiv c P W S C h).symm = endpointEquiv c P W S C (fun t => (h t).symm) := by
+  apply Equiv.ext
+  intro r'
+  apply (endpointEquiv c P W S C h).injective
+  rw [Equiv.apply_symm_apply, endpointEquiv_trans, endpointEquiv_self]
+
+/-- The whole decoration is constant along canonical endpoint continuation. -/
+@[simp↓]
+theorem endpointEquiv_decoration {Q Q' : V}
+    (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) (r : Rays(Q)) :
+    (endpointEquiv c P W S C h r).decoration = r.decoration := by
+  rw [← cutoffDecoratedRayFiberEquiv_decoration d ℳ T a v f c ε P W S C,
+    endpointEquiv_type, cutoffDecoratedRayFiberEquiv_decoration]
+
+/-- Inverse continuation preserves the complete type before the fiber map expands. -/
+@[simp↓]
+theorem endpointEquiv_symm_type {Q Q' : V}
+    (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) (r : Rays(Q')) :
+    (fiber(Q) ((endpointEquiv c P W S C h).symm r)).val = (fiber(Q') r).val := by
+  rw [endpointEquiv_symm, endpointEquiv_type]
+
+/-- Inverse continuation preserves the whole coefficient before decorations expand. -/
+@[simp↓]
+theorem endpointEquiv_symm_decoration {Q Q' : V}
+    (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) (r : Rays(Q')) :
+    ((endpointEquiv c P W S C h).symm r).decoration = r.decoration := by
+  rw [endpointEquiv_symm, endpointEquiv_decoration]
+
+/-- Off one finite arrangement, complete type admission is constant on an open
+convex neighborhood. This is the shared geometric input for canonical fiber
+continuation, product charts, and locally constant weighted evaluation. -/
+theorem exists_typeDomain_neighborhoods
+    {Λ : Type*} [AddCommGroup Λ] {i : Λ →+ V}
+    {h : TauCeti.Toric.IsIntegralLattice i}
+    (hdom : ∀ t : Types, IsRationalSemilinear h (domain(t))) :
+    ∃ E : ExceptionalArrangement V,
+      (∀ t : Types, frontier (domain(t)) ⊆ {Q | ¬ E.IsGeneric Q}) ∧
+      ∀ Q₀, E.IsGeneric Q₀ → ∃ U : Set V,
+        IsOpen U ∧ Convex ℝ U ∧ Q₀ ∈ U ∧
+          ∀ Q ∈ U, ∀ t : Types, Q₀ ∈ domain(t) ↔ Q ∈ domain(t) := by
+  obtain ⟨E, hfrontier, hstable⟩ := IsRationalSemilinear.exists_membershipArrangement hdom
+  refine ⟨E, hfrontier, fun Q₀ hQ₀ => ?_⟩
+  obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff_ball.mp (hstable Q₀ hQ₀)
+  exact ⟨Metric.ball Q₀ δ, Metric.isOpen_ball, convex_ball Q₀ δ, Metric.mem_ball_self hδ,
+    fun Q hQ t => (hball Q hQ t).symm⟩
+
+end CutoffDecoratedRay
+
 /-- At any endpoint the full cutoff family has finitely many decorated rays,
 without choosing or bounding the encounter itinerary beforehand. -/
 instance [Finite J] (k : ℕ) (Q : V) :
@@ -622,15 +725,13 @@ theorem exists_cutoffDecoratedRay_membershipArrangement (k : ℕ) :
   have hdom (t : CutoffDecoratedType d ℳ T a (fun q => i (w q)) f ε k) :
       IsRationalSemilinear h (CutoffDecoratedType.domain c P W S C t) :=
     t.isRationalSemilinear_domain c P W S C h w hf hP hW hS hC
-  obtain ⟨E, hfrontier, hstable⟩ := IsRationalSemilinear.exists_membershipArrangement hdom
-  refine ⟨E, hfrontier, fun Q hQ => (hstable Q hQ).mono fun Q' hQQ' => ?_⟩
-  let eQ (Q : V) := cutoffDecoratedRayFiberEquiv d ℳ T a (fun q => i (w q))
-    f c ε P W S C k Q
-  let e := (eQ Q).trans ((Equiv.subtypeEquivRight (fun t => (hQQ' t).symm)).trans
-    (eQ Q').symm)
-  refine ⟨e, fun r => ?_⟩
-  have he : (eQ Q' (e r)).val = (eQ Q r).val := by simp [e]
-  exact he
+  obtain ⟨E, hfrontier, hstable⟩ :=
+    CutoffDecoratedRay.exists_typeDomain_neighborhoods c P W S C hdom
+  refine ⟨E, hfrontier, fun Q hQ => ?_⟩
+  obtain ⟨U, hUopen, _, hQU, hU⟩ := hstable Q hQ
+  filter_upwards [hUopen.mem_nhds hQU] with Q' hQ'
+  exact ⟨CutoffDecoratedRay.endpointEquiv c P W S C (hU Q' hQ'),
+    CutoffDecoratedRay.endpointEquiv_type c P W S C (hU Q' hQ')⟩
 
 /-- Weighted evaluation over the complete cutoff family is locally constant off
 one finite exceptional arrangement, over arbitrary semirings. -/
@@ -638,18 +739,19 @@ theorem exists_cutoffDecoratedEvaluation_eventually_eq (k : ℕ) :
     ∃ E : ExceptionalArrangement V, ∀ Q, E.IsGeneric Q → ∀ᶠ Q' in nhds Q,
       cutoffDecoratedEvaluation d ℳ T a (fun q => i (w q)) f c ε P W S C k Q' =
         cutoffDecoratedEvaluation d ℳ T a (fun q => i (w q)) f c ε P W S C k Q := by
-  obtain ⟨E, _, hstable⟩ := exists_cutoffDecoratedRay_membershipArrangement d ℳ T a
-    f c ε P W S C h w hf hP hW hS hC k
-  refine ⟨E, fun Q hQ => (hstable Q hQ).mono fun Q' ⟨e, he⟩ => ?_⟩
+  have hdom (t : CutoffDecoratedType d ℳ T a (fun q => i (w q)) f ε k) :
+      IsRationalSemilinear h (CutoffDecoratedType.domain c P W S C t) :=
+    t.isRationalSemilinear_domain c P W S C h w hf hP hW hS hC
+  obtain ⟨E, _, hstable⟩ := CutoffDecoratedRay.exists_typeDomain_neighborhoods c P W S C hdom
+  refine ⟨E, fun Q hQ => ?_⟩
+  obtain ⟨U, hUopen, _, hQU, hU⟩ := hstable Q hQ
+  filter_upwards [hUopen.mem_nhds hQU] with Q' hQ'
   let := Fintype.ofFinite
     (CutoffDecoratedRay d ℳ T a (fun q => i (w q)) f c ε P W S C k Q)
   let := Fintype.ofFinite
     (CutoffDecoratedRay d ℳ T a (fun q => i (w q)) f c ε P W S C k Q')
-  apply (Fintype.sum_equiv e _ _ ?_).symm
-  intro r
-  rw [← cutoffDecoratedRayFiberEquiv_decoration d ℳ T a (fun q => i (w q))
-    f c ε P W S C k Q' (e r), he r,
-    cutoffDecoratedRayFiberEquiv_decoration]
+  exact (Fintype.sum_equiv (CutoffDecoratedRay.endpointEquiv c P W S C (hU Q' hQ'))
+    _ _ (fun r => (CutoffDecoratedRay.endpointEquiv_decoration c P W S C (hU Q' hQ') r).symm)).symm
 
 end Rational
 

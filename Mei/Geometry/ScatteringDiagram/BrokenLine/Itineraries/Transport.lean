@@ -16,8 +16,9 @@ decoration and obey identity, inverse and composition laws. On a neighborhood
 with constant admitted types they trivialize the actual ray family by a fixed
 fiber, and each transported path varies continuously in compact-open topology.
 
-A common membership arrangement supplies such open neighborhoods for rational
-semilinear type domains. Distinct complete types remain separate even when their
+The canonical continuation theorem supplies such open neighborhoods from a
+common membership arrangement for rational semilinear type domains. Distinct
+complete types remain separate even when their
 geometric paths or decorations coincide. The family equivalence is an equivalence
 of actual rays; no topology on the dependent ray fibers is asserted.
 
@@ -43,64 +44,6 @@ local notation "Types" => CutoffDecoratedType d ℳ T a v f ε k
 local notation "Rays(" Q ")" => CutoffDecoratedRay d ℳ T a v f c ε P W S C k Q
 local notation "domain(" t ")" => CutoffDecoratedType.domain c P W S C t
 local notation "fiber(" Q ")" => cutoffDecoratedRayFiberEquiv d ℳ T a v f c ε P W S C k Q
-
-/-- Canonical continuation between endpoints admitting exactly the same complete
-types. The geometric ray is reconstructed at the new endpoint. -/
-def endpointEquiv {Q Q' : V} (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) :
-    Rays(Q) ≃ Rays(Q') :=
-  (fiber(Q)).trans ((Equiv.subtypeEquivRight h).trans (fiber(Q')).symm)
-
-/-- Canonical endpoint continuation preserves the entire decorated type. -/
-@[simp↓]
-theorem endpointEquiv_type {Q Q' : V}
-    (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) (r : Rays(Q)) :
-    (fiber(Q') (endpointEquiv c P W S C h r)).val = (fiber(Q) r).val := by
-  simp only [endpointEquiv, Equiv.trans_apply, Equiv.apply_symm_apply]
-  rfl
-
-/-- A ray at the new endpoint with the same complete type is the canonical
-continuation. No equality of geometric paths is substituted for equality of types. -/
-theorem endpointEquiv_eq_of_type_eq {Q Q' : V}
-    (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) (r : Rays(Q)) (r' : Rays(Q'))
-    (ht : (fiber(Q') r').val = (fiber(Q) r).val) :
-    endpointEquiv c P W S C h r = r' := by
-  apply (fiber(Q')).injective
-  apply Subtype.ext
-  exact (endpointEquiv_type c P W S C h r).trans ht.symm
-
-/-- Continuing a ray to its own endpoint is the identity. -/
-@[simp]
-theorem endpointEquiv_self {Q : V}
-    (h : ∀ t : Types, Q ∈ domain(t) ↔ Q ∈ domain(t)) (r : Rays(Q)) :
-    endpointEquiv c P W S C h r = r :=
-  endpointEquiv_eq_of_type_eq c P W S C h r r rfl
-
-/-- Endpoint continuation is coherent under composition. -/
-theorem endpointEquiv_trans {Q₀ Q₁ Q₂ : V}
-    (h₀₁ : ∀ t : Types, Q₀ ∈ domain(t) ↔ Q₁ ∈ domain(t))
-    (h₁₂ : ∀ t : Types, Q₁ ∈ domain(t) ↔ Q₂ ∈ domain(t)) (r : Rays(Q₀)) :
-    endpointEquiv c P W S C h₁₂ (endpointEquiv c P W S C h₀₁ r) =
-      endpointEquiv c P W S C (fun t => (h₀₁ t).trans (h₁₂ t)) r := by
-  apply (fiber(Q₂)).injective
-  apply Subtype.ext
-  simp only [endpointEquiv_type]
-
-/-- Reversing the endpoint comparison gives the inverse continuation. -/
-theorem endpointEquiv_symm {Q Q' : V}
-    (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) :
-    (endpointEquiv c P W S C h).symm = endpointEquiv c P W S C (fun t => (h t).symm) := by
-  apply Equiv.ext
-  intro r'
-  apply (endpointEquiv c P W S C h).injective
-  rw [Equiv.apply_symm_apply, endpointEquiv_trans, endpointEquiv_self]
-
-/-- The whole decoration is constant along canonical endpoint continuation. -/
-@[simp↓]
-theorem endpointEquiv_decoration {Q Q' : V}
-    (h : ∀ t : Types, Q ∈ domain(t) ↔ Q' ∈ domain(t)) (r : Rays(Q)) :
-    (endpointEquiv c P W S C h r).decoration = r.decoration := by
-  rw [← cutoffDecoratedRayFiberEquiv_decoration d ℳ T a v f c ε P W S C,
-    endpointEquiv_type, cutoffDecoratedRayFiberEquiv_decoration]
 
 /-- A neighborhood with constant admitted types is a product of its endpoints
 and one actual ray fiber. All actual rays over the neighborhood are retained. -/
@@ -149,6 +92,14 @@ theorem familyTrivialization_decoration {U : Set V} {Q₀ : V}
     (familyTrivialization c P W S C hU z).2.decoration = z.2.decoration :=
   endpointEquiv_decoration c P W S C (hU z.1 z.1.property) z.2
 
+/-- Returning a chart ray to the reference fiber preserves its whole coefficient. -/
+@[simp↓]
+theorem familyTrivialization_symm_decoration {U : Set V} {Q₀ : V}
+    (hU : ∀ Q ∈ U, ∀ t : Types, Q₀ ∈ domain(t) ↔ Q ∈ domain(t))
+    (z : Σ Q : U, Rays(Q.val)) :
+    ((familyTrivialization c P W S C hU).symm z).2.decoration = z.2.decoration := by
+  rw [familyTrivialization_symm_apply, endpointEquiv_symm_decoration]
+
 /-- Changing the reference fiber gives a constant transition on an overlap:
 first transport the fixed reference ray, then use the second product chart. -/
 theorem familyTrivialization_change_base {U : Set V} {Q₀ Q₁ : V}
@@ -183,33 +134,5 @@ theorem continuous_familyTrivialization_path {U : Set V} {Q₀ : V}
       (continuous_subtype_val : Continuous (fun Q : U => Q.val))
   · intro Q
     exact familyTrivialization_type c P W S C hU (Q, r)
-
-/-- A single exceptional arrangement supplies genuine local product charts of
-actual rays, with continuous path branches and constant complete types and weights.
-The charts also admit the canonical identity and composition laws above. -/
-theorem exists_localFamilyTrivialization
-    {Λ : Type*} [AddCommGroup Λ] {i : Λ →+ V}
-    {h : TauCeti.Toric.IsIntegralLattice i}
-    (hdom : ∀ t : Types, IsRationalSemilinear h (domain(t))) :
-    ∃ E : ExceptionalArrangement V,
-      (∀ t : Types, frontier (domain(t)) ⊆ {Q | ¬ E.IsGeneric Q}) ∧
-      ∀ Q₀, E.IsGeneric Q₀ →
-        ∃ (U : Set V) (_ : IsOpen U) (_ : Q₀ ∈ U)
-          (hU : ∀ Q ∈ U, ∀ t : Types, Q₀ ∈ domain(t) ↔ Q ∈ domain(t)),
-          let e := familyTrivialization c P W S C hU
-          (∀ z, (e z).1 = z.1) ∧
-          (∀ z, (fiber((e z).1.val) (e z).2).val = (fiber(Q₀) z.2).val) ∧
-          (∀ z, (e z).2.decoration = z.2.decoration) ∧
-          ∀ r : Rays(Q₀), Continuous
-            (fun Q : U => (e (Q, r)).2.realization.2.ray.toContinuousMap) := by
-  obtain ⟨E, hfrontier, hstable⟩ := IsRationalSemilinear.exists_membershipArrangement hdom
-  refine ⟨E, hfrontier, fun Q₀ hQ₀ => ?_⟩
-  obtain ⟨U, hUsub, hUopen, hQ₀U⟩ := mem_nhds_iff.mp (hstable Q₀ hQ₀)
-  let hU (Q : V) (hQ : Q ∈ U) (t : Types) := (hUsub hQ t).symm
-  refine ⟨U, hUopen, hQ₀U, hU, ?_, ?_, ?_, ?_⟩
-  · exact familyTrivialization_endpoint c P W S C hU
-  · exact familyTrivialization_type c P W S C hU
-  · exact familyTrivialization_decoration c P W S C hU
-  · exact continuous_familyTrivialization_path c P W S C hU
 
 end Mei.CutoffDecoratedRay
