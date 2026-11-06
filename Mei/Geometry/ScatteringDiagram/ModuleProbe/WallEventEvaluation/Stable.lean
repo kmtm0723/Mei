@@ -125,13 +125,8 @@ theorem dense_stableWallEventLocus (K : ℕ)
     (B.wall a).rational_support
   obtain ⟨J, hJ, S, hS, hUnion⟩ := exists_finite_singularSupport_polyhedra W hW
   let := hJ
-  have hf (e : WallEvent (B.active K)) : Toric.IsRationalFunctional h (f e).toLinearMap := by
-    change Toric.IsRationalFunctional h (WallEvent.normal e (B.activeNormal K)).toLinearMap
-    rw [WallEvent.normal_def, B.activeNormal_apply]
-    convert Toric.IsRationalFunctional.realCharacter h
-      (B.wall e.1.property.choose).normal.toIntLinearMap using 1
-    ext x
-    exact h.continuousRealCharacter_apply _ x
+  have hf (e : WallEvent (B.active K)) : Toric.IsRationalFunctional h (f e).toLinearMap :=
+    B.isRationalFunctional_wallEventNormal K e
   have hP (e : WallEvent (B.active K)) : IsRationalSemilinear h (P e) :=
     e.isRationalSemilinear_support W fun a => (hW a).isLocallyClosedPolyhedron.isRationalSemilinear
   have hdom (t : Types) : IsRationalSemilinear h

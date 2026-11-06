@@ -64,9 +64,10 @@ variable (hinitial : ∀ c, D.wall (.inl c) =
 
 include hinitial in
 /-- Every intrinsically stable all-order endpoint has a unique completed actual
-ray value. The locus is dense Gδ independently of the auxiliary arrangements,
-and completed transport holds between any two of its points. Coherence across
-changing geometric inventories is a conclusion, not a hypothesis. -/
+ray value on a dense locus, independently of the auxiliary arrangements, and
+completed transport holds between any two of its points. The Gδ property is
+provided separately by `isGδ_stableWallEventLocusAll`; compatibility across
+changing geometric inventories follows from the returned projection identities. -/
 theorem exists_completedWallEventEvaluation_on_stableLocus
     (hBc : B.Consistent) (hD : D.Consistent)
     (hB : (D.map (chargeZeroGradedLieHom d ℳ p ℒ)
