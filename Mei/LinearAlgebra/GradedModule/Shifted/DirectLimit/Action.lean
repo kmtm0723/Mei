@@ -64,6 +64,7 @@ theorem shiftedDirectLimitAction_toShiftedDirectLimit (g : G) (s : Multiset d.mo
   d.compatibleDirectLimitEquiv_apply ℳ act hact g s x
 
 /-- Any containing chart intertwines the descended action at an arbitrary origin. -/
+@[simp]
 theorem shiftedDirectLimitAction_toShiftedDirectLimitOfChart (g : G) (p : Γ)
     (s : Multiset d.monoid) (hp : p - d.coefficientOrigin s ∈ d.monoid)
     (x : d.ShiftedCoefficients ℳ p) :
