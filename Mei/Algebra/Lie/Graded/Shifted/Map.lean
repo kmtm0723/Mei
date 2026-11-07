@@ -128,4 +128,35 @@ theorem quotientCoefficientMap_truncatedBCHAction (k : ℕ) (g : d.truncatedGrou
   simpa only [quotientCoefficientMap_def, GradedLieHom.truncatedMap_id,
     LieHom.bchGroupMap_id, MonoidHom.id_apply] using ht
 
+
+include hequiv in
+/-- Fixed-degree completed coefficient maps intertwine BCH actions by specialization
+of shifted naturality along the identity degree map. -/
+@[simp]
+theorem completionCoefficientMap_completedBCHAction (g : d.completedBCHGroup ℒ)
+    (a : d.ShiftedCoefficients ℳ p) :
+    d.completionCoefficientMap ℳ 𝓝 p f hf
+        ((d.shiftedLieFiltration ℒ ℳ p).completedBCHAction d ℒ g a) =
+      (d.shiftedLieFiltration ℒ 𝓝 p).completedBCHAction d ℒ g
+        (d.completionCoefficientMap ℳ 𝓝 p f hf a) := by
+  have hf' : ∀ q, ℳ q ≤ (𝓝 (PositiveDegreeMap.id d q)).comap f :=
+    fun q => by simpa only [PositiveDegreeMap.id_apply] using hf q
+  have h := (PositiveDegreeMap.id d).shiftedCompletionMap_completedBCHAction ℳ 𝓝 p
+    (GradedLieHom.id ℒ) f hf'
+    (fun x z => by simpa only [GradedLieHom.id_apply] using hequiv x z) g a
+  simp only [GradedLieHom.completedMap_id, MonoidHom.id_apply] at h
+  -- Transport the action across the opaque identity target origin; coefficient-map
+  -- coherence and equivariance are already supplied by the two general theorems.
+  have haction {q : Γ} (hq : q = p) {u : d.ShiftedCoefficients 𝓝 q}
+      {v : d.ShiftedCoefficients 𝓝 p} (huv : HEq u v) :
+      HEq ((d.shiftedLieFiltration ℒ 𝓝 q).completedBCHAction d ℒ g u)
+        ((d.shiftedLieFiltration ℒ 𝓝 p).completedBCHAction d ℒ g v) := by
+    subst q
+    cases huv
+    rfl
+  exact eq_of_heq
+    ((d.completionCoefficientMap_heq_shiftedCompletionMap_id ℳ 𝓝 f hf p hf' _).trans
+      ((heq_of_eq h).trans (haction (PositiveDegreeMap.id_apply p)
+        (d.completionCoefficientMap_heq_shiftedCompletionMap_id ℳ 𝓝 f hf p hf' a).symm)))
+
 end Mei.PositiveDegrees

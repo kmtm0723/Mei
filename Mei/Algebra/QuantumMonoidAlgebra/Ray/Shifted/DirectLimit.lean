@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.DirectLimit.Basic
+public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.Action
 public import Mei.Algebra.QuantumMonoidAlgebra.Ray.Shifted.Inclusion
 
 /-!
@@ -27,41 +28,17 @@ variable {R Γ : Type*} [CommRing R] [AddCommGroup Γ] [DecidableEq Γ]
   (q : Rˣ) (β : LinearMap.BilinForm ℤ Γ) (d : PositiveDegrees Γ)
   (n : d.monoid) (hn : 0 < d.degree n)
 
-private def rayDirectLimitEquiv (H : (PowerSeries R)ˣ) :
-    d.ShiftedDirectLimit (grade q β) ≃ₗ[R] d.ShiftedDirectLimit (grade q β) :=
-  Module.DirectLimit.congr
-    (fun s => shiftedRayAction q β d n hn (d.coefficientOrigin s) H)
-    (by
-      intro s t h
-      apply LinearMap.ext
-      intro x
-      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, PositiveDegrees.coefficientInclusion_eq]
-      exact (shiftedCompletedInclusion_shiftedRayAction q β d n hn
-        (d.coefficientOrigin s) (d.coefficientOrigin t)
-        (d.coefficientOrigin_sub_mem h) H x).symm)
-
-private theorem rayDirectLimitEquiv_apply (H : (PowerSeries R)ˣ)
-    (s : Multiset d.monoid) (x : d.ShiftedCoefficients (grade q β) (d.coefficientOrigin s)) :
-    rayDirectLimitEquiv q β d n hn H (d.toShiftedDirectLimit (grade q β) s x) =
-      d.toShiftedDirectLimit (grade q β) s
-        (shiftedRayAction q β d n hn (d.coefficientOrigin s) H x) := by
-  simp only [rayDirectLimitEquiv, PositiveDegrees.toShiftedDirectLimit_apply]
-  apply Module.DirectLimit.congr_apply_of
-
-private theorem rayDirectLimitEquiv_mul (H K : (PowerSeries R)ˣ) :
-    rayDirectLimitEquiv q β d n hn (H * K) =
-      rayDirectLimitEquiv q β d n hn H * rayDirectLimitEquiv q β d n hn K := by
-  apply LinearEquiv.ext
-  intro x
-  obtain ⟨s, a, ha⟩ := d.exists_toShiftedDirectLimit (grade q β) x
-  rw [← ha]
-  simp only [LinearEquiv.mul_apply, rayDirectLimitEquiv_apply,
-    (shiftedRayAction q β d n hn (d.coefficientOrigin s)).map_mul]
-
 /-- Unit power series act on the direct limit by the compatible shifted ray actions. -/
 def directLimitRayAction : (PowerSeries R)ˣ →*
     (d.ShiftedDirectLimit (grade q β) ≃ₗ[R] d.ShiftedDirectLimit (grade q β)) :=
-  MonoidHom.mk' (rayDirectLimitEquiv q β d n hn) (rayDirectLimitEquiv_mul q β d n hn)
+  d.shiftedDirectLimitAction (grade q β) (shiftedRayAction q β d n hn)
+    (shiftedCompletedInclusion_shiftedRayAction q β d n hn)
+
+/-- The ray action is the common descent of its translated completion actions. -/
+theorem directLimitRayAction_eq_shiftedDirectLimitAction :
+    directLimitRayAction q β d n hn =
+      d.shiftedDirectLimitAction (grade q β) (shiftedRayAction q β d n hn)
+        (shiftedCompletedInclusion_shiftedRayAction q β d n hn) := (rfl)
 
 /-- The direct-limit action restricts to the original action in every multiset chart. -/
 @[simp]
@@ -70,7 +47,7 @@ theorem directLimitRayAction_toShiftedDirectLimit (H : (PowerSeries R)ˣ)
     directLimitRayAction q β d n hn H (d.toShiftedDirectLimit (grade q β) s x) =
       d.toShiftedDirectLimit (grade q β) s
         (shiftedRayAction q β d n hn (d.coefficientOrigin s) H x) :=
-  rayDirectLimitEquiv_apply q β d n hn H s x
+  d.shiftedDirectLimitAction_toShiftedDirectLimit (grade q β) _ _ H s x
 
 /-- Any containing chart gives an equivariant embedding of the arbitrary-origin action. -/
 theorem directLimitRayAction_toShiftedDirectLimitOfChart (H : (PowerSeries R)ˣ)
@@ -78,11 +55,8 @@ theorem directLimitRayAction_toShiftedDirectLimitOfChart (H : (PowerSeries R)ˣ)
     (x : d.ShiftedCoefficients (grade q β) p) :
     directLimitRayAction q β d n hn H (d.toShiftedDirectLimitOfChart (grade q β) p s hp x) =
       d.toShiftedDirectLimitOfChart (grade q β) p s hp
-        (shiftedRayAction q β d n hn p H x) := by
-  simp only [PositiveDegrees.toShiftedDirectLimitOfChart_apply,
-    directLimitRayAction_toShiftedDirectLimit]
-  exact congrArg (d.toShiftedDirectLimit (grade q β) s)
-    (shiftedCompletedInclusion_shiftedRayAction q β d n hn p (d.coefficientOrigin s) hp H x).symm
+        (shiftedRayAction q β d n hn p H x) :=
+  d.shiftedDirectLimitAction_toShiftedDirectLimitOfChart (grade q β) _ _ H p s hp x
 
 /-- Reversed crossings induce the inverse direct-limit action. -/
 @[simp]

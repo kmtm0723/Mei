@@ -6,8 +6,6 @@ Authors: Codex
 module
 
 public import Mei.LinearAlgebra.GradedModule.Shifted.Inclusion
-public import Mathlib.Algebra.Colimit.Module
-public import Mathlib.Algebra.BigOperators.Group.Multiset.Basic
 
 /-!
 # Direct limits of shifted completed coefficient modules
@@ -15,8 +13,9 @@ public import Mathlib.Algebra.BigOperators.Group.Multiset.Basic
 Finite multisets of positive degrees index translates by the negative of their
 sum. Enlarging a multiset includes its coefficient support into a larger one.
 This is a directed system of the existing shifted completions. Its module direct
-limit uses Mathlib's carrier and universal property. Every chart includes
-injectively, and every limit element is represented in one chart.
+limit uses Mathlib's carrier and universal property for arbitrary submodule
+families. Every limit element is represented in one chart; a graded decomposition
+also makes each chart inclusion injective.
 -/
 
 public section
@@ -26,7 +25,6 @@ namespace Mei.PositiveDegrees
 
 variable {Γ R M : Type*} [AddCommGroup Γ] [Ring R] [AddCommGroup M] [Module R M]
   [DecidableEq Γ] (d : PositiveDegrees Γ) (ℳ : Γ → Submodule R M)
-  [DirectSum.Decomposition ℳ]
 
 /-- The translate associated to a finite multiset of positive degrees. -/
 def coefficientOrigin (s : Multiset d.monoid) : Γ := -(s.sum : d.monoid)
@@ -89,7 +87,7 @@ instance instDirectedSystemCoefficientInclusion :
     (d.coefficientOrigin_sub_mem hst) _ (d.coefficientOrigin_sub_mem htu)
     (d.coefficientOrigin_sub_mem (hst.trans htu)) x
 
-omit [DirectSum.Decomposition ℳ] [DecidableEq Γ] in
+omit [DecidableEq Γ] in
 /-- The direct-system transition is the original completed support inclusion. -/
 theorem coefficientInclusion_eq (s t : Multiset d.monoid) (h : s ≤ t) :
     d.coefficientInclusion ℳ s t h =
@@ -108,7 +106,6 @@ def toShiftedDirectLimit (s : Multiset d.monoid) :
     (fun s => d.ShiftedCoefficients ℳ (d.coefficientOrigin s))
     (fun s t h => d.coefficientInclusion ℳ s t h) s
 
-omit [DirectSum.Decomposition ℳ] in
 /-- The chart embedding is Mathlib's canonical direct-limit inclusion. -/
 theorem toShiftedDirectLimit_apply (s : Multiset d.monoid)
     (x : d.ShiftedCoefficients ℳ (d.coefficientOrigin s)) :
@@ -117,7 +114,6 @@ theorem toShiftedDirectLimit_apply (s : Multiset d.monoid)
         (fun s => d.ShiftedCoefficients ℳ (d.coefficientOrigin s))
         (fun s t h => d.coefficientInclusion ℳ s t h) s x := (rfl)
 
-omit [DirectSum.Decomposition ℳ] in
 /-- Enlarging a chart leaves its direct-limit element unchanged. -/
 @[simp]
 theorem toShiftedDirectLimit_inclusion {s t : Multiset d.monoid} (h : s ≤ t)
@@ -127,7 +123,6 @@ theorem toShiftedDirectLimit_inclusion {s t : Multiset d.monoid} (h : s ≤ t)
   simp only [toShiftedDirectLimit]
   exact Module.DirectLimit.of_f
 
-omit [DirectSum.Decomposition ℳ] in
 /-- Every direct-limit coefficient is represented in a single completed chart. -/
 theorem exists_toShiftedDirectLimit (x : d.ShiftedDirectLimit ℳ) :
     ∃ s a, d.toShiftedDirectLimit ℳ s a = x := by
@@ -135,7 +130,7 @@ theorem exists_toShiftedDirectLimit (x : d.ShiftedDirectLimit ℳ) :
   exact Module.DirectLimit.exists_of x
 
 /-- The canonical map of each completed chart is injective. -/
-theorem toShiftedDirectLimit_injective (s : Multiset d.monoid) :
+theorem toShiftedDirectLimit_injective [DirectSum.Decomposition ℳ] (s : Multiset d.monoid) :
     Function.Injective (d.toShiftedDirectLimit ℳ s) := by
   intro x y h
   simp only [toShiftedDirectLimit] at h
@@ -161,7 +156,6 @@ def toShiftedDirectLimitOfChart (p : Γ) (s : Multiset d.monoid)
   (d.toShiftedDirectLimit ℳ s).comp
     (d.shiftedCompletedInclusion ℳ p (d.coefficientOrigin s) hp)
 
-omit [DirectSum.Decomposition ℳ] in
 /-- An arbitrary-origin embedding first includes its support in the specified chart. -/
 theorem toShiftedDirectLimitOfChart_apply (p : Γ) (s : Multiset d.monoid)
     (hp : p - d.coefficientOrigin s ∈ d.monoid) (x : d.ShiftedCoefficients ℳ p) :
@@ -170,13 +164,13 @@ theorem toShiftedDirectLimitOfChart_apply (p : Γ) (s : Multiset d.monoid)
   (rfl)
 
 /-- Each arbitrary-origin chart includes injectively as soon as a containing chart is given. -/
-theorem toShiftedDirectLimitOfChart_injective (p : Γ) (s : Multiset d.monoid)
+theorem toShiftedDirectLimitOfChart_injective [DirectSum.Decomposition ℳ]
+    (p : Γ) (s : Multiset d.monoid)
     (hp : p - d.coefficientOrigin s ∈ d.monoid) :
     Function.Injective (d.toShiftedDirectLimitOfChart ℳ p s hp) := by
   exact (d.toShiftedDirectLimit_injective ℳ s).comp
     (d.shiftedCompletedInclusion_injective ℳ p (d.coefficientOrigin s) hp)
 
-omit [DirectSum.Decomposition ℳ] in
 /-- A canonical chart inclusion is the arbitrary-origin inclusion at its own origin. -/
 theorem toShiftedDirectLimit_eq_ofChart (s : Multiset d.monoid)
     (x : d.ShiftedCoefficients ℳ (d.coefficientOrigin s)) :
