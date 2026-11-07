@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit
+public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.Action
 public import Mei.Algebra.Lie.Graded.Shifted.Support
 
 /-!
@@ -32,41 +32,12 @@ variable {Γ R L M : Type*} [AddCommGroup Γ] [CommRing R] [Algebra ℚ R]
   (ℳ : Γ → Submodule R M) [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ]
   [DirectSum.Decomposition ℳ] [SetLike.GradedBracket ℒ ℳ]
 
-private def shiftedBCHDirectLimitEquiv (H : d.completedBCHGroup ℒ) :
-    d.ShiftedDirectLimit ℳ ≃ₗ[R] d.ShiftedDirectLimit ℳ :=
-  Module.DirectLimit.congr
-    (fun s => (d.shiftedLieFiltration ℒ ℳ (d.coefficientOrigin s)).completedBCHAction d ℒ H)
-    (by
-      intro s t h
-      apply LinearMap.ext
-      intro x
-      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, PositiveDegrees.coefficientInclusion_eq]
-      exact (d.shiftedCompletedInclusion_completedBCHAction ℒ ℳ
-        (d.coefficientOrigin s) (d.coefficientOrigin t)
-        (d.coefficientOrigin_sub_mem h) H x).symm)
-
-private theorem shiftedBCHDirectLimitEquiv_apply (H : d.completedBCHGroup ℒ)
-    (s : Multiset d.monoid) (x : d.ShiftedCoefficients ℳ (d.coefficientOrigin s)) :
-    shiftedBCHDirectLimitEquiv d ℒ ℳ H (d.toShiftedDirectLimit ℳ s x) =
-      d.toShiftedDirectLimit ℳ s
-        ((d.shiftedLieFiltration ℒ ℳ (d.coefficientOrigin s)).completedBCHAction d ℒ H x) := by
-  simp only [shiftedBCHDirectLimitEquiv, PositiveDegrees.toShiftedDirectLimit_apply]
-  apply Module.DirectLimit.congr_apply_of
-
-private theorem shiftedBCHDirectLimitEquiv_mul (H K : d.completedBCHGroup ℒ) :
-    shiftedBCHDirectLimitEquiv d ℒ ℳ (H * K) =
-      shiftedBCHDirectLimitEquiv d ℒ ℳ H * shiftedBCHDirectLimitEquiv d ℒ ℳ K := by
-  apply LinearEquiv.ext
-  intro x
-  obtain ⟨s, a, ha⟩ := d.exists_toShiftedDirectLimit ℳ x
-  rw [← ha]
-  simp only [LinearEquiv.mul_apply, shiftedBCHDirectLimitEquiv_apply,
-    ((d.shiftedLieFiltration ℒ ℳ (d.coefficientOrigin s)).completedBCHAction d ℒ).map_mul]
-
 /-- Completed BCH labels act on the direct limit by compatible shifted actions. -/
 def shiftedDirectLimitBCHAction : d.completedBCHGroup ℒ →*
     (d.ShiftedDirectLimit ℳ ≃ₗ[R] d.ShiftedDirectLimit ℳ) :=
-  MonoidHom.mk' (shiftedBCHDirectLimitEquiv d ℒ ℳ) (shiftedBCHDirectLimitEquiv_mul d ℒ ℳ)
+  d.shiftedDirectLimitAction ℳ
+    (fun p => (d.shiftedLieFiltration ℒ ℳ p).completedBCHAction d ℒ)
+    (d.shiftedCompletedInclusion_completedBCHAction ℒ ℳ)
 
 /-- The direct-limit action restricts to the original action in every multiset chart. -/
 @[simp]
@@ -75,7 +46,7 @@ theorem shiftedDirectLimitBCHAction_toShiftedDirectLimit (H : d.completedBCHGrou
     shiftedDirectLimitBCHAction d ℒ ℳ H (d.toShiftedDirectLimit ℳ s x) =
       d.toShiftedDirectLimit ℳ s
         ((d.shiftedLieFiltration ℒ ℳ (d.coefficientOrigin s)).completedBCHAction d ℒ H x) :=
-  shiftedBCHDirectLimitEquiv_apply d ℒ ℳ H s x
+  d.shiftedDirectLimitAction_toShiftedDirectLimit ℳ _ _ H s x
 
 /-- Any containing chart gives an equivariant embedding of the arbitrary-origin action. -/
 theorem shiftedDirectLimitBCHAction_toShiftedDirectLimitOfChart (H : d.completedBCHGroup ℒ)
@@ -83,12 +54,8 @@ theorem shiftedDirectLimitBCHAction_toShiftedDirectLimitOfChart (H : d.completed
     (x : d.ShiftedCoefficients ℳ p) :
     shiftedDirectLimitBCHAction d ℒ ℳ H (d.toShiftedDirectLimitOfChart ℳ p s hp x) =
       d.toShiftedDirectLimitOfChart ℳ p s hp
-        ((d.shiftedLieFiltration ℒ ℳ p).completedBCHAction d ℒ H x) := by
-  simp only [PositiveDegrees.toShiftedDirectLimitOfChart_apply,
-    shiftedDirectLimitBCHAction_toShiftedDirectLimit]
-  exact congrArg (d.toShiftedDirectLimit ℳ s)
-    (d.shiftedCompletedInclusion_completedBCHAction ℒ ℳ p
-      (d.coefficientOrigin s) hp H x).symm
+        ((d.shiftedLieFiltration ℒ ℳ p).completedBCHAction d ℒ H x) :=
+  d.shiftedDirectLimitAction_toShiftedDirectLimitOfChart ℳ _ _ H p s hp x
 
 /-- Inverse labels induce the inverse direct-limit action. -/
 @[simp]
