@@ -25,8 +25,7 @@ variable {R A G : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Monoid G]
 /-- Upgrade a multiplicative linear action to an action by algebra automorphisms. -/
 def toAlgAut : G →* (A ≃ₐ[R] A) where
   toFun g := AlgEquiv.ofLinearEquiv (act g)
-    (show act g 1 = 1 from
-      ({ (act g).toEquiv with map_mul' := hmul g } : A ≃* A).map_one)
+    ({ (act g).toEquiv with map_mul' := hmul g } : A ≃* A).map_one
     (hmul g)
   map_one' := by
     apply AlgEquiv.ext
