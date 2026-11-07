@@ -277,11 +277,8 @@ theorem existsUnique_sectionsPullback_lift_of_copies_eq [∀ b, Nonempty (D.face
   have hi : Function.Injective P := D.sectionsPullback_injective_of_face_coverage I
   have hmem x : ℓ x ∈ P.range :=
     D.exists_sectionsPullback_eq_of_copies_eq I hinj (ℓ x) (hℓ x)
-  let a := (LinearEquiv.ofInjective P hi).symm.toLinearMap.comp (ℓ.codRestrict P.range hmem)
-  have ha : P.comp a = ℓ := by
-    apply LinearMap.ext
-    intro x
-    exact LinearEquiv.ofInjective_symm_apply P (h := hi) ((ℓ.codRestrict P.range hmem) x)
+  let a := ℓ.codLift P hi hmem
+  have ha : P.comp a = ℓ := LinearMap.comp_codLift ℓ P hi hmem
   refine ⟨a, ha, ?_⟩
   intro q hq
   apply LinearMap.ext
