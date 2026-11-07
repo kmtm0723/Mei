@@ -32,6 +32,7 @@ variable {Γ R A G : Type*} [AddCommGroup Γ] [CommRing R]
       act q g (d.shiftedCompletedInclusion 𝒜 p q hpq x))
 
 /-- Preservation of chartwise mixed products descends to the global product. -/
+@[simp]
 theorem shiftedDirectLimitAction_map_mul
     (hmul : ∀ (p q : Γ) (g : G) (x : d.ShiftedCoefficients 𝒜 p)
       (y : d.ShiftedCoefficients 𝒜 q),
