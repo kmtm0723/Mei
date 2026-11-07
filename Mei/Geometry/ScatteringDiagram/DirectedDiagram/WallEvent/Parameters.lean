@@ -51,6 +51,16 @@ abbrev activeNormal (k : ℕ) : D.active k → V →L[ℝ] ℝ := fun c =>
 theorem activeNormal_apply (k : ℕ) (c : D.active k) :
     D.activeNormal k c = h.continuousRealCharacter (D.wall c).normal := (rfl)
 
+/-- The normal selected by an active wall event is rational for the integral
+lattice, independently of which incident wall supplies the selected normal. -/
+theorem isRationalFunctional_wallEventNormal (k : ℕ) (e : WallEvent (D.active k)) :
+    Toric.IsRationalFunctional h (e.normal (D.activeNormal k)).toLinearMap := by
+  rw [WallEvent.normal_def, D.activeNormal_apply]
+  convert Toric.IsRationalFunctional.realCharacter h
+    (D.wall e.1.property.choose).normal.toIntLinearMap using 1
+  ext x
+  exact h.continuousRealCharacter_apply _ x
+
 /-- The real offset family of the walls active at cutoff `k`. -/
 abbrev activeOffset (k : ℕ) : D.active k → ℝ := fun c => (D.wall c).offset
 

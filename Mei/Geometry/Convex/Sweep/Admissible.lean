@@ -63,6 +63,19 @@ theorem mem_admissibleBackwardDomain (Q : V) :
       Q ∈ backwardSingularAvoidanceDomain f c v P S ∧ ∀ a, Q ∉ W a := by
   simp only [admissibleBackwardDomain, mem_inter_iff, mem_ofPred_eq, and_assoc]
 
+/-- The full ray domain is unchanged by an exact replacement of the union of
+singular sets, including at recorded encounters, the endpoint and infinite tail. -/
+theorem admissibleBackwardDomain_congr_singular {K' : Type*}
+    (S' : K' → Set V) (C : Set V)
+    (hS : (⋃ a, S a) = ⋃ a, S' a) :
+    admissibleBackwardDomain f c v P W S C =
+      admissibleBackwardDomain f c v P W S' C := by
+  ext Q
+  simp only [mem_admissibleBackwardDomain, mem_backwardSingularAvoidanceDomain,
+    mem_backwardAvoidanceDomain, mem_backwardIncomingDomain]
+  simp_rw [forall_comm (α := K), forall_comm (α := K')]
+  simp only [← not_exists, ← mem_iUnion, hS]
+
 /-- Admissible endpoints satisfy the selected support and positive-time constraints. -/
 theorem admissibleBackwardDomain_subset_backwardDomain :
     admissibleBackwardDomain f c v P W S C ⊆
