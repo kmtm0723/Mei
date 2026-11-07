@@ -111,16 +111,8 @@ theorem backwardPath_notMem_wall_of_regular_limit
       have hreg : X e.succ Q ∉ singularSupport W := by
         simpa only [backwardPath_apply_parameter f c v h0] using hregular (τ e.succ Q) (hτ _)
       have heq := affineSpan_eq_of_notMem_singularSupport hreg hx hinc
-      have hxv : X e.succ Q + v e.succ ∈ affineSpan ℝ (W (wall e)) := by
-        rw [← heq]
-        apply (hspan a).symm.subset
-        have hhx : ν a (X e.succ Q) = b a := (hspan a).subset hxspan
-        simpa only [mem_ofPred_eq, map_add, hv, add_zero] using hhx
-      have hh := AffineMap.eqOn_affineSpan
-        (f := (f e).toLinearMap.toAffineMap) (g := AffineMap.const ℝ V (c e)) (hheight e) hxv
-      have hz : f e (v e.succ) = 0 := by
-        simpa only [LinearMap.coe_toAffineMap, ContinuousLinearMap.coe_coe,
-          AffineMap.const_apply, map_add, hheight e _ hinc, add_eq_left] using hh
+      have hz : f e (v e.succ) = 0 := (f e).toLinearMap.map_eq_zero_of_affineSpan_eq
+        (ν a).toLinearMap (hheight e) (hspan a) heq.symm hinc hv
       exact htrans e hz
 
 end Mei.Convex
