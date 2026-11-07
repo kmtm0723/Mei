@@ -128,4 +128,17 @@ theorem quotientCoefficientMap_truncatedBCHAction (k : ℕ) (g : d.truncatedGrou
   simpa only [quotientCoefficientMap_def, GradedLieHom.truncatedMap_id,
     LieHom.bchGroupMap_id, MonoidHom.id_apply] using ht
 
+include hequiv in
+/-- Completed fixed-degree coefficient maps intertwine the shifted BCH actions. -/
+theorem completionCoefficientMap_completedBCHAction
+    (g : d.completedBCHGroup ℒ) (a : d.ShiftedCoefficients ℳ p) :
+    d.completionCoefficientMap ℳ 𝓝 p f hf
+        ((d.shiftedLieFiltration ℒ ℳ p).completedBCHAction d ℒ g a) =
+      (d.shiftedLieFiltration ℒ 𝓝 p).completedBCHAction d ℒ g
+        (d.completionCoefficientMap ℳ 𝓝 p f hf a) := by
+  apply (d.shiftedFiltration 𝓝 p).completion_ext
+  intro k
+  simp only [projection_completionCoefficientMap, ModuleFiltration.projection_completedBCHAction]
+  exact d.quotientCoefficientMap_truncatedBCHAction ℳ 𝓝 p ℒ f hf hequiv k _ _
+
 end Mei.PositiveDegrees
