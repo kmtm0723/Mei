@@ -547,6 +547,28 @@ theorem completionCoefficientMap_comp {P : Type*} [AddCommGroup P] [Module R P]
 
 end FixedCompletion
 
+section TargetTransport
+
+variable {Γ R M N : Type*} [AddCommGroup Γ] [Ring R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  (e : PositiveDegrees Γ) (𝓝 : Γ → Submodule R N)
+
+/-- Transporting the target shift across an equality commutes with completion of a filtered map.
+The source filtration is arbitrary, and the target family need not decompose its ambient module. -/
+theorem cast_completionMap (F : ModuleFiltration R M) (s t : Γ) (h : s = t)
+    (g : M →ₗ[R] shiftedSubmodule 𝓝 e.monoid s)
+    (ρ : ℕ → ℕ) (hρ : Monotone ρ)
+    (hg : ∀ k, F.submodule (ρ k + 1) ≤
+      ((e.shiftedFiltration 𝓝 s).submodule (k + 1)).comap g) (x : F.completion) :
+    cast (congrArg (e.ShiftedCoefficients 𝓝) h)
+      (F.completionMap (e.shiftedFiltration 𝓝 s) g ρ hρ hg x) =
+    F.completionMap (e.shiftedFiltration 𝓝 t)
+      (h ▸ g) ρ hρ (by subst t; exact hg) x := by
+  subst t
+  rfl
+
+end TargetTransport
+
 end Mei.PositiveDegrees
 
 namespace Mei.PositiveDegreeMap
