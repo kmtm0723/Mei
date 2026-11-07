@@ -115,4 +115,15 @@ theorem shiftedDirectLimitComponents_one (u : Γ) :
 instance instAlgebraShiftedDirectLimit : Algebra R (d.ShiftedDirectLimit 𝒜) :=
   Algebra.ofModule (fun r x y => smul_assoc r x y) (fun r x y => (smul_comm r x y).symm)
 
+/-- A finite coefficient equal to the ambient unit represents the global unit in any chart. -/
+theorem toShiftedDirectLimitOfChart_of_eq_one (p : Γ) (s : Multiset d.monoid)
+    (hp : p - d.coefficientOrigin s ∈ d.monoid)
+    (a : shiftedSubmodule 𝒜 d.monoid p) (ha : (a : A) = 1) :
+    d.toShiftedDirectLimitOfChart 𝒜 p s hp ((d.shiftedFiltration 𝒜 p).of a) = 1 := by
+  apply d.shiftedDirectLimitComponents_injective 𝒜
+  funext u
+  rw [shiftedDirectLimitComponents_toShiftedDirectLimitOfChart,
+    shiftedHomogeneousComponent_of, shiftedDirectLimitComponents_one]
+  exact congrArg (fun z => DirectSum.decompose 𝒜 z u) ha
+
 end Mei.PositiveDegrees
