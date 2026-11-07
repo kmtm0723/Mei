@@ -5,11 +5,11 @@ Authors: Claude Code
 -/
 module
 
-public import Mei.Analysis.Normed.ContinuousLinearMap.Plane
 public import Mei.Geometry.Convex.PolyhedralCochain.Plane.Basic
 public import Mei.Geometry.Convex.PolyhedralComplex.OfPolyhedron.Basic
 public import Mei.Geometry.Convex.Recession
 public import Mei.Geometry.Convex.Sweep.Face
+public import Mei.LinearAlgebra.Plane
 
 /-!
 # Complexes with a line and with a ray at a real offset
@@ -111,8 +111,11 @@ theorem isPolyhedralFace_lineAtHeight_iff (c : ℝ) (F : Set (ℝ × ℝ)) :
     obtain ⟨hx, hmax⟩ := hxF
     ext y
     refine Set.mem_sep_iff.trans ⟨fun hy => hy.1, fun hy => ⟨hy, fun z hz => ?_⟩⟩
-    rw [l.apply_eq_of_snd_eq (hz.trans hx.symm), l.apply_eq_of_snd_eq (hy.trans hx.symm),
-      l.apply_one_zero_eq_zero (fun y hy => hmax y (hy.trans hx))]
+    have hlin : ∀ {p q : ℝ × ℝ}, q.2 = p.2 → l q = l p + (q.1 - p.1) * l (1, 0) :=
+      fun hpq => l.toLinearMap.apply_eq_of_snd_eq hpq
+    have h10 : l (1, 0) = 0 :=
+      l.toLinearMap.apply_one_zero_eq_zero fun y hy => hmax y (hy.trans hx)
+    rw [hlin (hz.trans hx.symm), hlin (hy.trans hx.symm), h10]
     simp
   · rintro rfl
     exact ⟨⟨(0, c), rfl⟩, IsExposed.refl _⟩
