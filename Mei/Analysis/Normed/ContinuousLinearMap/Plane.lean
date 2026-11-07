@@ -14,7 +14,9 @@ public import Mathlib.Topology.Instances.Real.Lemmas
 The values of a continuous linear functional `l` on `ℝ × ℝ` at two points `p` and `q` with the
 same second coordinate differ by `(q.1 - p.1) * l (1, 0)`
 (`ContinuousLinearMap.apply_eq_of_snd_eq`). In particular, `l` is determined along each
-horizontal line by its value at one point and its value at `(1, 0)`.
+horizontal line by its value at one point and its value at `(1, 0)`. A functional that attains its
+maximum over a horizontal line at a point vanishes at `(1, 0)`
+(`ContinuousLinearMap.apply_one_zero_eq_zero`), hence is constant on that line.
 -/
 
 public section
@@ -31,5 +33,14 @@ theorem apply_eq_of_snd_eq (l : (ℝ × ℝ) →L[ℝ] ℝ) {p q : ℝ × ℝ} (
     · simp [hpq]
   calc l q = l (p + (q.1 - p.1) • ((1 : ℝ), (0 : ℝ))) := congrArg l this
     _ = l p + (q.1 - p.1) * l (1, 0) := by rw [map_add, map_smul, smul_eq_mul]
+
+/-- A functional that attains its maximum over the horizontal line through `x` at `x` vanishes on
+the direction `(1, 0)` of the line, hence is constant on the line. -/
+theorem apply_one_zero_eq_zero (l : (ℝ × ℝ) →L[ℝ] ℝ) {x : ℝ × ℝ}
+    (hmax : ∀ y : ℝ × ℝ, y.2 = x.2 → l y ≤ l x) : l (1, 0) = 0 := by
+  have hpos := hmax (x + (1, 0)) (by simp)
+  have hneg := hmax (x - (1, 0)) (by simp)
+  simp only [map_add, map_sub] at hpos hneg
+  linarith
 
 end ContinuousLinearMap

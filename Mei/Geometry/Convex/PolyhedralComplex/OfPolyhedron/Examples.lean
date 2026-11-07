@@ -22,7 +22,7 @@ In the plane `ℝ²` with the standard lattice `ℤ²`, consider
 * the ray `r = {(x, 0) | a ≤ x}` with endpoint `(a, 0)` for an arbitrary real `a`, for instance
   `a = √2`. Its nonempty exposed faces are `r` and `{(a, 0)}`, so its complex has these two cells
   (`mem_cells_ofPolyhedron_rightRay_iff`), and the ray has trivial lineality
-  (`lineal_recessionCone_rightRay`).
+  (`lineal_recessionCone_rightRay_eq_bot`).
 
 Both are complexes of rational-normal polyhedra: the normals are coordinate functionals, while
 the offset `a` of the ray is not required to be rational. They are the complexes
@@ -51,22 +51,6 @@ its first coordinate is at least `a`. -/
 theorem mem_rightRay {a : ℝ} {p : ℝ × ℝ} : p ∈ rightRay a ↔ p.2 = 0 ∧ a ≤ p.1 := Iff.rfl
 
 end Mei.FinitePolyhedralComplex.Examples
-
-namespace ContinuousLinearMap
-
-open Mei.FinitePolyhedralComplex.Examples
-
-/-- A functional that attains its maximum over a horizontal line at some point vanishes on the
-direction `(1, 0)` of the line, hence is constant on the line. -/
-theorem apply_one_zero_eq_zero (l : (ℝ × ℝ) →L[ℝ] ℝ) {c : ℝ} {x : ℝ × ℝ}
-    (hx : x ∈ lineAtHeight c) (hmax : ∀ y ∈ lineAtHeight c, l y ≤ l x) :
-    l (1, 0) = 0 := by
-  have hpos := hmax (x + (1, 0)) (by simpa using hx)
-  have hneg := hmax (x - (1, 0)) (by simpa using hx)
-  simp only [map_add, map_sub] at hpos hneg
-  linarith
-
-end ContinuousLinearMap
 
 namespace Mei.FinitePolyhedralComplex.Examples
 
@@ -105,7 +89,8 @@ theorem lineal_recessionCone_lineAtHeight_ne_bot (c : ℝ) :
 
 /-- The ray has trivial lineality: it is pointed. -/
 @[simp]
-theorem lineal_recessionCone_rightRay (a : ℝ) : (recessionCone (rightRay a)).lineal = ⊥ := by
+theorem lineal_recessionCone_rightRay_eq_bot (a : ℝ) :
+    (recessionCone (rightRay a)).lineal = ⊥ := by
   refine (Submodule.eq_bot_iff _).mpr fun v hv => ?_
   obtain ⟨h₁, h₂⟩ := PointedCone.mem_lineal.mp hv
   rw [mem_recessionCone] at h₁ h₂
@@ -127,7 +112,7 @@ theorem isPolyhedralFace_lineAtHeight_iff (c : ℝ) (F : Set (ℝ × ℝ)) :
     ext y
     refine Set.mem_sep_iff.trans ⟨fun hy => hy.1, fun hy => ⟨hy, fun z hz => ?_⟩⟩
     rw [l.apply_eq_of_snd_eq (hz.trans hx.symm), l.apply_eq_of_snd_eq (hy.trans hx.symm),
-      l.apply_one_zero_eq_zero hx hmax]
+      l.apply_one_zero_eq_zero (fun y hy => hmax y (hy.trans hx))]
     simp
   · rintro rfl
     exact ⟨⟨(0, c), rfl⟩, IsExposed.refl _⟩
