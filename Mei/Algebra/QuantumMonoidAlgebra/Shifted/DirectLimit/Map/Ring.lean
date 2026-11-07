@@ -8,6 +8,7 @@ module
 public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.DirectLimit.Map.Basic
 public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.Map.Product
 public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.Unit
+public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.Transport
 
 /-!
 # Ring maps between global quantum coefficient algebras
@@ -29,94 +30,15 @@ variable {R S Γ Γ' : Type*} [CommRing R] [CommRing S]
   (φ : R →+* S)
   (h : ∀ p r, Units.map φ.toMonoidHom (q ^ β p r) = q' ^ β' (T p) (T r))
 
-private theorem map_global_mul_charts (p r : Γ) (s t : Multiset d.monoid)
-    (hp : p - d.coefficientOrigin s ∈ d.monoid)
-    (hr : r - d.coefficientOrigin t ∈ d.monoid) (u v : Multiset e.monoid)
-    (hu : T p - e.coefficientOrigin u ∈ e.monoid)
-    (hv : T r - e.coefficientOrigin v ∈ e.monoid)
-    (x : d.ShiftedCoefficients (grade q β) p)
-    (y : d.ShiftedCoefficients (grade q β) r) :
-    mapShiftedDirectLimit d e T φ h
-        (d.toShiftedDirectLimitOfChart (grade q β) p s hp x *
-          d.toShiftedDirectLimitOfChart (grade q β) r t hr y) =
-      mapShiftedDirectLimit d e T φ h (d.toShiftedDirectLimitOfChart (grade q β) p s hp x) *
-        mapShiftedDirectLimit d e T φ h (d.toShiftedDirectLimitOfChart (grade q β) r t hr y) := by
-  have hst : p + r - d.coefficientOrigin (s + t) ∈ d.monoid := by
-    simpa only [PositiveDegrees.coefficientOrigin_add, add_sub_add_comm] using
-      d.monoid.add_mem hp hr
-  have huv : T p + T r - e.coefficientOrigin (u + v) ∈ e.monoid := by
-    simpa only [PositiveDegrees.coefficientOrigin_add, add_sub_add_comm] using
-      e.monoid.add_mem hu hv
-  have huv' : T (p + r) - e.coefficientOrigin (u + v) ∈ e.monoid := by
-    simpa only [map_add] using huv
-  let z := d.shiftedCompletionMul (grade q β) p r x y
-  let E := e.toShiftedDirectLimitOfChart (grade q' β') (T p + T r) (u + v) huv
-  have hs := (d.shiftedDirectLimitMul_eq_mul (grade q β) _ _).symm.trans
-    (d.shiftedDirectLimitMul_toShiftedDirectLimitOfChart (grade q β) p r s t hp hr x y)
-  have h₁ := congrArg (mapShiftedDirectLimit d e T φ h) hs
-  have h₂ := mapShiftedDirectLimit_toShiftedDirectLimitOfChart d e T φ h
-    (p + r) (s + t) hst (u + v) huv' z
-  have h₃ := e.toShiftedDirectLimitOfChart_cast (grade q' β') (T (p + r)) (T p + T r)
-    (map_add T.toAddMonoidHom p r) (u + v) (u + v) huv' huv
-    (mapShiftedCompletion d e T φ h (p + r) z)
-  have h₄ := congrArg E (mapShiftedCompletion_mul d e T φ h p r x y)
-  have ht := (e.shiftedDirectLimitMul_eq_mul (grade q' β') _ _).symm.trans
-    (e.shiftedDirectLimitMul_toShiftedDirectLimitOfChart (grade q' β')
-      (T p) (T r) u v hu hv
-      (mapShiftedCompletion d e T φ h p x) (mapShiftedCompletion d e T φ h r y))
-  have hf := congrArg₂ (fun a b : e.ShiftedDirectLimit (grade q' β') => a * b)
-    (mapShiftedDirectLimit_toShiftedDirectLimitOfChart d e T φ h p s hp u hu x)
-    (mapShiftedDirectLimit_toShiftedDirectLimitOfChart d e T φ h r t hr v hv y)
-  exact (h₁).trans <|
-    (h₂).trans <|
-    (h₃.symm).trans <|
-    (h₄).trans <|
-    (ht.symm).trans <|
-    hf.symm
-
 /-- Global quantum coefficient transport preserves products for arbitrary bilinear forms. -/
 theorem mapShiftedDirectLimit_mul (x y : d.ShiftedDirectLimit (grade q β)) :
     mapShiftedDirectLimit d e T φ h (x * y) =
-      mapShiftedDirectLimit d e T φ h x * mapShiftedDirectLimit d e T φ h y := by
-  refine (d.exists_toShiftedDirectLimit (grade q β) x).elim fun s hs => ?_
-  refine hs.elim fun a ha => ?_
-  refine (d.exists_toShiftedDirectLimit (grade q β) y).elim fun t ht => ?_
-  refine ht.elim fun b hb => ?_
-  let u : Multiset e.monoid := {⟨T (s.sum : Γ), T.map_mem s.sum.property⟩}
-  let v : Multiset e.monoid := {⟨T (t.sum : Γ), T.map_mem t.sum.property⟩}
-  have hu : T (d.coefficientOrigin s) - e.coefficientOrigin u ∈ e.monoid := by
-    simp only [PositiveDegrees.coefficientOrigin_eq_neg_sum, u, Multiset.sum_singleton,
-      map_neg, sub_self, zero_mem]
-  have hv : T (d.coefficientOrigin t) - e.coefficientOrigin v ∈ e.monoid := by
-    simp only [PositiveDegrees.coefficientOrigin_eq_neg_sum, v, Multiset.sum_singleton,
-      map_neg, sub_self, zero_mem]
-  have hs : d.toShiftedDirectLimitOfChart (grade q β) (d.coefficientOrigin s) s (by simp) a = x :=
-    (d.toShiftedDirectLimitOfChart_apply (grade q β) (d.coefficientOrigin s) s (by simp) a).trans
-      ((congrArg (d.toShiftedDirectLimit (grade q β) s)
-        (d.shiftedCompletedInclusion_refl (grade q β) (d.coefficientOrigin s) a)).trans ha)
-  have ht : d.toShiftedDirectLimitOfChart (grade q β) (d.coefficientOrigin t) t (by simp) b = y :=
-    (d.toShiftedDirectLimitOfChart_apply (grade q β) (d.coefficientOrigin t) t (by simp) b).trans
-      ((congrArg (d.toShiftedDirectLimit (grade q β) t)
-        (d.shiftedCompletedInclusion_refl (grade q β) (d.coefficientOrigin t) b)).trans hb)
-  have hmul := map_global_mul_charts d e T φ h (d.coefficientOrigin s) (d.coefficientOrigin t)
-    s t (by simp) (by simp) u v hu hv a b
-  have hl := congrArg₂ (fun a b => mapShiftedDirectLimit d e T φ h (a * b)) hs ht
-  have hr := congrArg₂ (fun a b => mapShiftedDirectLimit d e T φ h a *
-    mapShiftedDirectLimit d e T φ h b) hs ht
-  exact hl.symm.trans (hmul.trans hr)
-
-omit [DecidableEq Γ'] in
-private theorem global_of_eq_one (p : Γ) (s : Multiset d.monoid)
-    (hp : p - d.coefficientOrigin s ∈ d.monoid)
-    (a : shiftedSubmodule (grade q β) d.monoid p) (ha : (a : QuantumMonoidAlgebra q β) = 1) :
-    d.toShiftedDirectLimitOfChart (grade q β) p s hp ((d.shiftedFiltration (grade q β) p).of a) =
-      1 := by
-  apply d.shiftedDirectLimitComponents_injective (grade q β)
-  funext u
-  rw [PositiveDegrees.shiftedDirectLimitComponents_toShiftedDirectLimitOfChart,
-    PositiveDegrees.shiftedHomogeneousComponent_of,
-    PositiveDegrees.shiftedDirectLimitComponents_one]
-  exact congrArg (fun z => DirectSum.decompose (grade q β) z u) ha
+      mapShiftedDirectLimit d e T φ h x * mapShiftedDirectLimit d e T φ h y :=
+  d.shiftedDirectLimitMap_mul_of_charts e T.toAddMonoidHom (fun hn => T.map_mem hn)
+    (grade q β) (grade q' β') (fun p => mapShiftedCompletion d e T φ h p)
+    (mapShiftedDirectLimit d e T φ h)
+    (mapShiftedDirectLimit_toShiftedDirectLimitOfChart d e T φ h)
+    (mapShiftedCompletion_mul d e T φ h) x y
 
 /-- Global scalar and exponent transport preserves the coefficient-algebra unit. -/
 theorem mapShiftedDirectLimit_one :
@@ -132,12 +54,13 @@ theorem mapShiftedDirectLimit_one :
   have hb : (b : QuantumMonoidAlgebra q' β') = 1 := by
     simp only [b, coe_positiveShiftEquiv, PositiveDegreeMap.map_zero, monomial_zero,
       map_one, Subalgebra.coe_one, one_mul]
-  have h₁ := congrArg (mapShiftedDirectLimit d e T φ h) (global_of_eq_one d 0 0 hzero a ha)
+  have h₁ := congrArg (mapShiftedDirectLimit d e T φ h)
+    (d.toShiftedDirectLimitOfChart_of_eq_one (grade q β) 0 0 hzero a ha)
   have h₂ := mapShiftedDirectLimit_toShiftedDirectLimitOfChart d e T φ h 0 0 hzero 0 hzero'
     ((d.shiftedFiltration (grade q β) 0).of a)
   have h₃ := congrArg (e.toShiftedDirectLimitOfChart (grade q' β') (T 0) 0 hzero')
     (mapShiftedCompletion_of_coordinates d e T φ h 0 1)
-  have h₄ := global_of_eq_one e (T 0) 0 hzero' b hb
+  have h₄ := e.toShiftedDirectLimitOfChart_of_eq_one (grade q' β') (T 0) 0 hzero' b hb
   exact (h₁.symm).trans <|
     (h₂).trans <|
     (h₃).trans <|
