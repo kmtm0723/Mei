@@ -127,20 +127,20 @@ theorem compatibleMap_injective : Function.Injective (D.compatibleMap I) := by
   exact he
 
 omit [∀ j, Nonempty (D.chambers j)] in
-/-- If every face has a copy and each chamber's identity-face graph is connected,
-every compatible refined family descends. Missing isolated chambers receive zero. -/
-theorem compatibleMap_surjective [∀ b, Nonempty (D.faces b)]
-    (hc : ∀ j a b, Relation.EqvGen (D.edgeRel j) a b) :
-    Function.Surjective (D.compatibleMap I) := by
+/-- A compatible family with equal chamber copies descends when every face has a copy.
+No connectivity or chamber coverage is required; missing chambers receive zero. -/
+theorem exists_compatibleMap_eq_of_copies_eq [∀ b, Nonempty (D.faces b)]
+    (y : (D.index I).compatibleFamilies)
+    (hy : ∀ j (c d : D.chambers j), y.val ⟨j, c⟩ = y.val ⟨j, d⟩) :
+    ∃ x, D.compatibleMap I x = y := by
   classical
-  intro y
   let value (j : J.R) : I.right j :=
     if h : Nonempty (D.chambers j) then y.val ⟨j, Classical.choice h⟩ else 0
   have hconst (j : J.R) (b : D.chambers j) : y.val ⟨j, b⟩ = value j := by
     have h : Nonempty (D.chambers j) := ⟨b⟩
     dsimp only [value]
     rw [dite_eq_left h]
-    exact D.eq_of_eqvGen_edgeRel I y j (hc j b (Classical.choice h))
+    exact hy j b (Classical.choice h)
   let x : I.compatibleFamilies := ⟨value, by
     apply I.mem_compatibleFamilies.mpr
     intro b
@@ -152,6 +152,16 @@ theorem compatibleMap_surjective [∀ b, Nonempty (D.faces b)]
   funext ⟨j, b⟩
   erw [compatibleMap_apply]
   exact (hconst j b).symm
+
+omit [∀ j, Nonempty (D.chambers j)] in
+/-- If every face has a copy and each chamber's identity-face graph is connected,
+every compatible refined family descends. Missing isolated chambers receive zero. -/
+theorem compatibleMap_surjective [∀ b, Nonempty (D.faces b)]
+    (hc : ∀ j a b, Relation.EqvGen (D.edgeRel j) a b) :
+    Function.Surjective (D.compatibleMap I) := by
+  intro y
+  exact D.exists_compatibleMap_eq_of_copies_eq I y
+    (fun j c d => D.eq_of_eqvGen_edgeRel I y j (hc j c d))
 
 /-- If every chamber and face has a copy and each chamber's identity-face graph is
 connected, compatible chamber families are linearly equivalent before and after subdivision. -/
@@ -235,22 +245,11 @@ theorem exists_sectionsPullback_eq_of_copies_eq [∀ b, Nonempty (D.faces b)]
     (y : SemimoduleCat.sectionsSubmodule (D.index I).multispan)
     (hy : ∀ j (c d : D.chambers j), y.val (.right ⟨j, c⟩) = y.val (.right ⟨j, d⟩)) :
     ∃ s, D.sectionsPullback I s = y := by
-  classical
-  let value (j : J.R) : I.right j :=
-    if h : Nonempty (D.chambers j) then y.val (.right ⟨j, Classical.choice h⟩) else 0
-  have hconst (j : J.R) (c : D.chambers j) : y.val (.right ⟨j, c⟩) = value j := by
-    have h : Nonempty (D.chambers j) := ⟨c⟩
-    dsimp only [value]
-    erw [dite_eq_left h]
-    exact hy j c (Classical.choice h)
-  let x : I.compatibleFamilies := ⟨value, by
-    apply I.mem_compatibleFamilies.mpr
-    intro b
-    let c : D.faces b := Classical.choice inferInstance
-    have hm := (D.index I).mem_sectionsSubmodule_multispan.mp y.property
-    exact ⟨y.val (.left (.inl ⟨b, c⟩)),
-      (hm.1 (.inl ⟨b, c⟩)).trans (hconst _ _),
-      (hm.2 (.inl ⟨b, c⟩)).trans (hconst _ _)⟩⟩
+  obtain ⟨x, hx⟩ := D.exists_compatibleMap_eq_of_copies_eq I
+    ((D.index I).restrictSections y) (by
+      intro j c d
+      erw [MultispanIndex.restrictSections_apply, MultispanIndex.restrictSections_apply]
+      exact hy j c d)
   obtain ⟨s, hs⟩ := I.restrictSections_surjective x
   refine ⟨s, ?_⟩
   apply (D.index I).restrictSections_injective (D.index_jointly_injective I hinj)
@@ -259,7 +258,9 @@ theorem exists_sectionsPullback_eq_of_copies_eq [∀ b, Nonempty (D.faces b)]
     MultispanIndex.restrictSections_apply]
   have hs' := congrArg (fun z : I.compatibleFamilies => z.val j) hs
   erw [MultispanIndex.restrictSections_apply] at hs'
-  exact hs'.trans (hconst j c).symm
+  have hx' := congrArg (fun z : (D.index I).compatibleFamilies => z.val ⟨j, c⟩) hx
+  erw [compatibleMap_apply, MultispanIndex.restrictSections_apply] at hx'
+  exact hs'.trans hx'
 
 /-- A linear refined family whose chamber copies agree has a unique linear descent
 when every chamber and face has a copy. Recovery is equality of complete matching
@@ -272,17 +273,20 @@ theorem existsUnique_sectionsPullback_lift_of_copies_eq [∀ b, Nonempty (D.face
       (ℓ x).val (.right ⟨j, c⟩) = (ℓ x).val (.right ⟨j, d⟩)) :
     ∃! a : E →ₗ[R] SemimoduleCat.sectionsSubmodule I.multispan,
       (D.sectionsPullback I).comp a = ℓ := by
-  choose s hs using fun x => D.exists_sectionsPullback_eq_of_copies_eq I hinj (ℓ x) (hℓ x)
-  have hi := D.sectionsPullback_injective_of_face_coverage I
-  let a : E →ₗ[R] SemimoduleCat.sectionsSubmodule I.multispan :=
-    { toFun := s
-      map_add' := fun x y => hi (by rw [map_add, hs, hs, hs, map_add])
-      map_smul' := fun r x => hi (by rw [map_smul, hs, hs, map_smul]; rfl) }
-  refine ⟨a, LinearMap.ext hs, ?_⟩
+  let P := D.sectionsPullback I
+  have hi : Function.Injective P := D.sectionsPullback_injective_of_face_coverage I
+  have hmem x : ℓ x ∈ P.range :=
+    D.exists_sectionsPullback_eq_of_copies_eq I hinj (ℓ x) (hℓ x)
+  let a := (LinearEquiv.ofInjective P hi).symm.toLinearMap.comp (ℓ.codRestrict P.range hmem)
+  have ha : P.comp a = ℓ := by
+    apply LinearMap.ext
+    intro x
+    exact LinearEquiv.ofInjective_symm_apply P (h := hi) ((ℓ.codRestrict P.range hmem) x)
+  refine ⟨a, ha, ?_⟩
   intro q hq
   apply LinearMap.ext
   intro x
-  exact hi ((LinearMap.congr_fun hq x).trans (hs x).symm)
+  exact hi ((LinearMap.congr_fun hq x).trans (LinearMap.congr_fun ha x).symm)
 
 omit [∀ j, Nonempty (D.chambers j)] in
 /-- If every face has a copy, identity graphs are connected and old spans are
