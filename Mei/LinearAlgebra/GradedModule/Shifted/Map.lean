@@ -365,6 +365,35 @@ theorem completionCoefficientMap_eq_completionMap (p : Γ) :
         (d.shiftedCoefficientMap ℳ 𝓝 p f hf) id monotone_id
         (fun k _ ha => d.shiftedCoefficientMap_mem_filtration ℳ 𝓝 p f hf k ha) := (rfl)
 
+omit [DirectSum.Decomposition 𝓝] in
+/-- The identity degree-map completion agrees with the fixed-degree completion.
+Heterogeneous equality accounts for the target origin `PositiveDegreeMap.id d p`. -/
+theorem completionCoefficientMap_heq_shiftedCompletionMap_id (p : Γ)
+    (hf' : ∀ q, ℳ q ≤ (𝓝 (PositiveDegreeMap.id d q)).comap f)
+    (a : d.ShiftedCoefficients ℳ p) :
+    HEq (d.completionCoefficientMap ℳ 𝓝 p f hf a)
+      ((PositiveDegreeMap.id d).shiftedCompletionMap ℳ 𝓝 p f hf' a) := by
+  revert hf'
+  let I : PositiveDegreeMap d d :=
+    { toAddMonoidHom := AddMonoidHom.id Γ
+      map_mem := fun h => h
+      map_ne_zero := fun _ h => h
+      modulus := id
+      monotone_modulus := monotone_id
+      degree_gt := fun _ _ h => h }
+  have hI : PositiveDegreeMap.id d = I :=
+    PositiveDegreeMap.ext (fun q => PositiveDegreeMap.id_apply q)
+      (fun k => PositiveDegreeMap.id_modulus k)
+  rw [hI]
+  intro hf'
+  have hm : I.shiftedMap ℳ 𝓝 p f hf' = d.shiftedCoefficientMap ℳ 𝓝 p f hf := by
+    apply LinearMap.ext
+    intro b
+    apply Subtype.ext
+    simp only [PositiveDegreeMap.coe_shiftedMap, coe_shiftedCoefficientMap]
+  simp only [completionCoefficientMap_eq_completionMap,
+    PositiveDegreeMap.shiftedCompletionMap_def, hm, I, AddMonoidHom.id_apply, heq_iff_eq]
+
 /-- A fixed-degree completed map applies the original linear map to each ambient component. -/
 @[simp]
 theorem coe_shiftedHomogeneousComponent_completionCoefficientMap (p u : Γ)
