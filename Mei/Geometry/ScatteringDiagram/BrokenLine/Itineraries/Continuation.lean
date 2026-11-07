@@ -90,26 +90,26 @@ theorem exists_cutoffDecoratedRay_continuousContinuation :
         ∃! e : ∀ Y : U, Rays'(Q) ≃ Rays'(Y.val),
           (∀ Y r, (typeOf'(Y.val) (e Y r)).val = (typeOf'(Q) r).val) ∧
           ∀ r, Continuous (fun Y : U => (e Y r).realization.2.ray.toContinuousMap) := by
-  obtain ⟨E, hfrontier, hstable⟩ := exists_cutoffDecoratedRay_membershipArrangement
-    d ℳ T a f c ε P W S C h w hf hP hW hS hC k
+  have hdom (t : Types') : IsRationalSemilinear h (CutoffDecoratedType.domain c P W S C t) :=
+    t.isRationalSemilinear_domain c P W S C h w hf hP hW hS hC
+  obtain ⟨E, hfrontier, hstable⟩ :=
+    CutoffDecoratedRay.exists_typeDomain_neighborhoods c P W S C hdom
   refine ⟨E, hfrontier, fun Q hQ => ?_⟩
-  obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff_ball.mp (hstable Q hQ)
-  let U := Metric.ball Q δ
-  have hex (Y : U) : ∃ e : Rays'(Q) ≃ Rays'(Y.val),
-      ∀ r, (typeOf'(Y.val) (e r)).val = (typeOf'(Q) r).val :=
-    hball Y.val Y.property
-  choose e he using hex
-  refine ⟨U, Metric.isOpen_ball, convex_ball Q δ, Metric.mem_ball_self hδ,
-    e, ⟨he, ?_⟩, ?_⟩
+  obtain ⟨U, hUopen, hUconvex, hQU, hU⟩ := hstable Q hQ
+  let e (Y : U) := CutoffDecoratedRay.endpointEquiv c P W S C (hU Y Y.property)
+  refine ⟨U, hUopen, hUconvex, hQU, e, ⟨?_, ?_⟩, ?_⟩
+  · intro Y r
+    exact CutoffDecoratedRay.endpointEquiv_type c P W S C (hU Y Y.property) r
   · intro r
     exact CutoffDecoratedRay.continuous_of_type_eq c P W S C (fun Y : U => e Y r)
-      (typeOf'(Q) r).val continuous_subtype_val (fun Y => he Y r)
+      (typeOf'(Q) r).val continuous_subtype_val
+      (fun Y => CutoffDecoratedRay.endpointEquiv_type c P W S C (hU Y Y.property) r)
   · intro e' he'
     funext Y
     apply Equiv.ext
     intro r
-    apply typeOf'(Y.val).injective
-    exact Subtype.ext ((he'.1 Y r).trans (he Y r).symm)
+    exact (CutoffDecoratedRay.endpointEquiv_eq_of_type_eq c P W S C
+      (hU Y Y.property) r (e' Y r) (he'.1 Y r)).symm
 
 end Rational
 
