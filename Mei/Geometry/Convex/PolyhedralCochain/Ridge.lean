@@ -186,9 +186,7 @@ theorem exists_reverse_mem_boundaryFacets (σ : OrientedCell h k)
   obtain ⟨Q, hQ, hQn, hQd, hrQ⟩ := (τ.mem_boundaryFacets r).mp hr
   have hτcarrier : τ.carrier = F := by rw [hτF, boundaryFacet_carrier]
   have hrcarrier : r.carrier = Q := by rw [hrQ, boundaryFacet_carrier]
-  have hpoly : TauCeti.IsConvexPolyhedron σ.carrier := by
-    obtain ⟨P, hP⟩ := isRationalNormalPolyhedron_iff.mp σ.rational
-    exact hP ▸ P.isConvexPolyhedron
+  have hpoly : TauCeti.IsConvexPolyhedron σ.carrier := σ.rational.isConvexPolyhedron
   obtain ⟨G, hG, hGdim, hGF, hinter⟩ := hF.exists_second_facet_at_ridge
     (by rwa [← hτcarrier]) hpoly hQn hFd (by rwa [← hτcarrier])
   have hGn : G.Nonempty := hQn.mono (hinter ▸ inter_subset_right)

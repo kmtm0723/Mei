@@ -245,6 +245,12 @@ theorem convex {P : Set V} (hP : IsRationalNormalPolyhedron h P) : Convex ℝ P 
   obtain ⟨Q, rfl⟩ := isRationalNormalPolyhedron_iff.mp hP
   exact Q.convex
 
+/-- A rational-normal polyhedron is a convex polyhedron in the sense of the supplier library. -/
+theorem isConvexPolyhedron {P : Set V} (hP : IsRationalNormalPolyhedron h P) :
+    TauCeti.IsConvexPolyhedron P := by
+  obtain ⟨Q, rfl⟩ := isRationalNormalPolyhedron_iff.mp hP
+  exact Q.isConvexPolyhedron
+
 /-- Rational-normal polyhedra are closed under intersection. -/
 theorem inter {P Q : Set V} (hP : IsRationalNormalPolyhedron h P)
     (hQ : IsRationalNormalPolyhedron h Q) : IsRationalNormalPolyhedron h (P ∩ Q) := by

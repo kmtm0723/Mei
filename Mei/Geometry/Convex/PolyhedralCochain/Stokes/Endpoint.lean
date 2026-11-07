@@ -176,8 +176,7 @@ theorem exists_ball_sum_intersectionIndex_boundaryFacets_eq_sub_endpoints
         σ.intersectionIndex ![y] - σ.intersectionIndex ![x] := by
   classical
   have := h.finiteDimensional
-  obtain ⟨P, hP⟩ := isRationalNormalPolyhedron_iff.mp σ.rational
-  have hpoly : TauCeti.IsConvexPolyhedron σ.carrier := hP ▸ P.isConvexPolyhedron
+  have hpoly : TauCeti.IsConvexPolyhedron σ.carrier := σ.rational.isConvexPolyhedron
   have htop : affineSpan ℝ σ.carrier = ⊤ := by
     apply (AffineSubspace.direction_eq_top_iff_of_nonempty
       (σ.nonempty.mono (subset_affineSpan ℝ _))).mp
