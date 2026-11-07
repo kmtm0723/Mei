@@ -22,7 +22,7 @@ namespace Mei.PositiveDegrees
 
 variable {Γ R A : Type*} [AddCommGroup Γ] [CommRing R] [Ring A] [Algebra R A]
   [DecidableEq Γ] (d : PositiveDegrees Γ) (𝒜 : Γ → Submodule R A)
-  [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜]
+  [SetLike.GradedMul 𝒜]
 
 /-- Commuting finite coefficients give commuting global coefficients, including
 infinite families in arbitrary negative charts. No graded unit is required. -/

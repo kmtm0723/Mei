@@ -24,7 +24,7 @@ namespace Mei.PositiveDegrees
 variable {Γ R A G : Type*} [AddCommGroup Γ] [CommRing R]
   [Ring A] [Algebra R A] [DecidableEq Γ] [Monoid G]
   (d : PositiveDegrees Γ) (𝒜 : Γ → Submodule R A)
-  [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜]
+  [SetLike.GradedMul 𝒜]
   (act : ∀ p, G →* (d.ShiftedCoefficients 𝒜 p ≃ₗ[R] d.ShiftedCoefficients 𝒜 p))
   (hact : ∀ (p q : Γ) (hpq : p - q ∈ d.monoid) (g : G)
     (x : d.ShiftedCoefficients 𝒜 p),

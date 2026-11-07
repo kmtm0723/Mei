@@ -31,6 +31,7 @@ section Multiplication
 
 variable [SetLike.GradedMul 𝒜]
 
+omit [DirectSum.Decomposition 𝒜] in
 /-- Multiplying two chart images produces a coefficient in the sum-support chart. -/
 theorem mul_mem_range_toShiftedDirectLimitOfChart (p q : Γ)
     (s t v : Multiset d.monoid)
