@@ -8,6 +8,8 @@ module
 public import Mei.Algebra.Lie.Graded.Shifted.DirectLimit.Product
 public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.Unit
 
+public import Mei.Algebra.Group.Hom.Algebra
+
 /-!
 # Global completed BCH algebra actions
 
@@ -30,34 +32,18 @@ variable {Γ R L A : Type*} [AddCommGroup Γ] [CommRing R] [Algebra ℚ R]
   [DirectSum.Decomposition 𝒜] [SetLike.GradedBracket ℒ 𝒜]
   [SetLike.GradedMonoid 𝒜]
 
-private def shiftedBCHDirectLimitAlgEquiv (g : d.completedBCHGroup ℒ) :
-    d.ShiftedDirectLimit 𝒜 ≃ₐ[R] d.ShiftedDirectLimit 𝒜 :=
-  let e := d.shiftedDirectLimitBCHAction ℒ 𝒜 g
-  let m : d.ShiftedDirectLimit 𝒜 ≃* d.ShiftedDirectLimit 𝒜 :=
-    { e.toEquiv with map_mul' := d.shiftedDirectLimitBCHAction_map_mul ℒ 𝒜 g }
-  AlgEquiv.ofLinearEquiv e m.map_one (d.shiftedDirectLimitBCHAction_map_mul ℒ 𝒜 g)
-
-private theorem shiftedBCHDirectLimitAlgEquiv_mul (g h : d.completedBCHGroup ℒ) :
-    d.shiftedBCHDirectLimitAlgEquiv ℒ 𝒜 (g * h) =
-      d.shiftedBCHDirectLimitAlgEquiv ℒ 𝒜 g * d.shiftedBCHDirectLimitAlgEquiv ℒ 𝒜 h := by
-  apply AlgEquiv.ext
-  intro x
-  exact congrArg (fun e : d.ShiftedDirectLimit 𝒜 ≃ₗ[R] d.ShiftedDirectLimit 𝒜 => e x)
-    ((d.shiftedDirectLimitBCHAction ℒ 𝒜).map_mul g h)
-
 /-- Completed BCH labels act on global coefficients by algebra automorphisms. -/
 def shiftedDirectLimitBCHAlgAction : d.completedBCHGroup ℒ →*
     (d.ShiftedDirectLimit 𝒜 ≃ₐ[R] d.ShiftedDirectLimit 𝒜) :=
-  MonoidHom.mk' (d.shiftedBCHDirectLimitAlgEquiv ℒ 𝒜)
-    (d.shiftedBCHDirectLimitAlgEquiv_mul ℒ 𝒜)
+  (d.shiftedDirectLimitBCHAction ℒ 𝒜).toAlgAut
+    (d.shiftedDirectLimitBCHAction_map_mul ℒ 𝒜)
 
 /-- The algebra action has the original global linear action as underlying map. -/
 @[simp]
 theorem shiftedDirectLimitBCHAlgAction_apply (g : d.completedBCHGroup ℒ)
     (x : d.ShiftedDirectLimit 𝒜) :
     d.shiftedDirectLimitBCHAlgAction ℒ 𝒜 g x = d.shiftedDirectLimitBCHAction ℒ 𝒜 g x := by
-  -- Both constructors retain the underlying linear map.
-  rfl
+  simp only [shiftedDirectLimitBCHAlgAction, MonoidHom.toAlgAut_apply]
 
 /-- Arbitrary-origin chart embeddings intertwine the completed algebra action. -/
 theorem shiftedDirectLimitBCHAlgAction_toShiftedDirectLimitOfChart (g : d.completedBCHGroup ℒ)
