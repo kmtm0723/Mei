@@ -128,6 +128,14 @@ abbrev regularSpace : TopCat := TopCat.of C.regularLocus
 abbrev coefficientPoints : Set C.regularSpace :=
   {x | ∀ P : C.walls, x.val ∉ (P : Set V)}
 
+/-- Off-wall coefficient points form an open subset of the regular locus. -/
+theorem isOpen_coefficientPoints : IsOpen C.coefficientPoints := by
+  have := h.finiteDimensional
+  simpa only [coefficientPoints, ofPred_forall] using isOpen_iInter_of_finite
+    (fun P : C.walls => show IsOpen {x : C.regularSpace | x.val ∉ (P : Set V)} from
+      (C.isConvexPolyhedron (C.mem_cells_of_mem_walls P.property)).isClosed.isOpen_compl.preimage
+        continuous_subtype_val)
+
 /-- Off-wall coefficient points are dense in the full regular locus. -/
 theorem dense_coefficientPoints : Dense C.coefficientPoints := by
   have := h.finiteDimensional
