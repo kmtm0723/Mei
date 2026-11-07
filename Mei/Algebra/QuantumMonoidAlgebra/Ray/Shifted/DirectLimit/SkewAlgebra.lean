@@ -8,7 +8,8 @@ module
 public import Mei.Algebra.QuantumMonoidAlgebra.Ray.Shifted.DirectLimit
 public import Mei.Algebra.QuantumMonoidAlgebra.Ray.Shifted.SkewProduct
 public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.Unit
-public import Mathlib.Algebra.Algebra.Equiv
+
+public import Mei.Algebra.Group.Hom.Algebra
 
 /-!
 # Global quantum ray algebra actions for arbitrary bilinear forms
@@ -93,34 +94,17 @@ theorem directLimitRayAction_map_mul_skew (H : (PowerSeries R)ˣ)
   simpa only [LinearMap.comp_apply, LinearMap.compr₂_apply, LinearMap.compl₂_apply,
     act, LinearEquiv.coe_coe, ← d.shiftedDirectLimitMul_eq_mul (grade q β)] using hh
 
-private def rayDirectLimitAlgEquiv (H : (PowerSeries R)ˣ) :
-    d.ShiftedDirectLimit (grade q β) ≃ₐ[R] d.ShiftedDirectLimit (grade q β) :=
-  let e := directLimitRayAction q β d n hn H
-  let m : d.ShiftedDirectLimit (grade q β) ≃* d.ShiftedDirectLimit (grade q β) :=
-    { e.toEquiv with map_mul' := directLimitRayAction_map_mul_skew q β d n hn H }
-  AlgEquiv.ofLinearEquiv e m.map_one (directLimitRayAction_map_mul_skew q β d n hn H)
-
-private theorem rayDirectLimitAlgEquiv_mul (H K : (PowerSeries R)ˣ) :
-    rayDirectLimitAlgEquiv q β d n hn (H * K) =
-      rayDirectLimitAlgEquiv q β d n hn H * rayDirectLimitAlgEquiv q β d n hn K := by
-  apply AlgEquiv.ext
-  intro x
-  exact congrArg (fun e : d.ShiftedDirectLimit (grade q β) ≃ₗ[R]
-    d.ShiftedDirectLimit (grade q β) => e x) ((directLimitRayAction q β d n hn).map_mul H K)
-
 /-- Unit ray series act on global coefficients by algebra automorphisms. -/
 def directLimitRaySkewAlgAction : (PowerSeries R)ˣ →*
     (d.ShiftedDirectLimit (grade q β) ≃ₐ[R] d.ShiftedDirectLimit (grade q β)) :=
-  MonoidHom.mk' (rayDirectLimitAlgEquiv q β d n hn)
-    (rayDirectLimitAlgEquiv_mul q β d n hn)
+  (directLimitRayAction q β d n hn).toAlgAut (directLimitRayAction_map_mul_skew q β d n hn)
 
 /-- The algebra action is the existing linear direct-limit action on coefficients. -/
 @[simp]
 theorem directLimitRaySkewAlgAction_apply (H : (PowerSeries R)ˣ)
     (x : d.ShiftedDirectLimit (grade q β)) :
     directLimitRaySkewAlgAction q β d n hn H x = directLimitRayAction q β d n hn H x := by
-  -- AlgEquiv.ofLinearEquiv and MonoidHom.mk' keep the underlying linear action.
-  rfl
+  simp only [directLimitRaySkewAlgAction, MonoidHom.toAlgAut_apply]
 
 /-- Every arbitrary-origin coefficient embedding intertwines the algebra action. -/
 theorem directLimitRaySkewAlgAction_toShiftedDirectLimitOfChart (H : (PowerSeries R)ˣ)
