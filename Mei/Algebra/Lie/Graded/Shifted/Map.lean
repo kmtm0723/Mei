@@ -128,4 +128,27 @@ theorem quotientCoefficientMap_truncatedBCHAction (k : ℕ) (g : d.truncatedGrou
   simpa only [quotientCoefficientMap_def, GradedLieHom.truncatedMap_id,
     LieHom.bchGroupMap_id, MonoidHom.id_apply] using ht
 
+
+include hequiv in
+/-- Fixed-degree completed coefficient maps intertwine BCH actions. This is the
+existing filtered naturality theorem applied to the restricted coefficient map. -/
+theorem completionCoefficientMap_completedBCHAction (g : d.completedBCHGroup ℒ)
+    (a : d.ShiftedCoefficients ℳ p) :
+    d.completionCoefficientMap ℳ 𝓝 p f hf
+        ((d.shiftedLieFiltration ℒ ℳ p).completedBCHAction d ℒ g a) =
+      (d.shiftedLieFiltration ℒ 𝓝 p).completedBCHAction d ℒ g
+        (d.completionCoefficientMap ℳ 𝓝 p f hf a) := by
+  let ψ : d.shiftedLieSubmodule ℒ ℳ p →ₗ[R] d.shiftedLieSubmodule ℒ 𝓝 p :=
+    d.shiftedCoefficientMap ℳ 𝓝 p f hf
+  have hcoe (z : d.shiftedLieSubmodule ℒ ℳ p) : (ψ z : N) = f z :=
+    d.coe_shiftedCoefficientMap ℳ 𝓝 p f hf z
+  have ht := (d.shiftedLieFiltration ℒ ℳ p).completionMap_completedBCHAction_of_gradedLieHom
+    (d.shiftedLieFiltration ℒ 𝓝 p) (GradedLieHom.id ℒ) ψ id monotone_id
+    (fun k _ ha => d.shiftedCoefficientMap_mem_filtration ℳ 𝓝 p f hf k ha)
+    (fun x z => by
+      apply Subtype.ext
+      simp only [hcoe, LieSubmodule.coe_bracket, GradedLieHom.id_apply, hequiv]) g a
+  simpa only [completionCoefficientMap_eq_completionMap, GradedLieHom.completedMap_id,
+    MonoidHom.id_apply] using ht
+
 end Mei.PositiveDegrees

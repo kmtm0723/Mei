@@ -16,8 +16,9 @@ support inclusions to the module direct limit. This supplies chart-independent
 coefficient actions for signed wall products, including arbitrary completed labels
 and coefficients. No multiplication or degree-zero unit is needed.
 
-This implements the global coefficient-action supplier in the
-[shifted coefficient roadmap](https://github.com/yuma-mizuno/TauCetiRoadmap/blob/mei/TauCetiRoadmap/ScatteringDiagrams/README.md#51-graded-actions-and-shifted-coefficient-modules).
+The shifted coefficient setting is motivated by Mandel, *Scattering diagrams,
+theta functions, and refined tropical curve counts*, §2.1 and Definition 2.10
+([arXiv:1503.06183v5](https://arxiv.org/abs/1503.06183v5)).
 -/
 
 public section
@@ -38,6 +39,13 @@ def shiftedDirectLimitBCHAction : d.completedBCHGroup ℒ →*
   d.shiftedDirectLimitAction ℳ
     (fun p => (d.shiftedLieFiltration ℒ ℳ p).completedBCHAction d ℒ)
     (d.shiftedCompletedInclusion_completedBCHAction ℒ ℳ)
+
+/-- The BCH action is the common descent of its translated completion actions. -/
+theorem shiftedDirectLimitBCHAction_eq_shiftedDirectLimitAction :
+    d.shiftedDirectLimitBCHAction ℒ ℳ =
+      d.shiftedDirectLimitAction ℳ
+        (fun p => (d.shiftedLieFiltration ℒ ℳ p).completedBCHAction d ℒ)
+        (d.shiftedCompletedInclusion_completedBCHAction ℒ ℳ) := (rfl)
 
 /-- The direct-limit action restricts to the original action in every multiset chart. -/
 @[simp]
