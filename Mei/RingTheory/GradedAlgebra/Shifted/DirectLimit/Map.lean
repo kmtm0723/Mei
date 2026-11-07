@@ -32,8 +32,7 @@ variable {Γ R A B C : Type*} [AddCommGroup Γ] [CommRing R]
 
 section Multiplicative
 
-variable [DirectSum.Decomposition 𝒜] [DirectSum.Decomposition ℬ]
-  [SetLike.GradedMul 𝒜] [SetLike.GradedMul ℬ]
+variable [SetLike.GradedMul 𝒜] [SetLike.GradedMul ℬ]
   (f : A →ₗ[R] B) (hf : ∀ u, 𝒜 u ≤ (ℬ u).comap f)
   (hmul : ∀ a b, f (a * b) = f a * f b)
 

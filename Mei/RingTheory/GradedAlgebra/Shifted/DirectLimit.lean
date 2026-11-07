@@ -23,7 +23,7 @@ namespace Mei.PositiveDegrees
 
 variable {Γ R A : Type*} [AddCommGroup Γ] [CommRing R] [Ring A] [Algebra R A]
   [DecidableEq Γ] (d : PositiveDegrees Γ) (𝒜 : Γ → Submodule R A)
-  [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜]
+  [SetLike.GradedMul 𝒜]
 
 /-- Multiply two completed charts and include the product in the sum chart. -/
 def shiftedDirectLimitChartMul (s t : Multiset d.monoid) :
@@ -33,7 +33,6 @@ def shiftedDirectLimitChartMul (s t : Multiset d.monoid) :
     (d.toShiftedDirectLimitOfChart 𝒜 (d.coefficientOrigin s + d.coefficientOrigin t)
       (s + t) (d.add_sub_coefficientOrigin_mem (by simp) (by simp)))
 
-omit [DirectSum.Decomposition 𝒜] in
 /-- The chart product uses the original completed shifted multiplication. -/
 theorem shiftedDirectLimitChartMul_apply (s t : Multiset d.monoid)
     (x : d.ShiftedCoefficients 𝒜 (d.coefficientOrigin s))

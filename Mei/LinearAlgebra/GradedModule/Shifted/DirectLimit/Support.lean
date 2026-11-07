@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.Component
 public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.Inclusion
 public import Mei.LinearAlgebra.GradedModule.Shifted.Overlap
 

@@ -5,10 +5,9 @@ Authors: Codex
 -/
 module
 
-public import Mei.LinearAlgebra.DirectLimit.Semilinear
 public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.Inclusion
 public import Mei.Algebra.QuantumMonoidAlgebra.Shifted.DirectLimit.Basic
-public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.Inclusion
+public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.Transport
 
 /-!
 # Scalar and exponent transport of global quantum coefficients
@@ -32,66 +31,19 @@ variable {R S Γ Γ' : Type*} [CommRing R] [CommRing S]
   (h : ∀ p r, Units.map φ.toMonoidHom (q ^ β p r) = q' ^ β' (T p) (T r))
 
 private def targetChart (s : Multiset d.monoid) : Multiset e.monoid :=
-  {⟨T (s.sum : Γ), T.map_mem s.sum.property⟩}
-
-omit [DecidableEq Γ] [DecidableEq Γ'] in
-private theorem targetChart_origin (s : Multiset d.monoid) :
-    T (d.coefficientOrigin s) = e.coefficientOrigin (targetChart d e T s) := by
-  simp only [PositiveDegrees.coefficientOrigin_eq_neg_sum, targetChart,
-    Multiset.sum_singleton, map_neg]
+  d.coefficientImageChart e T.toAddMonoidHom T.map_mem s
 
 omit [DecidableEq Γ] [DecidableEq Γ'] in
 private theorem targetChart_mem (s : Multiset d.monoid) :
-    T (d.coefficientOrigin s) - e.coefficientOrigin (targetChart d e T s) ∈ e.monoid := by
-  rw [targetChart_origin, sub_self]
-  exact e.monoid.zero_mem
-
-private def mapGlobalChart (s : Multiset d.monoid) :
-    d.ShiftedCoefficients (grade q β) (d.coefficientOrigin s) →ₛₗ[φ]
-      e.ShiftedDirectLimit (grade q' β') :=
-  (e.toShiftedDirectLimitOfChart (grade q' β') (T (d.coefficientOrigin s))
-    (targetChart d e T s) (targetChart_mem d e T s)).comp
-      (mapShiftedCompletion d e T φ h (d.coefficientOrigin s))
-
-omit [DecidableEq Γ] in
-private theorem mapGlobalChart_apply (s : Multiset d.monoid)
-    (x : d.ShiftedCoefficients (grade q β) (d.coefficientOrigin s)) :
-    mapGlobalChart d e T φ h s x =
-      e.toShiftedDirectLimitOfChart (grade q' β') (T (d.coefficientOrigin s))
-        (targetChart d e T s) (targetChart_mem d e T s)
-        (mapShiftedCompletion d e T φ h (d.coefficientOrigin s) x) := by
-  -- Applying the composition exposes the defining chart map.
-  rfl
-
-omit [DecidableEq Γ] in
-private theorem mapGlobalChart_inclusion (s t : Multiset d.monoid) (hst : s ≤ t)
-    (x : d.ShiftedCoefficients (grade q β) (d.coefficientOrigin s)) :
-    mapGlobalChart d e T φ h t (d.coefficientInclusion (grade q β) s t hst x) =
-      mapGlobalChart d e T φ h s x := by
-  simp only [mapGlobalChart, LinearMap.comp_apply, PositiveDegrees.coefficientInclusion_eq,
-    mapShiftedCompletion_shiftedCompletedInclusion]
-  exact e.toShiftedDirectLimitOfChart_inclusion (grade q' β')
-    (T (d.coefficientOrigin s)) (T (d.coefficientOrigin t))
-    (by simpa only [map_sub] using T.map_mem (d.coefficientOrigin_sub_mem hst))
-    (targetChart d e T s) (targetChart d e T t)
-    (targetChart_mem d e T s) (targetChart_mem d e T t) _
+    T (d.coefficientOrigin s) - e.coefficientOrigin (targetChart d e T s) ∈ e.monoid :=
+  d.coefficientImageChart_mem e T.toAddMonoidHom T.map_mem s
 
 /-- Transport global coefficients along compatible scalar and positive degree maps. -/
 def mapShiftedDirectLimit :
     d.ShiftedDirectLimit (grade q β) →ₛₗ[φ] e.ShiftedDirectLimit (grade q' β') :=
-  Module.DirectLimit.liftSemilinear
-    (fun s t hst => d.coefficientInclusion (grade q β) s t hst) φ
-    (mapGlobalChart d e T φ h) (mapGlobalChart_inclusion d e T φ h)
-
-private theorem mapShiftedDirectLimit_chart (s : Multiset d.monoid)
-    (x : d.ShiftedCoefficients (grade q β) (d.coefficientOrigin s)) :
-    mapShiftedDirectLimit d e T φ h (d.toShiftedDirectLimit (grade q β) s x) =
-      mapGlobalChart d e T φ h s x := by
-  exact (congrArg (mapShiftedDirectLimit d e T φ h)
-    (d.toShiftedDirectLimit_apply (grade q β) s x)).trans
-      (Module.DirectLimit.liftSemilinear_of
-        (fun s t hst => d.coefficientInclusion (grade q β) s t hst) φ
-        (mapGlobalChart d e T φ h) (mapGlobalChart_inclusion d e T φ h) s x)
+  d.shiftedDirectLimitLift e T.toAddMonoidHom T.map_mem (grade q β) (grade q' β') φ
+    (mapShiftedCompletion d e T φ h)
+    (fun p r hpr x => mapShiftedCompletion_shiftedCompletedInclusion q β d e T φ h p r hpr x)
 
 /-- Transport in a chart can use any target chart containing the mapped origin. -/
 theorem mapShiftedDirectLimit_toShiftedDirectLimit (s : Multiset d.monoid)
@@ -99,13 +51,11 @@ theorem mapShiftedDirectLimit_toShiftedDirectLimit (s : Multiset d.monoid)
     (x : d.ShiftedCoefficients (grade q β) (d.coefficientOrigin s)) :
     mapShiftedDirectLimit d e T φ h (d.toShiftedDirectLimit (grade q β) s x) =
       e.toShiftedDirectLimitOfChart (grade q' β') (T (d.coefficientOrigin s)) t ht
-        (mapShiftedCompletion d e T φ h (d.coefficientOrigin s) x) := by
-  rw [mapShiftedDirectLimit_chart, mapGlobalChart_apply]
-  simpa only [PositiveDegrees.shiftedCompletedInclusion_refl] using
-    e.toShiftedDirectLimitOfChart_inclusion (grade q' β')
-      (T (d.coefficientOrigin s)) (T (d.coefficientOrigin s)) (by simp)
-      t (targetChart d e T s) ht (targetChart_mem d e T s)
-      (mapShiftedCompletion d e T φ h (d.coefficientOrigin s) x)
+        (mapShiftedCompletion d e T φ h (d.coefficientOrigin s) x) :=
+  d.shiftedDirectLimitLift_toShiftedDirectLimit e T.toAddMonoidHom T.map_mem
+    (grade q β) (grade q' β') φ (mapShiftedCompletion d e T φ h)
+    (fun p r hpr x => mapShiftedCompletion_shiftedCompletedInclusion q β d e T φ h p r hpr x)
+    s t ht x
 
 /-- Arbitrary-origin chart embeddings commute with global scalar and exponent transport. -/
 theorem mapShiftedDirectLimit_toShiftedDirectLimitOfChart (p : Γ)
@@ -114,22 +64,11 @@ theorem mapShiftedDirectLimit_toShiftedDirectLimitOfChart (p : Γ)
     (x : d.ShiftedCoefficients (grade q β) p) :
     mapShiftedDirectLimit d e T φ h (d.toShiftedDirectLimitOfChart (grade q β) p s hs x) =
       e.toShiftedDirectLimitOfChart (grade q' β') (T p) t ht
-        (mapShiftedCompletion d e T φ h p x) := by
-  let E := e.toShiftedDirectLimitOfChart (grade q' β') (T (d.coefficientOrigin s))
-    (targetChart d e T s) (targetChart_mem d e T s)
-  have h₁ := congrArg (mapShiftedDirectLimit d e T φ h)
-    (d.toShiftedDirectLimitOfChart_apply (grade q β) p s hs x)
-  have h₂ := mapShiftedDirectLimit_chart d e T φ h s
-    (d.shiftedCompletedInclusion (grade q β) p (d.coefficientOrigin s) hs x)
-  have h₃ := mapGlobalChart_apply d e T φ h s
-    (d.shiftedCompletedInclusion (grade q β) p (d.coefficientOrigin s) hs x)
-  have h₄ := congrArg E (mapShiftedCompletion_shiftedCompletedInclusion q β d e T φ h
-    p (d.coefficientOrigin s) hs x)
-  have h₅ := e.toShiftedDirectLimitOfChart_inclusion (grade q' β') (T p)
-    (T (d.coefficientOrigin s)) (by simpa only [map_sub] using T.map_mem hs)
-    t (targetChart d e T s) ht (targetChart_mem d e T s)
-    (mapShiftedCompletion d e T φ h p x)
-  exact h₁.trans (h₂.trans (h₃.trans (h₄.trans h₅)))
+        (mapShiftedCompletion d e T φ h p x) :=
+  d.shiftedDirectLimitLift_toShiftedDirectLimitOfChart e T.toAddMonoidHom T.map_mem
+    (grade q β) (grade q' β') φ (mapShiftedCompletion d e T φ h)
+    (fun u r hur x => mapShiftedCompletion_shiftedCompletedInclusion q β d e T φ h u r hur x)
+    p s hs t ht x
 
 private theorem toShiftedDirectLimitOfChart_cast {p r : Γ} (hpr : p = r)
     (s : Multiset d.monoid) (hr : r - d.coefficientOrigin s ∈ d.monoid)

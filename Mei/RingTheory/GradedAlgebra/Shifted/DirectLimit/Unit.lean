@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mei.LinearAlgebra.GradedModule.Shifted.DirectLimit.Component
 public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.NonUnital
 public import Mei.RingTheory.GradedAlgebra.Supported
 
