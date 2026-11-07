@@ -34,6 +34,12 @@ def directLimitRayAction : (PowerSeries R)ˣ →*
   d.shiftedDirectLimitAction (grade q β) (shiftedRayAction q β d n hn)
     (shiftedCompletedInclusion_shiftedRayAction q β d n hn)
 
+/-- The ray action is the common descent of its translated completion actions. -/
+theorem directLimitRayAction_eq_shiftedDirectLimitAction :
+    directLimitRayAction q β d n hn =
+      d.shiftedDirectLimitAction (grade q β) (shiftedRayAction q β d n hn)
+        (shiftedCompletedInclusion_shiftedRayAction q β d n hn) := (rfl)
+
 /-- The direct-limit action restricts to the original action in every multiset chart. -/
 @[simp]
 theorem directLimitRayAction_toShiftedDirectLimit (H : (PowerSeries R)ˣ)
