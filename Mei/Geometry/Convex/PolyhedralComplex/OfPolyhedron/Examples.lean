@@ -9,6 +9,7 @@ public import Mei.Analysis.Normed.ContinuousLinearMap.Plane
 public import Mei.Geometry.Convex.PolyhedralComplex.CoordinateAxes
 public import Mei.Geometry.Convex.PolyhedralComplex.OfPolyhedron.Basic
 public import Mei.Geometry.Convex.Recession
+public import Mei.Geometry.Convex.Sweep.Face
 
 /-!
 # Complexes with a line and with a ray at a real offset
@@ -135,48 +136,35 @@ theorem isPolyhedralFace_lineAtHeight_iff (c : ℝ) (F : Set (ℝ × ℝ)) :
   · rintro rfl
     exact ⟨⟨(0, c), rfl⟩, IsExposed.refl _⟩
 
+/-- The ray with endpoint `(a, 0)` is the sweep of its endpoint along `(-1, 0)`. -/
+theorem rightRay_eq_sweep (a : ℝ) :
+    rightRay a = Mei.Convex.sweep {((a : ℝ), (0 : ℝ))} (-1, 0) := by
+  ext p
+  simp only [mem_rightRay, Mei.Convex.mem_sweep_iff_exists, mem_singleton_iff, exists_eq_left]
+  constructor
+  · rintro ⟨hp, hap⟩
+    exact ⟨p.1 - a, sub_nonneg.mpr hap, Prod.ext (by simp) (by simp [hp])⟩
+  · rintro ⟨t, ht, rfl⟩
+    simpa using ht
+
 /-- The nonempty exposed faces of the ray with endpoint `(a, 0)` are the ray and its endpoint.
 For `a = √2` the endpoint has an irrational coordinate. -/
 @[simp]
 theorem isPolyhedralFace_rightRay_iff (a : ℝ) (F : Set (ℝ × ℝ)) :
     IsPolyhedralFace (rightRay a) F ↔ F = rightRay a ∨ F = {(a, 0)} := by
-  rw [isPolyhedralFace_iff]
+  have hn : ((-1 : ℝ), (0 : ℝ)) ∉ vectorSpan ℝ {((a : ℝ), (0 : ℝ))} := by
+    simp [vectorSpan_singleton]
+  have hpt : IsExposed ℝ (Mei.Convex.sweep {((a : ℝ), (0 : ℝ))} (-1, 0)) {(a, 0)} :=
+    (IsExposed.refl _).in_sweep_of_transverse hn
+  rw [isPolyhedralFace_iff, rightRay_eq_sweep]
   constructor
-  · rintro ⟨⟨x, hxF⟩, hexp⟩
-    obtain ⟨l, rfl⟩ := hexp ⟨x, hxF⟩
-    obtain ⟨hx, hmax⟩ := hxF
-    -- The functional is nonpositive along the ray, since `x` maximizes it.
-    have hle : l (1, 0) ≤ 0 := by
-      have hy : (x.1 + 1, (0 : ℝ)) ∈ rightRay a := ⟨rfl, by linarith [hx.2]⟩
-      have := hmax _ hy
-      rw [l.apply_eq_of_snd_eq_zero hy.1, l.apply_eq_of_snd_eq_zero hx.1] at this
-      nlinarith
-    rcases hle.eq_or_lt with h0 | hlt
-    · refine Or.inl (Set.ext fun y => Set.mem_sep_iff.trans
-        ⟨fun hy => hy.1, fun hy => ⟨hy, fun z hz => ?_⟩⟩)
-      rw [l.apply_eq_of_snd_eq_zero hz.1, l.apply_eq_of_snd_eq_zero hy.1, h0]
-      simp
-    · refine Or.inr (Set.ext fun y => Set.mem_sep_iff.trans ⟨fun ⟨hy, hy'⟩ => ?_, ?_⟩)
-      · have := hy' _ (endpoint_mem_rightRay a)
-        rw [l.apply_eq_of_snd_eq_zero (endpoint_mem_rightRay a).1,
-          l.apply_eq_of_snd_eq_zero hy.1] at this
-        exact Prod.ext (le_antisymm (by nlinarith) hy.2) hy.1
-      · rintro rfl
-        refine ⟨endpoint_mem_rightRay a, fun z hz => ?_⟩
-        rw [l.apply_eq_of_snd_eq_zero hz.1, l.apply_eq_of_snd_eq_zero (endpoint_mem_rightRay a).1]
-        nlinarith [hz.2]
+  · rintro ⟨hne, hexp⟩
+    obtain ⟨F₀, hF₀, hF₀exp, rfl | rfl⟩ := (Mei.Convex.isExposed_sweep_iff hn hne).mp hexp
+    · exact Or.inr (hF₀.subset_singleton_iff.mp hF₀exp.subset)
+    · exact Or.inl (by rw [hF₀.subset_singleton_iff.mp hF₀exp.subset])
   · rintro (rfl | rfl)
-    · exact ⟨⟨(a, 0), endpoint_mem_rightRay a⟩, IsExposed.refl _⟩
-    · refine ⟨⟨(a, 0), rfl⟩, fun _ => ⟨-ContinuousLinearMap.fst ℝ ℝ ℝ, ?_⟩⟩
-      ext y
-      rw [Set.mem_singleton_iff, Set.mem_sep_iff]
-      constructor
-      · rintro rfl
-        exact ⟨endpoint_mem_rightRay a, fun z hz => by simpa using hz.2⟩
-      · rintro ⟨hy, hmax⟩
-        have := hmax (a, 0) (endpoint_mem_rightRay a)
-        simp only [neg_apply, ContinuousLinearMap.coe_fst', neg_le_neg_iff] at this
-        exact Prod.ext (le_antisymm this hy.2) hy.1
+    · exact ⟨(singleton_nonempty _).mono (Mei.Convex.subset_sweep _ _), IsExposed.refl _⟩
+    · exact ⟨singleton_nonempty _, hpt⟩
 
 /-- The complex of a horizontal line has the single cell `H`. -/
 theorem mem_cells_ofPolyhedron_lineAtHeight_iff (c : ℝ) (F : Set (ℝ × ℝ)) :
