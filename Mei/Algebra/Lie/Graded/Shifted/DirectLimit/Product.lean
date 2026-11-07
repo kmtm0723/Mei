@@ -36,6 +36,7 @@ variable {Γ R L A : Type*} [AddCommGroup Γ] [CommRing R] [Algebra ℚ R]
   [SetLike.GradedMul 𝒜]
 
 /-- Completed BCH labels preserve the global product without a graded unit. -/
+@[simp]
 theorem shiftedDirectLimitBCHAction_map_mul (g : d.completedBCHGroup ℒ)
     (x y : d.ShiftedDirectLimit 𝒜) :
     d.shiftedDirectLimitBCHAction ℒ 𝒜 g (x * y) =
