@@ -177,6 +177,76 @@ theorem shiftedCompletionMap_of (x : shiftedSubmodule ℳ d.monoid p) :
   (d.shiftedFiltration ℳ p).completionMap_of (e.shiftedFiltration 𝓝 (T p))
     (T.shiftedMap ℳ 𝓝 p f hf) T.modulus T.monotone_modulus _ x
 
+/-- A degree-changing completed map commutes with enlargement of translated support. -/
+theorem shiftedCompletionMap_inclusion (q : Γ) (hpq : p - q ∈ d.monoid)
+    (x : d.ShiftedCoefficients ℳ p) :
+    T.shiftedCompletionMap ℳ 𝓝 q f hf (d.shiftedCompletedInclusion ℳ p q hpq x) =
+      e.shiftedCompletedInclusion 𝓝 (T p) (T q)
+        (by simpa only [map_sub] using T.map_mem hpq)
+        (T.shiftedCompletionMap ℳ 𝓝 p f hf x) := by
+  let hTpq : T p - T q ∈ e.monoid := by simpa only [map_sub] using T.map_mem hpq
+  have hi : (T.shiftedMap ℳ 𝓝 q f hf).comp
+      (shiftedSupportInclusion ℳ d.monoid p q hpq) =
+      (shiftedSupportInclusion 𝓝 e.monoid (T p) (T q) hTpq).comp
+        (T.shiftedMap ℳ 𝓝 p f hf) := by
+    ext a
+    simp only [LinearMap.comp_apply, coe_shiftedMap, coe_shiftedSupportInclusion]
+  have h₁ := ModuleFiltration.completionMap_comp
+    (d.shiftedFiltration ℳ p) (d.shiftedFiltration ℳ q)
+    (shiftedSupportInclusion ℳ d.monoid p q hpq) _root_.id monotone_id
+    (fun k => d.shiftedSupportInclusion_filtered ℳ p q hpq (k + 1))
+    (e.shiftedFiltration 𝓝 (T q)) (T.shiftedMap ℳ 𝓝 q f hf)
+    T.modulus T.monotone_modulus
+    (fun k _ ha => T.shiftedMap_mem_shiftedFiltration ℳ 𝓝 q f hf k ha)
+  have h₂ := ModuleFiltration.completionMap_comp
+    (d.shiftedFiltration ℳ p) (e.shiftedFiltration 𝓝 (T p))
+    (T.shiftedMap ℳ 𝓝 p f hf) T.modulus T.monotone_modulus
+    (fun k _ ha => T.shiftedMap_mem_shiftedFiltration ℳ 𝓝 p f hf k ha)
+    (e.shiftedFiltration 𝓝 (T q))
+    (shiftedSupportInclusion 𝓝 e.monoid (T p) (T q) hTpq) _root_.id monotone_id
+    (fun k => e.shiftedSupportInclusion_filtered 𝓝 (T p) (T q) hTpq (k + 1))
+  simp only [hi, Function.id_comp, Function.comp_id] at h₁ h₂
+  simpa only [shiftedCompletionMap_def, PositiveDegrees.shiftedCompletedInclusion_def,
+    LinearMap.comp_apply] using congrArg (fun F => F x) (h₁.symm.trans h₂)
+
+/-- Composition of degree-changing completed maps, with heterogeneous equality
+accounting for the canonically equal target origins. -/
+theorem shiftedCompletionMap_comp {Γ'' P : Type*} [AddCommGroup Γ'']
+    [AddCommGroup P] [Module R P] [DecidableEq Γ']
+    {a : PositiveDegrees Γ''} (U : PositiveDegreeMap e a)
+    (𝓟 : Γ'' → Submodule R P) [DirectSum.Decomposition 𝓝]
+    (g : M' →ₗ[R] P) (hg : ∀ q, 𝓝 q ≤ (𝓟 (U q)).comap g)
+    (hc : ∀ q, ℳ q ≤ (𝓟 ((U.comp T) q)).comap (g.comp f))
+    (x : d.ShiftedCoefficients ℳ p) :
+    HEq ((U.comp T).shiftedCompletionMap ℳ 𝓟 p (g.comp f) hc x)
+      (U.shiftedCompletionMap 𝓝 𝓟 (T p) g hg (T.shiftedCompletionMap ℳ 𝓝 p f hf x)) := by
+  revert hc
+  -- Expose only the composite degree data; the completion maps remain the
+  -- existing functorial filtered maps.
+  let C : PositiveDegreeMap d a :=
+    { toAddMonoidHom := U.toAddMonoidHom.comp T.toAddMonoidHom
+      map_mem := fun h => U.map_mem (T.map_mem h)
+      map_ne_zero := fun h hn => U.map_ne_zero (T.map_mem h) (T.map_ne_zero h hn)
+      modulus := T.modulus ∘ U.modulus
+      monotone_modulus := T.monotone_modulus.comp U.monotone_modulus
+      degree_gt := fun k hn h => U.degree_gt k (T.map_mem hn) (T.degree_gt _ hn h) }
+  have hC : U.comp T = C :=
+    PositiveDegreeMap.ext (fun q => comp_apply U T q) (fun k => comp_modulus U T k)
+  rw [hC]
+  intro hc
+  have hi : C.shiftedMap ℳ 𝓟 p (g.comp f) hc =
+      (U.shiftedMap 𝓝 𝓟 (T p) g hg).comp (T.shiftedMap ℳ 𝓝 p f hf) := by
+    ext b
+    simp only [coe_shiftedMap, LinearMap.comp_apply]
+  simp only [heq_iff_eq, shiftedCompletionMap_def, hi]
+  exact congrArg (fun F => F x) (ModuleFiltration.completionMap_comp
+    (d.shiftedFiltration ℳ p) (e.shiftedFiltration 𝓝 (T p))
+    (T.shiftedMap ℳ 𝓝 p f hf) T.modulus T.monotone_modulus
+    (fun k _ hx => T.shiftedMap_mem_shiftedFiltration ℳ 𝓝 p f hf k hx)
+    (a.shiftedFiltration 𝓟 (U (T p))) (U.shiftedMap 𝓝 𝓟 (T p) g hg)
+    U.modulus U.monotone_modulus
+    (fun k _ hx => U.shiftedMap_mem_shiftedFiltration 𝓝 𝓟 (T p) g hg k hx))
+
 end Group
 
 section QuotientGrading
@@ -478,3 +548,26 @@ theorem completionCoefficientMap_comp {P : Type*} [AddCommGroup P] [Module R P]
 end FixedCompletion
 
 end Mei.PositiveDegrees
+
+namespace Mei.PositiveDegreeMap
+
+variable {Γ R M : Type*} [AddCommGroup Γ] [Ring R] [AddCommGroup M] [Module R M]
+  [DecidableEq Γ] (d : PositiveDegrees Γ) (ℳ : Γ → Submodule R M)
+  [DirectSum.Decomposition ℳ]
+
+/-- Identity degree and coefficient maps fix completed coefficients, accounting
+for the canonically equal target origin. -/
+theorem shiftedCompletionMap_id (p : Γ)
+    (hf : ∀ q, ℳ q ≤ (ℳ (PositiveDegreeMap.id d q)).comap (LinearMap.id : M →ₗ[R] M))
+    (x : d.ShiftedCoefficients ℳ p) :
+    HEq ((PositiveDegreeMap.id d).shiftedCompletionMap ℳ ℳ p LinearMap.id hf x) x := by
+  have hi : d.shiftedCoefficientMap ℳ ℳ p LinearMap.id (fun _ => le_rfl) = LinearMap.id := by
+    ext b
+    simp only [PositiveDegrees.coe_shiftedCoefficientMap, LinearMap.id_apply]
+  have hx : d.completionCoefficientMap ℳ ℳ p LinearMap.id (fun _ => le_rfl) x = x := by
+    simp only [PositiveDegrees.completionCoefficientMap_eq_completionMap, hi,
+      ModuleFiltration.completionMap_id, LinearMap.id_apply]
+  exact (d.completionCoefficientMap_heq_shiftedCompletionMap_id ℳ ℳ LinearMap.id
+    (fun _ => le_rfl) p hf x).symm.trans (heq_of_eq hx)
+
+end Mei.PositiveDegreeMap
