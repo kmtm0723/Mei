@@ -137,7 +137,7 @@ variable [DirectSum.Decomposition 𝓝]
 open Classical in
 /-- A target global component is the sum of the source components in its finite cutoff fiber.
 The cutoff bounds relative degrees, so this formula includes negative chart origins. -/
-theorem shiftedDirectLimitComponents_map_eq_sum (p : Γ)
+theorem coe_shiftedDirectLimitComponents_map_eq_sum (p : Γ)
     (s : Multiset d.monoid) (hs : p - d.coefficientOrigin s ∈ d.monoid)
     (j : Γ') (k : ℕ) (hj : e.degree j ≤ k) (x : d.ShiftedCoefficients ℳ p) :
     (e.shiftedDirectLimitComponents 𝓝

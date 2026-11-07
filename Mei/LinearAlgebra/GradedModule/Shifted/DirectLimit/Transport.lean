@@ -114,7 +114,7 @@ theorem shiftedDirectLimitLift_toShiftedDirectLimit (s : Multiset d.monoid)
       t (coefficientImageChart d e T hT s) ht (coefficientImageChart_mem d e T hT s)
       (F (d.coefficientOrigin s) x)
 
-/-- Arbitrary-origin chart embeddings commute with global scalar and exponent transport. -/
+/-- Arbitrary-origin chart embeddings commute with the global semilinear coefficient lift. -/
 theorem shiftedDirectLimitLift_toShiftedDirectLimitOfChart (p : Γ)
     (s : Multiset d.monoid) (hs : p - d.coefficientOrigin s ∈ d.monoid)
     (t : Multiset e.monoid) (ht : T p - e.coefficientOrigin t ∈ e.monoid)
