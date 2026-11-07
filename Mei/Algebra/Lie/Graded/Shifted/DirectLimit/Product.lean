@@ -7,7 +7,7 @@ module
 
 public import Mei.Algebra.Lie.Graded.Shifted.DirectLimit
 public import Mei.Algebra.Lie.Graded.Shifted.Product
-public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.NonUnital
+public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.Action
 
 /-!
 # Global completed BCH actions preserve products
@@ -15,6 +15,10 @@ public import Mei.RingTheory.GradedAlgebra.Shifted.DirectLimit.NonUnital
 A graded derivation action descends to multiplication on global coefficients.
 The coefficient algebra may be noncommutative, and only a graded multiplication
 is required: the original unit need not belong to the degree-zero piece.
+
+The shifted coefficient setting is motivated by Mandel, *Scattering diagrams,
+theta functions, and refined tropical curve counts*, §2.1 and Definition 2.10
+([arXiv:1503.06183v5](https://arxiv.org/abs/1503.06183v5)).
 -/
 
 public section
@@ -36,10 +40,10 @@ theorem shiftedDirectLimitBCHAction_map_mul (g : d.completedBCHGroup ℒ)
     (x y : d.ShiftedDirectLimit 𝒜) :
     d.shiftedDirectLimitBCHAction ℒ 𝒜 g (x * y) =
       d.shiftedDirectLimitBCHAction ℒ 𝒜 g x * d.shiftedDirectLimitBCHAction ℒ 𝒜 g y := by
-  obtain ⟨s, a, rfl⟩ := d.exists_toShiftedDirectLimit 𝒜 x
-  obtain ⟨t, b, rfl⟩ := d.exists_toShiftedDirectLimit 𝒜 y
-  rw [toShiftedDirectLimit_mul, shiftedDirectLimitBCHAction_toShiftedDirectLimitOfChart,
-    completedBCHAction_shiftedCompletionMul, shiftedDirectLimitBCHAction_toShiftedDirectLimit,
-    shiftedDirectLimitBCHAction_toShiftedDirectLimit, toShiftedDirectLimit_mul]
+  rw [shiftedDirectLimitBCHAction_eq_shiftedDirectLimitAction]
+  exact d.shiftedDirectLimitAction_map_mul 𝒜
+    (fun p => (d.shiftedLieFiltration ℒ 𝒜 p).completedBCHAction d ℒ)
+    (d.shiftedCompletedInclusion_completedBCHAction ℒ 𝒜)
+    (d.completedBCHAction_shiftedCompletionMul ℒ 𝒜) g x y
 
 end Mei.PositiveDegrees

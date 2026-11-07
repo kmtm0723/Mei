@@ -16,6 +16,10 @@ public import Mei.Algebra.Group.Hom.Algebra
 If the original unit has degree zero, the global linear action of each completed
 BCH label is an algebra automorphism. Product preservation is supplied by the
 nonunital result; the unit law follows from invertibility of that multiplicative map.
+
+The shifted coefficient setting is motivated by Mandel, *Scattering diagrams,
+theta functions, and refined tropical curve counts*, §2.1 and Definition 2.10
+([arXiv:1503.06183v5](https://arxiv.org/abs/1503.06183v5)).
 -/
 
 public section
