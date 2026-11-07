@@ -49,7 +49,7 @@ include hequiv
 /-- Coordinate changes of degrees, Lie labels, and module coefficients commute
 with the global completed BCH action. The Lie map is supplied explicitly because
 a coefficient map need not determine it. -/
-theorem shiftedDirectLimitMap_shiftedDirectLimitBCHAction
+theorem shiftedDirectLimitBCHAction_naturality
     (g : d.completedBCHGroup ℒ) (x : d.ShiftedDirectLimit ℳ) :
     T.shiftedDirectLimitMap ℳ 𝓝 f hf (d.shiftedDirectLimitBCHAction ℒ ℳ g x) =
       e.shiftedDirectLimitBCHAction ℒ' 𝓝 (φ.completedMap g)
