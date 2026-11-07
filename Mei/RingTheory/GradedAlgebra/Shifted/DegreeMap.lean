@@ -29,20 +29,6 @@ variable {Γ Γ' R A B : Type*} [AddCommGroup Γ] [AddCommGroup Γ']
   [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜] [SetLike.GradedMul ℬ]
   (f : A →ₗ[R] B) (hf : ∀ n, 𝒜 n ≤ (ℬ (T n)).comap f)
 
-omit [SetLike.GradedMul ℬ] in
-private theorem cast_completionMap {M : Type*} [AddCommGroup M] [Module R M]
-    (F : ModuleFiltration R M) (s t : Γ') (h : s = t)
-    (g : M →ₗ[R] shiftedSubmodule ℬ e.monoid s)
-    (ρ : ℕ → ℕ) (hρ : Monotone ρ)
-    (hg : ∀ k, F.submodule (ρ k + 1) ≤
-      ((e.shiftedFiltration ℬ s).submodule (k + 1)).comap g) (x : F.completion) :
-    cast (congrArg (e.ShiftedCoefficients ℬ) h)
-      (F.completionMap (e.shiftedFiltration ℬ s) g ρ hρ hg x) =
-    F.completionMap (e.shiftedFiltration ℬ t)
-      (h ▸ g) ρ hρ (by subst t; exact hg) x := by
-  subst t
-  rfl
-
 /-- Degree-changing coefficient maps preserve products after identifying the sum of shifts. -/
 theorem shiftedCompletionMap_mul (hmul : ∀ a b, f (a * b) = f a * f b)
     (p q : Γ) (x : d.ShiftedCoefficients 𝒜 p) (y : d.ShiftedCoefficients 𝒜 q) :
@@ -51,7 +37,7 @@ theorem shiftedCompletionMap_mul (hmul : ∀ a b, f (a * b) = f a * f b)
     e.shiftedCompletionMul ℬ (T p) (T q)
       (T.shiftedCompletionMap 𝒜 ℬ p f hf x) (T.shiftedCompletionMap 𝒜 ℬ q f hf y) := by
   simp only [shiftedCompletionMap_def, PositiveDegrees.shiftedCompletionMul_def]
-  rw [cast_completionMap (h := _root_.map_add T.toAddMonoidHom p q)]
+  rw [e.cast_completionMap ℬ (h := _root_.map_add T.toAddMonoidHom p q)]
   apply ModuleFiltration.completionMap_completionBilinear
   intro a b
   apply Subtype.ext
