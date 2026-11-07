@@ -7,6 +7,8 @@ module
 
 public import Mei.RingTheory.Node.Tangential
 public import Mei.Algebra.MonoidAlgebra.Ideal
+public import Mei.Algebra.MonoidAlgebra.Filtration.Coefficient
+public import Mei.Algebra.DirectSum.Component
 public import Mathlib.Algebra.BigOperators.Fin
 
 /-!
@@ -25,6 +27,10 @@ map. Its finite composites allow different slab parameters and independent
 source and target exponents at each step, and arbitrary intervening scalar-linear
 component maps, as needed when the chamber coordinates change between faces.
 No regularity of the slab parameters is assumed.
+
+A whole-component transfer to a different exponent also raises the coefficient filtration order.
+`Mei.NodeAlgebra.homogeneousComponent_mem_coeffFiltration_of_exponentCorrespondence` incorporates
+weight-zero transfers to a different exponent.
 
 The component formulas are those of `exponentCorrespondence_transfer` and its
 reverse, and the finite composites use Mathlib's `Module.End` multiplication.
@@ -111,6 +117,30 @@ theorem slabComponentMap_mem_pow (I : Ideal R) {a : R[M]}
     · simp [coeff_single, hm]
   · exact (I ^ _).zero_mem
 
+/-- A slab component to a different exponent raises the ideal order by at least one, since a
+component of positive normal weight gains that many powers and one of weight zero is carried to
+itself. A component to the same exponent preserves the order. -/
+theorem slabComponentMap_mem_pow_add_ite [DecidableEq M] (I : Ideal R) {a : R[M]}
+    (ha : ∀ m, a.coeff m ∈ I) (p : {p : ℤ × M | 0 ≤ p.1}) (q : ℤ × M) {b : ℕ} {c : R}
+    (hc : c ∈ I ^ b) :
+    slabComponentMap a p q c ∈ I ^ (b + if p.val = q then 0 else 1) := by
+  have hmem := slabComponentMap_mem_pow I ha p q hc
+  by_cases hpq : p.val = q
+  · simp only [hpq, ↓reduceIte, Nat.add_zero]
+    exact Ideal.pow_le_pow_right (Nat.le_add_right _ _) hmem
+  · simp only [hpq, ↓reduceIte]
+    by_cases hd : p.val.1 = 0
+    · have hq : slabComponentMap a p q c = 0 := by
+        rw [slabComponentMap_apply]
+        split_ifs with h
+        · have h2 : p.val.2 ≠ q.2 := fun h2 => hpq (Prod.ext (by omega) h2)
+          simp [hd, coeff_single, h2]
+        · rfl
+      rw [hq]
+      exact (I ^ _).zero_mem
+    · have hp : 0 ≤ p.val.1 := p.property
+      exact Ideal.pow_le_pow_right (by omega) hmem
+
 /-- Composite slab components gain the sum of their incoming normal weights.
 The maps `f` allow arbitrary coefficient-linear operations before each slab
 crossing. Index zero acts last, following multiplication in `Module.End`. -/
@@ -178,3 +208,45 @@ theorem card_transverse_lt_of_slabComponentMap_ne_zero (I : Ideal R) {n r : ℕ}
   omega
 
 end Ideal
+
+namespace Mei.NodeAlgebra
+
+open TauCeti AddMonoidAlgebra Mei
+
+variable {R M : Type*} [CommRing R] [AddCommMonoid M] [DecidableEq M] {I : Ideal R}
+
+/-- A homogeneous input in the `k`-th term of the coefficient filtration is sent by the
+whole-component transfer of a slab correspondence, in either orientation, into the `k`-th term
+if the output exponent is the input exponent, and into the `(k + 1)`-st term otherwise, provided
+the slab parameter has all coefficients in `I`. -/
+theorem homogeneousComponent_mem_coeffFiltration_of_exponentCorrespondence {a : R[M]}
+    (ha : ∀ m, a.coeff m ∈ I) {T : Module.End R R[ℤ × M]}
+    (hT : T = (exponentCorrespondence a).totalTransfer ∨
+      T = (exponentCorrespondence a).symm.totalTransfer)
+    {p q : ℤ × M} {x : R[ℤ × M]} (hx : x ∈ grade R p) {k : ℕ}
+    (hxk : x ∈ (Ideal.coeffFiltration I (ℤ × M)).submodule k) :
+    homogeneousComponent (grade R : ℤ × M → _) q (T x) ∈
+      (Ideal.coeffFiltration I (ℤ × M)).submodule (k + if p = q then 0 else 1) := by
+  classical
+  have key (C : GradedCorrespondence (B := NodeAlgebra R[M] a) (grade R : ℤ × M → _)
+      (grade R : ℤ × M → _) {p | 0 ≤ p.1} {p | 0 ≤ p.1})
+      (hC : ∀ (p : {p : ℤ × M | 0 ≤ p.1}) (q : ℤ × M) (u : grade R p.val),
+        ((C.transfer p q u : grade R q) : R[ℤ × M]) =
+          single q (slabComponentMap a p q (u.val.coeff p.val))) :
+      homogeneousComponent (grade R : ℤ × M → _) q (C.totalTransfer x) ∈
+        (Ideal.coeffFiltration I (ℤ × M)).submodule (k + if p = q then 0 else 1) := by
+    rw [homogeneousComponent_apply, GradedCorrespondence.totalTransfer_apply,
+      C.decompose_right_liftLeftTotal_of_mem hx q]
+    by_cases hp : p ∈ {p : ℤ × M | 0 ≤ p.1}
+    · simp only [hp, ↓reduceDIte]
+      rw [hC ⟨p, hp⟩ q ⟨x, hx⟩]
+      exact (Ideal.single_mem_coeffFiltration_submodule (I := I) (M := ℤ × M)).2
+        (Ideal.slabComponentMap_mem_pow_add_ite I ha ⟨p, hp⟩ q
+          ((Ideal.mem_coeffFiltration_submodule (I := I) (M := ℤ × M)).1 hxk p))
+    · simp only [hp, ↓reduceDIte]
+      exact Submodule.zero_mem _
+  rcases hT with rfl | rfl
+  · exact key _ fun p q u => exponentCorrespondence_transfer_eq_single a p q u
+  · exact key _ fun p q u => exponentCorrespondence_symm_transfer_eq_single a p q u
+
+end Mei.NodeAlgebra
