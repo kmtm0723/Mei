@@ -6,7 +6,7 @@ Authors: Claude Code
 module
 
 public import Mei.Analysis.Normed.ContinuousLinearMap.Plane
-public import Mei.Geometry.Convex.PolyhedralComplex.CoordinateAxes
+public import Mei.Geometry.Convex.PolyhedralCochain.Plane.Basic
 public import Mei.Geometry.Convex.PolyhedralComplex.OfPolyhedron.Basic
 public import Mei.Geometry.Convex.Recession
 public import Mei.Geometry.Convex.Sweep.Face
@@ -21,7 +21,7 @@ In the plane `ℝ²` with the standard lattice `ℤ²`, consider
   (`lineal_recessionCone_lineAtHeight_ne_bot`);
 * the ray `r = {(x, 0) | a ≤ x}` with endpoint `(a, 0)` for an arbitrary real `a`, for instance
   `a = √2`. Its nonempty exposed faces are `r` and `{(a, 0)}`, so its complex has these two cells
-  (`mem_cells_ofPolyhedron_rightRay_iff`), and its cells have trivial lineality
+  (`mem_cells_ofPolyhedron_rightRay_iff`), and the ray has trivial lineality
   (`lineal_recessionCone_rightRay`).
 
 Both are complexes of rational-normal polyhedra: the normals are coordinate functionals, while
@@ -75,23 +75,19 @@ variable (h : TauCeti.Toric.IsIntegralLattice ((Int.castAddHom ℝ).prodMap (Int
 /-- A horizontal line is a rational-normal polyhedron. -/
 theorem isRationalNormalPolyhedron_lineAtHeight (c : ℝ) :
     IsRationalNormalPolyhedron h (lineAtHeight c) := by
-  have hs := isRationalFunctional_axisRow h true
-  have h₁ := isRationalNormalPolyhedron_setOf_le (h := h) (axisRow true) hs c
-  have h₂ := isRationalNormalPolyhedron_setOf_le (h := h) (-axisRow true)
-    (by simpa using hs.neg) (-c)
-  convert h₁.inter h₂ using 1
+  convert Plane.isRationalNormalPolyhedron_setOf_snd_eq h c using 1
   ext p
-  simp [lineAtHeight, le_antisymm_iff, neg_le_neg_iff]
+  simp
 
 /-- A horizontal ray with any real endpoint is a rational-normal polyhedron. -/
 theorem isRationalNormalPolyhedron_rightRay (a : ℝ) :
     IsRationalNormalPolyhedron h (rightRay a) := by
-  have h₁ := isRationalNormalPolyhedron_lineAtHeight h 0
+  have h₁ := Plane.isRationalNormalPolyhedron_horizontalLine h
   have h₂ := isRationalNormalPolyhedron_setOf_le (h := h) (-axisRow false)
     (by simpa using (isRationalFunctional_axisRow h false).neg) (-a)
   convert h₁.inter h₂ using 1
   ext p
-  simp [rightRay, lineAtHeight, and_comm, neg_le_neg_iff]
+  simp [rightRay, and_comm, neg_le_neg_iff]
 
 /-- The endpoint of a ray lies on it. -/
 theorem endpoint_mem_rightRay (a : ℝ) : (a, (0 : ℝ)) ∈ rightRay a := ⟨rfl, le_rfl⟩

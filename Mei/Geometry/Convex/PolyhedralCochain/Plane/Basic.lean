@@ -16,8 +16,8 @@ The plane `ℝ × ℝ` carries the standard lattice `ℤ × ℤ`. This file reco
 write explicit oriented cells there: the coordinate form `dy` and the area form `dx ∧ dy`, whose
 rays orient the normal quotients of lines and points; the horizontal direction, which is the
 direction of every horizontal line or segment through the origin; and the rational-normal
-polyhedra cut out by the coordinate functionals, namely the upper half-plane, the horizontal axis
-and the closed unit segment on the axis.
+polyhedra cut out by the coordinate functionals, namely the upper half-plane, the horizontal lines
+(in particular the horizontal axis) and the closed unit segment on the axis.
 -/
 
 public section
@@ -117,15 +117,22 @@ theorem isRationalNormalPolyhedron_upperHalfPlane
   ext p
   simp
 
+/-- A horizontal line `{y = c}` is a rational-normal polyhedron, for any real height `c`. -/
+theorem isRationalNormalPolyhedron_setOf_snd_eq
+    (h : TauCeti.Toric.IsIntegralLattice ((Int.castAddHom ℝ).prodMap (Int.castAddHom ℝ)))
+    (c : ℝ) : IsRationalNormalPolyhedron h {p : ℝ × ℝ | p.2 = c} := by
+  convert (isRationalNormalPolyhedron_setOf_le (-axisRow true)
+    (by simpa using (isRationalFunctional_axisRow h true).neg) (-c)).inter
+    (isRationalNormalPolyhedron_setOf_le (axisRow true)
+      (isRationalFunctional_axisRow h true) c) using 1
+  ext p
+  simp [le_antisymm_iff, and_comm]
+
 /-- The horizontal axis is a rational-normal polyhedron. -/
 theorem isRationalNormalPolyhedron_horizontalLine
     (h : TauCeti.Toric.IsIntegralLattice ((Int.castAddHom ℝ).prodMap (Int.castAddHom ℝ))) :
-    IsRationalNormalPolyhedron h {p : ℝ × ℝ | p.2 = 0} := by
-  convert (isRationalNormalPolyhedron_upperHalfPlane h).inter
-    (isRationalNormalPolyhedron_setOf_le (axisRow true)
-      (isRationalFunctional_axisRow h true) 0) using 1
-  ext p
-  simp [le_antisymm_iff, and_comm]
+    IsRationalNormalPolyhedron h {p : ℝ × ℝ | p.2 = 0} :=
+  isRationalNormalPolyhedron_setOf_snd_eq h 0
 
 /-- The closed segment from `(0, 0)` to `(1, 0)` consists of the points of the axis with
 first coordinate in `[0, 1]`. -/
