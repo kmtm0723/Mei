@@ -66,13 +66,6 @@ variable {N ι R V : Type*} [AddCommGroup N] {D : SkewLatticeDatum N} {B : D.Ada
 local notation "Γ" => Module.Dual ℤ N × (I.Letter → ℤ)
 local notation "𝒅" => PositiveDegrees.finiteAlphabet I.letterExponent
 
-omit [DecidableEq ι] in
-/-- The exponent `s w_i` of the variable `p_{i,s}` is a positive multiple of `w_i`. -/
-theorem exists_letterExponent_eq_nsmul (α : I.Letter) :
-    ∃ b : ℕ, 0 < b ∧ I.letterExponent α = b • I.exponent α.1 := by
-  obtain ⟨i, s⟩ := α
-  exact ⟨s + 1, Nat.succ_pos _, I.letterExponent_mk i s⟩
-
 -- An `abbrev`, so that the walls of its ray presentation are indexed by `IncomingIndex`.
 /-- The initial walls of a polynomial input as polynomial function walls on the cylinders over
 the `e_i⊥` in the alphabet lattice `M × ℤ^E`, with `ρ = id`: the hyperplane `i ∈ I_uf` has the
